@@ -20,6 +20,8 @@ interface TimelineCardProps {
   event: TimelineEvent;
   isActive?: boolean;
   scopeLabel?: string | null;
+  /** When false, we don't render an <img> yet to avoid starting network requests for off-screen cards. */
+  shouldLoadImage?: boolean;
 }
 
 const categoryIcons = {
@@ -71,11 +73,26 @@ const scopeColors = {
   period: 'bg-muted text-muted-foreground',
 };
 
-export const TimelineCard = ({ event, isActive, scopeLabel }: TimelineCardProps) => {
+export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = true }: TimelineCardProps) => {
   const [imageError, setImageError] = useState(false);
   const Icon = categoryIcons[event.category] || Globe;
   const colorClass = categoryColors[event.category] || categoryColors.world;
   const label = categoryLabels[event.category] || event.category;
+
+  const buildWikimediaThumbSrcSet = (url: string) => {
+    // If we received a Wikimedia thumb url like .../960px-Filename.jpg, derive other sizes.
+    // This avoids shipping large images on small screens.
+    const hasThumb = /\/thumb\//.test(url) && /\/\d+px-/.test(url);
+    if (!hasThumb) return undefined;
+
+    const make = (w: number) => url.replace(/\/\d+px-/, `/${w}px-`);
+    return [
+      `${make(480)} 480w`,
+      `${make(640)} 640w`,
+      `${make(960)} 960w`,
+      `${make(1280)} 1280w`,
+    ].join(', ');
+  };
 
   const formatDate = () => {
     if (event.day && event.month) {
@@ -88,7 +105,10 @@ export const TimelineCard = ({ event, isActive, scopeLabel }: TimelineCardProps)
   };
 
   // Only show real images - no generic placeholders
-  const hasRealImage = !!event.imageUrl && !imageError;
+  // Also: do not start image requests for off-screen cards.
+  const hasRealImage = shouldLoadImage && !!event.imageUrl && !imageError;
+  const srcSet = event.imageUrl ? buildWikimediaThumbSrcSet(event.imageUrl) : undefined;
+  const sizes = "(min-width: 1024px) 420px, (min-width: 640px) 380px, 320px";
 
   return (
     <article 
@@ -102,21 +122,25 @@ export const TimelineCard = ({ event, isActive, scopeLabel }: TimelineCardProps)
       `}
     >
       {/* Image section - only real event images, no generic placeholders */}
-      <div className="relative h-56 sm:h-72 overflow-hidden bg-muted flex-shrink-0">
+      <div className="relative h-64 sm:h-80 lg:h-96 overflow-hidden bg-muted flex-shrink-0">
         {hasRealImage ? (
           <img 
             src={event.imageUrl!}
+            srcSet={srcSet}
+            sizes={srcSet ? sizes : undefined}
             alt={event.title}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             onError={() => setImageError(true)}
-            loading="lazy"
+            loading={isActive ? "eager" : "lazy"}
             decoding="async"
             fetchPriority={isActive ? "high" : "low"}
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-muted to-secondary/30">
             <ImageOff className="h-10 w-10 text-muted-foreground/30" />
-            <span className="text-xs text-muted-foreground/50">Afbeelding laden...</span>
+            <span className="text-xs text-muted-foreground/50">
+              {shouldLoadImage ? 'Afbeelding laden...' : 'Afbeelding wordt geladen...'}
+            </span>
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />

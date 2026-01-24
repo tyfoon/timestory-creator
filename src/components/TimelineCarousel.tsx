@@ -118,6 +118,7 @@ export const TimelineCarousel = ({
               event={event} 
               isActive={index === currentEventIndex}
               scopeLabel={getScopeLabel(event)}
+              shouldLoadImage={Math.abs(index - currentEventIndex) <= 2}
             />
           </div>
         ))}
