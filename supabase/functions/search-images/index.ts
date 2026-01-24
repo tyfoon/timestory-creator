@@ -219,136 +219,112 @@ serve(async (req) => {
       );
     }
 
-    const batchSize = 5;
+    // Process all queries in parallel (Firecrawl can handle it)
     const allResults: { eventId: string; imageUrl: string | null; source: string | null }[] = [];
-    const limitedQueries = queries.slice(0, 15);
-    
-    for (let i = 0; i < limitedQueries.length; i += batchSize) {
-      const batch = limitedQueries.slice(i, i + batchSize);
-      
-      const batchResults = await Promise.all(
-        batch.map(async ({ eventId, query, year }) => {
-          try {
-            // Search for Wikipedia/Wikimedia images
-            const searchQuery = year 
-              ? `${query} ${year} wikipedia`
-              : `${query} wikipedia`;
-            
-            console.log(`Searching for: "${searchQuery}"`);
+    const limitedQueries = queries.slice(0, 20);
 
-            const response = await fetch("https://api.firecrawl.dev/v1/search", {
+    const processQuery = async ({ eventId, query, year }: { eventId: string; query: string; year?: number }) => {
+      try {
+        const searchQuery = year ? `${query} ${year} wikipedia` : `${query} wikipedia`;
+        console.log(`Searching for: "${searchQuery}"`);
+
+        const response = await fetch("https://api.firecrawl.dev/v1/search", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query: searchQuery, limit: 5 }),
+        });
+
+        if (!response.ok) {
+          console.error(`Firecrawl search failed for "${query}":`, response.status);
+          return { eventId, imageUrl: null, source: null };
+        }
+
+        const data = await response.json();
+        const results = data.data || [];
+
+        for (const result of results) {
+          if (result?.url) {
+            const candidate = toSpecialFilePath(result.url);
+            if (candidate) {
+              const resolved = await resolveWikimediaUrl(candidate);
+              if (resolved) {
+                console.log(`Found direct image from result URL for "${query}": ${resolved}`);
+                return { eventId, imageUrl: resolved, source: result.url };
+              }
+            }
+          }
+
+          if (result.metadata?.ogImage) {
+            const candidate = toSpecialFilePath(result.metadata.ogImage);
+            if (candidate) {
+              const resolved = await resolveWikimediaUrl(candidate);
+              if (resolved) {
+                console.log(`Found og:image for "${query}": ${resolved}`);
+                return { eventId, imageUrl: resolved, source: result.url };
+              }
+            }
+          }
+
+          if (result.metadata?.image) {
+            const candidate = toSpecialFilePath(result.metadata.image);
+            if (candidate) {
+              const resolved = await resolveWikimediaUrl(candidate);
+              if (resolved) {
+                console.log(`Found metadata image for "${query}": ${resolved}`);
+                return { eventId, imageUrl: resolved, source: result.url };
+              }
+            }
+          }
+        }
+
+        const wikiResult = results.find(
+          (r: any) => r?.url?.includes("wikipedia.org") || r?.url?.includes("wikimedia.org")
+        );
+
+        if (wikiResult?.url) {
+          try {
+            console.log(`Scraping ${wikiResult.url} for images...`);
+            const scrapeResponse = await fetch("https://api.firecrawl.dev/v1/scrape", {
               method: "POST",
               headers: {
                 "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({
-                query: searchQuery,
-                limit: 5,
-              }),
+              body: JSON.stringify({ url: wikiResult.url, formats: ["links"], onlyMainContent: true }),
             });
 
-            if (!response.ok) {
-              console.error(`Firecrawl search failed for "${query}":`, response.status);
-              return { eventId, imageUrl: null, source: null };
-            }
+            if (scrapeResponse.ok) {
+              const scrapeData = await scrapeResponse.json();
+              const links = scrapeData.data?.links || scrapeData.links || [];
 
-            const data = await response.json();
-            const results = data.data || [];
-            
-            // Check each result for image URLs
-            for (const result of results) {
-              // If the result URL itself is a Wikipedia File: page, convert it
-              if (result?.url) {
-                const candidate = toSpecialFilePath(result.url);
-                if (candidate) {
-                  const resolved = await resolveWikimediaUrl(candidate);
-                  if (resolved) {
-                    console.log(`Found direct image from result URL for "${query}": ${resolved}`);
-                    return { eventId, imageUrl: resolved, source: result.url };
-                  }
-                }
-              }
-
-              // Check og:image metadata
-              if (result.metadata?.ogImage) {
-                const candidate = toSpecialFilePath(result.metadata.ogImage);
-                if (candidate) {
-                  const resolved = await resolveWikimediaUrl(candidate);
-                  if (resolved) {
-                    console.log(`Found og:image for "${query}": ${resolved}`);
-                    return { eventId, imageUrl: resolved, source: result.url };
-                  }
-                }
-              }
-              
-              // Check image metadata
-              if (result.metadata?.image) {
-                const candidate = toSpecialFilePath(result.metadata.image);
-                if (candidate) {
-                  const resolved = await resolveWikimediaUrl(candidate);
-                  if (resolved) {
-                    console.log(`Found metadata image for "${query}": ${resolved}`);
-                    return { eventId, imageUrl: resolved, source: result.url };
-                  }
+              const bestImageCandidate = pickBestImageLink(links);
+              if (bestImageCandidate) {
+                const resolved = await resolveWikimediaUrl(bestImageCandidate);
+                if (resolved) {
+                  console.log(`Found best image for "${query}": ${resolved}`);
+                  return { eventId, imageUrl: resolved, source: wikiResult.url };
                 }
               }
             }
-            
-            // Try scraping the first Wikipedia result for image links
-            const wikiResult = results.find((r: any) => 
-              r?.url?.includes("wikipedia.org") || r?.url?.includes("wikimedia.org")
-            );
-            
-            if (wikiResult?.url) {
-              try {
-                console.log(`Scraping ${wikiResult.url} for images...`);
-                const scrapeResponse = await fetch("https://api.firecrawl.dev/v1/scrape", {
-                  method: "POST",
-                  headers: {
-                    "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    url: wikiResult.url,
-                    formats: ["links"],
-                    onlyMainContent: true,
-                  }),
-                });
-
-                if (scrapeResponse.ok) {
-                  const scrapeData = await scrapeResponse.json();
-                  const links = scrapeData.data?.links || scrapeData.links || [];
-                  
-                  const bestImageCandidate = pickBestImageLink(links);
-                  if (bestImageCandidate) {
-                    const resolved = await resolveWikimediaUrl(bestImageCandidate);
-                    if (resolved) {
-                      console.log(`Found best image for "${query}": ${resolved}`);
-                      return { eventId, imageUrl: resolved, source: wikiResult.url };
-                    }
-                  }
-                }
-              } catch (scrapeErr) {
-                console.error(`Scrape error for "${query}":`, scrapeErr);
-              }
-            }
-
-            console.log(`No image found for "${query}"`);
-            return { eventId, imageUrl: null, source: results[0]?.url || null };
-          } catch (error) {
-            console.error(`Error searching for "${query}":`, error);
-            return { eventId, imageUrl: null, source: null };
+          } catch (scrapeErr) {
+            console.error(`Scrape error for "${query}":`, scrapeErr);
           }
-        })
-      );
-      
-      allResults.push(...batchResults);
-      
-      if (i + batchSize < limitedQueries.length) {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
+        console.log(`No image found for "${query}"`);
+        return { eventId, imageUrl: null, source: results[0]?.url || null };
+      } catch (error) {
+        console.error(`Error searching for "${query}":`, error);
+        return { eventId, imageUrl: null, source: null };
       }
-    }
+    };
+
+    // Run all queries in parallel
+    const batchResults = await Promise.all(limitedQueries.map(processQuery));
+    allResults.push(...batchResults);
 
     const finalResults = queries.map(q => {
       const found = allResults.find(r => r.eventId === q.eventId);
