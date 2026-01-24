@@ -112,14 +112,14 @@ const ResultPage = () => {
       };
 
       // Fetch priority images first (first 3 visible cards)
-      const priorityResult = await searchImages(priorityQueries);
+      const priorityResult = await searchImages(priorityQueries, { mode: 'fast' });
       if (priorityResult.success && priorityResult.images) {
         applyImages(priorityResult.images);
       }
 
       // Then fetch the rest in background
       if (remainingQueries.length > 0) {
-        const restResult = await searchImages(remainingQueries);
+        const restResult = await searchImages(remainingQueries, { mode: 'full' });
         if (restResult.success && restResult.images) {
           applyImages(restResult.images);
         }

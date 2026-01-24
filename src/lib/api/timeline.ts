@@ -57,6 +57,7 @@ export const generateTimeline = async (
 
 export const searchImages = async (
   queries: { eventId: string; query: string; year?: number }[]
+  , options?: { mode?: 'fast' | 'full' }
 ): Promise<{ success: boolean; images?: { eventId: string; imageUrl: string | null; source: string | null }[] }> => {
   try {
     const response = await fetch(`${SUPABASE_URL}/functions/v1/search-images`, {
@@ -66,7 +67,7 @@ export const searchImages = async (
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         'apikey': SUPABASE_ANON_KEY,
       },
-      body: JSON.stringify({ queries })
+      body: JSON.stringify({ queries, mode: options?.mode })
     });
 
     if (!response.ok) {
