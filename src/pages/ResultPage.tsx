@@ -150,41 +150,55 @@ const ResultPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-hero pb-20">
+    <div className="min-h-screen bg-gradient-hero flex flex-col">
       <Header />
       
-      {/* Header section */}
-      <section className="pt-32 pb-4 px-4">
-        <div className="container mx-auto max-w-5xl">
-          {/* Back button */}
+      {/* Compact header section */}
+      <section className="pt-24 pb-2 px-4">
+        <div className="container mx-auto max-w-6xl">
+          {/* Back button - smaller */}
           <button
             onClick={() => navigate('/invoer?type=' + (formData?.type || 'birthdate'))}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6 fade-in"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 fade-in"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-3.5 w-3.5" />
             <span>Terug naar invoer</span>
           </button>
 
-          {/* Title */}
-          <div className="text-center mb-6 fade-in">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/80 border border-border mb-4">
-              <Clock className="h-4 w-4 text-accent" />
-              <span className="text-sm text-muted-foreground font-medium">
-                {formData?.type === 'birthdate' ? 'Geboortedatum Overzicht' : 'Tijdperiode Overzicht'}
-              </span>
+          {/* Compact title row */}
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3 fade-in">
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary/80 border border-border text-xs">
+                <Clock className="h-3.5 w-3.5 text-accent" />
+                <span className="text-muted-foreground font-medium">
+                  {formData?.type === 'birthdate' ? 'Geboortedatum' : 'Tijdperiode'}
+                </span>
+              </div>
+              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
+                {getTitle()}
+              </h1>
             </div>
             
-            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-3">
-              {getTitle()}
-            </h1>
-            
-            {formData?.optionalData.city && (
-              <p className="text-muted-foreground">
-                📍 {formData.optionalData.city}
-                {formData.optionalData.focus === 'netherlands' && ' • Focus: Nederland'}
-                {formData.optionalData.focus === 'europe' && ' • Focus: Europa'}
-                {formData.optionalData.focus === 'world' && ' • Focus: Wereld'}
-              </p>
+            {/* Event scope badges - inline */}
+            {formData?.type === 'birthdate' && events.length > 0 && (
+              <div className="flex flex-wrap gap-2 text-xs">
+                {birthdateEvents > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-accent-foreground">
+                    <Cake className="h-3 w-3" />
+                    {birthdateEvents} op je dag
+                  </span>
+                )}
+                {birthmonthEvents > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/70 text-accent-foreground">
+                    {birthmonthEvents} in je maand
+                  </span>
+                )}
+                {birthyearEvents > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+                    {birthyearEvents} in je jaar
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -192,31 +206,32 @@ const ResultPage = () => {
 
       {/* Loading state */}
       {isLoading && (
-        <div className="flex flex-col items-center justify-center py-20 fade-in">
-          <div className="w-20 h-20 rounded-full bg-gradient-gold flex items-center justify-center mb-6 animate-pulse">
-            <Clock className="h-10 w-10 text-primary-foreground" />
+        <div className="flex-1 flex flex-col items-center justify-center py-12 fade-in">
+          <div className="w-16 h-16 rounded-full bg-gradient-gold flex items-center justify-center mb-4 animate-pulse">
+            <Clock className="h-8 w-8 text-primary-foreground" />
           </div>
-          <h2 className="font-serif text-2xl font-semibold text-foreground mb-2">
+          <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
             We reizen terug in de tijd...
           </h2>
-          <p className="text-muted-foreground mb-4">
-            Dit kan even duren, we doorzoeken de geschiedenis
+          <p className="text-muted-foreground text-sm mb-3">
+            Dit kan even duren
           </p>
-          <Loader2 className="h-6 w-6 animate-spin text-accent" />
+          <Loader2 className="h-5 w-5 animate-spin text-accent" />
         </div>
       )}
 
       {/* Error state */}
       {error && !isLoading && (
-        <div className="container mx-auto max-w-md py-20 px-4">
-          <div className="bg-card rounded-xl shadow-card border border-destructive/20 p-8 text-center">
-            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h3 className="font-serif text-xl font-semibold text-foreground mb-2">
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="bg-card rounded-xl shadow-card border border-destructive/20 p-6 text-center max-w-md">
+            <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
+            <h3 className="font-serif text-lg font-semibold text-foreground mb-2">
               Er ging iets mis
             </h3>
-            <p className="text-muted-foreground mb-6">{error}</p>
+            <p className="text-muted-foreground text-sm mb-4">{error}</p>
             <Button 
               onClick={() => formData && loadTimeline(formData)}
+              size="sm"
               className="btn-vintage"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
@@ -226,84 +241,45 @@ const ResultPage = () => {
         </div>
       )}
 
-      {/* Timeline content */}
+      {/* Timeline content - takes remaining space */}
       {!isLoading && !error && events.length > 0 && (
-        <>
-          {/* Event scope legend */}
-          {formData?.type === 'birthdate' && (
-            <div className="container mx-auto max-w-5xl px-4 mb-4">
-              <div className="flex flex-wrap gap-3 justify-center text-xs">
-                {birthdateEvents > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent text-accent-foreground">
-                    <Cake className="h-3 w-3" />
-                    {birthdateEvents} op je geboortedag
-                  </span>
-                )}
-                {birthmonthEvents > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/70 text-accent-foreground">
-                    {birthmonthEvents} in je geboortemaand
-                  </span>
-                )}
-                {birthyearEvents > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary text-secondary-foreground">
-                    {birthyearEvents} in je geboortejaar
-                  </span>
-                )}
-                {celebrityEvents > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/50 text-accent-foreground">
-                    <Star className="h-3 w-3" />
-                    {celebrityEvents} beroemde jarigen
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Summary */}
-          {summary && (
-            <div className="container mx-auto max-w-4xl px-4 mb-6">
-              <div className="bg-card/50 rounded-lg p-4 border border-border/50">
-                <p className="text-muted-foreground italic text-sm">{summary}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Famous birthdays highlight */}
+        <div className="flex-1 flex flex-col min-h-0 pb-16">
+          {/* Famous birthdays - compact inline */}
           {famousBirthdays.length > 0 && (
-            <div className="container mx-auto max-w-5xl px-4 mb-6">
-              <div className="bg-secondary/50 rounded-lg p-4 border border-border/50">
-                <h3 className="font-serif text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
-                  <Cake className="h-5 w-5 text-accent" />
-                  Beroemde jarigen op jouw verjaardag
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {famousBirthdays.slice(0, 8).map((celeb, idx) => (
-                    <span 
-                      key={idx} 
-                      className="inline-flex items-center gap-1 px-3 py-1 bg-card/50 rounded-full text-sm"
-                    >
-                      <Star className="h-3 w-3 text-accent" />
-                      <strong>{celeb.name}</strong>
-                      <span className="text-muted-foreground">({celeb.profession}, {celeb.birthYear})</span>
-                    </span>
-                  ))}
-                </div>
+            <div className="container mx-auto max-w-6xl px-4 mb-2">
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                <span className="font-medium text-muted-foreground flex items-center gap-1">
+                  <Star className="h-3 w-3 text-accent" />
+                  Ook jarig:
+                </span>
+                {famousBirthdays.slice(0, 5).map((celeb, idx) => (
+                  <span 
+                    key={idx} 
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-secondary/50 rounded-full"
+                  >
+                    <strong>{celeb.name}</strong>
+                    <span className="text-muted-foreground">({celeb.birthYear})</span>
+                  </span>
+                ))}
+                {famousBirthdays.length > 5 && (
+                  <span className="text-muted-foreground">+{famousBirthdays.length - 5} meer</span>
+                )}
               </div>
             </div>
           )}
 
-          {/* Image loading indicator */}
+          {/* Image loading indicator - minimal */}
           {isLoadingImages && (
-            <div className="container mx-auto max-w-5xl px-4 mb-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
+            <div className="container mx-auto max-w-6xl px-4 mb-2">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
                 <span>Afbeeldingen laden...</span>
               </div>
             </div>
           )}
 
-          {/* Horizontal carousel */}
-          <section className="pb-20">
+          {/* Horizontal carousel - fills remaining space */}
+          <section className="flex-1 min-h-0">
             <TimelineCarousel
               events={events}
               currentEventIndex={currentEventIndex}
@@ -318,7 +294,7 @@ const ResultPage = () => {
             currentEventIndex={currentEventIndex}
             onEventSelect={handleEventSelect}
           />
-        </>
+        </div>
       )}
     </div>
   );

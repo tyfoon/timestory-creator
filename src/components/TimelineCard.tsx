@@ -87,10 +87,29 @@ export const TimelineCard = ({ event, isActive, scopeLabel }: TimelineCardProps)
     return event.year.toString();
   };
 
+  // Generate a placeholder image based on category
+  const getCategoryImage = () => {
+    const categoryImages: Record<string, string> = {
+      politics: `https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=600&h=400&fit=crop`,
+      sports: `https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=600&h=400&fit=crop`,
+      entertainment: `https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&h=400&fit=crop`,
+      science: `https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=600&h=400&fit=crop`,
+      culture: `https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=600&h=400&fit=crop`,
+      world: `https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&h=400&fit=crop`,
+      local: `https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=600&h=400&fit=crop`,
+      music: `https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&h=400&fit=crop`,
+      technology: `https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&h=400&fit=crop`,
+      celebrity: `https://images.unsplash.com/photo-1533738363-b7f9aef128ce?w=600&h=400&fit=crop`,
+    };
+    return categoryImages[event.category] || categoryImages.world;
+  };
+
+  const displayImage = event.imageUrl && !imageError ? event.imageUrl : getCategoryImage();
+
   return (
     <article 
       className={`
-        group relative bg-card rounded-xl border transition-all duration-300 h-full flex flex-col
+        group relative bg-card rounded-xl border transition-all duration-300 h-full flex flex-col overflow-hidden
         ${isActive 
           ? 'border-accent shadow-elevated scale-[1.02]' 
           : 'border-border/50 shadow-card hover:shadow-elevated hover:border-border'
@@ -98,63 +117,50 @@ export const TimelineCard = ({ event, isActive, scopeLabel }: TimelineCardProps)
         ${event.importance === 'high' ? 'ring-2 ring-accent/20' : ''}
       `}
     >
-      {/* Image section */}
-      {event.imageUrl && !imageError ? (
-        <div className="relative h-40 overflow-hidden rounded-t-xl bg-muted">
-          <img 
-            src={event.imageUrl} 
-            alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            onError={() => setImageError(true)}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-card/80 to-transparent" />
-          
-          {/* Scope badge on image */}
-          {scopeLabel && (
-            <div className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-medium ${scopeColors[event.eventScope] || scopeColors.period}`}>
-              {event.isCelebrityBirthday && <Cake className="inline h-3 w-3 mr-1" />}
-              {scopeLabel}
-            </div>
-          )}
+      {/* Image section - larger */}
+      <div className="relative h-48 sm:h-56 overflow-hidden bg-muted flex-shrink-0">
+        <img 
+          src={displayImage} 
+          alt={event.title}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          onError={() => setImageError(true)}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
+        
+        {/* Scope badge on image */}
+        {scopeLabel && (
+          <div className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-medium ${scopeColors[event.eventScope] || scopeColors.period}`}>
+            {event.isCelebrityBirthday && <Cake className="inline h-3 w-3 mr-1" />}
+            {scopeLabel}
+          </div>
+        )}
+        
+        {/* Category badge on image */}
+        <div className={`absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
+          <Icon className="h-3 w-3" />
+          {label}
         </div>
-      ) : (
-        <div className="relative h-24 overflow-hidden rounded-t-xl bg-gradient-to-br from-muted to-secondary flex items-center justify-center">
-          <ImageOff className="h-8 w-8 text-muted-foreground/30" />
-          
-          {/* Scope badge */}
-          {scopeLabel && (
-            <div className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-medium ${scopeColors[event.eventScope] || scopeColors.period}`}>
-              {event.isCelebrityBirthday && <Cake className="inline h-3 w-3 mr-1" />}
-              {scopeLabel}
-            </div>
-          )}
-        </div>
-      )}
+      </div>
 
       {/* Importance indicator */}
       {event.importance === 'high' && (
-        <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-accent shadow-lg" />
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-accent shadow-lg" />
       )}
 
-      <div className="p-4 flex-1 flex flex-col">
-        {/* Header with date and category */}
-        <div className="flex items-center justify-between mb-3">
-          <time className="text-sm font-medium text-muted-foreground font-mono">
-            {formatDate()}
-          </time>
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${colorClass}`}>
-            <Icon className="h-3 w-3" />
-            {label}
-          </span>
-        </div>
+      {/* Content section - flex grow */}
+      <div className="p-4 sm:p-5 flex-1 flex flex-col">
+        {/* Date */}
+        <time className="text-sm font-medium text-accent font-mono mb-2">
+          {formatDate()}
+        </time>
 
         {/* Title */}
-        <h3 className="font-serif text-base font-semibold text-foreground mb-2 leading-tight line-clamp-2">
+        <h3 className="font-serif text-lg sm:text-xl font-semibold text-foreground mb-3 leading-tight line-clamp-2">
           {event.title}
         </h3>
 
-        {/* Description */}
-        <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3 flex-1">
+        {/* Description - more space */}
+        <p className="text-muted-foreground text-sm sm:text-base leading-relaxed flex-1 line-clamp-4">
           {event.description}
         </p>
 
@@ -164,7 +170,7 @@ export const TimelineCard = ({ event, isActive, scopeLabel }: TimelineCardProps)
             href={event.source}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 mt-3 text-xs text-accent hover:underline"
+            className="inline-flex items-center gap-1 mt-4 text-xs text-accent hover:underline"
             onClick={(e) => e.stopPropagation()}
           >
             Bron →
