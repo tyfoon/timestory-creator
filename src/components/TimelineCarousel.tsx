@@ -77,7 +77,7 @@ export const TimelineCarousel = ({
   };
 
   return (
-    <div className="relative">
+    <div className="relative h-full">
       {/* Navigation buttons */}
       <Button
         variant="outline"
@@ -101,17 +101,17 @@ export const TimelineCarousel = ({
         <ChevronRight className="h-5 w-5" />
       </Button>
 
-      {/* Scroll container */}
+      {/* Scroll container - taller cards */}
       <div
         ref={scrollContainerRef}
-        className="flex gap-6 overflow-x-auto pb-6 px-12 scroll-smooth snap-x snap-mandatory hide-scrollbar"
+        className="flex gap-4 overflow-x-auto h-full px-12 scroll-smooth snap-x snap-mandatory hide-scrollbar items-stretch"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {events.map((event, index) => (
           <div
             key={event.id}
             ref={(el) => (cardRefs.current[index] = el)}
-            className="flex-shrink-0 w-[340px] sm:w-[400px] snap-center cursor-pointer transition-transform hover:scale-[1.02]"
+            className="flex-shrink-0 w-[320px] sm:w-[380px] lg:w-[420px] snap-center cursor-pointer transition-transform hover:scale-[1.01] h-full"
             onClick={() => onEventSelect(index)}
           >
             <TimelineCard 
@@ -124,8 +124,8 @@ export const TimelineCarousel = ({
       </div>
 
       {/* Gradient overlays for scroll indication */}
-      <div className="absolute left-0 top-0 bottom-6 w-12 bg-gradient-to-r from-background to-transparent pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-6 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+      <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-background to-transparent pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
     </div>
   );
 };
