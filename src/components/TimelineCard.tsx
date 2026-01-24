@@ -14,7 +14,7 @@ import {
   Cake,
   ImageOff
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface TimelineCardProps {
   event: TimelineEvent;
@@ -75,6 +75,12 @@ const scopeColors = {
 
 export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = true }: TimelineCardProps) => {
   const [imageError, setImageError] = useState(false);
+
+  // If a previous URL failed (e.g. a non-image URL), allow retry when we later set a new imageUrl.
+  useEffect(() => {
+    setImageError(false);
+  }, [event.imageUrl]);
+
   const Icon = categoryIcons[event.category] || Globe;
   const colorClass = categoryColors[event.category] || categoryColors.world;
   const label = categoryLabels[event.category] || event.category;

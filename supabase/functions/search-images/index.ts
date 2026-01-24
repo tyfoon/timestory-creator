@@ -7,6 +7,7 @@ const corsHeaders = {
 
 interface ImageSearchRequest {
   queries: { eventId: string; query: string; year?: number }[];
+  mode?: "fast" | "full";
 }
 
 const THUMB_WIDTH = 960;
@@ -118,7 +119,8 @@ async function resolveWikimediaUrl(url: string): Promise<string | null> {
       return null;
     }
 
-    return url;
+    // Never return non-image pages (e.g. wikipedia.org/wiki/Fișier:...) as an image URL.
+    return null;
   } catch (e) {
     console.error("Error resolving URL:", url, e);
     return null;
@@ -144,12 +146,6 @@ function toSpecialFilePath(maybeUrl: string): string | null {
     if (idx !== -1) {
       const filename = decodeURIComponent(url.pathname.slice(idx + marker.length));
       return `${url.origin}/wiki/Special:FilePath/${encodeURIComponent(filename)}`;
-    }
-
-    // Accept direct image file URLs
-    const lower = url.pathname.toLowerCase();
-    if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".webp") || lower.endsWith(".gif")) {
-      return url.toString();
     }
 
     return null;
@@ -201,7 +197,7 @@ serve(async (req) => {
   }
 
   try {
-    const { queries }: ImageSearchRequest = await req.json();
+    const { queries, mode = "full" }: ImageSearchRequest = await req.json();
     console.log(`Searching images for ${queries.length} events`);
 
     const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
@@ -280,37 +276,41 @@ serve(async (req) => {
           }
         }
 
-        const wikiResult = results.find(
-          (r: any) => r?.url?.includes("wikipedia.org") || r?.url?.includes("wikimedia.org")
-        );
+        // Full mode: optionally scrape the top Wikipedia result for extra image links.
+        // Fast mode: skip scraping entirely (much faster first images).
+        if (mode === "full") {
+          const wikiResult = results.find(
+            (r: any) => r?.url?.includes("wikipedia.org") || r?.url?.includes("wikimedia.org")
+          );
 
-        if (wikiResult?.url) {
-          try {
-            console.log(`Scraping ${wikiResult.url} for images...`);
-            const scrapeResponse = await fetch("https://api.firecrawl.dev/v1/scrape", {
-              method: "POST",
-              headers: {
-                "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ url: wikiResult.url, formats: ["links"], onlyMainContent: true }),
-            });
+          if (wikiResult?.url) {
+            try {
+              console.log(`Scraping ${wikiResult.url} for images...`);
+              const scrapeResponse = await fetch("https://api.firecrawl.dev/v1/scrape", {
+                method: "POST",
+                headers: {
+                  "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ url: wikiResult.url, formats: ["links"], onlyMainContent: true }),
+              });
 
-            if (scrapeResponse.ok) {
-              const scrapeData = await scrapeResponse.json();
-              const links = scrapeData.data?.links || scrapeData.links || [];
+              if (scrapeResponse.ok) {
+                const scrapeData = await scrapeResponse.json();
+                const links = scrapeData.data?.links || scrapeData.links || [];
 
-              const bestImageCandidate = pickBestImageLink(links);
-              if (bestImageCandidate) {
-                const resolved = await resolveWikimediaUrl(bestImageCandidate);
-                if (resolved) {
-                  console.log(`Found best image for "${query}": ${resolved}`);
-                  return { eventId, imageUrl: resolved, source: wikiResult.url };
+                const bestImageCandidate = pickBestImageLink(links);
+                if (bestImageCandidate) {
+                  const resolved = await resolveWikimediaUrl(bestImageCandidate);
+                  if (resolved) {
+                    console.log(`Found best image for "${query}": ${resolved}`);
+                    return { eventId, imageUrl: resolved, source: wikiResult.url };
+                  }
                 }
               }
+            } catch (scrapeErr) {
+              console.error(`Scrape error for "${query}":`, scrapeErr);
             }
-          } catch (scrapeErr) {
-            console.error(`Scrape error for "${query}":`, scrapeErr);
           }
         }
 
