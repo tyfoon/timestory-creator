@@ -9,6 +9,8 @@ export interface TimelineEvent {
   category: 'politics' | 'sports' | 'entertainment' | 'science' | 'culture' | 'world' | 'local' | 'personal' | 'music' | 'technology' | 'celebrity';
   imageSearchQuery?: string;
   imageUrl?: string;
+  /** Frontend-only helper to avoid showing an infinite “loading” state when no image is found. */
+  imageStatus?: 'idle' | 'loading' | 'found' | 'none' | 'error';
   source?: string;
   importance: 'high' | 'medium' | 'low';
   // Whether this event happened on the exact birth date vs just the year

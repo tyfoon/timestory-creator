@@ -51,8 +51,14 @@ const ResultPage = () => {
           if ((a.month || 0) !== (b.month || 0)) return (a.month || 0) - (b.month || 0);
           return (a.day || 0) - (b.day || 0);
         });
+
+        // Frontend-only: mark image loading state so cards don't show an infinite spinner.
+        const eventsWithImageStatus = sortedEvents.map((e) => {
+          if (!e.imageSearchQuery) return { ...e, imageStatus: 'none' as const };
+          return { ...e, imageStatus: 'loading' as const };
+        });
         
-        setEvents(sortedEvents);
+        setEvents(eventsWithImageStatus);
         setSummary(response.data.summary);
         setFamousBirthdays(response.data.famousBirthdays || []);
         
@@ -62,7 +68,7 @@ const ResultPage = () => {
         });
 
         // Load images in background
-        loadImages(sortedEvents);
+        loadImages(eventsWithImageStatus);
       } else {
         throw new Error(response.error || 'Onbekende fout');
       }
@@ -86,8 +92,7 @@ const ResultPage = () => {
     try {
       // Create image search queries for events that have a search query
       const allQueries = timelineEvents
-        .filter(e => e.imageSearchQuery)
-        .slice(0, 20) // Limit to first 20 to save API calls
+        .filter(e => e.imageSearchQuery && e.imageStatus !== 'found')
         .map(e => ({
           eventId: e.id,
           query: e.imageSearchQuery!,
@@ -104,10 +109,18 @@ const ResultPage = () => {
       const applyImages = (images: { eventId: string; imageUrl: string | null; source: string | null }[]) => {
         setEvents(prev => prev.map(event => {
           const imageResult = images.find(img => img.eventId === event.id);
-          if (imageResult?.imageUrl) {
-            return { ...event, imageUrl: imageResult.imageUrl, source: imageResult.source || undefined };
+          if (!imageResult) return event;
+
+          if (imageResult.imageUrl) {
+            return {
+              ...event,
+              imageUrl: imageResult.imageUrl,
+              source: imageResult.source || undefined,
+              imageStatus: 'found',
+            };
           }
-          return event;
+
+          return { ...event, imageStatus: 'none' };
         }));
       };
 
@@ -117,11 +130,15 @@ const ResultPage = () => {
         applyImages(priorityResult.images);
       }
 
-      // Then fetch the rest in background
+      // Then fetch the rest in background in smaller chunks.
       if (remainingQueries.length > 0) {
-        const restResult = await searchImages(remainingQueries, { mode: 'full' });
-        if (restResult.success && restResult.images) {
-          applyImages(restResult.images);
+        const CHUNK_SIZE = 8;
+        for (let i = 0; i < remainingQueries.length; i += CHUNK_SIZE) {
+          const chunk = remainingQueries.slice(i, i + CHUNK_SIZE);
+          const restResult = await searchImages(chunk, { mode: 'full' });
+          if (restResult.success && restResult.images) {
+            applyImages(restResult.images);
+          }
         }
       }
     } catch (err) {
