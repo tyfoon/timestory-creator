@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { TimelineEvent } from '@/types/timeline';
 import { TimelineCard } from './TimelineCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -21,6 +21,34 @@ export const TimelineCarousel = ({
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [cardRotations, setCardRotations] = useState<number[]>([]);
+
+  // Calculate rotation for each card based on its position
+  const updateCardRotations = useCallback(() => {
+    if (!scrollContainerRef.current) return;
+    
+    const container = scrollContainerRef.current;
+    const containerRect = container.getBoundingClientRect();
+    const containerCenter = containerRect.left + containerRect.width / 2;
+    
+    const rotations = cardRefs.current.map((cardEl) => {
+      if (!cardEl) return 0;
+      
+      const cardRect = cardEl.getBoundingClientRect();
+      const cardCenter = cardRect.left + cardRect.width / 2;
+      
+      // Distance from container center (-1 to 1 range, clamped)
+      const distanceFromCenter = (cardCenter - containerCenter) / (containerRect.width / 2);
+      const clampedDistance = Math.max(-1, Math.min(1, distanceFromCenter));
+      
+      // Max rotation of 35 degrees at edges, negative on left, positive on right
+      const rotation = clampedDistance * -35;
+      
+      return rotation;
+    });
+    
+    setCardRotations(rotations);
+  }, []);
 
   // Scroll to current event when it changes
   useEffect(() => {
@@ -37,23 +65,30 @@ export const TimelineCarousel = ({
     }
   }, [currentEventIndex]);
 
-  // Check scroll buttons state
-  const updateScrollButtons = () => {
+  // Check scroll buttons state and update rotations
+  const updateScrollState = useCallback(() => {
     if (scrollContainerRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
       setCanScrollLeft(scrollLeft > 0);
       setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
     }
-  };
+    updateCardRotations();
+  }, [updateCardRotations]);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (container) {
-      container.addEventListener('scroll', updateScrollButtons);
-      updateScrollButtons();
-      return () => container.removeEventListener('scroll', updateScrollButtons);
+      container.addEventListener('scroll', updateScrollState);
+      window.addEventListener('resize', updateScrollState);
+      // Initial calculation
+      requestAnimationFrame(updateScrollState);
+      
+      return () => {
+        container.removeEventListener('scroll', updateScrollState);
+        window.removeEventListener('resize', updateScrollState);
+      };
     }
-  }, [events]);
+  }, [events, updateScrollState]);
 
   const scrollByAmount = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
@@ -77,7 +112,7 @@ export const TimelineCarousel = ({
   };
 
   return (
-    <div className="relative h-full">
+    <div className="relative h-full" style={{ perspective: '1200px' }}>
       {/* Navigation buttons */}
       <Button
         variant="outline"
@@ -101,27 +136,42 @@ export const TimelineCarousel = ({
         <ChevronRight className="h-5 w-5" />
       </Button>
 
-      {/* Scroll container - taller cards */}
+      {/* Scroll container - taller cards with 3D perspective */}
       <div
         ref={scrollContainerRef}
         className="flex gap-4 overflow-x-auto h-full px-12 scroll-smooth snap-x snap-mandatory hide-scrollbar items-stretch"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', transformStyle: 'preserve-3d' }}
       >
-        {events.map((event, index) => (
-          <div
-            key={event.id}
-            ref={(el) => (cardRefs.current[index] = el)}
-            className="flex-shrink-0 w-[320px] sm:w-[380px] lg:w-[420px] snap-center cursor-pointer transition-transform hover:scale-[1.01] h-full"
-            onClick={() => onEventSelect(index)}
-          >
-            <TimelineCard 
-              event={event} 
-              isActive={index === currentEventIndex}
-              scopeLabel={getScopeLabel(event)}
-              shouldLoadImage={Math.abs(index - currentEventIndex) <= 2}
-            />
-          </div>
-        ))}
+        {events.map((event, index) => {
+          const rotation = cardRotations[index] || 0;
+          const absRotation = Math.abs(rotation);
+          // Fade cards as they rotate more
+          const opacity = 1 - (absRotation / 35) * 0.4;
+          // Scale down slightly as they rotate
+          const scale = 1 - (absRotation / 35) * 0.1;
+          
+          return (
+            <div
+              key={event.id}
+              ref={(el) => (cardRefs.current[index] = el)}
+              className="flex-shrink-0 w-[320px] sm:w-[380px] lg:w-[420px] snap-center cursor-pointer h-full"
+              style={{
+                transform: `rotateY(${rotation}deg) scale(${scale})`,
+                opacity,
+                transition: 'transform 0.15s ease-out, opacity 0.15s ease-out',
+                transformStyle: 'preserve-3d',
+              }}
+              onClick={() => onEventSelect(index)}
+            >
+              <TimelineCard 
+                event={event} 
+                isActive={index === currentEventIndex}
+                scopeLabel={getScopeLabel(event)}
+                shouldLoadImage={Math.abs(index - currentEventIndex) <= 2}
+              />
+            </div>
+          );
+        })}
       </div>
 
       {/* Gradient overlays for scroll indication */}
