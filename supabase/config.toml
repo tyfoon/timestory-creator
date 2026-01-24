@@ -1,1 +1,7 @@
 project_id = "koeoboygsssyajpdstel"
+
+[functions.generate-timeline]
+verify_jwt = false
+
+[functions.search-images]
+verify_jwt = false
