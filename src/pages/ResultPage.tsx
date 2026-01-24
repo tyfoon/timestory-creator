@@ -309,6 +309,8 @@ const ResultPage = () => {
             events={events}
             currentEventIndex={currentEventIndex}
             onEventSelect={handleEventSelect}
+            birthDate={formData?.birthDate}
+            mode={formData?.type || 'birthdate'}
           />
         </div>
       )}
