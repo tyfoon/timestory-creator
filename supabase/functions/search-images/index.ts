@@ -11,8 +11,46 @@ interface ImageSearchRequest {
 
 const THUMB_WIDTH = 960;
 
+function isAllowedImageUrl(maybeUrl: string): boolean {
+  try {
+    const url = new URL(maybeUrl);
+    const path = url.pathname.toLowerCase();
+
+    // Wikimedia sometimes hosts audio/video under /thumb/transcoded/... and will happily return .mp3 etc.
+    // Those are NOT images and can be very large downloads.
+    if (path.includes("/transcoded/")) return false;
+
+    // Quick reject known non-image extensions
+    if (
+      path.endsWith(".mp3") ||
+      path.endsWith(".ogg") ||
+      path.endsWith(".wav") ||
+      path.endsWith(".webm") ||
+      path.endsWith(".mp4") ||
+      path.endsWith(".ogv") ||
+      path.endsWith(".pdf") ||
+      path.endsWith(".svg")
+    ) {
+      return false;
+    }
+
+    // Accept common raster image extensions
+    return (
+      path.endsWith(".jpg") ||
+      path.endsWith(".jpeg") ||
+      path.endsWith(".png") ||
+      path.endsWith(".webp") ||
+      path.endsWith(".gif")
+    );
+  } catch {
+    return false;
+  }
+}
+
 function toWikimediaThumbUrl(uploadUrl: string, width: number): string | null {
   try {
+    if (!isAllowedImageUrl(uploadUrl)) return null;
+
     const url = new URL(uploadUrl);
     if (url.hostname !== "upload.wikimedia.org") return null;
 
@@ -41,13 +79,24 @@ async function resolveWikimediaUrl(url: string): Promise<string | null> {
   try {
     // Already a direct upload URL - return as-is
     if (url.includes("upload.wikimedia.org") && !url.includes("Special:FilePath")) {
+      if (!isAllowedImageUrl(url)) return null;
       return toWikimediaThumbUrl(url, THUMB_WIDTH) || url;
     }
 
-    // Skip non-image files (audio, video, etc.)
+    // Skip obvious non-image files early
+    // (For Special:FilePath URLs we may not have a filename extension, so this is best-effort.)
     const lower = url.toLowerCase();
-    if (lower.includes(".ogg") || lower.includes(".mp3") || lower.includes(".wav") || 
-        lower.includes(".svg") || lower.includes(".pdf")) {
+    if (
+      lower.includes("/transcoded/") ||
+      lower.includes(".ogg") ||
+      lower.includes(".mp3") ||
+      lower.includes(".wav") ||
+      lower.includes(".webm") ||
+      lower.includes(".mp4") ||
+      lower.includes(".ogv") ||
+      lower.includes(".svg") ||
+      lower.includes(".pdf")
+    ) {
       return null;
     }
 
@@ -63,12 +112,8 @@ async function resolveWikimediaUrl(url: string): Promise<string | null> {
       
       // Verify it's actually an image
       if (finalUrl.includes("upload.wikimedia.org")) {
-        const finalLower = finalUrl.toLowerCase();
-        if (finalLower.endsWith(".jpg") || finalLower.endsWith(".jpeg") || 
-            finalLower.endsWith(".png") || finalLower.endsWith(".webp") || 
-            finalLower.endsWith(".gif")) {
-          return toWikimediaThumbUrl(finalUrl, THUMB_WIDTH) || finalUrl;
-        }
+        if (!isAllowedImageUrl(finalUrl)) return null;
+        return toWikimediaThumbUrl(finalUrl, THUMB_WIDTH) || finalUrl;
       }
       return null;
     }
@@ -119,7 +164,7 @@ function pickBestImageLink(links: string[]): string | null {
   for (const link of links) {
     if (!link) continue;
     const direct = toSpecialFilePath(link);
-    if (direct && direct.includes("upload.wikimedia.org")) {
+    if (direct && direct.includes("upload.wikimedia.org") && isAllowedImageUrl(direct)) {
       return direct;
     }
   }
@@ -128,7 +173,12 @@ function pickBestImageLink(links: string[]): string | null {
   for (const link of links) {
     if (!link) continue;
     const direct = toSpecialFilePath(link);
-    if (direct && direct.includes("Special:FilePath")) {
+    // Skip obvious non-image file types even if they come via Special:FilePath
+    if (
+      direct &&
+      direct.includes("Special:FilePath") &&
+      !/\.(ogg|mp3|wav|webm|mp4|ogv|pdf|svg)$/i.test(direct)
+    ) {
       return direct;
     }
   }
@@ -137,7 +187,7 @@ function pickBestImageLink(links: string[]): string | null {
   for (const link of links) {
     if (!link) continue;
     const direct = toSpecialFilePath(link);
-    if (direct) {
+    if (direct && (direct.includes("upload.wikimedia.org") ? isAllowedImageUrl(direct) : true)) {
       return direct;
     }
   }
