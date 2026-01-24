@@ -77,17 +77,37 @@ serve(async (req) => {
                         description: { type: "string" },
                         category: { 
                           type: "string", 
-                          enum: ["politics", "sports", "entertainment", "science", "culture", "world", "local", "personal", "music", "technology"] 
+                          enum: ["politics", "sports", "entertainment", "science", "culture", "world", "local", "personal", "music", "technology", "celebrity"] 
                         },
                         imageSearchQuery: { type: "string", description: "Search query to find a relevant image for this event" },
-                        importance: { type: "string", enum: ["high", "medium", "low"] }
+                        importance: { type: "string", enum: ["high", "medium", "low"] },
+                        eventScope: { 
+                          type: "string", 
+                          enum: ["birthdate", "birthmonth", "birthyear", "period"],
+                          description: "Whether this event is from the exact birth date, birth month, birth year, or general period"
+                        },
+                        isCelebrityBirthday: { type: "boolean", description: "True if this is about a famous person born on the same date" }
                       },
-                      required: ["id", "date", "year", "title", "description", "category", "importance"]
+                      required: ["id", "date", "year", "title", "description", "category", "importance", "eventScope"]
                     }
                   },
                   summary: {
                     type: "string",
                     description: "A brief summary of the era/period covered"
+                  },
+                  famousBirthdays: {
+                    type: "array",
+                    description: "List of famous people born on the same date (day and month)",
+                    items: {
+                      type: "object",
+                      properties: {
+                        name: { type: "string" },
+                        profession: { type: "string" },
+                        birthYear: { type: "number" },
+                        imageSearchQuery: { type: "string" }
+                      },
+                      required: ["name", "profession", "birthYear"]
+                    }
                   }
                 },
                 required: ["events", "summary"]
@@ -128,6 +148,7 @@ serve(async (req) => {
 
     const timelineData = JSON.parse(toolCall.function.arguments);
     console.log(`Generated ${timelineData.events?.length || 0} events`);
+    console.log(`Famous birthdays: ${timelineData.famousBirthdays?.length || 0}`);
 
     return new Response(
       JSON.stringify({ 
@@ -170,15 +191,29 @@ BELANGRIJKE INSTRUCTIES:
 6. Voeg context toe die de gebeurtenis memorabel maakt
 7. Voor elke gebeurtenis, geef een zoekterm (imageSearchQuery) die een relevante afbeelding zou vinden
 
+KRITIEK - EVENTSCOPE VELD:
+- Markeer elke gebeurtenis met het juiste eventScope:
+  - "birthdate": gebeurtenissen die specifiek op de exacte geboortedag plaatsvonden
+  - "birthmonth": gebeurtenissen die in de geboortemaand plaatsvonden
+  - "birthyear": gebeurtenissen die in het geboortejaar plaatsvonden
+  - "period": gebeurtenissen uit de bredere tijdsperiode
+
+BEROEMDE JARIGEN:
+- Zoek naar bekende personen (acteurs, muzikanten, sporters, politici, etc.) die op DEZELFDE DAG EN MAAND jarig zijn
+- Voeg deze toe als events met category="celebrity" en isCelebrityBirthday=true
+- Voeg ook een aparte famousBirthdays array toe met de belangrijkste beroemdheden
+
 VOOR GEBOORTEDATUM:
-- 55% van de gebeurtenissen: het geboortejaar
-- 15% van de gebeurtenissen: de geboortemaand
-- 30% van de gebeurtenissen: de specifieke geboortedag (internationaal nieuws van die dag, wat was er op tv, populaire muziek, etc.)
+- 55% van de gebeurtenissen: het geboortejaar (eventScope="birthyear")
+- 15% van de gebeurtenissen: de geboortemaand (eventScope="birthmonth")  
+- 30% van de gebeurtenissen: de specifieke geboortedag (eventScope="birthdate")
+- Minstens 5 beroemde jarigen met dezelfde verjaardag
 
 VOOR TIJDSPERIODE:
 - Verdeel gebeurtenissen gelijkmatig over de jaren
 - Focus op de belangrijkste momenten per jaar
-- Voeg decennium-specifieke cultuur toe (mode, muziek, technologie)`;
+- Voeg decennium-specifieke cultuur toe (mode, muziek, technologie)
+- Gebruik eventScope="period" voor alle gebeurtenissen`;
 }
 
 function buildPrompt(data: TimelineRequest): string {
@@ -193,9 +228,18 @@ function buildPrompt(data: TimelineRequest): string {
     prompt = `Maak een uitgebreide tijdlijn voor iemand geboren op ${day} ${monthName} ${year}.
 
 Genereer minimaal 50 gebeurtenissen:
-- Minstens 25 gebeurtenissen over het jaar ${year} (politiek, cultuur, sport, wetenschap, entertainment)
-- Minstens 8 gebeurtenissen specifiek over ${monthName} ${year}
-- Minstens 15 gebeurtenissen over de exacte dag ${day} ${monthName} ${year} (wat gebeurde er die dag in de wereld, wat was populair, wat was op tv/radio)
+- Minstens 25 gebeurtenissen over het jaar ${year} (politiek, cultuur, sport, wetenschap, entertainment) - markeer met eventScope="birthyear"
+- Minstens 8 gebeurtenissen specifiek over ${monthName} ${year} - markeer met eventScope="birthmonth"
+- Minstens 15 gebeurtenissen over de exacte dag ${day} ${monthName} ${year} - markeer met eventScope="birthdate"
+
+BELANGRIJK - BEROEMDE JARIGEN:
+Zoek naar minstens 5-10 bekende personen die ook op ${day} ${monthName} jarig zijn (niet per se hetzelfde jaar).
+Dit kunnen zijn: acteurs, muzikanten, atleten, politici, wetenschappers, schrijvers, etc.
+Voeg deze toe als aparte events met:
+- category: "celebrity"
+- isCelebrityBirthday: true
+- eventScope: "birthdate"
+EN voeg ze ook toe aan de famousBirthdays array.
 
 Voeg toe:
 - Nummer 1 hits in de hitparade rond die tijd
@@ -211,6 +255,7 @@ Voeg toe:
     prompt = `Maak een uitgebreide tijdlijn van ${startYear} tot ${endYear}.
 
 Dit is een periode van ${yearSpan} jaar. Genereer minimaal ${Math.max(50, yearSpan * 5)} gebeurtenissen.
+Markeer alle gebeurtenissen met eventScope="period".
 
 Zorg voor een goede spreiding over alle jaren en verschillende categorieën:
 - Belangrijke politieke gebeurtenissen
@@ -224,7 +269,7 @@ Zorg voor een goede spreiding over alle jaren en verschillende categorieën:
     if (data.birthDate) {
       const { day, month, year } = data.birthDate;
       if (year >= startYear && year <= endYear) {
-        prompt += `\n\nBELANGRIJK: Het geboortejaar ${year} valt in deze periode. Besteed extra aandacht aan dit jaar (circa 20% van alle gebeurtenissen).`;
+        prompt += `\n\nBELANGRIJK: Het geboortejaar ${year} valt in deze periode. Besteed extra aandacht aan dit jaar (circa 20% van alle gebeurtenissen). Markeer gebeurtenissen uit dat jaar met eventScope="birthyear".`;
       }
     }
   }
