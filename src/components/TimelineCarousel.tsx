@@ -75,20 +75,58 @@ export const TimelineCarousel = ({
     updateCardRotations();
   }, [updateCardRotations]);
 
+  // Detect which card is most centered and sync with scrubber
+  const detectCenteredCard = useCallback(() => {
+    if (!scrollContainerRef.current) return;
+    
+    const container = scrollContainerRef.current;
+    const containerRect = container.getBoundingClientRect();
+    const containerCenter = containerRect.left + containerRect.width / 2;
+    
+    let closestIndex = 0;
+    let closestDistance = Infinity;
+    
+    cardRefs.current.forEach((cardEl, index) => {
+      if (!cardEl) return;
+      const cardRect = cardEl.getBoundingClientRect();
+      const cardCenter = cardRect.left + cardRect.width / 2;
+      const distance = Math.abs(cardCenter - containerCenter);
+      
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = index;
+      }
+    });
+    
+    if (closestIndex !== currentEventIndex) {
+      onEventSelect(closestIndex);
+    }
+  }, [currentEventIndex, onEventSelect]);
+
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (container) {
-      container.addEventListener('scroll', updateScrollState);
+      let scrollTimeout: ReturnType<typeof setTimeout>;
+      
+      const handleScroll = () => {
+        updateScrollState();
+        // Debounce: detect centered card after scroll stops
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(detectCenteredCard, 100);
+      };
+      
+      container.addEventListener('scroll', handleScroll);
       window.addEventListener('resize', updateScrollState);
       // Initial calculation
       requestAnimationFrame(updateScrollState);
       
       return () => {
-        container.removeEventListener('scroll', updateScrollState);
+        container.removeEventListener('scroll', handleScroll);
         window.removeEventListener('resize', updateScrollState);
+        clearTimeout(scrollTimeout);
       };
     }
-  }, [events, updateScrollState]);
+  }, [events, updateScrollState, detectCenteredCard]);
 
   const scrollByAmount = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
