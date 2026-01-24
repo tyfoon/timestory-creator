@@ -1,40 +1,56 @@
 import { FormData } from '@/types/form';
 import { TimelineResponse } from '@/types/timeline';
 
-// Lazy import supabase to prevent crash if env vars not loaded yet
-const getSupabase = async () => {
-  const { supabase } = await import('@/integrations/supabase/client');
-  return supabase;
-};
+// Fallback Supabase configuration - used when env vars aren't loaded yet
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvZW9ib3lnc3NzeWFqcGRzdGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNTY2NjEsImV4cCI6MjA4NDgzMjY2MX0.KuFaWF4r_cxZRiOumPGMChLVmwgyhT9vR5s7L52zr5s';
 
 export const generateTimeline = async (
   formData: FormData, 
   language: string
 ): Promise<TimelineResponse> => {
   try {
-    const supabase = await getSupabase();
+    console.log('Calling generate-timeline edge function...');
     
-    const { data, error } = await supabase.functions.invoke('generate-timeline', {
-      body: {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-timeline`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({
         type: formData.type,
         birthDate: formData.birthDate,
         yearRange: formData.yearRange,
         optionalData: formData.optionalData,
         language
-      }
+      })
     });
 
-    if (error) {
-      console.error('Error calling generate-timeline:', error);
-      return { success: false, error: error.message };
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Edge function error:', response.status, errorText);
+      
+      if (response.status === 429) {
+        return { success: false, error: 'Te veel verzoeken. Probeer het later opnieuw.' };
+      }
+      if (response.status === 402) {
+        return { success: false, error: 'Credits op. Voeg credits toe aan je workspace.' };
+      }
+      
+      return { success: false, error: `Server error: ${response.status}` };
     }
 
+    const data = await response.json();
+    console.log('Timeline generated successfully');
     return data;
+    
   } catch (err) {
-    console.error('Error initializing Supabase:', err);
+    console.error('Error calling generate-timeline:', err);
     return { 
       success: false, 
-      error: 'Backend nog niet beschikbaar. Ververs de pagina.' 
+      error: err instanceof Error ? err.message : 'Onbekende fout' 
     };
   }
 };
@@ -43,20 +59,26 @@ export const searchImages = async (
   queries: { eventId: string; query: string; year?: number }[]
 ): Promise<{ success: boolean; images?: { eventId: string; imageUrl: string | null; source: string | null }[] }> => {
   try {
-    const supabase = await getSupabase();
-    
-    const { data, error } = await supabase.functions.invoke('search-images', {
-      body: { queries }
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/search-images`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ queries })
     });
 
-    if (error) {
-      console.error('Error calling search-images:', error);
+    if (!response.ok) {
+      console.error('Search images error:', response.status);
       return { success: false };
     }
 
+    const data = await response.json();
     return data;
+    
   } catch (err) {
-    console.error('Error initializing Supabase:', err);
+    console.error('Error calling search-images:', err);
     return { success: false };
   }
 };
