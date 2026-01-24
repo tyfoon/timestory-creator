@@ -6,16 +6,28 @@ export interface TimelineEvent {
   day?: number;
   title: string;
   description: string;
-  category: 'politics' | 'sports' | 'entertainment' | 'science' | 'culture' | 'world' | 'local' | 'personal' | 'music' | 'technology';
+  category: 'politics' | 'sports' | 'entertainment' | 'science' | 'culture' | 'world' | 'local' | 'personal' | 'music' | 'technology' | 'celebrity';
   imageSearchQuery?: string;
   imageUrl?: string;
   source?: string;
   importance: 'high' | 'medium' | 'low';
+  // Whether this event happened on the exact birth date vs just the year
+  eventScope: 'birthdate' | 'birthmonth' | 'birthyear' | 'period';
+  // For celebrity birthdays
+  isCelebrityBirthday?: boolean;
+}
+
+export interface FamousBirthday {
+  name: string;
+  profession: string;
+  birthYear: number;
+  imageSearchQuery: string;
 }
 
 export interface TimelineData {
   events: TimelineEvent[];
   summary: string;
+  famousBirthdays?: FamousBirthday[];
 }
 
 export interface TimelineResponse {
