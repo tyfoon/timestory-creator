@@ -9,12 +9,39 @@ interface ImageSearchRequest {
   queries: { eventId: string; query: string; year?: number }[];
 }
 
+const THUMB_WIDTH = 960;
+
+function toWikimediaThumbUrl(uploadUrl: string, width: number): string | null {
+  try {
+    const url = new URL(uploadUrl);
+    if (url.hostname !== "upload.wikimedia.org") return null;
+
+    const parts = url.pathname.split("/").filter(Boolean);
+    // Expected: wikipedia/<project>/<hash1>/<hash2>/<filename>
+    if (parts.length < 5) return null;
+    if (parts[0] !== "wikipedia") return null;
+
+    // If already a thumb URL, keep it (avoid weird re-writes)
+    if (parts[2] === "thumb") return uploadUrl;
+
+    const project = parts[1];
+    const hash1 = parts[2];
+    const hash2 = parts[3];
+    const filename = parts.slice(4).join("/");
+
+    const thumbPath = `/wikipedia/${project}/thumb/${hash1}/${hash2}/${filename}/${width}px-${filename.split("/").pop()}`;
+    return `${url.origin}${thumbPath}`;
+  } catch {
+    return null;
+  }
+}
+
 // Resolve Wikipedia Special:FilePath URLs to actual direct image URLs
 async function resolveWikimediaUrl(url: string): Promise<string | null> {
   try {
     // Already a direct upload URL - return as-is
     if (url.includes("upload.wikimedia.org") && !url.includes("Special:FilePath")) {
-      return url;
+      return toWikimediaThumbUrl(url, THUMB_WIDTH) || url;
     }
 
     // Skip non-image files (audio, video, etc.)
@@ -26,10 +53,12 @@ async function resolveWikimediaUrl(url: string): Promise<string | null> {
 
     // If it's a Special:FilePath URL, follow the redirect to get the actual image URL
     if (url.includes("Special:FilePath")) {
-      const resp = await fetch(url, { 
-        method: "HEAD", 
-        redirect: "follow",
-      });
+      let resp = await fetch(url, { method: "HEAD", redirect: "follow" });
+      if (!resp.ok) {
+        // Some hosts don't love HEAD; fall back to GET
+        resp = await fetch(url, { method: "GET", redirect: "follow" });
+      }
+
       const finalUrl = resp.url;
       
       // Verify it's actually an image
@@ -38,7 +67,7 @@ async function resolveWikimediaUrl(url: string): Promise<string | null> {
         if (finalLower.endsWith(".jpg") || finalLower.endsWith(".jpeg") || 
             finalLower.endsWith(".png") || finalLower.endsWith(".webp") || 
             finalLower.endsWith(".gif")) {
-          return finalUrl;
+          return toWikimediaThumbUrl(finalUrl, THUMB_WIDTH) || finalUrl;
         }
       }
       return null;
