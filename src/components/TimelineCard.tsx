@@ -112,9 +112,17 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
 
   // Only show real images - no generic placeholders
   // Also: do not start image requests for off-screen cards.
-  const hasRealImage = shouldLoadImage && !!event.imageUrl && !imageError;
+  const isImageFound = event.imageStatus ? event.imageStatus === 'found' : !!event.imageUrl;
+  const hasRealImage = shouldLoadImage && isImageFound && !!event.imageUrl && !imageError;
   const srcSet = event.imageUrl ? buildWikimediaThumbSrcSet(event.imageUrl) : undefined;
   const sizes = "(min-width: 1024px) 420px, (min-width: 640px) 380px, 320px";
+
+  const emptyStateLabel = (() => {
+    if (!shouldLoadImage) return 'Scroll om foto’s te laden';
+    if (imageError) return 'Afbeelding niet beschikbaar';
+    if (event.imageStatus === 'none' || event.imageStatus === 'error') return 'Geen foto gevonden';
+    return 'Foto zoeken...';
+  })();
 
   return (
     <article 
@@ -145,7 +153,7 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
           <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-muted to-secondary/30">
             <ImageOff className="h-10 w-10 text-muted-foreground/30" />
             <span className="text-xs text-muted-foreground/50">
-              {shouldLoadImage ? 'Afbeelding laden...' : 'Afbeelding wordt geladen...'}
+              {emptyStateLabel}
             </span>
           </div>
         )}
