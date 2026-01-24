@@ -87,24 +87,8 @@ export const TimelineCard = ({ event, isActive, scopeLabel }: TimelineCardProps)
     return event.year.toString();
   };
 
-  // Generate a placeholder image based on category
-  const getCategoryImage = () => {
-    const categoryImages: Record<string, string> = {
-      politics: `https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=600&h=400&fit=crop`,
-      sports: `https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=600&h=400&fit=crop`,
-      entertainment: `https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&h=400&fit=crop`,
-      science: `https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=600&h=400&fit=crop`,
-      culture: `https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=600&h=400&fit=crop`,
-      world: `https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&h=400&fit=crop`,
-      local: `https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=600&h=400&fit=crop`,
-      music: `https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&h=400&fit=crop`,
-      technology: `https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&h=400&fit=crop`,
-      celebrity: `https://images.unsplash.com/photo-1533738363-b7f9aef128ce?w=600&h=400&fit=crop`,
-    };
-    return categoryImages[event.category] || categoryImages.world;
-  };
-
-  const displayImage = event.imageUrl && !imageError ? event.imageUrl : getCategoryImage();
+  // Only show real images - no generic placeholders
+  const hasRealImage = !!event.imageUrl && !imageError;
 
   return (
     <article 
@@ -117,14 +101,22 @@ export const TimelineCard = ({ event, isActive, scopeLabel }: TimelineCardProps)
         ${event.importance === 'high' ? 'ring-2 ring-accent/20' : ''}
       `}
     >
-      {/* Image section - larger */}
+      {/* Image section - only real event images, no generic placeholders */}
       <div className="relative h-48 sm:h-56 overflow-hidden bg-muted flex-shrink-0">
-        <img 
-          src={displayImage} 
-          alt={event.title}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          onError={() => setImageError(true)}
-        />
+        {hasRealImage ? (
+          <img 
+            src={event.imageUrl!}
+            alt={event.title}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            onError={() => setImageError(true)}
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-muted to-secondary/30">
+            <ImageOff className="h-10 w-10 text-muted-foreground/30" />
+            <span className="text-xs text-muted-foreground/50">Afbeelding laden...</span>
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
         
         {/* Scope badge on image */}
