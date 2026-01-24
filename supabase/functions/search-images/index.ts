@@ -9,8 +9,50 @@ interface ImageSearchRequest {
   queries: { eventId: string; query: string; year?: number }[];
 }
 
-// Convert Wikipedia/Commons File: page URLs to direct image URLs via Special:FilePath
-function toDirectImageUrl(maybeUrl: string): string | null {
+// Resolve Wikipedia Special:FilePath URLs to actual direct image URLs
+async function resolveWikimediaUrl(url: string): Promise<string | null> {
+  try {
+    // Already a direct upload URL - return as-is
+    if (url.includes("upload.wikimedia.org") && !url.includes("Special:FilePath")) {
+      return url;
+    }
+
+    // Skip non-image files (audio, video, etc.)
+    const lower = url.toLowerCase();
+    if (lower.includes(".ogg") || lower.includes(".mp3") || lower.includes(".wav") || 
+        lower.includes(".svg") || lower.includes(".pdf")) {
+      return null;
+    }
+
+    // If it's a Special:FilePath URL, follow the redirect to get the actual image URL
+    if (url.includes("Special:FilePath")) {
+      const resp = await fetch(url, { 
+        method: "HEAD", 
+        redirect: "follow",
+      });
+      const finalUrl = resp.url;
+      
+      // Verify it's actually an image
+      if (finalUrl.includes("upload.wikimedia.org")) {
+        const finalLower = finalUrl.toLowerCase();
+        if (finalLower.endsWith(".jpg") || finalLower.endsWith(".jpeg") || 
+            finalLower.endsWith(".png") || finalLower.endsWith(".webp") || 
+            finalLower.endsWith(".gif")) {
+          return finalUrl;
+        }
+      }
+      return null;
+    }
+
+    return url;
+  } catch (e) {
+    console.error("Error resolving URL:", url, e);
+    return null;
+  }
+}
+
+// Convert Wikipedia/Commons File: page URLs to Special:FilePath URL
+function toSpecialFilePath(maybeUrl: string): string | null {
   try {
     // Remove hash fragments
     const hashIdx = maybeUrl.indexOf("#");
@@ -22,12 +64,11 @@ function toDirectImageUrl(maybeUrl: string): string | null {
       return url.toString();
     }
 
-    // Wikipedia/Commons file page -> convert to Special:FilePath (redirects to actual image)
+    // Wikipedia/Commons file page -> convert to Special:FilePath
     const marker = "/wiki/File:";
     const idx = url.pathname.indexOf(marker);
     if (idx !== -1) {
       const filename = decodeURIComponent(url.pathname.slice(idx + marker.length));
-      // Special:FilePath returns a redirect to the actual image file
       return `${url.origin}/wiki/Special:FilePath/${encodeURIComponent(filename)}`;
     }
 
@@ -43,21 +84,21 @@ function toDirectImageUrl(maybeUrl: string): string | null {
   }
 }
 
-// Pick the best direct image URL from a list of links
-function pickBestDirectImage(links: string[]): string | null {
+// Pick the best image URL from a list of links (returns Special:FilePath for later resolution)
+function pickBestImageLink(links: string[]): string | null {
   // First priority: direct upload.wikimedia.org URLs
   for (const link of links) {
     if (!link) continue;
-    const direct = toDirectImageUrl(link);
+    const direct = toSpecialFilePath(link);
     if (direct && direct.includes("upload.wikimedia.org")) {
       return direct;
     }
   }
 
-  // Second priority: Special:FilePath URLs (converted from File: pages)
+  // Second priority: File: pages (will be converted to Special:FilePath)
   for (const link of links) {
     if (!link) continue;
-    const direct = toDirectImageUrl(link);
+    const direct = toSpecialFilePath(link);
     if (direct && direct.includes("Special:FilePath")) {
       return direct;
     }
@@ -66,7 +107,7 @@ function pickBestDirectImage(links: string[]): string | null {
   // Third priority: any direct image URL
   for (const link of links) {
     if (!link) continue;
-    const direct = toDirectImageUrl(link);
+    const direct = toSpecialFilePath(link);
     if (direct) {
       return direct;
     }
@@ -136,32 +177,41 @@ serve(async (req) => {
             const data = await response.json();
             const results = data.data || [];
             
-            // Check each result for direct image URLs
+            // Check each result for image URLs
             for (const result of results) {
               // If the result URL itself is a Wikipedia File: page, convert it
               if (result?.url) {
-                const directFromUrl = toDirectImageUrl(result.url);
-                if (directFromUrl) {
-                  console.log(`Found direct image from result URL for "${query}": ${directFromUrl}`);
-                  return { eventId, imageUrl: directFromUrl, source: result.url };
+                const candidate = toSpecialFilePath(result.url);
+                if (candidate) {
+                  const resolved = await resolveWikimediaUrl(candidate);
+                  if (resolved) {
+                    console.log(`Found direct image from result URL for "${query}": ${resolved}`);
+                    return { eventId, imageUrl: resolved, source: result.url };
+                  }
                 }
               }
 
               // Check og:image metadata
               if (result.metadata?.ogImage) {
-                const directOg = toDirectImageUrl(result.metadata.ogImage);
-                if (directOg) {
-                  console.log(`Found og:image for "${query}": ${directOg}`);
-                  return { eventId, imageUrl: directOg, source: result.url };
+                const candidate = toSpecialFilePath(result.metadata.ogImage);
+                if (candidate) {
+                  const resolved = await resolveWikimediaUrl(candidate);
+                  if (resolved) {
+                    console.log(`Found og:image for "${query}": ${resolved}`);
+                    return { eventId, imageUrl: resolved, source: result.url };
+                  }
                 }
               }
               
               // Check image metadata
               if (result.metadata?.image) {
-                const directImg = toDirectImageUrl(result.metadata.image);
-                if (directImg) {
-                  console.log(`Found metadata image for "${query}": ${directImg}`);
-                  return { eventId, imageUrl: directImg, source: result.url };
+                const candidate = toSpecialFilePath(result.metadata.image);
+                if (candidate) {
+                  const resolved = await resolveWikimediaUrl(candidate);
+                  if (resolved) {
+                    console.log(`Found metadata image for "${query}": ${resolved}`);
+                    return { eventId, imageUrl: resolved, source: result.url };
+                  }
                 }
               }
             }
@@ -191,10 +241,13 @@ serve(async (req) => {
                   const scrapeData = await scrapeResponse.json();
                   const links = scrapeData.data?.links || scrapeData.links || [];
                   
-                  const bestImage = pickBestDirectImage(links);
-                  if (bestImage) {
-                    console.log(`Found best image for "${query}": ${bestImage}`);
-                    return { eventId, imageUrl: bestImage, source: wikiResult.url };
+                  const bestImageCandidate = pickBestImageLink(links);
+                  if (bestImageCandidate) {
+                    const resolved = await resolveWikimediaUrl(bestImageCandidate);
+                    if (resolved) {
+                      console.log(`Found best image for "${query}": ${resolved}`);
+                      return { eventId, imageUrl: resolved, source: wikiResult.url };
+                    }
                   }
                 }
               } catch (scrapeErr) {
