@@ -132,6 +132,40 @@ export const TimelineScrubberBottom = ({
     document.addEventListener('touchend', handleTouchEnd);
   };
 
+  // Pointer events (works for mouse + touch + pen) for reliable dragging
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!scrubberRef.current) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+
+    const selectAt = (clientX: number) => {
+      if (!scrubberRef.current) return;
+      const rect = scrubberRef.current.getBoundingClientRect();
+      const percentage = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      const closestIndex = findEventAtPosition(percentage);
+      onEventSelect(closestIndex);
+    };
+
+    selectAt(e.clientX);
+
+    const pointerId = e.pointerId;
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      if (moveEvent.pointerId !== pointerId) return;
+      selectAt(moveEvent.clientX);
+    };
+
+    const handlePointerUp = (upEvent: PointerEvent) => {
+      if (upEvent.pointerId !== pointerId) return;
+      document.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('pointerup', handlePointerUp);
+      document.removeEventListener('pointercancel', handlePointerUp);
+    };
+
+    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerup', handlePointerUp);
+    document.addEventListener('pointercancel', handlePointerUp);
+  };
+
   return (
     <div className="fixed bottom-4 left-4 right-4 z-50">
       <div className="mx-auto max-w-3xl bg-card/95 backdrop-blur-lg border border-border rounded-full shadow-elevated px-4 py-2">
@@ -145,9 +179,8 @@ export const TimelineScrubberBottom = ({
           {/* Scrubber track */}
           <div 
             ref={scrubberRef}
-            onMouseDown={handleMouseDown}
-            onTouchStart={handleTouchStart}
-            className="relative flex-1 h-6 bg-secondary/50 rounded-full cursor-pointer group overflow-visible"
+            onPointerDown={handlePointerDown}
+            className="relative flex-1 h-6 bg-secondary/50 rounded-full cursor-pointer group overflow-visible touch-none select-none"
           >
             {/* Month grid lines - subtle */}
             {[...Array(11)].map((_, index) => {
