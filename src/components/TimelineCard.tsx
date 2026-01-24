@@ -102,7 +102,7 @@ export const TimelineCard = ({ event, isActive, scopeLabel }: TimelineCardProps)
       `}
     >
       {/* Image section - only real event images, no generic placeholders */}
-      <div className="relative h-48 sm:h-56 overflow-hidden bg-muted flex-shrink-0">
+      <div className="relative h-56 sm:h-72 overflow-hidden bg-muted flex-shrink-0">
         {hasRealImage ? (
           <img 
             src={event.imageUrl!}
@@ -110,6 +110,8 @@ export const TimelineCard = ({ event, isActive, scopeLabel }: TimelineCardProps)
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             onError={() => setImageError(true)}
             loading="lazy"
+            decoding="async"
+            fetchPriority={isActive ? "high" : "low"}
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-muted to-secondary/30">
