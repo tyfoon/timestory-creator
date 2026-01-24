@@ -133,133 +133,112 @@ export const TimelineScrubberBottom = ({
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/98 backdrop-blur-lg border-t border-border shadow-elevated">
-      <div className="container mx-auto max-w-5xl px-4 py-3">
-        {/* Year indicator */}
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-medium text-muted-foreground">
-            Jouw jaar: <span className="text-foreground font-semibold">{birthYear}</span>
+    <div className="fixed bottom-4 left-4 right-4 z-50">
+      <div className="mx-auto max-w-3xl bg-card/95 backdrop-blur-lg border border-border rounded-full shadow-elevated px-4 py-2">
+        {/* Main scrubber row - compact */}
+        <div className="flex items-center gap-3">
+          {/* Year badge */}
+          <span className="text-xs font-bold text-accent whitespace-nowrap">
+            {birthYear}
           </span>
-          <span className="text-xs text-muted-foreground">
-            {currentEventIndex + 1} / {events.length} gebeurtenissen
-          </span>
-        </div>
 
-        {/* Month labels */}
-        <div className="relative h-4 mb-1">
-          {MONTH_LABELS.map((label, index) => {
-            const position = (index / 12) * 100 + (100 / 24); // Center in month
-            const isCurrentMonth = currentEvent?.month === index + 1;
-            const isBirthMonth = index + 1 === birthMonth;
-            return (
-              <span
-                key={label}
-                className={`absolute text-[10px] transform -translate-x-1/2 transition-colors ${
-                  isCurrentMonth 
-                    ? 'text-accent font-bold' 
-                    : isBirthMonth 
-                      ? 'text-accent/70 font-medium'
-                      : 'text-muted-foreground'
-                }`}
-                style={{ left: `${position}%` }}
-              >
-                {label}
-              </span>
-            );
-          })}
-        </div>
-
-        {/* Scrubber track */}
-        <div 
-          ref={scrubberRef}
-          onMouseDown={handleMouseDown}
-          onTouchStart={handleTouchStart}
-          className="relative h-8 bg-secondary/50 rounded-lg cursor-pointer group overflow-hidden"
-        >
-          {/* Month grid lines */}
-          {[...Array(12)].map((_, index) => {
-            const position = ((index + 1) / 12) * 100;
-            return (
-              <div
-                key={index}
-                className="absolute top-0 bottom-0 w-px bg-border/50"
-                style={{ left: `${position}%` }}
-              />
-            );
-          })}
-
-          {/* Birthday marker - prominent */}
+          {/* Scrubber track */}
           <div 
-            className="absolute top-0 bottom-0 w-1 bg-accent/30 z-[5]"
-            style={{ left: `calc(${birthdayPosition}% - 2px)` }}
+            ref={scrubberRef}
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
+            className="relative flex-1 h-6 bg-secondary/50 rounded-full cursor-pointer group overflow-visible"
           >
-            <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 bg-accent rounded-full p-1 shadow-lg">
-              <Cake className="h-3 w-3 text-accent-foreground" />
+            {/* Month grid lines - subtle */}
+            {[...Array(11)].map((_, index) => {
+              const position = ((index + 1) / 12) * 100;
+              return (
+                <div
+                  key={index}
+                  className="absolute top-1 bottom-1 w-px bg-border/40"
+                  style={{ left: `${position}%` }}
+                />
+              );
+            })}
+
+            {/* Birthday marker */}
+            <div 
+              className="absolute top-1/2 -translate-y-1/2 z-[5] flex flex-col items-center pointer-events-none"
+              style={{ left: `${birthdayPosition}%` }}
+            >
+              <div className="w-0.5 h-4 bg-accent/50" />
+              <Cake className="h-3 w-3 text-accent -mt-0.5" />
+            </div>
+
+            {/* Progress fill */}
+            <div 
+              className="absolute left-0 top-1 bottom-1 bg-accent/20 rounded-full transition-all duration-150"
+              style={{ width: `${currentPosition}%` }}
+            />
+
+            {/* Event markers - minimal dots */}
+            {eventPositions.map(({ index, event, position, isBirthday }) => {
+              const isActive = index === currentEventIndex;
+              if (isActive) return null; // Don't show dot for active (thumb is there)
+              return (
+                <button
+                  key={event.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEventSelect(index);
+                  }}
+                  className={`
+                    absolute top-1/2 rounded-full transition-all duration-100 z-10
+                    ${isBirthday
+                      ? 'w-2 h-2 bg-accent hover:scale-150'
+                      : event.importance === 'high'
+                        ? 'w-1.5 h-1.5 bg-muted-foreground/50 hover:bg-accent hover:scale-150'
+                        : 'w-1 h-1 bg-muted-foreground/30 hover:bg-muted-foreground/60 hover:scale-150'
+                    }
+                  `}
+                  style={{ left: `${position}%`, transform: 'translate(-50%, -50%)' }}
+                  title={event.title}
+                />
+              );
+            })}
+
+            {/* Current position thumb */}
+            <div 
+              className="absolute top-1/2 w-4 h-4 bg-accent rounded-full shadow-md transition-all duration-150 cursor-grab active:cursor-grabbing z-20 flex items-center justify-center ring-2 ring-background"
+              style={{ left: `${currentPosition}%`, transform: 'translate(-50%, -50%)' }}
+            >
+              <div className="w-1.5 h-1.5 bg-accent-foreground rounded-full" />
+            </div>
+
+            {/* Month labels - positioned above */}
+            <div className="absolute -top-4 left-0 right-0 flex justify-between px-1 pointer-events-none">
+              {['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'].map((label, index) => {
+                const position = (index / 12) * 100 + (100 / 24);
+                const isCurrentMonth = currentEvent?.month === index + 1;
+                return (
+                  <span
+                    key={index}
+                    className={`text-[8px] ${
+                      isCurrentMonth ? 'text-accent font-bold' : 'text-muted-foreground/60'
+                    }`}
+                  >
+                    {label}
+                  </span>
+                );
+              })}
             </div>
           </div>
 
-          {/* Progress fill - from start of year to current position */}
-          <div 
-            className="absolute left-0 top-0 h-full bg-gradient-to-r from-accent/20 to-accent/40 transition-all duration-200"
-            style={{ width: `${currentPosition}%` }}
-          />
-
-          {/* Event markers */}
-          {eventPositions.map(({ index, event, position, isBirthday, isBirthMonth }) => {
-            const isActive = index === currentEventIndex;
-            return (
-              <button
-                key={event.id}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEventSelect(index);
-                }}
-                className={`
-                  absolute top-1/2 -translate-y-1/2 rounded-full transition-all duration-150 z-10
-                  ${isActive 
-                    ? 'w-4 h-4 bg-accent ring-2 ring-accent/30 ring-offset-1 ring-offset-background scale-110' 
-                    : isBirthday
-                      ? 'w-3 h-3 bg-accent hover:bg-accent/80 hover:scale-125'
-                      : isBirthMonth
-                        ? 'w-2.5 h-2.5 bg-accent/60 hover:bg-accent/80 hover:scale-125'
-                        : event.importance === 'high'
-                          ? 'w-2 h-2 bg-muted-foreground/60 hover:bg-accent/60 hover:scale-150'
-                          : 'w-1.5 h-1.5 bg-muted-foreground/40 hover:bg-muted-foreground/70 hover:scale-150'
-                  }
-                `}
-                style={{ left: `${position}%`, transform: `translateX(-50%) translateY(-50%)` }}
-                title={`${event.day || ''}${event.day && event.month ? '-' : ''}${event.month || ''}: ${event.title}`}
-                aria-label={event.title}
-              />
-            );
-          })}
-
-          {/* Current position thumb */}
-          <div 
-            className="absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-accent rounded-full shadow-lg transition-all duration-200 group-hover:scale-110 cursor-grab active:cursor-grabbing z-20 flex items-center justify-center"
-            style={{ left: `${currentPosition}%`, transform: `translateX(-50%) translateY(-50%)` }}
-          >
-            <div className="w-2 h-2 bg-accent-foreground rounded-full" />
-          </div>
-        </div>
-
-        {/* Current event info */}
-        <div className="mt-2 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
+          {/* Current event info - compact */}
+          <div className="flex items-center gap-2 text-xs whitespace-nowrap">
             {currentEvent?.month && (
-              <span className="px-2 py-0.5 rounded-full bg-accent/20 text-accent font-medium">
-                {currentEvent.day && `${currentEvent.day} `}
-                {MONTH_LABELS[currentEvent.month - 1]}
+              <span className="px-1.5 py-0.5 rounded bg-accent/20 text-accent font-medium text-[10px]">
+                {currentEvent.day && `${currentEvent.day}/`}{currentEvent.month}
               </span>
             )}
-            <span className="text-muted-foreground truncate max-w-[200px] sm:max-w-[400px]">
-              {currentEvent?.title}
+            <span className="text-muted-foreground hidden sm:inline max-w-[120px] truncate">
+              {currentEventIndex + 1}/{events.length}
             </span>
-          </div>
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <span className="hidden sm:inline">Sleep om te navigeren</span>
-            <span className="sm:hidden">Swipe</span>
-            <span className="text-accent">→</span>
           </div>
         </div>
       </div>
