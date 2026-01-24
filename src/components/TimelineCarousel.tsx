@@ -19,9 +19,19 @@ export const TimelineCarousel = ({
 }: TimelineCarouselProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const currentIndexRef = useRef(currentEventIndex);
+  const onEventSelectRef = useRef(onEventSelect);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [cardRotations, setCardRotations] = useState<number[]>([]);
+
+  useEffect(() => {
+    currentIndexRef.current = currentEventIndex;
+  }, [currentEventIndex]);
+
+  useEffect(() => {
+    onEventSelectRef.current = onEventSelect;
+  }, [onEventSelect]);
 
   // Calculate rotation for each card based on its position
   const updateCardRotations = useCallback(() => {
@@ -75,55 +85,55 @@ export const TimelineCarousel = ({
     updateCardRotations();
   }, [updateCardRotations]);
 
-  // Detect which card is most centered and sync with scrubber
+  // Detect which card is most centered and sync with scrubber (stable via refs)
   const detectCenteredCard = useCallback(() => {
     if (!scrollContainerRef.current) return;
-    
+
     const container = scrollContainerRef.current;
     const containerRect = container.getBoundingClientRect();
     const containerCenter = containerRect.left + containerRect.width / 2;
-    
+
     let closestIndex = 0;
     let closestDistance = Infinity;
-    
+
     cardRefs.current.forEach((cardEl, index) => {
       if (!cardEl) return;
       const cardRect = cardEl.getBoundingClientRect();
       const cardCenter = cardRect.left + cardRect.width / 2;
       const distance = Math.abs(cardCenter - containerCenter);
-      
+
       if (distance < closestDistance) {
         closestDistance = distance;
         closestIndex = index;
       }
     });
-    
-    if (closestIndex !== currentEventIndex) {
-      onEventSelect(closestIndex);
+
+    if (closestIndex !== currentIndexRef.current) {
+      onEventSelectRef.current(closestIndex);
     }
-  }, [currentEventIndex, onEventSelect]);
+  }, []);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (container) {
-      let scrollTimeout: ReturnType<typeof setTimeout>;
-      
+      let rafId = 0;
+
       const handleScroll = () => {
         updateScrollState();
-        // Debounce: detect centered card after scroll stops
-        clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(detectCenteredCard, 100);
+        // Sync active index while the user is scrolling (throttled to rAF)
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(detectCenteredCard);
       };
-      
-      container.addEventListener('scroll', handleScroll);
+
+      container.addEventListener('scroll', handleScroll, { passive: true });
       window.addEventListener('resize', updateScrollState);
       // Initial calculation
       requestAnimationFrame(updateScrollState);
       
       return () => {
-        container.removeEventListener('scroll', handleScroll);
+        container.removeEventListener('scroll', handleScroll as any);
         window.removeEventListener('resize', updateScrollState);
-        clearTimeout(scrollTimeout);
+        if (rafId) cancelAnimationFrame(rafId);
       };
     }
   }, [events, updateScrollState, detectCenteredCard]);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { TimelineCarousel } from '@/components/TimelineCarousel';
@@ -149,9 +149,9 @@ const ResultPage = () => {
     }
   };
 
-  const handleEventSelect = (index: number) => {
+  const handleEventSelect = useCallback((index: number) => {
     setCurrentEventIndex(index);
-  };
+  }, []);
 
   const getTitle = () => {
     if (!formData) return 'Jouw Tijdreis';
