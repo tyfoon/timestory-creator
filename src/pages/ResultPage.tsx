@@ -85,7 +85,7 @@ const ResultPage = () => {
     
     try {
       // Create image search queries for events that have a search query
-      const queries = timelineEvents
+      const allQueries = timelineEvents
         .filter(e => e.imageSearchQuery)
         .slice(0, 20) // Limit to first 20 to save API calls
         .map(e => ({
@@ -94,18 +94,34 @@ const ResultPage = () => {
           year: e.year
         }));
 
-      if (queries.length > 0) {
-        const result = await searchImages(queries);
-        
-        if (result.success && result.images) {
-          // Update events with found images
-          setEvents(prev => prev.map(event => {
-            const imageResult = result.images?.find(img => img.eventId === event.id);
-            if (imageResult?.imageUrl) {
-              return { ...event, imageUrl: imageResult.imageUrl, source: imageResult.source || undefined };
-            }
-            return event;
-          }));
+      if (allQueries.length === 0) return;
+
+      // Priority: first fetch the first 3 events (visible cards) for fast initial display
+      const priorityQueries = allQueries.slice(0, 3);
+      const remainingQueries = allQueries.slice(3);
+
+      // Helper to update state with images
+      const applyImages = (images: { eventId: string; imageUrl: string | null; source: string | null }[]) => {
+        setEvents(prev => prev.map(event => {
+          const imageResult = images.find(img => img.eventId === event.id);
+          if (imageResult?.imageUrl) {
+            return { ...event, imageUrl: imageResult.imageUrl, source: imageResult.source || undefined };
+          }
+          return event;
+        }));
+      };
+
+      // Fetch priority images first (first 3 visible cards)
+      const priorityResult = await searchImages(priorityQueries);
+      if (priorityResult.success && priorityResult.images) {
+        applyImages(priorityResult.images);
+      }
+
+      // Then fetch the rest in background
+      if (remainingQueries.length > 0) {
+        const restResult = await searchImages(remainingQueries);
+        if (restResult.success && restResult.images) {
+          applyImages(restResult.images);
         }
       }
     } catch (err) {
