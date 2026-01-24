@@ -1,0 +1,221 @@
+export type Language = 'nl' | 'en' | 'de' | 'fr';
+
+export const translations = {
+  nl: {
+    // Landing page
+    heroTitle: 'Jouw Verhaal in de Tijd',
+    heroSubtitle: 'Ontdek wat er gebeurde op de dag dat jij geboren werd, of reis door de jaren heen met een persoonlijk historisch overzicht.',
+    startButton: 'Begin Jouw Reis',
+    
+    // Choice page
+    choiceTitle: 'Wat wil je ontdekken?',
+    choiceSubtitle: 'Kies hoe je door de tijd wilt reizen',
+    
+    option1Title: 'Het Jaar, Maand en Dag Van...',
+    option1Description: 'Ontdek alles over een specifieke geboortedatum: wat gebeurde er in dat jaar, die maand en precies op die dag?',
+    
+    option2Title: 'Een Tijdreis van Jaar tot Jaar',
+    option2Description: 'Maak een historisch overzicht van een hele periode, perfect voor jubilea of om een tijdperk te herbeleven.',
+    
+    // Form labels
+    birthDateLabel: 'Geboortedatum',
+    dayLabel: 'Dag',
+    monthLabel: 'Maand',
+    yearLabel: 'Jaar',
+    startYearLabel: 'Startjaar',
+    endYearLabel: 'Eindjaar',
+    
+    // Optional info
+    optionalInfoTitle: 'Maak het persoonlijker',
+    optionalInfoSubtitle: 'Deze informatie is optioneel, maar helpt ons een rijker verhaal te creëren',
+    cityLabel: 'Woonplaats',
+    cityPlaceholder: 'Bijv. Amsterdam',
+    
+    child1NameLabel: 'Naam kind 1',
+    child1BirthLabel: 'Geboortedatum kind 1',
+    child2NameLabel: 'Naam kind 2',
+    child2BirthLabel: 'Geboortedatum kind 2',
+    child3NameLabel: 'Naam kind 3',
+    child3BirthLabel: 'Geboortedatum kind 3',
+    partnerNameLabel: 'Naam partner',
+    partnerBirthLabel: 'Geboortedatum partner',
+    
+    interestsLabel: 'Interesses',
+    interestsPlaceholder: 'Bijv. sport, muziek, computers, politiek',
+    
+    focusLabel: 'Geografische focus',
+    focusNetherlands: 'Nederland',
+    focusEurope: 'Europa',
+    focusWorld: 'Wereld',
+    
+    // Buttons
+    nextButton: 'Volgende',
+    backButton: 'Terug',
+    skipButton: 'Overslaan',
+    generateButton: 'Maak Mijn Tijdreis',
+    
+    // Validation
+    required: 'Dit veld is verplicht',
+    invalidDate: 'Ongeldige datum',
+    yearRange: 'Jaar moet tussen 1900 en huidig jaar liggen',
+    endYearAfterStart: 'Eindjaar moet na startjaar liggen',
+    
+    // Months
+    months: [
+      'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
+      'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'
+    ],
+  },
+  en: {
+    heroTitle: 'Your Story in Time',
+    heroSubtitle: 'Discover what happened on the day you were born, or journey through the years with a personal historical overview.',
+    startButton: 'Start Your Journey',
+    choiceTitle: 'What do you want to discover?',
+    choiceSubtitle: 'Choose how you want to travel through time',
+    option1Title: 'The Year, Month and Day Of...',
+    option1Description: 'Discover everything about a specific birth date: what happened that year, that month, and on that exact day?',
+    option2Title: 'A Time Journey from Year to Year',
+    option2Description: 'Create a historical overview of an entire period, perfect for anniversaries or reliving an era.',
+    birthDateLabel: 'Birth date',
+    dayLabel: 'Day',
+    monthLabel: 'Month',
+    yearLabel: 'Year',
+    startYearLabel: 'Start year',
+    endYearLabel: 'End year',
+    optionalInfoTitle: 'Make it more personal',
+    optionalInfoSubtitle: 'This information is optional, but helps us create a richer story',
+    cityLabel: 'City',
+    cityPlaceholder: 'E.g. Amsterdam',
+    child1NameLabel: 'Name child 1',
+    child1BirthLabel: 'Birth date child 1',
+    child2NameLabel: 'Name child 2',
+    child2BirthLabel: 'Birth date child 2',
+    child3NameLabel: 'Name child 3',
+    child3BirthLabel: 'Birth date child 3',
+    partnerNameLabel: 'Partner name',
+    partnerBirthLabel: 'Partner birth date',
+    interestsLabel: 'Interests',
+    interestsPlaceholder: 'E.g. sports, music, computers, politics',
+    focusLabel: 'Geographic focus',
+    focusNetherlands: 'Netherlands',
+    focusEurope: 'Europe',
+    focusWorld: 'World',
+    nextButton: 'Next',
+    backButton: 'Back',
+    skipButton: 'Skip',
+    generateButton: 'Create My Time Journey',
+    required: 'This field is required',
+    invalidDate: 'Invalid date',
+    yearRange: 'Year must be between 1900 and current year',
+    endYearAfterStart: 'End year must be after start year',
+    months: [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ],
+  },
+  de: {
+    heroTitle: 'Deine Geschichte in der Zeit',
+    heroSubtitle: 'Entdecke, was am Tag deiner Geburt geschah, oder reise durch die Jahre mit einem persönlichen historischen Überblick.',
+    startButton: 'Starte Deine Reise',
+    choiceTitle: 'Was möchtest du entdecken?',
+    choiceSubtitle: 'Wähle, wie du durch die Zeit reisen möchtest',
+    option1Title: 'Das Jahr, der Monat und der Tag von...',
+    option1Description: 'Entdecke alles über ein bestimmtes Geburtsdatum: was geschah in diesem Jahr, diesem Monat und an diesem Tag?',
+    option2Title: 'Eine Zeitreise von Jahr zu Jahr',
+    option2Description: 'Erstelle einen historischen Überblick über eine ganze Periode, perfekt für Jubiläen oder um eine Ära wiederzuerleben.',
+    birthDateLabel: 'Geburtsdatum',
+    dayLabel: 'Tag',
+    monthLabel: 'Monat',
+    yearLabel: 'Jahr',
+    startYearLabel: 'Startjahr',
+    endYearLabel: 'Endjahr',
+    optionalInfoTitle: 'Mach es persönlicher',
+    optionalInfoSubtitle: 'Diese Informationen sind optional, helfen uns aber, eine reichere Geschichte zu erstellen',
+    cityLabel: 'Stadt',
+    cityPlaceholder: 'Z.B. Amsterdam',
+    child1NameLabel: 'Name Kind 1',
+    child1BirthLabel: 'Geburtsdatum Kind 1',
+    child2NameLabel: 'Name Kind 2',
+    child2BirthLabel: 'Geburtsdatum Kind 2',
+    child3NameLabel: 'Name Kind 3',
+    child3BirthLabel: 'Geburtsdatum Kind 3',
+    partnerNameLabel: 'Name Partner',
+    partnerBirthLabel: 'Geburtsdatum Partner',
+    interestsLabel: 'Interessen',
+    interestsPlaceholder: 'Z.B. Sport, Musik, Computer, Politik',
+    focusLabel: 'Geografischer Fokus',
+    focusNetherlands: 'Niederlande',
+    focusEurope: 'Europa',
+    focusWorld: 'Welt',
+    nextButton: 'Weiter',
+    backButton: 'Zurück',
+    skipButton: 'Überspringen',
+    generateButton: 'Erstelle Meine Zeitreise',
+    required: 'Dieses Feld ist erforderlich',
+    invalidDate: 'Ungültiges Datum',
+    yearRange: 'Jahr muss zwischen 1900 und aktuellem Jahr liegen',
+    endYearAfterStart: 'Endjahr muss nach Startjahr liegen',
+    months: [
+      'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+      'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+    ],
+  },
+  fr: {
+    heroTitle: 'Votre Histoire dans le Temps',
+    heroSubtitle: 'Découvrez ce qui s\'est passé le jour de votre naissance, ou voyagez à travers les années avec un aperçu historique personnel.',
+    startButton: 'Commencez Votre Voyage',
+    choiceTitle: 'Que voulez-vous découvrir?',
+    choiceSubtitle: 'Choisissez comment vous voulez voyager dans le temps',
+    option1Title: 'L\'Année, le Mois et le Jour De...',
+    option1Description: 'Découvrez tout sur une date de naissance spécifique: que s\'est-il passé cette année-là, ce mois-là et ce jour précis?',
+    option2Title: 'Un Voyage dans le Temps d\'Année en Année',
+    option2Description: 'Créez un aperçu historique d\'une période entière, parfait pour les anniversaires ou pour revivre une époque.',
+    birthDateLabel: 'Date de naissance',
+    dayLabel: 'Jour',
+    monthLabel: 'Mois',
+    yearLabel: 'Année',
+    startYearLabel: 'Année de début',
+    endYearLabel: 'Année de fin',
+    optionalInfoTitle: 'Rendez-le plus personnel',
+    optionalInfoSubtitle: 'Ces informations sont optionnelles, mais nous aident à créer une histoire plus riche',
+    cityLabel: 'Ville',
+    cityPlaceholder: 'Ex. Amsterdam',
+    child1NameLabel: 'Nom enfant 1',
+    child1BirthLabel: 'Date de naissance enfant 1',
+    child2NameLabel: 'Nom enfant 2',
+    child2BirthLabel: 'Date de naissance enfant 2',
+    child3NameLabel: 'Nom enfant 3',
+    child3BirthLabel: 'Date de naissance enfant 3',
+    partnerNameLabel: 'Nom du partenaire',
+    partnerBirthLabel: 'Date de naissance du partenaire',
+    interestsLabel: 'Intérêts',
+    interestsPlaceholder: 'Ex. sport, musique, informatique, politique',
+    focusLabel: 'Focus géographique',
+    focusNetherlands: 'Pays-Bas',
+    focusEurope: 'Europe',
+    focusWorld: 'Monde',
+    nextButton: 'Suivant',
+    backButton: 'Retour',
+    skipButton: 'Passer',
+    generateButton: 'Créer Mon Voyage dans le Temps',
+    required: 'Ce champ est obligatoire',
+    invalidDate: 'Date invalide',
+    yearRange: 'L\'année doit être entre 1900 et l\'année actuelle',
+    endYearAfterStart: 'L\'année de fin doit être après l\'année de début',
+    months: [
+      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+    ],
+  },
+} as const;
+
+export type TranslationKey = keyof typeof translations.nl;
+export type TranslationValue = string | readonly string[];
+
+export const useTranslation = (lang: Language = 'nl') => {
+  const t = (key: TranslationKey): TranslationValue => {
+    return translations[lang][key] || translations.nl[key] || key;
+  };
+  
+  return { t, lang };
+};
