@@ -21,6 +21,7 @@ interface TimelineRequest {
   };
   language: string;
   stream?: boolean;
+  maxEvents?: number; // For short version (20 items)
 }
 
 serve(async (req) => {
@@ -56,7 +57,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: getSystemPrompt(requestData.language) },
+          { role: "system", content: getSystemPrompt(requestData.language, requestData.maxEvents) },
           { role: "user", content: prompt },
         ],
         tools: [getTimelineTool()],
@@ -106,7 +107,7 @@ async function handleStreamingResponse(
       model: "google/gemini-3-flash-preview",
       stream: true,
       messages: [
-        { role: "system", content: getSystemPrompt(requestData.language) },
+        { role: "system", content: getSystemPrompt(requestData.language, requestData.maxEvents) },
         { role: "user", content: prompt },
       ],
       tools: [getTimelineTool()],
@@ -452,7 +453,7 @@ function getTimelineTool() {
   };
 }
 
-function getSystemPrompt(language: string): string {
+function getSystemPrompt(language: string, maxEvents?: number): string {
   const langInstructions = {
     nl: "Schrijf alle tekst in het Nederlands.",
     en: "Write all text in English.",
@@ -460,12 +461,16 @@ function getSystemPrompt(language: string): string {
     fr: "Écrivez tout le texte en français."
   };
 
+  const isShort = maxEvents && maxEvents <= 20;
+  const eventCount = isShort ? "15-20" : "30-50";
+  const rangeEventCount = isShort ? "15-20" : "50-100";
+
   return `Je bent een historicus die gedetailleerde, accurate en boeiende tijdlijnen maakt over historische gebeurtenissen.
 
 ${langInstructions[language as keyof typeof langInstructions] || langInstructions.nl}
 
 BELANGRIJKE INSTRUCTIES:
-1. Genereer minimaal 30-50 gebeurtenissen voor een geboortedatum, of 50-100 voor een tijdsperiode
+1. Genereer ${isShort ? 'maximaal 20' : 'minimaal 30-50'} gebeurtenissen voor een geboortedatum, of ${isShort ? 'maximaal 20' : '50-100'} voor een tijdsperiode
 2. Verdeel de gebeurtenissen over verschillende categorieën (politiek, sport, entertainment, wetenschap, cultuur, etc.)
 3. Zorg voor een goede mix van wereldwijde en lokale gebeurtenissen
 4. Voeg ook culturele momenten toe: populaire muziek, films, tv-shows, boeken
@@ -486,10 +491,12 @@ BEROEMDE JARIGEN:
 - Voeg ook een aparte famousBirthdays array toe met de belangrijkste beroemdheden
 
 VOOR GEBOORTEDATUM:
-- 55% van de gebeurtenissen: het geboortejaar (eventScope="birthyear")
+${isShort ? `- Selecteer de ${maxEvents} meest interessante en iconische gebeurtenissen
+- Verdeel over: 50% geboortejaar, 20% geboortemaand, 30% exacte geboortedag
+- Minstens 2-3 beroemde jarigen` : `- 55% van de gebeurtenissen: het geboortejaar (eventScope="birthyear")
 - 15% van de gebeurtenissen: de geboortemaand (eventScope="birthmonth")  
 - 30% van de gebeurtenissen: de specifieke geboortedag (eventScope="birthdate")
-- Minstens 5 beroemde jarigen met dezelfde verjaardag
+- Minstens 5 beroemde jarigen met dezelfde verjaardag`}
 
 VOOR TIJDSPERIODE:
 - Verdeel gebeurtenissen gelijkmatig over de jaren
@@ -500,6 +507,7 @@ VOOR TIJDSPERIODE:
 
 function buildPrompt(data: TimelineRequest): string {
   let prompt = "";
+  const isShort = data.maxEvents && data.maxEvents <= 20;
   
   if (data.type === 'birthdate' && data.birthDate) {
     const { day, month, year } = data.birthDate;
@@ -507,7 +515,23 @@ function buildPrompt(data: TimelineRequest): string {
                         "juli", "augustus", "september", "oktober", "november", "december"];
     const monthName = monthNames[month - 1];
     
-    prompt = `Maak een uitgebreide tijdlijn voor iemand geboren op ${day} ${monthName} ${year}.
+    if (isShort) {
+      prompt = `Maak een KORTE tijdlijn voor iemand geboren op ${day} ${monthName} ${year}.
+
+Genereer PRECIES ${data.maxEvents} gebeurtenissen - niet meer, niet minder.
+Selecteer alleen de meest iconische en memorabele momenten:
+- 10 gebeurtenissen over het jaar ${year} - markeer met eventScope="birthyear"
+- 3 gebeurtenissen specifiek over ${monthName} ${year} - markeer met eventScope="birthmonth"
+- 5 gebeurtenissen over de exacte dag ${day} ${monthName} ${year} - markeer met eventScope="birthdate"
+- 2 beroemde personen die ook op ${day} ${monthName} jarig zijn
+
+Focus op:
+- De #1 hit van die dag/week
+- De belangrijkste nieuwsgebeurtenissen
+- Iconische films of tv-shows
+- Belangrijke sportmomenten`;
+    } else {
+      prompt = `Maak een uitgebreide tijdlijn voor iemand geboren op ${day} ${monthName} ${year}.
 
 Genereer minimaal 50 gebeurtenissen:
 - Minstens 25 gebeurtenissen over het jaar ${year} (politiek, cultuur, sport, wetenschap, entertainment) - markeer met eventScope="birthyear"
@@ -530,6 +554,7 @@ Voeg toe:
 - Politieke gebeurtenissen
 - Wetenschappelijke doorbraken
 - Culturele fenomenen`;
+    }
   } else if (data.type === 'range' && data.yearRange) {
     const { startYear, endYear } = data.yearRange;
     const yearSpan = endYear - startYear;
