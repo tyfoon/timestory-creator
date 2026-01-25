@@ -10,8 +10,6 @@ interface TimelineScrubberBottomProps {
   mode?: 'birthdate' | 'range';
 }
 
-const MONTH_LABELS = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
-
 export const TimelineScrubberBottom = ({ 
   events, 
   currentEventIndex, 
@@ -21,10 +19,46 @@ export const TimelineScrubberBottom = ({
 }: TimelineScrubberBottomProps) => {
   const scrubberRef = useRef<HTMLDivElement>(null);
 
+  const parseEventDateParts = (event: TimelineEvent): { year: number; month?: number; day?: number } => {
+    // Prefer explicit fields
+    const year = event.year;
+    const month = event.month;
+    const day = event.day;
+    if (month || day) return { year, month, day };
+
+    // Fallback: parse event.date (YYYY, YYYY-MM, YYYY-MM-DD)
+    const raw = (event.date || '').trim();
+    const m = raw.match(/^(\d{4})(?:-(\d{1,2})(?:-(\d{1,2}))?)?$/);
+    if (!m) return { year };
+    const parsedYear = Number(m[1]);
+    const parsedMonth = m[2] ? Number(m[2]) : undefined;
+    const parsedDay = m[3] ? Number(m[3]) : undefined;
+    return {
+      year: Number.isFinite(parsedYear) ? parsedYear : year,
+      month: Number.isFinite(parsedMonth ?? NaN) ? parsedMonth : undefined,
+      day: Number.isFinite(parsedDay ?? NaN) ? parsedDay : undefined,
+    };
+  };
+
   // For birthdate mode: show the birth year as a 12-month timeline
   const birthYear = birthDate?.year || events[0]?.year || new Date().getFullYear();
   const birthMonth = birthDate?.month || 1;
   const birthDay = birthDate?.day || 1;
+
+  const rangeYears = useMemo(() => {
+    if (!events.length) return { minYear: new Date().getFullYear(), maxYear: new Date().getFullYear() };
+    let minYear = Infinity;
+    let maxYear = -Infinity;
+    for (const e of events) {
+      minYear = Math.min(minYear, e.year);
+      maxYear = Math.max(maxYear, e.year);
+    }
+    if (!Number.isFinite(minYear) || !Number.isFinite(maxYear)) {
+      const y = new Date().getFullYear();
+      return { minYear: y, maxYear: y };
+    }
+    return { minYear, maxYear };
+  }, [events]);
 
   // Calculate position in the year (0-100%)
   const getYearPosition = (month: number, day: number = 15) => {
@@ -34,29 +68,48 @@ export const TimelineScrubberBottom = ({
     return Math.min(100, monthStart + dayOffset);
   };
 
+  const getRangePosition = (year: number, month?: number, day?: number) => {
+    const { minYear, maxYear } = rangeYears;
+    const span = Math.max(1, maxYear - minYear);
+    const base = ((year - minYear) / span) * 100;
+    // optional intra-year offset
+    if (!month) return Math.max(0, Math.min(100, base));
+    const intra = ((month - 1) / 12) * (100 / span) + (((day ?? 15) - 1) / 30) * ((100 / span) / 12);
+    return Math.max(0, Math.min(100, base + intra));
+  };
+
+  const getEventPosition = (event: TimelineEvent) => {
+    const parts = parseEventDateParts(event);
+    if (mode === 'range') {
+      return getRangePosition(parts.year, parts.month, parts.day);
+    }
+    // birthdate mode
+    return getYearPosition(parts.month || 6, parts.day || 15);
+  };
+
   // Birthday position
   const birthdayPosition = getYearPosition(birthMonth, birthDay);
 
   // Group events by their position in the year
   const eventPositions = useMemo(() => {
     return events.map((event, index) => {
-      const eventMonth = event.month || 6; // Default to middle of year if no month
-      const eventDay = event.day || 15;
       return {
         index,
         event,
-        position: getYearPosition(eventMonth, eventDay),
+        position: getEventPosition(event),
         isBirthday: event.eventScope === 'birthdate',
         isBirthMonth: event.eventScope === 'birthmonth',
       };
     });
-  }, [events]);
+  }, [events, mode, rangeYears]);
 
   // Current event position
   const currentEvent = events[currentEventIndex];
-  const currentPosition = currentEvent 
-    ? getYearPosition(currentEvent.month || 6, currentEvent.day || 15)
-    : 0;
+  const currentEventParts = useMemo(
+    () => (currentEvent ? parseEventDateParts(currentEvent) : null),
+    [currentEvent]
+  );
+  const currentPosition = currentEvent ? getEventPosition(currentEvent) : 0;
 
   // Find event at position
   const findEventAtPosition = (percentage: number) => {
@@ -138,6 +191,13 @@ export const TimelineScrubberBottom = ({
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
 
+    // Ensure we keep receiving pointer events during drag.
+    try {
+      (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+
     const selectAt = (clientX: number) => {
       if (!scrubberRef.current) return;
       const rect = scrubberRef.current.getBoundingClientRect();
@@ -173,7 +233,7 @@ export const TimelineScrubberBottom = ({
         <div className="flex items-center gap-3">
           {/* Year badge */}
           <span className="text-xs font-bold text-accent whitespace-nowrap">
-            {birthYear}
+            {mode === 'range' ? `${rangeYears.minYear}–${rangeYears.maxYear}` : birthYear}
           </span>
 
           {/* Scrubber track */}
@@ -183,29 +243,45 @@ export const TimelineScrubberBottom = ({
             className="relative flex-1 h-6 bg-secondary/50 rounded-full cursor-pointer group overflow-visible touch-none select-none"
           >
             {/* Month grid lines - subtle */}
-            {[...Array(11)].map((_, index) => {
-              const position = ((index + 1) / 12) * 100;
-              return (
-                <div
-                  key={index}
-                  className="absolute top-1 bottom-1 w-px bg-border/40"
-                  style={{ left: `${position}%` }}
-                />
-              );
-            })}
+            {mode === 'birthdate' ? (
+              [...Array(11)].map((_, index) => {
+                const position = ((index + 1) / 12) * 100;
+                return (
+                  <div
+                    key={index}
+                    className="absolute top-1 bottom-1 w-px bg-border/40 pointer-events-none"
+                    style={{ left: `${position}%` }}
+                  />
+                );
+              })
+            ) : (
+              // Range mode: 4 interior tick lines for quick orientation
+              [...Array(4)].map((_, i) => {
+                const position = ((i + 1) / 5) * 100;
+                return (
+                  <div
+                    key={i}
+                    className="absolute top-1 bottom-1 w-px bg-border/40 pointer-events-none"
+                    style={{ left: `${position}%` }}
+                  />
+                );
+              })
+            )}
 
             {/* Birthday marker */}
-            <div 
-              className="absolute top-1/2 -translate-y-1/2 z-[5] flex flex-col items-center pointer-events-none"
-              style={{ left: `${birthdayPosition}%` }}
-            >
-              <div className="w-0.5 h-4 bg-accent/50" />
-              <Cake className="h-3 w-3 text-accent -mt-0.5" />
-            </div>
+            {mode === 'birthdate' && (
+              <div 
+                className="absolute top-1/2 -translate-y-1/2 z-[5] flex flex-col items-center pointer-events-none"
+                style={{ left: `${birthdayPosition}%` }}
+              >
+                <div className="w-0.5 h-4 bg-accent/50" />
+                <Cake className="h-3 w-3 text-accent -mt-0.5" />
+              </div>
+            )}
 
             {/* Progress fill */}
             <div 
-              className="absolute left-0 top-1 bottom-1 bg-accent/20 rounded-full transition-all duration-150"
+              className="absolute left-0 top-1 bottom-1 bg-accent/20 rounded-full transition-all duration-150 pointer-events-none"
               style={{ width: `${currentPosition}%` }}
             />
 
@@ -244,22 +320,37 @@ export const TimelineScrubberBottom = ({
             </div>
 
             {/* Month labels - positioned above */}
-            <div className="absolute -top-4 left-0 right-0 flex justify-between px-1 pointer-events-none">
-              {['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'].map((label, index) => {
-                const position = (index / 12) * 100 + (100 / 24);
-                const isCurrentMonth = currentEvent?.month === index + 1;
-                return (
-                  <span
-                    key={index}
-                    className={`text-[8px] ${
-                      isCurrentMonth ? 'text-accent font-bold' : 'text-muted-foreground/60'
-                    }`}
-                  >
-                    {label}
+            {mode === 'birthdate' ? (
+              <div className="absolute -top-4 left-0 right-0 flex justify-between px-1 pointer-events-none">
+                {['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'].map((label, index) => {
+                  const isCurrentMonth = (currentEventParts?.month ?? currentEvent?.month) === index + 1;
+                  return (
+                    <span
+                      key={index}
+                      className={`text-[8px] ${
+                        isCurrentMonth ? 'text-accent font-bold' : 'text-muted-foreground/60'
+                      }`}
+                    >
+                      {label}
+                    </span>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="absolute -top-4 left-0 right-0 flex justify-between px-1 pointer-events-none">
+                {[
+                  rangeYears.minYear,
+                  Math.round(rangeYears.minYear + (rangeYears.maxYear - rangeYears.minYear) * 0.25),
+                  Math.round(rangeYears.minYear + (rangeYears.maxYear - rangeYears.minYear) * 0.5),
+                  Math.round(rangeYears.minYear + (rangeYears.maxYear - rangeYears.minYear) * 0.75),
+                  rangeYears.maxYear,
+                ].map((y, i) => (
+                  <span key={i} className="text-[8px] text-muted-foreground/60">
+                    {y}
                   </span>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Current event info - compact */}
