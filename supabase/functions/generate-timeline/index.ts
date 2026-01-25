@@ -20,6 +20,7 @@ interface TimelineRequest {
     focus: 'netherlands' | 'europe' | 'world';
   };
   language: string;
+  stream?: boolean;
 }
 
 serve(async (req) => {
@@ -38,9 +39,14 @@ serve(async (req) => {
 
     // Build the prompt based on request type
     const prompt = buildPrompt(requestData);
-    console.log("Generated prompt:", prompt);
+    console.log("Generated prompt (first 500 chars):", prompt.substring(0, 500));
 
-    // Call AI to generate timeline events
+    // If streaming is requested, use streaming response
+    if (requestData.stream) {
+      return handleStreamingResponse(requestData, prompt, LOVABLE_API_KEY);
+    }
+
+    // Non-streaming: original behavior
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -50,99 +56,19 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { 
-            role: "system", 
-            content: getSystemPrompt(requestData.language) 
-          },
+          { role: "system", content: getSystemPrompt(requestData.language) },
           { role: "user", content: prompt },
         ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "create_timeline",
-              description: "Creates a timeline with historical events, returning structured data",
-              parameters: {
-                type: "object",
-                properties: {
-                  events: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        id: { type: "string" },
-                        date: { type: "string", description: "Date in format YYYY-MM-DD or YYYY-MM or YYYY" },
-                        year: { type: "number" },
-                        month: { type: "number" },
-                        day: { type: "number" },
-                        title: { type: "string" },
-                        description: { type: "string" },
-                        category: { 
-                          type: "string", 
-                          enum: ["politics", "sports", "entertainment", "science", "culture", "world", "local", "personal", "music", "technology", "celebrity"] 
-                        },
-                        imageSearchQuery: { type: "string", description: "Search query to find a relevant image for this event" },
-                        importance: { type: "string", enum: ["high", "medium", "low"] },
-                        eventScope: { 
-                          type: "string", 
-                          enum: ["birthdate", "birthmonth", "birthyear", "period"],
-                          description: "Whether this event is from the exact birth date, birth month, birth year, or general period"
-                        },
-                        isCelebrityBirthday: { type: "boolean", description: "True if this is about a famous person born on the same date" }
-                      },
-                      required: ["id", "date", "year", "title", "description", "category", "importance", "eventScope"]
-                    }
-                  },
-                  summary: {
-                    type: "string",
-                    description: "A brief summary of the era/period covered"
-                  },
-                  famousBirthdays: {
-                    type: "array",
-                    description: "List of famous people born on the same date (day and month)",
-                    items: {
-                      type: "object",
-                      properties: {
-                        name: { type: "string" },
-                        profession: { type: "string" },
-                        birthYear: { type: "number" },
-                        imageSearchQuery: { type: "string" }
-                      },
-                      required: ["name", "profession", "birthYear"]
-                    }
-                  }
-                },
-                required: ["events", "summary"]
-              }
-            }
-          }
-        ],
+        tools: [getTimelineTool()],
         tool_choice: { type: "function", function: { name: "create_timeline" } }
       }),
     });
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Te veel verzoeken. Probeer het later opnieuw." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Credits op. Voeg credits toe aan je workspace." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error(`AI gateway error: ${response.status}`);
+      return handleErrorResponse(response);
     }
 
     const aiResponse = await response.json();
-    console.log("AI response received");
-
-    // Extract the tool call result
     const toolCall = aiResponse.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall || toolCall.function.name !== "create_timeline") {
       throw new Error("Invalid AI response - no timeline data");
@@ -150,27 +76,330 @@ serve(async (req) => {
 
     const timelineData = JSON.parse(toolCall.function.arguments);
     console.log(`Generated ${timelineData.events?.length || 0} events`);
-    console.log(`Famous birthdays: ${timelineData.famousBirthdays?.length || 0}`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        data: timelineData 
-      }),
+      JSON.stringify({ success: true, data: timelineData }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error) {
     console.error("Error generating timeline:", error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error instanceof Error ? error.message : "Unknown error" 
-      }),
+      JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
+
+async function handleStreamingResponse(
+  requestData: TimelineRequest,
+  prompt: string,
+  apiKey: string
+): Promise<Response> {
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-3-flash-preview",
+      stream: true,
+      messages: [
+        { role: "system", content: getSystemPrompt(requestData.language) },
+        { role: "user", content: prompt },
+      ],
+      tools: [getTimelineTool()],
+      tool_choice: { type: "function", function: { name: "create_timeline" } }
+    }),
+  });
+
+  if (!response.ok) {
+    return handleErrorResponse(response);
+  }
+
+  // Create a TransformStream to process SSE and extract events incrementally
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  
+  let functionArguments = "";
+  let lastSentEventCount = 0;
+  let sentSummary = false;
+  let sentFamousBirthdays = false;
+
+  const transformStream = new TransformStream({
+    async transform(chunk, controller) {
+      const text = decoder.decode(chunk);
+      const lines = text.split('\n');
+      
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6);
+        if (data === '[DONE]') {
+          // Send final complete message
+          try {
+            const finalData = JSON.parse(functionArguments);
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+              type: 'complete', 
+              data: finalData 
+            })}\n\n`));
+          } catch (e) {
+            console.error('Error parsing final data:', e);
+          }
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+          return;
+        }
+        
+        try {
+          const parsed = JSON.parse(data);
+          const delta = parsed.choices?.[0]?.delta;
+          
+          if (delta?.tool_calls?.[0]?.function?.arguments) {
+            functionArguments += delta.tool_calls[0].function.arguments;
+            
+            // Try to extract complete events from the partial JSON
+            const partialData = tryParsePartialTimeline(functionArguments);
+            
+            if (partialData) {
+              // Send new events incrementally
+              if (partialData.events && partialData.events.length > lastSentEventCount) {
+                const newEvents = partialData.events.slice(lastSentEventCount);
+                for (const event of newEvents) {
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                    type: 'event', 
+                    event 
+                  })}\n\n`));
+                }
+                lastSentEventCount = partialData.events.length;
+              }
+              
+              // Send summary once available
+              if (partialData.summary && !sentSummary) {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                  type: 'summary', 
+                  summary: partialData.summary 
+                })}\n\n`));
+                sentSummary = true;
+              }
+              
+              // Send famous birthdays once available
+              if (partialData.famousBirthdays && partialData.famousBirthdays.length > 0 && !sentFamousBirthdays) {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                  type: 'famousBirthdays', 
+                  famousBirthdays: partialData.famousBirthdays 
+                })}\n\n`));
+                sentFamousBirthdays = true;
+              }
+            }
+          }
+        } catch (e) {
+          // Ignore parse errors for incomplete chunks
+        }
+      }
+    }
+  });
+
+  const reader = response.body!.getReader();
+  const readable = new ReadableStream({
+    async start(controller) {
+      const writer = transformStream.writable.getWriter();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            await writer.close();
+            break;
+          }
+          await writer.write(value);
+        }
+      } catch (e) {
+        console.error('Stream error:', e);
+        await writer.abort(e);
+      }
+    }
+  });
+
+  // Pipe through transform and return
+  readable.pipeTo(transformStream.writable).catch(console.error);
+  
+  return new Response(transformStream.readable, {
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+    }
+  });
+}
+
+function tryParsePartialTimeline(partial: string): { events?: any[]; summary?: string; famousBirthdays?: any[] } | null {
+  // Try to extract complete events array from partial JSON
+  // The AI generates: {"events":[{...},{...}],"summary":"...","famousBirthdays":[...]}
+  
+  try {
+    // First try full parse
+    return JSON.parse(partial);
+  } catch {
+    // Try to extract events array
+    const eventsMatch = partial.match(/"events"\s*:\s*\[/);
+    if (!eventsMatch) return null;
+    
+    const eventsStart = eventsMatch.index! + eventsMatch[0].length - 1;
+    let bracketCount = 0;
+    let inString = false;
+    let escape = false;
+    let lastCompleteEvent = -1;
+    
+    const events: any[] = [];
+    let currentEventStart = -1;
+    
+    for (let i = eventsStart; i < partial.length; i++) {
+      const char = partial[i];
+      
+      if (escape) {
+        escape = false;
+        continue;
+      }
+      
+      if (char === '\\') {
+        escape = true;
+        continue;
+      }
+      
+      if (char === '"' && !escape) {
+        inString = !inString;
+        continue;
+      }
+      
+      if (inString) continue;
+      
+      if (char === '[' || char === '{') {
+        if (bracketCount === 1 && char === '{') {
+          currentEventStart = i;
+        }
+        bracketCount++;
+      } else if (char === ']' || char === '}') {
+        bracketCount--;
+        if (bracketCount === 1 && char === '}' && currentEventStart !== -1) {
+          // Complete event object
+          try {
+            const eventStr = partial.substring(currentEventStart, i + 1);
+            const event = JSON.parse(eventStr);
+            events.push(event);
+            lastCompleteEvent = i;
+          } catch {
+            // Incomplete event, ignore
+          }
+          currentEventStart = -1;
+        }
+      }
+    }
+    
+    // Try to extract summary
+    let summary: string | undefined;
+    const summaryMatch = partial.match(/"summary"\s*:\s*"([^"]+)"/);
+    if (summaryMatch) {
+      summary = summaryMatch[1];
+    }
+    
+    // Try to extract famousBirthdays
+    let famousBirthdays: any[] | undefined;
+    const fbMatch = partial.match(/"famousBirthdays"\s*:\s*\[([^\]]*)\]/);
+    if (fbMatch) {
+      try {
+        famousBirthdays = JSON.parse(`[${fbMatch[1]}]`);
+      } catch {
+        // Incomplete array
+      }
+    }
+    
+    if (events.length > 0 || summary || famousBirthdays) {
+      return { events: events.length > 0 ? events : undefined, summary, famousBirthdays };
+    }
+    
+    return null;
+  }
+}
+
+async function handleErrorResponse(response: Response): Promise<Response> {
+  if (response.status === 429) {
+    return new Response(
+      JSON.stringify({ error: "Te veel verzoeken. Probeer het later opnieuw." }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  if (response.status === 402) {
+    return new Response(
+      JSON.stringify({ error: "Credits op. Voeg credits toe aan je workspace." }),
+      { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  const errorText = await response.text();
+  console.error("AI gateway error:", response.status, errorText);
+  throw new Error(`AI gateway error: ${response.status}`);
+}
+
+function getTimelineTool() {
+  return {
+    type: "function",
+    function: {
+      name: "create_timeline",
+      description: "Creates a timeline with historical events, returning structured data",
+      parameters: {
+        type: "object",
+        properties: {
+          events: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                id: { type: "string" },
+                date: { type: "string", description: "Date in format YYYY-MM-DD or YYYY-MM or YYYY" },
+                year: { type: "number" },
+                month: { type: "number" },
+                day: { type: "number" },
+                title: { type: "string" },
+                description: { type: "string" },
+                category: { 
+                  type: "string", 
+                  enum: ["politics", "sports", "entertainment", "science", "culture", "world", "local", "personal", "music", "technology", "celebrity"] 
+                },
+                imageSearchQuery: { type: "string", description: "Search query to find a relevant image for this event" },
+                importance: { type: "string", enum: ["high", "medium", "low"] },
+                eventScope: { 
+                  type: "string", 
+                  enum: ["birthdate", "birthmonth", "birthyear", "period"],
+                  description: "Whether this event is from the exact birth date, birth month, birth year, or general period"
+                },
+                isCelebrityBirthday: { type: "boolean", description: "True if this is about a famous person born on the same date" }
+              },
+              required: ["id", "date", "year", "title", "description", "category", "importance", "eventScope"]
+            }
+          },
+          summary: {
+            type: "string",
+            description: "A brief summary of the era/period covered"
+          },
+          famousBirthdays: {
+            type: "array",
+            description: "List of famous people born on the same date (day and month)",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string" },
+                profession: { type: "string" },
+                birthYear: { type: "number" },
+                imageSearchQuery: { type: "string" }
+              },
+              required: ["name", "profession", "birthYear"]
+            }
+          }
+        },
+        required: ["events", "summary"]
+      }
+    }
+  };
+}
 
 function getSystemPrompt(language: string): string {
   const langInstructions = {
@@ -267,7 +496,6 @@ Zorg voor een goede spreiding over alle jaren en verschillende categorieën:
 - Technologische innovaties
 - Sociale veranderingen`;
 
-    // If birthdate falls in range, highlight it
     if (data.birthDate) {
       const { day, month, year } = data.birthDate;
       if (year >= startYear && year <= endYear) {
@@ -276,10 +504,8 @@ Zorg voor een goede spreiding over alle jaren en verschillende categorieën:
     }
   }
 
-  // Add optional context
   const { optionalData } = data;
 
-  // Add person's name if provided
   if (optionalData.firstName || optionalData.lastName) {
     const fullName = [optionalData.firstName, optionalData.lastName].filter(Boolean).join(' ');
     prompt += `\n\nDe tijdlijn is voor: ${fullName}. Maak de beschrijvingen persoonlijk door soms de naam te noemen.`;
@@ -302,7 +528,6 @@ Zorg voor een goede spreiding over alle jaren en verschillende categorieën:
     prompt += `\n\nDe persoon woont in ${optionalData.city}. Voeg indien mogelijk lokale/regionale gebeurtenissen toe.`;
   }
 
-  // Add children birthdays as personal events if they fall in the range
   if (optionalData.children && optionalData.children.length > 0) {
     const childrenInfo = optionalData.children
       .filter(c => c.name && c.birthDate?.year)
