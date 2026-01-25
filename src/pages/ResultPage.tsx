@@ -8,8 +8,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { FormData } from '@/types/form';
 import { TimelineEvent, FamousBirthday } from '@/types/timeline';
 import { generateTimeline, searchImages } from '@/lib/api/timeline';
+import { generateTimelinePdf } from '@/lib/pdfGenerator';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents } from '@/lib/timelineCache';
-import { ArrowLeft, Clock, Loader2, AlertCircle, RefreshCw, Cake, Star } from 'lucide-react';
+import { ArrowLeft, Clock, Loader2, AlertCircle, RefreshCw, Cake, Star, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const ResultPage = () => {
@@ -26,6 +27,8 @@ const ResultPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
   const [isScrubbing, setIsScrubbing] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState(0);
 
   // Track current formData for cache updates
   const formDataRef = useRef<FormData | null>(null);
@@ -212,6 +215,39 @@ const ResultPage = () => {
     setCurrentEventIndex(index);
   }, []);
 
+  const handleDownloadPdf = async () => {
+    if (!formData || events.length === 0) return;
+    
+    setIsGeneratingPdf(true);
+    setPdfProgress(0);
+    
+    try {
+      await generateTimelinePdf({
+        events,
+        famousBirthdays,
+        formData,
+        summary
+      }, (progress) => {
+        setPdfProgress(progress);
+      });
+      
+      toast({
+        title: "PDF gedownload!",
+        description: "Je tijdreis magazine is klaar",
+      });
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+      toast({
+        variant: "destructive",
+        title: "Fout bij PDF genereren",
+        description: "Probeer het opnieuw",
+      });
+    } finally {
+      setIsGeneratingPdf(false);
+      setPdfProgress(0);
+    }
+  };
+
   const getTitle = () => {
     if (!formData) return 'Jouw Tijdreis';
     
@@ -271,27 +307,51 @@ const ResultPage = () => {
               </h1>
             </div>
             
-            {/* Event scope badges - inline */}
-            {formData?.type === 'birthdate' && events.length > 0 && (
-              <div className="flex flex-wrap gap-2 text-xs">
-                {birthdateEvents > 0 && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-accent-foreground">
-                    <Cake className="h-3 w-3" />
-                    {birthdateEvents} op je dag
-                  </span>
-                )}
-                {birthmonthEvents > 0 && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/70 text-accent-foreground">
-                    {birthmonthEvents} in je maand
-                  </span>
-                )}
-                {birthyearEvents > 0 && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-                    {birthyearEvents} in je jaar
-                  </span>
-                )}
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              {/* Download PDF button */}
+              {events.length > 0 && (
+                <Button
+                  onClick={handleDownloadPdf}
+                  disabled={isGeneratingPdf || isLoadingImages}
+                  size="sm"
+                  className="btn-vintage gap-2"
+                >
+                  {isGeneratingPdf ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>{pdfProgress}%</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4" />
+                      <span className="hidden sm:inline">Download PDF</span>
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {/* Event scope badges - inline */}
+              {formData?.type === 'birthdate' && events.length > 0 && (
+                <div className="hidden lg:flex flex-wrap gap-2 text-xs">
+                  {birthdateEvents > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-accent-foreground">
+                      <Cake className="h-3 w-3" />
+                      {birthdateEvents} op je dag
+                    </span>
+                  )}
+                  {birthmonthEvents > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/70 text-accent-foreground">
+                      {birthmonthEvents} in je maand
+                    </span>
+                  )}
+                  {birthyearEvents > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+                      {birthyearEvents} in je jaar
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>
