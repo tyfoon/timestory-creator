@@ -327,7 +327,7 @@ const ResultPage = () => {
         <div className="container mx-auto max-w-6xl">
           {/* Back button - smaller */}
           <button
-            onClick={() => navigate('/invoer?type=' + (formData?.type || 'birthdate'))}
+            onClick={() => navigate('/')}
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 fade-in"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
