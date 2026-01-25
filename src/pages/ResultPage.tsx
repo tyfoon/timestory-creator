@@ -130,16 +130,26 @@ const ResultPage = () => {
         applyImages(priorityResult.images);
       }
 
-      // Then fetch the rest in background in smaller chunks.
+      // Then fetch the rest in parallel chunks (much faster than sequential).
       if (remainingQueries.length > 0) {
         const CHUNK_SIZE = 8;
+        const chunks: typeof remainingQueries[] = [];
         for (let i = 0; i < remainingQueries.length; i += CHUNK_SIZE) {
-          const chunk = remainingQueries.slice(i, i + CHUNK_SIZE);
-          const restResult = await searchImages(chunk, { mode: 'full' });
-          if (restResult.success && restResult.images) {
-            applyImages(restResult.images);
-          }
+          chunks.push(remainingQueries.slice(i, i + CHUNK_SIZE));
         }
+        
+        // Fire all chunk requests in parallel
+        const chunkPromises = chunks.map(chunk => 
+          searchImages(chunk, { mode: 'full' })
+            .then(result => {
+              if (result.success && result.images) {
+                applyImages(result.images);
+              }
+            })
+            .catch(err => console.error('Chunk error:', err))
+        );
+        
+        await Promise.all(chunkPromises);
       }
     } catch (err) {
       console.error('Error loading images:', err);
