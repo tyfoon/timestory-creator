@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { TimelineCarousel } from '@/components/TimelineCarousel';
@@ -8,6 +8,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { FormData } from '@/types/form';
 import { TimelineEvent, FamousBirthday } from '@/types/timeline';
 import { generateTimeline, searchImages } from '@/lib/api/timeline';
+import { getCachedTimeline, cacheTimeline, updateCachedEvents } from '@/lib/timelineCache';
 import { ArrowLeft, Clock, Loader2, AlertCircle, RefreshCw, Cake, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -25,11 +26,33 @@ const ResultPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
 
+  // Track current formData for cache updates
+  const formDataRef = useRef<FormData | null>(null);
+
   useEffect(() => {
     const stored = sessionStorage.getItem('timelineFormData');
     if (stored) {
       const data = JSON.parse(stored) as FormData;
       setFormData(data);
+      formDataRef.current = data;
+
+      // Check cache first
+      const cached = getCachedTimeline(data, language);
+      if (cached) {
+        console.log('Using cached timeline');
+        setEvents(cached.events);
+        setSummary(cached.summary);
+        setFamousBirthdays(cached.famousBirthdays);
+        setIsLoading(false);
+
+        // If some images are still marked as 'loading', resume loading them
+        const needImages = cached.events.some(e => e.imageStatus === 'loading');
+        if (needImages) {
+          loadImages(cached.events);
+        }
+        return;
+      }
+
       loadTimeline(data);
     } else {
       setError('Geen gegevens gevonden');
@@ -66,6 +89,9 @@ const ResultPage = () => {
           title: "Tijdlijn geladen!",
           description: `${sortedEvents.length} gebeurtenissen gevonden`,
         });
+
+        // Cache the fresh timeline
+        cacheTimeline(data, language, eventsWithImageStatus, response.data.summary, response.data.famousBirthdays || []);
 
         // Load images in background
         loadImages(eventsWithImageStatus);
@@ -105,23 +131,32 @@ const ResultPage = () => {
       const priorityQueries = allQueries.slice(0, 3);
       const remainingQueries = allQueries.slice(3);
 
-      // Helper to update state with images
+      // Helper to update state with images and persist to cache
       const applyImages = (images: { eventId: string; imageUrl: string | null; source: string | null }[]) => {
-        setEvents(prev => prev.map(event => {
-          const imageResult = images.find(img => img.eventId === event.id);
-          if (!imageResult) return event;
+        setEvents(prev => {
+          const updated = prev.map(event => {
+            const imageResult = images.find(img => img.eventId === event.id);
+            if (!imageResult) return event;
 
-          if (imageResult.imageUrl) {
-            return {
-              ...event,
-              imageUrl: imageResult.imageUrl,
-              source: imageResult.source || undefined,
-              imageStatus: 'found',
-            };
+            if (imageResult.imageUrl) {
+              return {
+                ...event,
+                imageUrl: imageResult.imageUrl,
+                source: imageResult.source || undefined,
+                imageStatus: 'found' as const,
+              };
+            }
+
+            return { ...event, imageStatus: 'none' as const };
+          });
+
+          // Persist updated events to cache
+          if (formDataRef.current) {
+            updateCachedEvents(formDataRef.current, language, () => updated);
           }
 
-          return { ...event, imageStatus: 'none' };
-        }));
+          return updated;
+        });
       };
 
       // Fetch priority images first (first 3 visible cards)
