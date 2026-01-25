@@ -118,7 +118,6 @@ async function handleStreamingResponse(
     return handleErrorResponse(response);
   }
 
-  // Create a TransformStream to process SSE and extract events incrementally
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
   
@@ -126,103 +125,155 @@ async function handleStreamingResponse(
   let lastSentEventCount = 0;
   let sentSummary = false;
   let sentFamousBirthdays = false;
+  let buffer = "";
 
-  const transformStream = new TransformStream({
-    async transform(chunk, controller) {
-      const text = decoder.decode(chunk);
-      const lines = text.split('\n');
+  const readable = new ReadableStream({
+    async start(controller) {
+      const reader = response.body!.getReader();
       
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const data = line.slice(6);
-        if (data === '[DONE]') {
-          // Send final complete message
-          try {
-            const finalData = JSON.parse(functionArguments);
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || "";
+          
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const data = line.slice(6).trim();
+            
+            if (data === '[DONE]') {
+              // Send final complete message
+              try {
+                const finalData = JSON.parse(functionArguments);
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                  type: 'complete', 
+                  data: finalData 
+                })}\n\n`));
+              } catch (e) {
+                console.error('Error parsing final data:', e);
+                // Try to send what we have
+                const partialData = tryParsePartialTimeline(functionArguments);
+                if (partialData) {
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                    type: 'complete', 
+                    data: partialData 
+                  })}\n\n`));
+                }
+              }
+              controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+              continue;
+            }
+            
+            try {
+              const parsed = JSON.parse(data);
+              const delta = parsed.choices?.[0]?.delta;
+              
+              if (delta?.tool_calls?.[0]?.function?.arguments) {
+                functionArguments += delta.tool_calls[0].function.arguments;
+                
+                // Try to extract complete events from the partial JSON
+                const partialData = tryParsePartialTimeline(functionArguments);
+                
+                if (partialData) {
+                  // Send new events incrementally
+                  if (partialData.events && partialData.events.length > lastSentEventCount) {
+                    const newEvents = partialData.events.slice(lastSentEventCount);
+                    for (const event of newEvents) {
+                      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                        type: 'event', 
+                        event 
+                      })}\n\n`));
+                    }
+                    lastSentEventCount = partialData.events.length;
+                  }
+                  
+                  // Send summary once available
+                  if (partialData.summary && !sentSummary) {
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                      type: 'summary', 
+                      summary: partialData.summary 
+                    })}\n\n`));
+                    sentSummary = true;
+                  }
+                  
+                  // Send famous birthdays once available
+                  if (partialData.famousBirthdays && partialData.famousBirthdays.length > 0 && !sentFamousBirthdays) {
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                      type: 'famousBirthdays', 
+                      famousBirthdays: partialData.famousBirthdays 
+                    })}\n\n`));
+                    sentFamousBirthdays = true;
+                  }
+                }
+              }
+            } catch (e) {
+              // Ignore parse errors for incomplete chunks
+            }
+          }
+        }
+        
+        // Process any remaining buffer
+        if (buffer.trim()) {
+          if (buffer.startsWith('data: ')) {
+            const data = buffer.slice(6).trim();
+            if (data !== '[DONE]') {
+              try {
+                const parsed = JSON.parse(data);
+                const delta = parsed.choices?.[0]?.delta;
+                if (delta?.tool_calls?.[0]?.function?.arguments) {
+                  functionArguments += delta.tool_calls[0].function.arguments;
+                }
+              } catch (e) {
+                // Ignore
+              }
+            }
+          }
+        }
+        
+        // Final flush - make sure we send complete data
+        if (!sentSummary || lastSentEventCount === 0) {
+          const finalData = tryParsePartialTimeline(functionArguments);
+          if (finalData) {
+            if (finalData.events && finalData.events.length > lastSentEventCount) {
+              const newEvents = finalData.events.slice(lastSentEventCount);
+              for (const event of newEvents) {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                  type: 'event', 
+                  event 
+                })}\n\n`));
+              }
+            }
+            if (finalData.summary && !sentSummary) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                type: 'summary', 
+                summary: finalData.summary 
+              })}\n\n`));
+            }
+            if (finalData.famousBirthdays && !sentFamousBirthdays) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                type: 'famousBirthdays', 
+                famousBirthdays: finalData.famousBirthdays 
+              })}\n\n`));
+            }
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
               type: 'complete', 
               data: finalData 
             })}\n\n`));
-          } catch (e) {
-            console.error('Error parsing final data:', e);
           }
-          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-          return;
         }
         
-        try {
-          const parsed = JSON.parse(data);
-          const delta = parsed.choices?.[0]?.delta;
-          
-          if (delta?.tool_calls?.[0]?.function?.arguments) {
-            functionArguments += delta.tool_calls[0].function.arguments;
-            
-            // Try to extract complete events from the partial JSON
-            const partialData = tryParsePartialTimeline(functionArguments);
-            
-            if (partialData) {
-              // Send new events incrementally
-              if (partialData.events && partialData.events.length > lastSentEventCount) {
-                const newEvents = partialData.events.slice(lastSentEventCount);
-                for (const event of newEvents) {
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-                    type: 'event', 
-                    event 
-                  })}\n\n`));
-                }
-                lastSentEventCount = partialData.events.length;
-              }
-              
-              // Send summary once available
-              if (partialData.summary && !sentSummary) {
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-                  type: 'summary', 
-                  summary: partialData.summary 
-                })}\n\n`));
-                sentSummary = true;
-              }
-              
-              // Send famous birthdays once available
-              if (partialData.famousBirthdays && partialData.famousBirthdays.length > 0 && !sentFamousBirthdays) {
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-                  type: 'famousBirthdays', 
-                  famousBirthdays: partialData.famousBirthdays 
-                })}\n\n`));
-                sentFamousBirthdays = true;
-              }
-            }
-          }
-        } catch (e) {
-          // Ignore parse errors for incomplete chunks
-        }
-      }
-    }
-  });
-
-  const reader = response.body!.getReader();
-  const readable = new ReadableStream({
-    async start(controller) {
-      const writer = transformStream.writable.getWriter();
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            await writer.close();
-            break;
-          }
-          await writer.write(value);
-        }
+        controller.close();
       } catch (e) {
         console.error('Stream error:', e);
-        await writer.abort(e);
+        controller.error(e);
       }
     }
   });
 
-  // Pipe through transform and return
-  readable.pipeTo(transformStream.writable).catch(console.error);
-  
-  return new Response(transformStream.readable, {
+  return new Response(readable, {
     headers: {
       ...corsHeaders,
       "Content-Type": "text/event-stream",
