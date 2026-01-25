@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { OptionalData, GeographicFocus, BirthDateData } from '@/types/form';
 import { DateInput } from './DateInput';
-import { MapPin, Heart, Users, Compass, Sparkles } from 'lucide-react';
+import { MapPin, Heart, Users, Compass, Sparkles, User } from 'lucide-react';
 
 interface OptionalInfoFormProps {
   value: OptionalData;
@@ -29,6 +29,38 @@ export const OptionalInfoForm = ({ value, onChange }: OptionalInfoFormProps) => 
 
   return (
     <div className="space-y-8">
+      {/* Name */}
+      <div className="space-y-4 p-4 rounded-lg bg-secondary/30 border border-border/50">
+        <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <User className="h-4 w-4 text-accent" />
+          {t('nameLabel') as string}
+        </Label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">
+              {t('firstNameLabel') as string}
+            </Label>
+            <Input
+              placeholder={t('firstNamePlaceholder') as string}
+              value={value.firstName || ''}
+              onChange={(e) => onChange({ ...value, firstName: e.target.value })}
+              className="bg-card"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">
+              {t('lastNameLabel') as string}
+            </Label>
+            <Input
+              placeholder={t('lastNamePlaceholder') as string}
+              value={value.lastName || ''}
+              onChange={(e) => onChange({ ...value, lastName: e.target.value })}
+              className="bg-card"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* City */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2 text-sm font-medium text-foreground">

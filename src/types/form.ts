@@ -19,6 +19,8 @@ export type ChildData = {
 };
 
 export type OptionalData = {
+  firstName?: string;
+  lastName?: string;
   city?: string;
   children: ChildData[];
   partnerName?: string;
