@@ -9,7 +9,7 @@ import { FormData } from '@/types/form';
 import { TimelineEvent, FamousBirthday } from '@/types/timeline';
 import { generateTimelineStreaming, searchImages } from '@/lib/api/timeline';
 import { generateTimelinePdf } from '@/lib/pdfGenerator';
-import { getCachedTimeline, cacheTimeline, updateCachedEvents } from '@/lib/timelineCache';
+import { getCachedTimeline, cacheTimeline, updateCachedEvents, getCacheKey } from '@/lib/timelineCache';
 import { ArrowLeft, Clock, Loader2, AlertCircle, RefreshCw, Cake, Star, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -55,8 +55,12 @@ const ResultPage = () => {
       const cached = getCachedTimeline(data, language);
       if (cached) {
         console.log('Using cached timeline');
-        // Normalize older cached data: events without imageSearchQuery should not show "Geen foto gevonden".
+        // Normalize older cached data and reset images that need to be refetched
         const normalizedCachedEvents = cached.events.map((e) => {
+          // Reset 'none' or 'error' status to 'loading' so we retry fetching
+          if (e.imageSearchQuery && (e.imageStatus === 'none' || e.imageStatus === 'error' || !e.imageUrl)) {
+            return { ...e, imageStatus: 'loading' as const, imageUrl: undefined };
+          }
           if (!e.imageSearchQuery && (e.imageStatus === 'none' || e.imageStatus === 'error')) {
             return { ...e, imageStatus: 'idle' as const };
           }
@@ -68,9 +72,12 @@ const ResultPage = () => {
         setFamousBirthdays(cached.famousBirthdays);
         setIsLoading(false);
 
-        // If some images are still marked as 'loading', resume loading them
-        const needImages = normalizedCachedEvents.filter(e => e.imageStatus === 'loading' && e.imageSearchQuery);
+        // Reload images for events that don't have an image yet
+        const needImages = normalizedCachedEvents.filter(e => 
+          e.imageSearchQuery && (!e.imageUrl || e.imageStatus === 'loading')
+        );
         if (needImages.length > 0) {
+          console.log('Refetching images for', needImages.length, 'events');
           loadImagesForEvents(needImages);
         }
         return;
@@ -335,6 +342,25 @@ const ResultPage = () => {
   const birthdateEvents = events.filter(e => e.eventScope === 'birthdate').length;
   const birthmonthEvents = events.filter(e => e.eventScope === 'birthmonth').length;
   const birthyearEvents = events.filter(e => e.eventScope === 'birthyear').length;
+  
+  // Count images loaded
+  const imagesLoaded = events.filter(e => e.imageStatus === 'found' && e.imageUrl).length;
+  const imagesLoading = events.filter(e => e.imageStatus === 'loading').length;
+  
+  const handleClearCache = () => {
+    if (formData) {
+      const key = getCacheKey(formData, language);
+      sessionStorage.removeItem(key);
+      // Reload the page to trigger fresh generation
+      const storedLength = sessionStorage.getItem('timelineLength') || 'short';
+      const maxEvents = storedLength === 'short' ? 20 : undefined;
+      setEvents([]);
+      setSummary('');
+      setFamousBirthdays([]);
+      setIsLoading(true);
+      loadTimelineStreaming(formData, maxEvents);
+    }
+  };
 
   if (!formData && !isLoading) {
     return (
@@ -377,7 +403,21 @@ const ResultPage = () => {
               </h1>
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              {/* Refresh button */}
+              {events.length > 0 && !isLoading && (
+                <Button
+                  onClick={handleClearCache}
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  title="Genereer opnieuw met nieuwe afbeeldingen"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  <span className="hidden sm:inline">Opnieuw</span>
+                </Button>
+              )}
+              
               {/* Download PDF button */}
               {events.length > 0 && !isLoading && (
                 <Button
@@ -398,6 +438,14 @@ const ResultPage = () => {
                     </>
                   )}
                 </Button>
+              )}
+              
+              {/* Image loading indicator */}
+              {isLoadingImages && imagesLoading > 0 && (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  {imagesLoaded}/{events.length} foto's
+                </span>
               )}
 
               {/* Event scope badges - inline */}
