@@ -132,14 +132,6 @@ const scopeLabels: Record<string, string> = {
   period: 'Periode'
 };
 
-// Layout types for variety
-type LayoutType = 'fullBleed' | 'leftHero' | 'rightHero' | 'splitDiagonal' | 'polaroid';
-
-const getLayoutForIndex = (index: number): LayoutType => {
-  const layouts: LayoutType[] = ['fullBleed', 'leftHero', 'rightHero', 'splitDiagonal', 'polaroid'];
-  return layouts[index % layouts.length];
-};
-
 // Month names in Dutch
 const monthNames = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 
                     'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
@@ -189,86 +181,58 @@ const inferMonthFromEvent = (event: TimelineEvent): number | null => {
   return null;
 };
 
-// Draw the creative timeline ribbon on page edge - shows MONTH prominently
-const drawTimelineRibbon = (
-  pdf: jsPDF,
-  event: TimelineEvent,
-  pageHeight: number,
-  accentColor: [number, number, number],
-  primaryColor: [number, number, number]
-) => {
-  const ribbonWidth = 30;
-  const ribbonX = 0;
+// Collage layout configurations - creative asymmetric positions
+// Each layout has a "top" and "bottom" slot for 2 items per page
+type CollageSlot = {
+  imgX: number;
+  imgY: number;
+  imgW: number;
+  imgH: number;
+  textX: number;
+  textY: number;
+  textW: number;
+  textMaxH: number;
+  rotation?: number; // Visual hint for slight tilt effect (we simulate with shadow offset)
+};
+
+// Generate creative collage layouts - 2 items per page, varying sizes
+const getCollageLayouts = (pageWidth: number, pageHeight: number, ribbonWidth: number): CollageSlot[][] => {
+  const contentStartX = ribbonWidth + 5;
+  const availableWidth = pageWidth - contentStartX - 10;
+  const halfPageHeight = (pageHeight - 40) / 2; // 40 for margins
   
-  // Golden ribbon background
-  pdf.setFillColor(...accentColor);
-  pdf.rect(ribbonX, 25, ribbonWidth, pageHeight - 35, 'F');
-  
-  // Timeline vertical line
-  pdf.setDrawColor(255, 255, 255);
-  pdf.setLineWidth(2);
-  pdf.line(ribbonX + ribbonWidth / 2, 35, ribbonX + ribbonWidth / 2, pageHeight - 15);
-  
-  // Top connection dot
-  pdf.setFillColor(255, 255, 255);
-  pdf.circle(ribbonX + ribbonWidth / 2, 35, 5, 'F');
-  
-  // === PROMINENT MONTH DISPLAY ===
-  const monthBoxY = 45;
-  
-  // Month background box - taller for vertical text
-  pdf.setFillColor(...primaryColor);
-  pdf.roundedRect(ribbonX + 3, monthBoxY, ribbonWidth - 6, 80, 4, 4, 'F');
-  
-  // Day number at top (large)
-  if (event.day) {
-    pdf.setFontSize(18);
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFont('times', 'bold');
-    pdf.text(event.day.toString(), ribbonX + ribbonWidth / 2, monthBoxY + 16, { align: 'center' });
-  }
-  
-  // Month name - VERTICAL letters for visibility (use inferred month if needed)
-  const inferredMonth = inferMonthFromEvent(event);
-  if (inferredMonth) {
-    const monthName = monthNamesShort[inferredMonth - 1];
-    pdf.setFontSize(12);
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFont('times', 'bold');
-    const startY = event.day ? monthBoxY + 28 : monthBoxY + 16;
-    // Draw letters vertically
-    const letters = monthName.split('');
-    let letterY = startY;
-    for (const letter of letters) {
-      pdf.text(letter, ribbonX + ribbonWidth / 2, letterY, { align: 'center' });
-      letterY += 11;
-    }
-  }
-  
-  // Year at bottom of box
-  pdf.setFontSize(10);
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFont('times', 'bold');
-  pdf.text(event.year.toString(), ribbonX + ribbonWidth / 2, monthBoxY + 73, { align: 'center' });
-  
-  // Timeline marker dot
-  const markerY = monthBoxY + 95;
-  pdf.setFillColor(255, 255, 255);
-  pdf.circle(ribbonX + ribbonWidth / 2, markerY, 6, 'F');
-  pdf.setFillColor(...primaryColor);
-  pdf.circle(ribbonX + ribbonWidth / 2, markerY, 4, 'F');
-  
-  // Decorative dots along the timeline
-  for (let dotY = markerY + 35; dotY < pageHeight - 30; dotY += 30) {
-    pdf.setFillColor(255, 255, 255);
-    pdf.setGState(new (pdf as any).GState({ opacity: 0.4 }));
-    pdf.circle(ribbonX + ribbonWidth / 2, dotY, 2, 'F');
-    pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
-  }
-  
-  // Bottom connection dot
-  pdf.setFillColor(255, 255, 255);
-  pdf.circle(ribbonX + ribbonWidth / 2, pageHeight - 15, 5, 'F');
+  return [
+    // Layout 1: Large top-left, small bottom-right
+    [
+      { imgX: contentStartX, imgY: 30, imgW: availableWidth * 0.65, imgH: halfPageHeight * 0.75, textX: contentStartX + availableWidth * 0.68, textY: 35, textW: availableWidth * 0.30, textMaxH: halfPageHeight * 0.70 },
+      { imgX: contentStartX + availableWidth * 0.35, imgY: halfPageHeight + 20, imgW: availableWidth * 0.60, imgH: halfPageHeight * 0.65, textX: contentStartX, textY: halfPageHeight + 25, textW: availableWidth * 0.32, textMaxH: halfPageHeight * 0.60, rotation: 2 }
+    ],
+    // Layout 2: Wide top strip, tall bottom-left
+    [
+      { imgX: contentStartX + 20, imgY: 30, imgW: availableWidth * 0.75, imgH: halfPageHeight * 0.55, textX: contentStartX, textY: halfPageHeight * 0.55 + 35, textW: availableWidth - 10, textMaxH: 35, rotation: -1 },
+      { imgX: contentStartX, imgY: halfPageHeight + 15, imgW: availableWidth * 0.45, imgH: halfPageHeight * 0.80, textX: contentStartX + availableWidth * 0.48, textY: halfPageHeight + 20, textW: availableWidth * 0.48, textMaxH: halfPageHeight * 0.75 }
+    ],
+    // Layout 3: Polaroid-style scattered
+    [
+      { imgX: contentStartX + 10, imgY: 35, imgW: availableWidth * 0.50, imgH: halfPageHeight * 0.70, textX: contentStartX + availableWidth * 0.55, textY: 40, textW: availableWidth * 0.40, textMaxH: halfPageHeight * 0.65, rotation: 3 },
+      { imgX: contentStartX + availableWidth * 0.30, imgY: halfPageHeight + 25, imgW: availableWidth * 0.55, imgH: halfPageHeight * 0.70, textX: contentStartX, textY: halfPageHeight + 30, textW: availableWidth * 0.28, textMaxH: halfPageHeight * 0.65, rotation: -2 }
+    ],
+    // Layout 4: Diagonal balance
+    [
+      { imgX: contentStartX + availableWidth * 0.25, imgY: 28, imgW: availableWidth * 0.70, imgH: halfPageHeight * 0.60, textX: contentStartX, textY: 33, textW: availableWidth * 0.23, textMaxH: halfPageHeight * 0.55 },
+      { imgX: contentStartX, imgY: halfPageHeight + 20, imgW: availableWidth * 0.55, imgH: halfPageHeight * 0.75, textX: contentStartX + availableWidth * 0.58, textY: halfPageHeight + 25, textW: availableWidth * 0.38, textMaxH: halfPageHeight * 0.70, rotation: 1 }
+    ],
+    // Layout 5: Hero top, compact bottom
+    [
+      { imgX: contentStartX, imgY: 30, imgW: availableWidth * 0.80, imgH: halfPageHeight * 0.80, textX: contentStartX + availableWidth * 0.82, textY: 35, textW: availableWidth * 0.16, textMaxH: halfPageHeight * 0.75, rotation: -1 },
+      { imgX: contentStartX + availableWidth * 0.40, imgY: halfPageHeight + 25, imgW: availableWidth * 0.55, imgH: halfPageHeight * 0.55, textX: contentStartX, textY: halfPageHeight + 30, textW: availableWidth * 0.38, textMaxH: halfPageHeight * 0.50 }
+    ],
+    // Layout 6: Side by side (more equal)
+    [
+      { imgX: contentStartX, imgY: 30, imgW: availableWidth * 0.55, imgH: halfPageHeight * 0.65, textX: contentStartX, textY: halfPageHeight * 0.65 + 35, textW: availableWidth * 0.50, textMaxH: 40, rotation: 2 },
+      { imgX: contentStartX + availableWidth * 0.35, imgY: halfPageHeight + 15, imgW: availableWidth * 0.60, imgH: halfPageHeight * 0.70, textX: contentStartX, textY: halfPageHeight + 20, textW: availableWidth * 0.33, textMaxH: halfPageHeight * 0.65, rotation: -1 }
+    ]
+  ];
 };
 
 export const generateTimelinePdf = async (
@@ -291,6 +255,7 @@ export const generateTimelinePdf = async (
   const pageHeight = 297;
   const margin = 12;
   const contentWidth = pageWidth - (margin * 2);
+  const ribbonWidth = 28;
 
   // Colors (magazine style - vintage/sepia tones)
   const primaryColor: [number, number, number] = [139, 90, 43]; // Warm brown
@@ -491,67 +456,69 @@ export const generateTimelinePdf = async (
 
   onProgress?.(40);
 
-  // ===== CONTENT PAGES - Creative layouts =====
-  let eventIndex = 0;
+  // ===== CONTENT PAGES - 2 ITEMS PER PAGE COLLAGE LAYOUT =====
+  const collageLayouts = getCollageLayouts(pageWidth, pageHeight, ribbonWidth);
+  
+  // Process events in pairs
+  for (let i = 0; i < regularEvents.length; i += 2) {
+    pdf.addPage();
+    currentPage++;
 
-  for (const year of years) {
-    const yearEvents = eventsByYear.get(year)!;
+    // Background
+    pdf.setFillColor(...lightBg);
+    pdf.rect(0, 0, pageWidth, pageHeight, 'F');
 
-    for (const event of yearEvents) {
-      pdf.addPage();
-      currentPage++;
+    // Get layout for this page
+    const layoutIndex = Math.floor(i / 2) % collageLayouts.length;
+    const pageLayout = collageLayouts[layoutIndex];
 
-      const layout = getLayoutForIndex(eventIndex);
-      
-      // Background
-      pdf.setFillColor(255, 255, 255);
-      pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+    // Get the two events for this page
+    const event1 = regularEvents[i];
+    const event2 = regularEvents[i + 1]; // May be undefined if odd number
 
-      // Load event image
-      let imgData: ImageData | null = null;
-      if (event.imageUrl) {
-        imgData = await imageToBase64WithDimensions(event.imageUrl);
-      }
+    // Load images
+    const [imgData1, imgData2] = await Promise.all([
+      event1.imageUrl ? imageToBase64WithDimensions(event1.imageUrl) : Promise.resolve(null),
+      event2?.imageUrl ? imageToBase64WithDimensions(event2.imageUrl) : Promise.resolve(null)
+    ]);
 
-      // Draw the timeline ribbon on left edge
-      drawTimelineRibbon(pdf, event, pageHeight, accentColor, primaryColor);
+    // Draw golden timeline ribbon on left edge
+    drawCollageRibbon(pdf, event1, event2, pageHeight, accentColor, primaryColor);
 
-      // Adjusted margin for ribbon
-      const ribbonMargin = 22;
+    // Render first event
+    renderCollageItem(pdf, event1, imgData1, pageLayout[0], primaryColor, accentColor, textColor);
 
-      switch (layout) {
-        case 'fullBleed':
-          await renderFullBleedLayout(pdf, event, imgData, pageWidth, pageHeight, ribbonMargin, primaryColor, accentColor, textColor, lightBg, fullName);
-          break;
-        case 'leftHero':
-          await renderLeftHeroLayout(pdf, event, imgData, pageWidth, pageHeight, ribbonMargin, primaryColor, accentColor, textColor, lightBg, fullName);
-          break;
-        case 'rightHero':
-          await renderRightHeroLayout(pdf, event, imgData, pageWidth, pageHeight, ribbonMargin, primaryColor, accentColor, textColor, lightBg, fullName);
-          break;
-        case 'splitDiagonal':
-          await renderDiagonalLayout(pdf, event, imgData, pageWidth, pageHeight, ribbonMargin, primaryColor, accentColor, textColor, lightBg, fullName);
-          break;
-        case 'polaroid':
-          await renderPolaroidLayout(pdf, event, imgData, pageWidth, pageHeight, ribbonMargin, primaryColor, accentColor, textColor, lightBg, fullName);
-          break;
-      }
-
-      // Page number
-      pdf.setFontSize(8);
-      pdf.setTextColor(...textColor);
-      pdf.text(`${currentPage}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
-
-      eventIndex++;
-      
-      // Update progress
-      const progress = 40 + Math.round((eventIndex / regularEvents.length) * 45);
-      onProgress?.(Math.min(progress, 85));
+    // Render second event if exists
+    if (event2) {
+      renderCollageItem(pdf, event2, imgData2, pageLayout[1], primaryColor, accentColor, textColor);
     }
+
+    // Page header
+    pdf.setFillColor(...primaryColor);
+    pdf.rect(ribbonWidth, 0, pageWidth - ribbonWidth, 22, 'F');
+    pdf.setFontSize(9);
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont('times', 'bolditalic');
+    pdf.text(`TIJDREIS • ${fullName}`, ribbonWidth + 6, 14);
+
+    // Show year range in header
+    const yearRange = event2 && event2.year !== event1.year 
+      ? `${event1.year} - ${event2.year}` 
+      : event1.year.toString();
+    pdf.setFont('times', 'bold');
+    pdf.text(yearRange, pageWidth - 10, 14, { align: 'right' });
+
+    // Page number
+    pdf.setFontSize(8);
+    pdf.setTextColor(...textColor);
+    pdf.text(`${currentPage}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
+
+    // Update progress
+    const progress = 40 + Math.round((i / regularEvents.length) * 45);
+    onProgress?.(Math.min(progress, 85));
   }
 
   // ===== SPECIAL CHAPTER: FAMOUS BIRTHDAYS WITH PHOTOS =====
-  // Use celebrity events (which HAVE images) instead of famousBirthdays array (which doesn't)
   const celebrityEvents = events.filter(e => e.isCelebrityBirthday && e.imageUrl);
   const celebritiesWithoutImages = famousBirthdays.filter(fb => 
     !celebrityEvents.some(ce => ce.title.toLowerCase().includes(fb.name.toLowerCase().split(' ')[0]))
@@ -824,514 +791,199 @@ export const generateTimelinePdf = async (
   pdf.save(fileName);
 };
 
-// ===== LAYOUT RENDERERS =====
+// ===== COLLAGE HELPERS =====
 
-async function renderFullBleedLayout(
+function drawCollageRibbon(
+  pdf: jsPDF,
+  event1: TimelineEvent,
+  event2: TimelineEvent | undefined,
+  pageHeight: number,
+  accentColor: [number, number, number],
+  primaryColor: [number, number, number]
+) {
+  const ribbonWidth = 28;
+  const ribbonX = 0;
+  
+  // Golden ribbon background
+  pdf.setFillColor(...accentColor);
+  pdf.rect(ribbonX, 22, ribbonWidth, pageHeight - 30, 'F');
+  
+  // Timeline vertical line
+  pdf.setDrawColor(255, 255, 255);
+  pdf.setLineWidth(1.5);
+  pdf.line(ribbonX + ribbonWidth / 2, 32, ribbonX + ribbonWidth / 2, pageHeight - 12);
+  
+  // First event marker (top)
+  const marker1Y = 55;
+  pdf.setFillColor(...primaryColor);
+  pdf.roundedRect(ribbonX + 3, marker1Y, ribbonWidth - 6, 50, 3, 3, 'F');
+  
+  // Day
+  if (event1.day) {
+    pdf.setFontSize(14);
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont('times', 'bold');
+    pdf.text(event1.day.toString(), ribbonX + ribbonWidth / 2, marker1Y + 14, { align: 'center' });
+  }
+  
+  // Month
+  const month1 = inferMonthFromEvent(event1);
+  if (month1) {
+    pdf.setFontSize(10);
+    const letters = monthNamesShort[month1 - 1].split('');
+    let letterY = event1.day ? marker1Y + 22 : marker1Y + 14;
+    for (const letter of letters) {
+      pdf.text(letter, ribbonX + ribbonWidth / 2, letterY, { align: 'center' });
+      letterY += 8;
+    }
+  }
+  
+  // Year
+  pdf.setFontSize(9);
+  pdf.text(event1.year.toString(), ribbonX + ribbonWidth / 2, marker1Y + 46, { align: 'center' });
+  
+  // Connector dot
+  pdf.setFillColor(255, 255, 255);
+  pdf.circle(ribbonX + ribbonWidth / 2, marker1Y + 60, 4, 'F');
+  
+  // Second event marker (if exists)
+  if (event2) {
+    const marker2Y = pageHeight / 2 + 20;
+    pdf.setFillColor(...primaryColor);
+    pdf.roundedRect(ribbonX + 3, marker2Y, ribbonWidth - 6, 50, 3, 3, 'F');
+    
+    if (event2.day) {
+      pdf.setFontSize(14);
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFont('times', 'bold');
+      pdf.text(event2.day.toString(), ribbonX + ribbonWidth / 2, marker2Y + 14, { align: 'center' });
+    }
+    
+    const month2 = inferMonthFromEvent(event2);
+    if (month2) {
+      pdf.setFontSize(10);
+      const letters = monthNamesShort[month2 - 1].split('');
+      let letterY = event2.day ? marker2Y + 22 : marker2Y + 14;
+      for (const letter of letters) {
+        pdf.text(letter, ribbonX + ribbonWidth / 2, letterY, { align: 'center' });
+        letterY += 8;
+      }
+    }
+    
+    pdf.setFontSize(9);
+    pdf.text(event2.year.toString(), ribbonX + ribbonWidth / 2, marker2Y + 46, { align: 'center' });
+    
+    // Bottom connector dot
+    pdf.setFillColor(255, 255, 255);
+    pdf.circle(ribbonX + ribbonWidth / 2, marker2Y + 60, 4, 'F');
+  }
+  
+  // Decorative end dots
+  pdf.setFillColor(255, 255, 255);
+  pdf.circle(ribbonX + ribbonWidth / 2, 32, 3, 'F');
+  pdf.circle(ribbonX + ribbonWidth / 2, pageHeight - 12, 3, 'F');
+}
+
+function renderCollageItem(
   pdf: jsPDF,
   event: TimelineEvent,
   imgData: ImageData | null,
-  pageWidth: number,
-  pageHeight: number,
-  margin: number,
+  slot: CollageSlot,
   primaryColor: [number, number, number],
   accentColor: [number, number, number],
-  textColor: [number, number, number],
-  lightBg: [number, number, number],
-  fullName: string
+  textColor: [number, number, number]
 ) {
-  // Header bar first
-  renderPageHeader(pdf, fullName, event, pageWidth, margin, primaryColor);
-  
-  const ribbonWidth = 30;
-  const contentStartX = ribbonWidth + 8;
-  const contentWidth = pageWidth - contentStartX - 15;
-  
-  // Image takes right side of page (50% width)
-  const imageWidth = pageWidth * 0.48;
-  const imageHeight = pageHeight * 0.55;
-  const imageX = pageWidth - imageWidth - 10;
-  const imageY = 30;
-  
+  // Draw image with creative frame effect
   if (imgData) {
-    const fit = fitImageInBox(imgData.width, imgData.height, imageWidth, imageHeight);
+    // Shadow (offset based on rotation hint)
+    const shadowOffsetX = slot.rotation ? slot.rotation * 1.5 : 3;
+    const shadowOffsetY = 3;
+    pdf.setFillColor(0, 0, 0);
+    pdf.setGState(new (pdf as any).GState({ opacity: 0.12 }));
+    pdf.rect(slot.imgX + shadowOffsetX, slot.imgY + shadowOffsetY, slot.imgW, slot.imgH, 'F');
+    pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
+    
+    // White polaroid-style frame
+    pdf.setFillColor(255, 255, 255);
+    pdf.rect(slot.imgX - 3, slot.imgY - 3, slot.imgW + 6, slot.imgH + 12, 'F');
     
     // Image background
     pdf.setFillColor(240, 235, 225);
-    pdf.rect(imageX, imageY, imageWidth, imageHeight, 'F');
+    pdf.rect(slot.imgX, slot.imgY, slot.imgW, slot.imgH, 'F');
     
+    // Fit and draw image
+    const fit = fitImageInBox(imgData.width, imgData.height, slot.imgW, slot.imgH);
     try {
-      pdf.addImage(imgData.base64, 'JPEG', imageX + fit.x, imageY + fit.y, fit.width, fit.height);
+      pdf.addImage(imgData.base64, 'JPEG', slot.imgX + fit.x, slot.imgY + fit.y, fit.width, fit.height);
     } catch (e) {
-      console.error('Error adding image:', e);
+      console.error('Error adding collage image:', e);
     }
-  } else {
-    pdf.setFillColor(...lightBg);
-    pdf.rect(imageX, imageY, imageWidth, imageHeight, 'F');
-  }
-
-  // Content area - LEFT side, clear of ribbon and image
-  const textMaxWidth = imageX - contentStartX - 10;
-  let contentY = 45;
-
-  // Category badge
-  const categoryLabel = categoryLabels[event.category] || event.category;
-  pdf.setFillColor(...primaryColor);
-  pdf.roundedRect(contentStartX, contentY, 60, 16, 3, 3, 'F');
-  pdf.setFontSize(9);
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFont('times', 'bold');
-  pdf.text(categoryLabel.toUpperCase(), contentStartX + 30, contentY + 11, { align: 'center' });
-
-  contentY += 28;
-
-  // Title - LARGER font
-  pdf.setFontSize(22);
-  pdf.setTextColor(...textColor);
-  pdf.setFont('times', 'bold');
-  const titleLines = pdf.splitTextToSize(event.title, textMaxWidth);
-  pdf.text(titleLines.slice(0, 3), contentStartX, contentY);
-
-  contentY += titleLines.length * 10 + 12;
-
-  // Date with month name
-  const eventDate = formatEventDate(event);
-  pdf.setFontSize(12);
-  pdf.setTextColor(...accentColor);
-  pdf.setFont('times', 'italic');
-  pdf.text(eventDate, contentStartX, contentY);
-
-  // Scope label
-  const scopeLabel = scopeLabels[event.eventScope] || '';
-  if (scopeLabel) {
-    pdf.text(` • ${scopeLabel}`, contentStartX + pdf.getTextWidth(eventDate), contentY);
-  }
-
-  contentY += 18;
-
-  // Description - LARGER font, starts clearly below all above content
-  pdf.setFontSize(13);
-  pdf.setTextColor(...textColor);
-  pdf.setFont('times', 'normal');
-  const descLines = pdf.splitTextToSize(event.description, textMaxWidth);
-  
-  // Draw description, but stop before hitting the bottom of the image
-  const maxDescY = imageY + imageHeight - 10;
-  let descY = contentY;
-  for (const line of descLines) {
-    if (descY > maxDescY) break;
-    pdf.text(line, contentStartX, descY);
-    descY += 7;
-  }
-}
-
-async function renderLeftHeroLayout(
-  pdf: jsPDF,
-  event: TimelineEvent,
-  imgData: ImageData | null,
-  pageWidth: number,
-  pageHeight: number,
-  margin: number,
-  primaryColor: [number, number, number],
-  accentColor: [number, number, number],
-  textColor: [number, number, number],
-  lightBg: [number, number, number],
-  fullName: string
-) {
-  // Header
-  renderPageHeader(pdf, fullName, event, pageWidth, margin, primaryColor);
-
-  const ribbonWidth = 30;
-  const contentTop = 35;
-  const imageWidth = (pageWidth - ribbonWidth) * 0.50;
-  const imageHeight = pageHeight - contentTop - 50;
-
-  // Left side image (after ribbon)
-  if (imgData) {
-    const fit = fitImageInBox(imgData.width, imgData.height, imageWidth - 5, imageHeight);
     
-    pdf.setFillColor(240, 235, 225);
-    pdf.rect(ribbonWidth, contentTop, imageWidth, imageHeight, 'F');
-    
-    try {
-      pdf.addImage(imgData.base64, 'JPEG', ribbonWidth + fit.x, contentTop + fit.y, fit.width, fit.height);
-    } catch (e) {
-      console.error('Error adding image:', e);
-    }
-  } else {
-    pdf.setFillColor(...lightBg);
-    pdf.rect(ribbonWidth, contentTop, imageWidth, imageHeight, 'F');
-  }
-
-  // Right side content - clear of image
-  const contentX = ribbonWidth + imageWidth + 12;
-  const contentWidth = pageWidth - contentX - 15;
-  let contentY = contentTop + 20;
-
-  // Category
-  const categoryLabel = categoryLabels[event.category] || event.category;
-  pdf.setFillColor(...primaryColor);
-  pdf.roundedRect(contentX, contentY, 60, 16, 3, 3, 'F');
-  pdf.setFontSize(9);
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFont('times', 'bold');
-  pdf.text(categoryLabel.toUpperCase(), contentX + 30, contentY + 11, { align: 'center' });
-
-  contentY += 28;
-
-  // Title - LARGER
-  pdf.setFontSize(18);
-  pdf.setTextColor(...textColor);
-  pdf.setFont('times', 'bold');
-  const titleLines = pdf.splitTextToSize(event.title, contentWidth);
-  pdf.text(titleLines.slice(0, 3), contentX, contentY);
-
-  contentY += titleLines.length * 8 + 12;
-
-  // Date with month
-  const eventDate = formatEventDate(event);
-  pdf.setFontSize(11);
-  pdf.setTextColor(...accentColor);
-  pdf.setFont('times', 'italic');
-  pdf.text(eventDate, contentX, contentY);
-
-  contentY += 18;
-
-  // Description - LARGER font
-  pdf.setFontSize(12);
-  pdf.setTextColor(...textColor);
-  pdf.setFont('times', 'normal');
-  const descLines = pdf.splitTextToSize(event.description, contentWidth);
-  pdf.text(descLines.slice(0, 10), contentX, contentY);
-}
-
-async function renderRightHeroLayout(
-  pdf: jsPDF,
-  event: TimelineEvent,
-  imgData: ImageData | null,
-  pageWidth: number,
-  pageHeight: number,
-  margin: number,
-  primaryColor: [number, number, number],
-  accentColor: [number, number, number],
-  textColor: [number, number, number],
-  lightBg: [number, number, number],
-  fullName: string
-) {
-  // Header
-  renderPageHeader(pdf, fullName, event, pageWidth, margin, primaryColor);
-
-  const ribbonWidth = 30;
-  const contentTop = 35;
-  const imageWidth = pageWidth * 0.50;
-  const imageHeight = pageHeight - contentTop - 50;
-  const imageX = pageWidth - imageWidth;
-
-  // Right side image
-  if (imgData) {
-    const fit = fitImageInBox(imgData.width, imgData.height, imageWidth - 5, imageHeight);
-    
-    pdf.setFillColor(240, 235, 225);
-    pdf.rect(imageX, contentTop, imageWidth, imageHeight, 'F');
-    
-    try {
-      pdf.addImage(imgData.base64, 'JPEG', imageX + fit.x, contentTop + fit.y, fit.width, fit.height);
-    } catch (e) {
-      console.error('Error adding image:', e);
-    }
-  } else {
-    pdf.setFillColor(...lightBg);
-    pdf.rect(imageX, contentTop, imageWidth, imageHeight, 'F');
-  }
-
-  // Left side content - starts after ribbon
-  const contentX = ribbonWidth + 8;
-  const contentWidth = imageX - contentX - 12;
-  let contentY = contentTop + 20;
-
-  // Category
-  const categoryLabel = categoryLabels[event.category] || event.category;
-  pdf.setFillColor(...primaryColor);
-  pdf.roundedRect(contentX, contentY, 60, 16, 3, 3, 'F');
-  pdf.setFontSize(9);
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFont('times', 'bold');
-  pdf.text(categoryLabel.toUpperCase(), contentX + 30, contentY + 11, { align: 'center' });
-
-  contentY += 28;
-
-  // Title - LARGER
-  pdf.setFontSize(16);
-  pdf.setTextColor(...textColor);
-  pdf.setFont('times', 'bold');
-  const titleLines = pdf.splitTextToSize(event.title, contentWidth);
-  pdf.text(titleLines.slice(0, 3), contentX, contentY);
-
-  contentY += titleLines.length * 8 + 12;
-
-  // Date with month
-  const eventDate = formatEventDate(event);
-  pdf.setFontSize(11);
-  pdf.setTextColor(...accentColor);
-  pdf.setFont('times', 'italic');
-  pdf.text(eventDate, contentX, contentY);
-
-  contentY += 18;
-
-  // Description - LARGER
-  pdf.setFontSize(12);
-  pdf.setTextColor(...textColor);
-  pdf.setFont('times', 'normal');
-  const descLines = pdf.splitTextToSize(event.description, contentWidth);
-  pdf.text(descLines.slice(0, 12), contentX, contentY);
-}
-
-async function renderDiagonalLayout(
-  pdf: jsPDF,
-  event: TimelineEvent,
-  imgData: ImageData | null,
-  pageWidth: number,
-  pageHeight: number,
-  margin: number,
-  primaryColor: [number, number, number],
-  accentColor: [number, number, number],
-  textColor: [number, number, number],
-  lightBg: [number, number, number],
-  fullName: string
-) {
-  // Background split
-  pdf.setFillColor(...lightBg);
-  pdf.rect(0, 0, pageWidth, pageHeight, 'F');
-  
-  // Header
-  renderPageHeader(pdf, fullName, event, pageWidth, margin, primaryColor);
-
-  // Image area (top portion), offset for ribbon
-  const ribbonWidth = 30;
-  const imageAreaHeight = pageHeight * 0.45;
-  const imageAreaX = ribbonWidth + 5;
-  const imageAreaWidth = pageWidth - imageAreaX - 15;
-  
-  if (imgData) {
-    const fit = fitImageInBox(imgData.width, imgData.height, imageAreaWidth - 10, imageAreaHeight - 20);
-    
-    // Frame effect
-    pdf.setFillColor(255, 255, 255);
-    pdf.rect(imageAreaX, 35, imageAreaWidth, imageAreaHeight - 10, 'F');
-    
-    // Shadow
+    // Year label on image
     pdf.setFillColor(0, 0, 0);
-    pdf.setGState(new (pdf as any).GState({ opacity: 0.1 }));
-    pdf.rect(imageAreaX + 5, 40, imageAreaWidth, imageAreaHeight - 10, 'F');
+    pdf.setGState(new (pdf as any).GState({ opacity: 0.65 }));
+    pdf.rect(slot.imgX, slot.imgY + slot.imgH - 14, 32, 14, 'F');
     pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
-    
-    try {
-      pdf.addImage(
-        imgData.base64, 
-        'JPEG', 
-        imageAreaX + fit.x, 
-        35 + fit.y, 
-        fit.width, 
-        fit.height
-      );
-    } catch (e) {
-      console.error('Error adding image:', e);
-    }
-  }
-
-  // Content below image - starts after ribbon
-  const contentX = ribbonWidth + 8;
-  const contentWidth = pageWidth - contentX - 15;
-  let contentY = imageAreaHeight + 40;
-
-  // Category
-  const categoryLabel = categoryLabels[event.category] || event.category;
-  pdf.setFillColor(...primaryColor);
-  pdf.roundedRect(contentX, contentY, 60, 16, 3, 3, 'F');
-  pdf.setFontSize(9);
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFont('times', 'bold');
-  pdf.text(categoryLabel.toUpperCase(), contentX + 30, contentY + 11, { align: 'center' });
-
-  contentY += 28;
-
-  // Title - LARGER
-  pdf.setFontSize(20);
-  pdf.setTextColor(...textColor);
-  pdf.setFont('times', 'bold');
-  const titleLines = pdf.splitTextToSize(event.title, contentWidth);
-  pdf.text(titleLines.slice(0, 2), contentX, contentY);
-
-  contentY += titleLines.length * 9 + 12;
-
-  // Date with month
-  const eventDate = formatEventDate(event);
-  pdf.setFontSize(12);
-  pdf.setTextColor(...accentColor);
-  pdf.setFont('times', 'italic');
-  pdf.text(eventDate, contentX, contentY);
-
-  contentY += 18;
-
-  // Description - LARGER
-  pdf.setFontSize(13);
-  pdf.setTextColor(...textColor);
-  pdf.setFont('times', 'normal');
-  const descLines = pdf.splitTextToSize(event.description, contentWidth);
-  pdf.text(descLines.slice(0, 7), contentX, contentY);
-}
-
-async function renderPolaroidLayout(
-  pdf: jsPDF,
-  event: TimelineEvent,
-  imgData: ImageData | null,
-  pageWidth: number,
-  pageHeight: number,
-  margin: number,
-  primaryColor: [number, number, number],
-  accentColor: [number, number, number],
-  textColor: [number, number, number],
-  lightBg: [number, number, number],
-  fullName: string
-) {
-  // Cream background
-  pdf.setFillColor(...lightBg);
-  pdf.rect(0, 0, pageWidth, pageHeight, 'F');
-
-  // Header
-  renderPageHeader(pdf, fullName, event, pageWidth, margin, primaryColor);
-
-  // Polaroid frame - offset for ribbon
-  const ribbonWidth = 30;
-  const polaroidWidth = 120;
-  const polaroidHeight = 145;
-  const polaroidX = ribbonWidth + ((pageWidth - ribbonWidth - polaroidWidth) / 2);
-  const polaroidY = 45;
-  const imageInset = 8;
-  const bottomPadding = 25;
-
-  // Shadow
-  pdf.setFillColor(0, 0, 0);
-  pdf.setGState(new (pdf as any).GState({ opacity: 0.15 }));
-  pdf.rect(polaroidX + 5, polaroidY + 5, polaroidWidth, polaroidHeight, 'F');
-  pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
-
-  // White frame
-  pdf.setFillColor(255, 255, 255);
-  pdf.rect(polaroidX, polaroidY, polaroidWidth, polaroidHeight, 'F');
-
-  // Image area
-  const imageWidth = polaroidWidth - imageInset * 2;
-  const imageHeight = polaroidHeight - bottomPadding - imageInset;
-
-  if (imgData) {
-    const fit = fitImageInBox(imgData.width, imgData.height, imageWidth, imageHeight);
-    
-    pdf.setFillColor(240, 235, 225);
-    pdf.rect(polaroidX + imageInset, polaroidY + imageInset, imageWidth, imageHeight, 'F');
-    
-    try {
-      pdf.addImage(
-        imgData.base64, 
-        'JPEG', 
-        polaroidX + imageInset + fit.x, 
-        polaroidY + imageInset + fit.y, 
-        fit.width, 
-        fit.height
-      );
-    } catch (e) {
-      console.error('Error adding image:', e);
-    }
+    pdf.setFontSize(10);
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont('times', 'bold');
+    pdf.text(event.year.toString(), slot.imgX + 5, slot.imgY + slot.imgH - 4);
   } else {
+    // Placeholder
     pdf.setFillColor(230, 225, 215);
-    pdf.rect(polaroidX + imageInset, polaroidY + imageInset, imageWidth, imageHeight, 'F');
+    pdf.rect(slot.imgX, slot.imgY, slot.imgW, slot.imgH, 'F');
+    pdf.setFontSize(24);
+    pdf.setTextColor(200, 195, 185);
+    pdf.text(event.year.toString(), slot.imgX + slot.imgW / 2, slot.imgY + slot.imgH / 2, { align: 'center' });
   }
-
-  // Month on polaroid bottom (use inferred month)
-  pdf.setFontSize(12);
-  pdf.setTextColor(...textColor);
-  pdf.setFont('times', 'italic');
-  const inferredMonth = inferMonthFromEvent(event);
-  const polaroidLabel = inferredMonth 
-    ? `${monthNames[inferredMonth - 1]} ${event.year}`
-    : event.year.toString();
-  pdf.text(polaroidLabel, polaroidX + polaroidWidth / 2, polaroidY + polaroidHeight - 8, { align: 'center' });
-
-  // Content below polaroid - starts after ribbon
-  const contentX = ribbonWidth + 8;
-  const contentWidth = pageWidth - contentX - 15;
-  let contentY = polaroidY + polaroidHeight + 18;
-
+  
+  // Text content
+  let textY = slot.textY;
+  
   // Category badge
   const categoryLabel = categoryLabels[event.category] || event.category;
   pdf.setFillColor(...primaryColor);
-  pdf.setFont('times', 'bold');
-  const badgeWidth = pdf.getTextWidth(categoryLabel.toUpperCase()) + 16;
-  pdf.roundedRect(contentX, contentY, badgeWidth, 14, 2, 2, 'F');
-  pdf.setFontSize(8);
+  const badgeWidth = Math.min(pdf.getTextWidth(categoryLabel.toUpperCase()) + 12, slot.textW);
+  pdf.roundedRect(slot.textX, textY, badgeWidth, 12, 2, 2, 'F');
+  pdf.setFontSize(7);
   pdf.setTextColor(255, 255, 255);
-  pdf.text(categoryLabel.toUpperCase(), contentX + badgeWidth / 2, contentY + 9.5, { align: 'center' });
-
-  contentY += 24;
-
-  // Title - LARGER
-  pdf.setFontSize(18);
-  pdf.setTextColor(...textColor);
   pdf.setFont('times', 'bold');
-  const titleLines = pdf.splitTextToSize(event.title, contentWidth);
-  pdf.text(titleLines.slice(0, 2), contentX, contentY);
-
-  contentY += titleLines.length * 8 + 10;
-
-  // Date with month
-  const eventDate = formatEventDate(event);
-  pdf.setFontSize(11);
-  pdf.setTextColor(...accentColor);
-  pdf.setFont('times', 'italic');
-  pdf.text(eventDate, contentX, contentY);
-
-  contentY += 16;
-
-  // Description - LARGER
+  pdf.text(categoryLabel.toUpperCase(), slot.textX + badgeWidth / 2, textY + 8, { align: 'center' });
+  
+  textY += 18;
+  
+  // Title
   pdf.setFontSize(12);
   pdf.setTextColor(...textColor);
-  pdf.setFont('times', 'normal');
-  const descLines = pdf.splitTextToSize(event.description, contentWidth);
-  pdf.text(descLines.slice(0, 5), contentX, contentY);
-}
-
-function renderPageHeader(
-  pdf: jsPDF,
-  fullName: string,
-  event: TimelineEvent,
-  pageWidth: number,
-  margin: number,
-  primaryColor: [number, number, number]
-) {
-  const ribbonWidth = 30;
-  
-  pdf.setFillColor(...primaryColor);
-  pdf.rect(ribbonWidth, 0, pageWidth - ribbonWidth, 25, 'F');
-  
-  pdf.setFontSize(10);
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFont('times', 'bolditalic');
-  pdf.text(`TIJDREIS • ${fullName}`, ribbonWidth + 8, 16);
-  
-// Show month name in header instead of year everywhere
   pdf.setFont('times', 'bold');
+  const titleLines = pdf.splitTextToSize(event.title, slot.textW);
+  const maxTitleLines = Math.min(titleLines.length, 3);
+  pdf.text(titleLines.slice(0, maxTitleLines), slot.textX, textY);
+  
+  textY += maxTitleLines * 5.5 + 6;
+  
+  // Date
   const inferredMonth = inferMonthFromEvent(event);
-  const headerText = inferredMonth 
-    ? `${monthNames[inferredMonth - 1].toUpperCase()} ${event.year}`
-    : event.year.toString();
-  pdf.text(headerText, pageWidth - 12, 16, { align: 'right' });
-}
-
-function formatEventDate(event: TimelineEvent): string {
-  const inferredMonth = inferMonthFromEvent(event);
-  if (event.day && inferredMonth) {
-    return `${event.day} ${monthNames[inferredMonth - 1]} ${event.year}`;
-  } else if (inferredMonth) {
-    return `${monthNames[inferredMonth - 1]} ${event.year}`;
+  const dateStr = event.day && inferredMonth 
+    ? `${event.day} ${monthNames[inferredMonth - 1]} ${event.year}`
+    : inferredMonth 
+      ? `${monthNames[inferredMonth - 1]} ${event.year}`
+      : event.year.toString();
+  
+  pdf.setFontSize(9);
+  pdf.setTextColor(...accentColor);
+  pdf.setFont('times', 'italic');
+  pdf.text(dateStr, slot.textX, textY);
+  
+  textY += 10;
+  
+  // Description (compact)
+  if (textY < slot.textY + slot.textMaxH - 15) {
+    pdf.setFontSize(9);
+    pdf.setTextColor(...textColor);
+    pdf.setFont('times', 'normal');
+    const descLines = pdf.splitTextToSize(event.description, slot.textW);
+    const availableLines = Math.floor((slot.textY + slot.textMaxH - textY) / 4.5);
+    pdf.text(descLines.slice(0, Math.max(availableLines, 2)), slot.textX, textY);
   }
-  return event.year.toString();
 }
