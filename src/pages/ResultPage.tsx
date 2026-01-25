@@ -43,8 +43,11 @@ const ResultPage = () => {
     const stored = sessionStorage.getItem('timelineFormData');
     const storedLength = sessionStorage.getItem('timelineLength') || 'short';
     
+    console.log('ResultPage: Loading form data from sessionStorage:', stored);
+    
     if (stored) {
       const data = JSON.parse(stored) as FormData;
+      console.log('ResultPage: Parsed form data:', data);
       setFormData(data);
       formDataRef.current = data;
 
