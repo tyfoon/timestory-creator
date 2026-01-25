@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { FormData } from '@/types/form';
 import { TimelineEvent, FamousBirthday } from '@/types/timeline';
-import { generateTimeline, searchImages } from '@/lib/api/timeline';
+import { generateTimelineStreaming, searchImages } from '@/lib/api/timeline';
 import { generateTimelinePdf } from '@/lib/pdfGenerator';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents } from '@/lib/timelineCache';
 import { ArrowLeft, Clock, Loader2, AlertCircle, RefreshCw, Cake, Star, Download } from 'lucide-react';
@@ -29,9 +29,15 @@ const ResultPage = () => {
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState(0);
+  const [streamingProgress, setStreamingProgress] = useState(0);
 
   // Track current formData for cache updates
   const formDataRef = useRef<FormData | null>(null);
+  
+  // Track events being loaded for images to avoid duplicate requests
+  const pendingImageRequests = useRef<Set<string>>(new Set());
+  const imageQueueRef = useRef<TimelineEvent[]>([]);
+  const isProcessingImagesRef = useRef(false);
 
   useEffect(() => {
     const stored = sessionStorage.getItem('timelineFormData');
@@ -58,165 +64,192 @@ const ResultPage = () => {
         setIsLoading(false);
 
         // If some images are still marked as 'loading', resume loading them
-        const needImages = normalizedCachedEvents.some(e => e.imageStatus === 'loading');
-        if (needImages) {
-          loadImages(normalizedCachedEvents);
+        const needImages = normalizedCachedEvents.filter(e => e.imageStatus === 'loading' && e.imageSearchQuery);
+        if (needImages.length > 0) {
+          loadImagesForEvents(needImages);
         }
         return;
       }
 
-      loadTimeline(data);
+      loadTimelineStreaming(data);
     } else {
       setError('Geen gegevens gevonden');
       setIsLoading(false);
     }
   }, []);
 
-  const loadTimeline = async (data: FormData) => {
+  // Process image queue - fetch images in batches
+  const processImageQueue = useCallback(async () => {
+    if (isProcessingImagesRef.current) return;
+    if (imageQueueRef.current.length === 0) return;
+    
+    isProcessingImagesRef.current = true;
+    setIsLoadingImages(true);
+    
+    while (imageQueueRef.current.length > 0) {
+      // Take up to 5 events at a time
+      const batch = imageQueueRef.current.splice(0, 5);
+      const queries = batch
+        .filter(e => e.imageSearchQuery && !pendingImageRequests.current.has(e.id))
+        .map(e => {
+          pendingImageRequests.current.add(e.id);
+          return {
+            eventId: e.id,
+            query: e.imageSearchQuery!,
+            year: e.year
+          };
+        });
+      
+      if (queries.length === 0) continue;
+      
+      console.log('Fetching images for batch:', queries.length);
+      
+      try {
+        const result = await searchImages(queries, { mode: 'fast' });
+        if (result.success && result.images) {
+          applyImageResults(result.images);
+        }
+      } catch (err) {
+        console.error('Error fetching images:', err);
+      }
+      
+      // Remove from pending
+      queries.forEach(q => pendingImageRequests.current.delete(q.eventId));
+    }
+    
+    isProcessingImagesRef.current = false;
+    setIsLoadingImages(false);
+  }, []);
+
+  const applyImageResults = useCallback((images: { eventId: string; imageUrl: string | null; source: string | null }[]) => {
+    setEvents(prev => {
+      const updated = prev.map(event => {
+        const imageResult = images.find(img => img.eventId === event.id);
+        if (!imageResult) return event;
+
+        if (imageResult.imageUrl) {
+          return {
+            ...event,
+            imageUrl: imageResult.imageUrl,
+            source: imageResult.source || undefined,
+            imageStatus: 'found' as const,
+          };
+        }
+
+        return { ...event, imageStatus: 'none' as const };
+      });
+
+      // Persist updated events to cache
+      if (formDataRef.current) {
+        updateCachedEvents(formDataRef.current, language, () => updated);
+      }
+
+      return updated;
+    });
+  }, [language]);
+
+  const loadImagesForEvents = useCallback((newEvents: TimelineEvent[]) => {
+    const eventsNeedingImages = newEvents.filter(
+      e => e.imageSearchQuery && 
+           e.imageStatus !== 'found' && 
+           e.imageStatus !== 'none' &&
+           !pendingImageRequests.current.has(e.id)
+    );
+    
+    if (eventsNeedingImages.length === 0) return;
+    
+    imageQueueRef.current.push(...eventsNeedingImages);
+    processImageQueue();
+  }, [processImageQueue]);
+
+  const loadTimelineStreaming = async (data: FormData) => {
     setIsLoading(true);
     setError(null);
+    setStreamingProgress(0);
+    
+    const receivedEvents: TimelineEvent[] = [];
+    let receivedSummary = '';
+    let receivedFamousBirthdays: FamousBirthday[] = [];
     
     try {
-      const response = await generateTimeline(data, language);
-      
-      if (response.success && response.data) {
-        // Sort events by date
-        const sortedEvents = response.data.events.sort((a, b) => {
-          if (a.year !== b.year) return a.year - b.year;
-          if ((a.month || 0) !== (b.month || 0)) return (a.month || 0) - (b.month || 0);
-          return (a.day || 0) - (b.day || 0);
-        });
-
-        // Frontend-only: mark image loading state so cards don't show an infinite spinner.
-        const eventsWithImageStatus = sortedEvents.map((e) => {
-          // No search query means: we never attempted an image search, so don't show "Geen foto gevonden".
-          if (!e.imageSearchQuery) return { ...e, imageStatus: 'idle' as const };
-          return { ...e, imageStatus: 'loading' as const };
-        });
-        
-        setEvents(eventsWithImageStatus);
-        setSummary(response.data.summary);
-        setFamousBirthdays(response.data.famousBirthdays || []);
-        
-        toast({
-          title: "Tijdlijn geladen!",
-          description: `${sortedEvents.length} gebeurtenissen gevonden`,
-        });
-
-        // Cache the fresh timeline
-        cacheTimeline(data, language, eventsWithImageStatus, response.data.summary, response.data.famousBirthdays || []);
-
-        // Load images in background
-        loadImages(eventsWithImageStatus);
-      } else {
-        throw new Error(response.error || 'Onbekende fout');
-      }
-    } catch (err) {
-      console.error('Error loading timeline:', err);
-      setError(err instanceof Error ? err.message : 'Er ging iets mis');
-      
-      toast({
-        variant: "destructive",
-        title: "Fout bij laden",
-        description: err instanceof Error ? err.message : 'Probeer het opnieuw',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadImages = async (timelineEvents: TimelineEvent[]) => {
-    setIsLoadingImages(true);
-    console.log('loadImages called with', timelineEvents.length, 'events');
-    
-    try {
-      // Create image search queries for events that need images
-      // Include 'loading' status AND events that have no imageUrl yet
-      const allQueries = timelineEvents
-        .filter(e => e.imageSearchQuery && e.imageStatus !== 'found' && e.imageStatus !== 'none')
-        .map(e => ({
-          eventId: e.id,
-          query: e.imageSearchQuery!,
-          year: e.year
-        }));
-
-      console.log('Queries to fetch:', allQueries.length);
-
-      if (allQueries.length === 0) {
-        console.log('No queries needed, all images already resolved');
-        return;
-      }
-
-      // Priority: first fetch the first 3 events (visible cards) for fast initial display
-      const priorityQueries = allQueries.slice(0, 3);
-      const remainingQueries = allQueries.slice(3);
-
-      // Helper to update state with images and persist to cache
-      const applyImages = (images: { eventId: string; imageUrl: string | null; source: string | null }[]) => {
-        setEvents(prev => {
-          const updated = prev.map(event => {
-            const imageResult = images.find(img => img.eventId === event.id);
-            if (!imageResult) return event;
-
-            if (imageResult.imageUrl) {
-              return {
-                ...event,
-                imageUrl: imageResult.imageUrl,
-                source: imageResult.source || undefined,
-                imageStatus: 'found' as const,
-              };
-            }
-
-            return { ...event, imageStatus: 'none' as const };
+      await generateTimelineStreaming(data, language, {
+        onEvent: (event) => {
+          // Add imageStatus to new event
+          const eventWithStatus: TimelineEvent = {
+            ...event,
+            imageStatus: event.imageSearchQuery ? 'loading' : 'idle'
+          };
+          
+          receivedEvents.push(eventWithStatus);
+          
+          // Sort and update state
+          const sorted = [...receivedEvents].sort((a, b) => {
+            if (a.year !== b.year) return a.year - b.year;
+            if ((a.month || 0) !== (b.month || 0)) return (a.month || 0) - (b.month || 0);
+            return (a.day || 0) - (b.day || 0);
           });
-
-          // Persist updated events to cache
-          if (formDataRef.current) {
-            updateCachedEvents(formDataRef.current, language, () => updated);
+          
+          setEvents(sorted);
+          setStreamingProgress(receivedEvents.length);
+          
+          // Start loading image for this event immediately
+          if (event.imageSearchQuery) {
+            loadImagesForEvents([eventWithStatus]);
           }
-
-          return updated;
-        });
-      };
-
-      // Fetch priority images first (first 3 visible cards)
-      console.log('Fetching priority images:', priorityQueries.length);
-      const priorityResult = await searchImages(priorityQueries, { mode: 'fast' });
-      console.log('Priority result:', priorityResult);
-      if (priorityResult.success && priorityResult.images) {
-        applyImages(priorityResult.images);
-      }
-
-      // Then fetch the rest in parallel chunks (much faster than sequential).
-      if (remainingQueries.length > 0) {
-        const CHUNK_SIZE = 8;
-        const chunks: typeof remainingQueries[] = [];
-        for (let i = 0; i < remainingQueries.length; i += CHUNK_SIZE) {
-          chunks.push(remainingQueries.slice(i, i + CHUNK_SIZE));
+        },
+        onSummary: (summary) => {
+          receivedSummary = summary;
+          setSummary(summary);
+        },
+        onFamousBirthdays: (birthdays) => {
+          receivedFamousBirthdays = birthdays;
+          setFamousBirthdays(birthdays);
+        },
+        onComplete: (completeData) => {
+          console.log('Streaming complete:', completeData.events.length, 'events');
+          
+          // Final sort
+          const sorted = completeData.events
+            .map(e => ({
+              ...e,
+              imageStatus: (receivedEvents.find(re => re.id === e.id)?.imageStatus || 
+                           (e.imageSearchQuery ? 'loading' : 'idle')) as TimelineEvent['imageStatus']
+            }))
+            .sort((a, b) => {
+              if (a.year !== b.year) return a.year - b.year;
+              if ((a.month || 0) !== (b.month || 0)) return (a.month || 0) - (b.month || 0);
+              return (a.day || 0) - (b.day || 0);
+            });
+          
+          setEvents(sorted);
+          setSummary(completeData.summary);
+          setFamousBirthdays(completeData.famousBirthdays || []);
+          setIsLoading(false);
+          
+          toast({
+            title: "Tijdlijn geladen!",
+            description: `${sorted.length} gebeurtenissen gevonden`,
+          });
+          
+          // Cache the timeline
+          cacheTimeline(data, language, sorted, completeData.summary, completeData.famousBirthdays || []);
+        },
+        onError: (errorMsg) => {
+          console.error('Streaming error:', errorMsg);
+          setError(errorMsg);
+          setIsLoading(false);
+          
+          toast({
+            variant: "destructive",
+            title: "Fout bij laden",
+            description: errorMsg,
+          });
         }
-        
-        console.log('Fetching', chunks.length, 'chunks in parallel');
-        
-        // Fire all chunk requests in parallel
-        const chunkPromises = chunks.map((chunk, idx) => 
-          searchImages(chunk, { mode: 'full' })
-            .then(result => {
-              console.log(`Chunk ${idx} result:`, result.success, result.images?.length || 0, 'images');
-              if (result.success && result.images) {
-                applyImages(result.images);
-              }
-            })
-            .catch(err => console.error(`Chunk ${idx} error:`, err))
-        );
-        
-        await Promise.all(chunkPromises);
-        console.log('All chunks completed');
-      }
+      });
     } catch (err) {
-      console.error('Error loading images:', err);
-      // Don't show error toast for images - they're optional
-    } finally {
-      setIsLoadingImages(false);
+      console.error('Error in streaming:', err);
+      setError(err instanceof Error ? err.message : 'Er ging iets mis');
+      setIsLoading(false);
     }
   };
 
@@ -273,7 +306,6 @@ const ResultPage = () => {
   const birthdateEvents = events.filter(e => e.eventScope === 'birthdate').length;
   const birthmonthEvents = events.filter(e => e.eventScope === 'birthmonth').length;
   const birthyearEvents = events.filter(e => e.eventScope === 'birthyear').length;
-  const celebrityEvents = events.filter(e => e.isCelebrityBirthday).length;
 
   if (!formData && !isLoading) {
     return (
@@ -318,7 +350,7 @@ const ResultPage = () => {
             
             <div className="flex items-center gap-3">
               {/* Download PDF button */}
-              {events.length > 0 && (
+              {events.length > 0 && !isLoading && (
                 <Button
                   onClick={handleDownloadPdf}
                   disabled={isGeneratingPdf || isLoadingImages}
@@ -365,19 +397,52 @@ const ResultPage = () => {
         </div>
       </section>
 
-      {/* Loading state */}
+      {/* Loading state - now shows events as they stream in */}
       {isLoading && (
-        <div className="flex-1 flex flex-col items-center justify-center py-12 fade-in">
-          <div className="w-16 h-16 rounded-full bg-gradient-gold flex items-center justify-center mb-4 animate-pulse">
-            <Clock className="h-8 w-8 text-primary-foreground" />
-          </div>
-          <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
-            We reizen terug in de tijd...
-          </h2>
-          <p className="text-muted-foreground text-sm mb-3">
-            Dit kan even duren
-          </p>
-          <Loader2 className="h-5 w-5 animate-spin text-accent" />
+        <div className="flex-1 flex flex-col">
+          {events.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center py-12 fade-in">
+              <div className="w-16 h-16 rounded-full bg-gradient-gold flex items-center justify-center mb-4 animate-pulse">
+                <Clock className="h-8 w-8 text-primary-foreground" />
+              </div>
+              <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
+                We reizen terug in de tijd...
+              </h2>
+              <p className="text-muted-foreground text-sm mb-3">
+                Dit kan even duren
+              </p>
+              <Loader2 className="h-5 w-5 animate-spin text-accent" />
+            </div>
+          ) : (
+            <>
+              {/* Show streaming progress */}
+              <div className="container mx-auto max-w-6xl px-4 mb-2">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span>{streamingProgress} gebeurtenissen geladen...</span>
+                </div>
+              </div>
+              
+              {/* Show events as they come in */}
+              <section className="flex-1 min-h-0">
+                <TimelineCarousel
+                  events={events}
+                  currentEventIndex={currentEventIndex}
+                  onEventSelect={handleEventSelect}
+                  birthDate={formData?.birthDate}
+                  isScrubbing={isScrubbing}
+                />
+              </section>
+              
+              <TimelineScrubberBottom 
+                events={events}
+                currentEventIndex={currentEventIndex}
+                onEventSelect={handleEventSelect}
+                onScrubStart={() => setIsScrubbing(true)}
+                onScrubEnd={() => setIsScrubbing(false)}
+              />
+            </>
+          )}
         </div>
       )}
 
@@ -391,7 +456,7 @@ const ResultPage = () => {
             </h3>
             <p className="text-muted-foreground text-sm mb-4">{error}</p>
             <Button 
-              onClick={() => formData && loadTimeline(formData)}
+              onClick={() => formData && loadTimelineStreaming(formData)}
               size="sm"
               className="btn-vintage"
             >
@@ -457,8 +522,6 @@ const ResultPage = () => {
             onEventSelect={handleEventSelect}
             onScrubStart={() => setIsScrubbing(true)}
             onScrubEnd={() => setIsScrubbing(false)}
-            birthDate={formData?.birthDate}
-            mode={formData?.type || 'birthdate'}
           />
         </div>
       )}
