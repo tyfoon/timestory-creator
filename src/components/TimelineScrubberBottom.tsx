@@ -127,76 +127,11 @@ export const TimelineScrubberBottom = ({
     return closestIndex;
   };
 
-  const handleScrubberClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!scrubberRef.current) return;
-    
-    const rect = scrubberRef.current.getBoundingClientRect();
-    const percentage = (e.clientX - rect.left) / rect.width;
-    const closestIndex = findEventAtPosition(Math.max(0, Math.min(1, percentage)));
-    onEventSelect(closestIndex);
-  };
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    handleScrubberClick(e);
-    
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      if (!scrubberRef.current) return;
-      const rect = scrubberRef.current.getBoundingClientRect();
-      const percentage = Math.max(0, Math.min(1, (moveEvent.clientX - rect.left) / rect.width));
-      const closestIndex = findEventAtPosition(percentage);
-      onEventSelect(closestIndex);
-    };
-    
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-    
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  };
-
-  // Touch support
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    const touch = e.touches[0];
-    if (!scrubberRef.current) return;
-    
-    const rect = scrubberRef.current.getBoundingClientRect();
-    const percentage = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
-    const closestIndex = findEventAtPosition(percentage);
-    onEventSelect(closestIndex);
-    
-    const handleTouchMove = (moveEvent: TouchEvent) => {
-      const moveTouch = moveEvent.touches[0];
-      if (!scrubberRef.current) return;
-      const rect = scrubberRef.current.getBoundingClientRect();
-      const percentage = Math.max(0, Math.min(1, (moveTouch.clientX - rect.left) / rect.width));
-      const closestIndex = findEventAtPosition(percentage);
-      onEventSelect(closestIndex);
-    };
-    
-    const handleTouchEnd = () => {
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
-    };
-    
-    document.addEventListener('touchmove', handleTouchMove);
-    document.addEventListener('touchend', handleTouchEnd);
-  };
-
   // Pointer events (works for mouse + touch + pen) for reliable dragging
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!scrubberRef.current) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
-
-    // Ensure we keep receiving pointer events during drag.
-    try {
-      (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
-    } catch {
-      // ignore
-    }
 
     const selectAt = (clientX: number) => {
       if (!scrubberRef.current) return;
@@ -221,9 +156,10 @@ export const TimelineScrubberBottom = ({
       document.removeEventListener('pointercancel', handlePointerUp);
     };
 
-    document.addEventListener('pointermove', handlePointerMove);
-    document.addEventListener('pointerup', handlePointerUp);
-    document.addEventListener('pointercancel', handlePointerUp);
+    // Attach to document so dragging keeps working even if the pointer leaves the bar.
+    document.addEventListener('pointermove', handlePointerMove, { passive: true });
+    document.addEventListener('pointerup', handlePointerUp, { passive: true });
+    document.addEventListener('pointercancel', handlePointerUp, { passive: true });
   };
 
   return (
