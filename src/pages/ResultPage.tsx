@@ -25,6 +25,7 @@ const ResultPage = () => {
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
+  const [isScrubbing, setIsScrubbing] = useState(false);
 
   // Track current formData for cache updates
   const formDataRef = useRef<FormData | null>(null);
@@ -376,6 +377,7 @@ const ResultPage = () => {
               currentEventIndex={currentEventIndex}
               onEventSelect={handleEventSelect}
               birthDate={formData?.birthDate}
+              isScrubbing={isScrubbing}
             />
           </section>
 
@@ -384,6 +386,8 @@ const ResultPage = () => {
             events={events}
             currentEventIndex={currentEventIndex}
             onEventSelect={handleEventSelect}
+            onScrubStart={() => setIsScrubbing(true)}
+            onScrubEnd={() => setIsScrubbing(false)}
             birthDate={formData?.birthDate}
             mode={formData?.type || 'birthdate'}
           />

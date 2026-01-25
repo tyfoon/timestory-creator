@@ -6,6 +6,8 @@ interface TimelineScrubberBottomProps {
   events: TimelineEvent[];
   currentEventIndex: number;
   onEventSelect: (index: number) => void;
+  onScrubStart?: () => void;
+  onScrubEnd?: () => void;
   birthDate?: { day: number; month: number; year: number };
   mode?: 'birthdate' | 'range';
 }
@@ -14,6 +16,8 @@ export const TimelineScrubberBottom = ({
   events, 
   currentEventIndex, 
   onEventSelect,
+  onScrubStart,
+  onScrubEnd,
   birthDate,
   mode = 'birthdate'
 }: TimelineScrubberBottomProps) => {
@@ -133,6 +137,8 @@ export const TimelineScrubberBottom = ({
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
 
+    onScrubStart?.();
+
     const selectAt = (clientX: number) => {
       if (!scrubberRef.current) return;
       const rect = scrubberRef.current.getBoundingClientRect();
@@ -154,6 +160,8 @@ export const TimelineScrubberBottom = ({
       document.removeEventListener('pointermove', handlePointerMove);
       document.removeEventListener('pointerup', handlePointerUp);
       document.removeEventListener('pointercancel', handlePointerUp);
+
+      onScrubEnd?.();
     };
 
     // Attach to document so dragging keeps working even if the pointer leaves the bar.
