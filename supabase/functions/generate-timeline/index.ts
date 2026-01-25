@@ -10,6 +10,8 @@ interface TimelineRequest {
   birthDate?: { day: number; month: number; year: number };
   yearRange?: { startYear: number; endYear: number };
   optionalData: {
+    firstName?: string;
+    lastName?: string;
     city?: string;
     children: { name: string; birthDate?: { day: number; month: number; year: number } }[];
     partnerName?: string;
@@ -276,6 +278,12 @@ Zorg voor een goede spreiding over alle jaren en verschillende categorieën:
 
   // Add optional context
   const { optionalData } = data;
+
+  // Add person's name if provided
+  if (optionalData.firstName || optionalData.lastName) {
+    const fullName = [optionalData.firstName, optionalData.lastName].filter(Boolean).join(' ');
+    prompt += `\n\nDe tijdlijn is voor: ${fullName}. Maak de beschrijvingen persoonlijk door soms de naam te noemen.`;
+  }
   
   if (optionalData.focus) {
     const focusMap = {
