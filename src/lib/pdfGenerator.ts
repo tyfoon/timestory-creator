@@ -144,6 +144,51 @@ const getLayoutForIndex = (index: number): LayoutType => {
 const monthNames = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 
                     'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
 
+const monthNamesShort = ['JAN', 'FEB', 'MRT', 'APR', 'MEI', 'JUN', 'JUL', 'AUG', 'SEP', 'OKT', 'NOV', 'DEC'];
+
+// Try to infer the month from the event title, description, or date string
+const inferMonthFromEvent = (event: TimelineEvent): number | null => {
+  // First, if month is already set, use it
+  if (event.month) return event.month;
+  
+  // Try to extract from the date field (could be "15 januari 1969" format)
+  const dateStr = event.date?.toLowerCase() || '';
+  const titleStr = event.title?.toLowerCase() || '';
+  const descStr = event.description?.toLowerCase() || '';
+  const combinedText = `${dateStr} ${titleStr} ${descStr}`;
+  
+  // Check for Dutch month names
+  for (let i = 0; i < monthNames.length; i++) {
+    if (combinedText.includes(monthNames[i])) {
+      return i + 1;
+    }
+  }
+  
+  // Check for common date patterns like "15-01-1969" or "1969-01-15"
+  const datePatterns = [
+    /(\d{1,2})-(\d{1,2})-(\d{4})/,  // dd-mm-yyyy
+    /(\d{4})-(\d{1,2})-(\d{1,2})/,  // yyyy-mm-dd
+  ];
+  
+  for (const pattern of datePatterns) {
+    const match = dateStr.match(pattern);
+    if (match) {
+      // For dd-mm-yyyy format
+      if (match[3]?.length === 4) {
+        const month = parseInt(match[2], 10);
+        if (month >= 1 && month <= 12) return month;
+      }
+      // For yyyy-mm-dd format
+      if (match[1]?.length === 4) {
+        const month = parseInt(match[2], 10);
+        if (month >= 1 && month <= 12) return month;
+      }
+    }
+  }
+  
+  return null;
+};
+
 // Draw the creative timeline ribbon on page edge - shows MONTH prominently
 const drawTimelineRibbon = (
   pdf: jsPDF,
@@ -183,9 +228,10 @@ const drawTimelineRibbon = (
     pdf.text(event.day.toString(), ribbonX + ribbonWidth / 2, monthBoxY + 16, { align: 'center' });
   }
   
-  // Month name - VERTICAL letters for visibility
-  if (event.month) {
-    const monthName = monthNames[event.month - 1].substring(0, 3).toUpperCase();
+  // Month name - VERTICAL letters for visibility (use inferred month if needed)
+  const inferredMonth = inferMonthFromEvent(event);
+  if (inferredMonth) {
+    const monthName = monthNamesShort[inferredMonth - 1];
     pdf.setFontSize(12);
     pdf.setTextColor(255, 255, 255);
     pdf.setFont('times', 'bold');
@@ -536,13 +582,15 @@ export const generateTimelinePdf = async (
     pdf.setFont('times', 'bolditalic');
     pdf.text('Ook Jarig op Deze Dag', pageWidth / 2, 42, { align: 'center' });
 
-    // Grid layout for celebrities with photos - 2 per row
+    // Single column layout for celebrities - better readability
     let cardY = 70;
-    const cardHeight = 80;
-    const cardWidth = (contentWidth - 10) / 2;
+    const cardHeight = 55;
+    const cardWidth = contentWidth;
 
     // First render celebrity EVENTS (which have real images)
-    for (let i = 0; i < celebrityEvents.length; i += 2) {
+    for (let i = 0; i < celebrityEvents.length; i++) {
+      const celeb = celebrityEvents[i];
+      
       // Check if we need a new page
       if (cardY + cardHeight > pageHeight - 30) {
         pdf.addPage();
@@ -561,84 +609,80 @@ export const generateTimelinePdf = async (
         cardY = 40;
       }
 
-      // Render up to 2 celebrities per row
-      for (let j = 0; j < 2 && i + j < celebrityEvents.length; j++) {
-        const celeb = celebrityEvents[i + j];
-        const x = margin + j * (cardWidth + 10);
+      // Card background with shadow
+      pdf.setFillColor(0, 0, 0);
+      pdf.setGState(new (pdf as any).GState({ opacity: 0.1 }));
+      pdf.roundedRect(margin + 2, cardY + 2, cardWidth, cardHeight, 4, 4, 'F');
+      pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
+      
+      pdf.setFillColor(255, 255, 255);
+      pdf.roundedRect(margin, cardY, cardWidth, cardHeight, 4, 4, 'F');
 
-        // Card background with shadow
-        pdf.setFillColor(0, 0, 0);
-        pdf.setGState(new (pdf as any).GState({ opacity: 0.1 }));
-        pdf.roundedRect(x + 2, cardY + 2, cardWidth, cardHeight, 4, 4, 'F');
-        pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
-        
-        pdf.setFillColor(255, 255, 255);
-        pdf.roundedRect(x, cardY, cardWidth, cardHeight, 4, 4, 'F');
+      // Photo area (left side of card)
+      const photoSize = cardHeight - 10;
+      pdf.setFillColor(230, 225, 215);
+      pdf.roundedRect(margin + 5, cardY + 5, photoSize, photoSize, 3, 3, 'F');
 
-        // Photo area (left side of card)
-        const photoSize = cardHeight - 10;
-        pdf.setFillColor(230, 225, 215);
-        pdf.roundedRect(x + 5, cardY + 5, photoSize, photoSize, 3, 3, 'F');
-
-        // Load and display the actual image
-        if (celeb.imageUrl) {
-          try {
-            const imgData = await imageToBase64WithDimensions(celeb.imageUrl);
-            if (imgData) {
-              const fit = fitImageInBox(imgData.width, imgData.height, photoSize, photoSize);
-              pdf.addImage(
-                imgData.base64, 
-                'JPEG', 
-                x + 5 + fit.x, 
-                cardY + 5 + fit.y, 
-                fit.width, 
-                fit.height
-              );
-            }
-          } catch (e) {
-            console.error('Error loading celebrity image:', e);
-            // Fallback to star
-            pdf.setFillColor(...accentColor);
-            pdf.circle(x + 5 + photoSize / 2, cardY + 5 + photoSize / 2, photoSize / 3, 'F');
-            pdf.setFontSize(20);
-            pdf.setTextColor(255, 255, 255);
-            pdf.text('★', x + 5 + photoSize / 2, cardY + 5 + photoSize / 2 + 7, { align: 'center' });
+      // Load and display the actual image
+      if (celeb.imageUrl) {
+        try {
+          const imgData = await imageToBase64WithDimensions(celeb.imageUrl);
+          if (imgData) {
+            const fit = fitImageInBox(imgData.width, imgData.height, photoSize, photoSize);
+            pdf.addImage(
+              imgData.base64, 
+              'JPEG', 
+              margin + 5 + fit.x, 
+              cardY + 5 + fit.y, 
+              fit.width, 
+              fit.height
+            );
           }
+        } catch (e) {
+          console.error('Error loading celebrity image:', e);
+          // Fallback to star
+          pdf.setFillColor(...accentColor);
+          pdf.circle(margin + 5 + photoSize / 2, cardY + 5 + photoSize / 2, photoSize / 3, 'F');
+          pdf.setFontSize(16);
+          pdf.setTextColor(255, 255, 255);
+          pdf.text('★', margin + 5 + photoSize / 2, cardY + 5 + photoSize / 2 + 5, { align: 'center' });
         }
-
-        // Content area (right side of card)
-        const contentX = x + photoSize + 12;
-        const contentMaxWidth = cardWidth - photoSize - 20;
-
-        // Extract name from title (usually "Geboorte: Name")
-        let displayName = celeb.title.replace(/^Geboorte:\s*/i, '').replace(/^Geboren:\s*/i, '');
-        pdf.setFontSize(12);
-        pdf.setTextColor(...textColor);
-        pdf.setFont('times', 'bold');
-        while (pdf.getTextWidth(displayName) > contentMaxWidth && displayName.length > 10) {
-          displayName = displayName.slice(0, -4) + '...';
-        }
-        pdf.text(displayName, contentX, cardY + 22);
-
-        // Category/profession from description
-        pdf.setFontSize(9);
-        pdf.setTextColor(...primaryColor);
-        pdf.setFont('times', 'italic');
-        let displayDesc = celeb.description.substring(0, 50);
-        if (celeb.description.length > 50) displayDesc += '...';
-        const descLines = pdf.splitTextToSize(displayDesc, contentMaxWidth);
-        pdf.text(descLines.slice(0, 2), contentX, cardY + 34);
-
-        // Birth year with decorative element
-        pdf.setFillColor(...primaryColor);
-        pdf.roundedRect(contentX, cardY + 52, 45, 18, 3, 3, 'F');
-        pdf.setFontSize(11);
-        pdf.setTextColor(255, 255, 255);
-        pdf.setFont('times', 'bold');
-        pdf.text(`★ ${celeb.year}`, contentX + 22.5, cardY + 64, { align: 'center' });
       }
 
-      cardY += cardHeight + 10;
+      // Content area (right side of card) - plenty of space now
+      const textContentX = margin + photoSize + 15;
+      const textContentWidth = cardWidth - photoSize - 25;
+
+      // Extract name from title (usually "Geboorte: Name")
+      let displayName = celeb.title.replace(/^Geboorte:\s*/i, '').replace(/^Geboren:\s*/i, '');
+      pdf.setFontSize(14);
+      pdf.setTextColor(...textColor);
+      pdf.setFont('times', 'bold');
+      // Truncate if too long
+      while (pdf.getTextWidth(displayName) > textContentWidth - 60 && displayName.length > 10) {
+        displayName = displayName.slice(0, -4) + '...';
+      }
+      pdf.text(displayName, textContentX, cardY + 18);
+
+      // Description/profession
+      pdf.setFontSize(10);
+      pdf.setTextColor(...primaryColor);
+      pdf.setFont('times', 'italic');
+      let displayDesc = celeb.description.substring(0, 80);
+      if (celeb.description.length > 80) displayDesc += '...';
+      const descLines = pdf.splitTextToSize(displayDesc, textContentWidth - 60);
+      pdf.text(descLines.slice(0, 2), textContentX, cardY + 32);
+
+      // Birth year badge on right side
+      const badgeX = margin + cardWidth - 55;
+      pdf.setFillColor(...primaryColor);
+      pdf.roundedRect(badgeX, cardY + 12, 45, 20, 3, 3, 'F');
+      pdf.setFontSize(12);
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFont('times', 'bold');
+      pdf.text(`★ ${celeb.year}`, badgeX + 22.5, cardY + 26, { align: 'center' });
+
+      cardY += cardHeight + 8;
     }
 
     // Then render remaining famousBirthdays (without images, use star placeholder)
@@ -1202,12 +1246,13 @@ async function renderPolaroidLayout(
     pdf.rect(polaroidX + imageInset, polaroidY + imageInset, imageWidth, imageHeight, 'F');
   }
 
-  // Month on polaroid bottom (instead of year)
+  // Month on polaroid bottom (use inferred month)
   pdf.setFontSize(12);
   pdf.setTextColor(...textColor);
   pdf.setFont('times', 'italic');
-  const polaroidLabel = event.month 
-    ? `${monthNames[event.month - 1]} ${event.year}`
+  const inferredMonth = inferMonthFromEvent(event);
+  const polaroidLabel = inferredMonth 
+    ? `${monthNames[inferredMonth - 1]} ${event.year}`
     : event.year.toString();
   pdf.text(polaroidLabel, polaroidX + polaroidWidth / 2, polaroidY + polaroidHeight - 8, { align: 'center' });
 
@@ -1272,21 +1317,21 @@ function renderPageHeader(
   pdf.setFont('times', 'bolditalic');
   pdf.text(`TIJDREIS • ${fullName}`, ribbonWidth + 8, 16);
   
-  // Show month name in header instead of year everywhere
+// Show month name in header instead of year everywhere
   pdf.setFont('times', 'bold');
-  const headerText = event.month 
-    ? `${monthNames[event.month - 1].toUpperCase()} ${event.year}`
+  const inferredMonth = inferMonthFromEvent(event);
+  const headerText = inferredMonth 
+    ? `${monthNames[inferredMonth - 1].toUpperCase()} ${event.year}`
     : event.year.toString();
   pdf.text(headerText, pageWidth - 12, 16, { align: 'right' });
 }
 
 function formatEventDate(event: TimelineEvent): string {
-  if (event.day && event.month) {
-    return `${event.day}-${event.month}-${event.year}`;
-  } else if (event.month) {
-    const monthNames = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 
-                        'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
-    return `${monthNames[event.month - 1]} ${event.year}`;
+  const inferredMonth = inferMonthFromEvent(event);
+  if (event.day && inferredMonth) {
+    return `${event.day} ${monthNames[inferredMonth - 1]} ${event.year}`;
+  } else if (inferredMonth) {
+    return `${monthNames[inferredMonth - 1]} ${event.year}`;
   }
   return event.year.toString();
 }
