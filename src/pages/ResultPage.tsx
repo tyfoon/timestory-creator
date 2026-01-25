@@ -85,7 +85,7 @@ const ResultPage = () => {
     }
   }, []);
 
-  // Process image queue - fetch images in batches
+  // Process image queue - fetch images in larger parallel batches for speed
   const processImageQueue = useCallback(async () => {
     if (isProcessingImagesRef.current) return;
     if (imageQueueRef.current.length === 0) return;
@@ -94,8 +94,8 @@ const ResultPage = () => {
     setIsLoadingImages(true);
     
     while (imageQueueRef.current.length > 0) {
-      // Take up to 5 events at a time
-      const batch = imageQueueRef.current.splice(0, 5);
+      // Take up to 10 events at a time (increased from 5 for parallel processing)
+      const batch = imageQueueRef.current.splice(0, 10);
       const queries = batch
         .filter(e => e.imageSearchQuery && !pendingImageRequests.current.has(e.id))
         .map(e => {
@@ -112,9 +112,31 @@ const ResultPage = () => {
       console.log('Fetching images for batch:', queries.length);
       
       try {
+        // Use fast mode for quick first results
         const result = await searchImages(queries, { mode: 'fast' });
         if (result.success && result.images) {
           applyImageResults(result.images);
+          
+          // For events that didn't get images in fast mode, try full mode
+          const missingImages = result.images.filter(img => !img.imageUrl);
+          if (missingImages.length > 0) {
+            // Retry missing ones with full mode in background
+            const retryQueries = missingImages.map(img => {
+              const originalQuery = queries.find(q => q.eventId === img.eventId);
+              return originalQuery;
+            }).filter(Boolean) as typeof queries;
+            
+            if (retryQueries.length > 0) {
+              // Don't await - let this run in background
+              searchImages(retryQueries, { mode: 'full' })
+                .then(retryResult => {
+                  if (retryResult.success && retryResult.images) {
+                    applyImageResults(retryResult.images);
+                  }
+                })
+                .catch(err => console.error('Retry image fetch error:', err));
+            }
+          }
         }
       } catch (err) {
         console.error('Error fetching images:', err);
