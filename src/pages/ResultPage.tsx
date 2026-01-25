@@ -114,18 +114,25 @@ const ResultPage = () => {
 
   const loadImages = async (timelineEvents: TimelineEvent[]) => {
     setIsLoadingImages(true);
+    console.log('loadImages called with', timelineEvents.length, 'events');
     
     try {
-      // Create image search queries for events that have a search query
+      // Create image search queries for events that need images
+      // Include 'loading' status AND events that have no imageUrl yet
       const allQueries = timelineEvents
-        .filter(e => e.imageSearchQuery && e.imageStatus !== 'found')
+        .filter(e => e.imageSearchQuery && e.imageStatus !== 'found' && e.imageStatus !== 'none')
         .map(e => ({
           eventId: e.id,
           query: e.imageSearchQuery!,
           year: e.year
         }));
 
-      if (allQueries.length === 0) return;
+      console.log('Queries to fetch:', allQueries.length);
+
+      if (allQueries.length === 0) {
+        console.log('No queries needed, all images already resolved');
+        return;
+      }
 
       // Priority: first fetch the first 3 events (visible cards) for fast initial display
       const priorityQueries = allQueries.slice(0, 3);
@@ -160,7 +167,9 @@ const ResultPage = () => {
       };
 
       // Fetch priority images first (first 3 visible cards)
+      console.log('Fetching priority images:', priorityQueries.length);
       const priorityResult = await searchImages(priorityQueries, { mode: 'fast' });
+      console.log('Priority result:', priorityResult);
       if (priorityResult.success && priorityResult.images) {
         applyImages(priorityResult.images);
       }
@@ -173,18 +182,22 @@ const ResultPage = () => {
           chunks.push(remainingQueries.slice(i, i + CHUNK_SIZE));
         }
         
+        console.log('Fetching', chunks.length, 'chunks in parallel');
+        
         // Fire all chunk requests in parallel
-        const chunkPromises = chunks.map(chunk => 
+        const chunkPromises = chunks.map((chunk, idx) => 
           searchImages(chunk, { mode: 'full' })
             .then(result => {
+              console.log(`Chunk ${idx} result:`, result.success, result.images?.length || 0, 'images');
               if (result.success && result.images) {
                 applyImages(result.images);
               }
             })
-            .catch(err => console.error('Chunk error:', err))
+            .catch(err => console.error(`Chunk ${idx} error:`, err))
         );
         
         await Promise.all(chunkPromises);
+        console.log('All chunks completed');
       }
     } catch (err) {
       console.error('Error loading images:', err);
