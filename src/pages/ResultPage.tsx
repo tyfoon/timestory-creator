@@ -41,6 +41,8 @@ const ResultPage = () => {
 
   useEffect(() => {
     const stored = sessionStorage.getItem('timelineFormData');
+    const storedLength = sessionStorage.getItem('timelineLength') || 'short';
+    
     if (stored) {
       const data = JSON.parse(stored) as FormData;
       setFormData(data);
@@ -71,7 +73,9 @@ const ResultPage = () => {
         return;
       }
 
-      loadTimelineStreaming(data);
+      // Determine max events based on length selection
+      const maxEvents = storedLength === 'short' ? 20 : undefined;
+      loadTimelineStreaming(data, maxEvents);
     } else {
       setError('Geen gegevens gevonden');
       setIsLoading(false);
@@ -162,7 +166,7 @@ const ResultPage = () => {
     processImageQueue();
   }, [processImageQueue]);
 
-  const loadTimelineStreaming = async (data: FormData) => {
+  const loadTimelineStreaming = async (data: FormData, maxEvents?: number) => {
     setIsLoading(true);
     setError(null);
     setStreamingProgress(0);
@@ -245,7 +249,7 @@ const ResultPage = () => {
             description: errorMsg,
           });
         }
-      });
+      }, { maxEvents });
     } catch (err) {
       console.error('Error in streaming:', err);
       setError(err instanceof Error ? err.message : 'Er ging iets mis');

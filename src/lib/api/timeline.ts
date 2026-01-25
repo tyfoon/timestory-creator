@@ -16,7 +16,8 @@ export interface StreamCallbacks {
 export const generateTimelineStreaming = async (
   formData: FormData,
   language: string,
-  callbacks: StreamCallbacks
+  callbacks: StreamCallbacks,
+  options?: { maxEvents?: number }
 ): Promise<void> => {
   try {
     console.log('Calling generate-timeline edge function with streaming...');
@@ -34,7 +35,8 @@ export const generateTimelineStreaming = async (
         yearRange: formData.yearRange,
         optionalData: formData.optionalData,
         language,
-        stream: true
+        stream: true,
+        maxEvents: options?.maxEvents
       })
     });
 
