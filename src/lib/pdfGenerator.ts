@@ -505,7 +505,13 @@ export const generateTimelinePdf = async (
   }
 
   // ===== SPECIAL CHAPTER: FAMOUS BIRTHDAYS WITH PHOTOS =====
-  if (famousBirthdays.length > 0) {
+  // Use celebrity events (which HAVE images) instead of famousBirthdays array (which doesn't)
+  const celebrityEvents = events.filter(e => e.isCelebrityBirthday && e.imageUrl);
+  const celebritiesWithoutImages = famousBirthdays.filter(fb => 
+    !celebrityEvents.some(ce => ce.title.toLowerCase().includes(fb.name.toLowerCase().split(' ')[0]))
+  );
+  
+  if (celebrityEvents.length > 0 || famousBirthdays.length > 0) {
     pdf.addPage();
     currentPage++;
 
@@ -532,10 +538,11 @@ export const generateTimelinePdf = async (
 
     // Grid layout for celebrities with photos - 2 per row
     let cardY = 70;
-    const cardHeight = 70;
+    const cardHeight = 80;
     const cardWidth = (contentWidth - 10) / 2;
 
-    for (let i = 0; i < famousBirthdays.length; i += 2) {
+    // First render celebrity EVENTS (which have real images)
+    for (let i = 0; i < celebrityEvents.length; i += 2) {
       // Check if we need a new page
       if (cardY + cardHeight > pageHeight - 30) {
         pdf.addPage();
@@ -555,8 +562,8 @@ export const generateTimelinePdf = async (
       }
 
       // Render up to 2 celebrities per row
-      for (let j = 0; j < 2 && i + j < famousBirthdays.length; j++) {
-        const celeb = famousBirthdays[i + j];
+      for (let j = 0; j < 2 && i + j < celebrityEvents.length; j++) {
+        const celeb = celebrityEvents[i + j];
         const x = margin + j * (cardWidth + 10);
 
         // Card background with shadow
@@ -568,34 +575,128 @@ export const generateTimelinePdf = async (
         pdf.setFillColor(255, 255, 255);
         pdf.roundedRect(x, cardY, cardWidth, cardHeight, 4, 4, 'F');
 
-        // Photo placeholder area (left side of card)
+        // Photo area (left side of card)
         const photoSize = cardHeight - 10;
         pdf.setFillColor(230, 225, 215);
         pdf.roundedRect(x + 5, cardY + 5, photoSize, photoSize, 3, 3, 'F');
 
-        // Try to load celebrity image if imageSearchQuery exists
-        if (celeb.imageSearchQuery) {
-          // We'll use a placeholder star for now since we don't have actual celebrity images
-          pdf.setFillColor(...accentColor);
-          pdf.circle(x + 5 + photoSize / 2, cardY + 5 + photoSize / 2, photoSize / 3, 'F');
-          pdf.setFontSize(20);
-          pdf.setTextColor(255, 255, 255);
-          pdf.text('★', x + 5 + photoSize / 2, cardY + 5 + photoSize / 2 + 7, { align: 'center' });
+        // Load and display the actual image
+        if (celeb.imageUrl) {
+          try {
+            const imgData = await imageToBase64WithDimensions(celeb.imageUrl);
+            if (imgData) {
+              const fit = fitImageInBox(imgData.width, imgData.height, photoSize, photoSize);
+              pdf.addImage(
+                imgData.base64, 
+                'JPEG', 
+                x + 5 + fit.x, 
+                cardY + 5 + fit.y, 
+                fit.width, 
+                fit.height
+              );
+            }
+          } catch (e) {
+            console.error('Error loading celebrity image:', e);
+            // Fallback to star
+            pdf.setFillColor(...accentColor);
+            pdf.circle(x + 5 + photoSize / 2, cardY + 5 + photoSize / 2, photoSize / 3, 'F');
+            pdf.setFontSize(20);
+            pdf.setTextColor(255, 255, 255);
+            pdf.text('★', x + 5 + photoSize / 2, cardY + 5 + photoSize / 2 + 7, { align: 'center' });
+          }
         }
 
         // Content area (right side of card)
         const contentX = x + photoSize + 12;
         const contentMaxWidth = cardWidth - photoSize - 20;
 
-        // Name with nostalgic font
-        pdf.setFontSize(13);
+        // Extract name from title (usually "Geboorte: Name")
+        let displayName = celeb.title.replace(/^Geboorte:\s*/i, '').replace(/^Geboren:\s*/i, '');
+        pdf.setFontSize(12);
+        pdf.setTextColor(...textColor);
+        pdf.setFont('times', 'bold');
+        while (pdf.getTextWidth(displayName) > contentMaxWidth && displayName.length > 10) {
+          displayName = displayName.slice(0, -4) + '...';
+        }
+        pdf.text(displayName, contentX, cardY + 22);
+
+        // Category/profession from description
+        pdf.setFontSize(9);
+        pdf.setTextColor(...primaryColor);
+        pdf.setFont('times', 'italic');
+        let displayDesc = celeb.description.substring(0, 50);
+        if (celeb.description.length > 50) displayDesc += '...';
+        const descLines = pdf.splitTextToSize(displayDesc, contentMaxWidth);
+        pdf.text(descLines.slice(0, 2), contentX, cardY + 34);
+
+        // Birth year with decorative element
+        pdf.setFillColor(...primaryColor);
+        pdf.roundedRect(contentX, cardY + 52, 45, 18, 3, 3, 'F');
+        pdf.setFontSize(11);
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFont('times', 'bold');
+        pdf.text(`★ ${celeb.year}`, contentX + 22.5, cardY + 64, { align: 'center' });
+      }
+
+      cardY += cardHeight + 10;
+    }
+
+    // Then render remaining famousBirthdays (without images, use star placeholder)
+    for (let i = 0; i < celebritiesWithoutImages.length; i += 2) {
+      // Check if we need a new page
+      if (cardY + cardHeight > pageHeight - 30) {
+        pdf.addPage();
+        currentPage++;
+        pdf.setFillColor(...lightBg);
+        pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+        
+        // Mini header
+        pdf.setFillColor(...accentColor);
+        pdf.rect(0, 0, pageWidth, 25, 'F');
+        pdf.setFontSize(12);
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFont('times', 'bold');
+        pdf.text('★ Ook Jarig ★', pageWidth / 2, 16, { align: 'center' });
+        
+        cardY = 40;
+      }
+
+      for (let j = 0; j < 2 && i + j < celebritiesWithoutImages.length; j++) {
+        const celeb = celebritiesWithoutImages[i + j];
+        const x = margin + j * (cardWidth + 10);
+
+        // Card background with shadow
+        pdf.setFillColor(0, 0, 0);
+        pdf.setGState(new (pdf as any).GState({ opacity: 0.1 }));
+        pdf.roundedRect(x + 2, cardY + 2, cardWidth, cardHeight, 4, 4, 'F');
+        pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
+        
+        pdf.setFillColor(255, 255, 255);
+        pdf.roundedRect(x, cardY, cardWidth, cardHeight, 4, 4, 'F');
+
+        // Photo placeholder with star
+        const photoSize = cardHeight - 10;
+        pdf.setFillColor(230, 225, 215);
+        pdf.roundedRect(x + 5, cardY + 5, photoSize, photoSize, 3, 3, 'F');
+        pdf.setFillColor(...accentColor);
+        pdf.circle(x + 5 + photoSize / 2, cardY + 5 + photoSize / 2, photoSize / 3, 'F');
+        pdf.setFontSize(20);
+        pdf.setTextColor(255, 255, 255);
+        pdf.text('★', x + 5 + photoSize / 2, cardY + 5 + photoSize / 2 + 7, { align: 'center' });
+
+        // Content area
+        const contentX = x + photoSize + 12;
+        const contentMaxWidth = cardWidth - photoSize - 20;
+
+        // Name
+        pdf.setFontSize(12);
         pdf.setTextColor(...textColor);
         pdf.setFont('times', 'bold');
         let displayName = celeb.name;
         while (pdf.getTextWidth(displayName) > contentMaxWidth && displayName.length > 10) {
           displayName = displayName.slice(0, -4) + '...';
         }
-        pdf.text(displayName, contentX, cardY + 20);
+        pdf.text(displayName, contentX, cardY + 22);
 
         // Profession
         pdf.setFontSize(9);
@@ -605,15 +706,15 @@ export const generateTimelinePdf = async (
         while (pdf.getTextWidth(displayProf) > contentMaxWidth && displayProf.length > 10) {
           displayProf = displayProf.slice(0, -4) + '...';
         }
-        pdf.text(displayProf, contentX, cardY + 32);
+        pdf.text(displayProf, contentX, cardY + 36);
 
-        // Birth year with decorative element
+        // Birth year
         pdf.setFillColor(...primaryColor);
-        pdf.roundedRect(contentX, cardY + 40, 45, 18, 3, 3, 'F');
+        pdf.roundedRect(contentX, cardY + 52, 45, 18, 3, 3, 'F');
         pdf.setFontSize(11);
         pdf.setTextColor(255, 255, 255);
         pdf.setFont('times', 'bold');
-        pdf.text(`★ ${celeb.birthYear}`, contentX + 22.5, cardY + 52, { align: 'center' });
+        pdf.text(`★ ${celeb.birthYear}`, contentX + 22.5, cardY + 64, { align: 'center' });
       }
 
       cardY += cardHeight + 10;
