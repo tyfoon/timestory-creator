@@ -9,18 +9,23 @@ interface TimelineCarouselProps {
   currentEventIndex: number;
   onEventSelect: (index: number) => void;
   birthDate?: { day: number; month: number; year: number };
+  /** When true, don't let carousel scroll-detection overwrite the selected index. */
+  isScrubbing?: boolean;
 }
 
 export const TimelineCarousel = ({ 
   events, 
   currentEventIndex, 
   onEventSelect,
-  birthDate 
+  birthDate,
+  isScrubbing = false,
 }: TimelineCarouselProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const currentIndexRef = useRef(currentEventIndex);
   const onEventSelectRef = useRef(onEventSelect);
+  const programmaticScrollRef = useRef(false);
+  const programmaticScrollTimeoutRef = useRef<number | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [cardRotations, setCardRotations] = useState<number[]>([]);
@@ -71,9 +76,22 @@ export const TimelineCarousel = ({
       
       // Center the card in view
       const scrollPosition = cardLeft - (containerWidth / 2) + (cardWidth / 2);
-      container.scrollTo({ left: scrollPosition, behavior: 'smooth' });
+
+      // Mark programmatic scroll so centered-card detection doesn't fight the scrubber.
+      programmaticScrollRef.current = true;
+      if (programmaticScrollTimeoutRef.current) {
+        window.clearTimeout(programmaticScrollTimeoutRef.current);
+      }
+
+      // While scrubbing, use immediate scroll for responsiveness.
+      container.scrollTo({ left: scrollPosition, behavior: isScrubbing ? 'auto' : 'smooth' });
+
+      // Release the lock shortly after the scroll starts.
+      programmaticScrollTimeoutRef.current = window.setTimeout(() => {
+        programmaticScrollRef.current = false;
+      }, isScrubbing ? 100 : 500);
     }
-  }, [currentEventIndex]);
+  }, [currentEventIndex, isScrubbing]);
 
   // Check scroll buttons state and update rotations
   const updateScrollState = useCallback(() => {
@@ -121,6 +139,8 @@ export const TimelineCarousel = ({
       const handleScroll = () => {
         updateScrollState();
         // Sync active index while the user is scrolling (throttled to rAF)
+        // but do not overwrite selection while scrubbing or during programmatic scroll.
+        if (isScrubbing || programmaticScrollRef.current) return;
         if (rafId) cancelAnimationFrame(rafId);
         rafId = requestAnimationFrame(detectCenteredCard);
       };
@@ -134,9 +154,14 @@ export const TimelineCarousel = ({
         container.removeEventListener('scroll', handleScroll as any);
         window.removeEventListener('resize', updateScrollState);
         if (rafId) cancelAnimationFrame(rafId);
+
+        if (programmaticScrollTimeoutRef.current) {
+          window.clearTimeout(programmaticScrollTimeoutRef.current);
+          programmaticScrollTimeoutRef.current = null;
+        }
       };
     }
-  }, [events, updateScrollState, detectCenteredCard]);
+  }, [events, updateScrollState, detectCenteredCard, isScrubbing]);
 
   const scrollByAmount = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
