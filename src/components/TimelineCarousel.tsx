@@ -212,8 +212,8 @@ export const TimelineCarousel = ({
       {/* Scroll container - taller cards with 3D perspective */}
       <div
         ref={scrollContainerRef}
-        className="flex gap-4 overflow-x-auto h-full px-12 scroll-smooth snap-x snap-mandatory hide-scrollbar items-stretch"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', transformStyle: 'preserve-3d' }}
+        className="flex gap-4 overflow-x-auto h-full px-12 scroll-smooth snap-x snap-mandatory hide-scrollbar items-stretch overscroll-x-contain"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', transformStyle: 'preserve-3d', overscrollBehaviorX: 'contain' }}
       >
         {events.map((event, index) => {
           const rotation = cardRotations[index] || 0;
