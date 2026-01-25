@@ -127,6 +127,44 @@ async function resolveWikimediaUrl(url: string): Promise<string | null> {
   }
 }
 
+// Fetch the main image from a Wikipedia article using the Wikipedia API
+async function getWikipediaMainImage(wikiUrl: string): Promise<string | null> {
+  try {
+    const url = new URL(wikiUrl);
+    
+    // Extract article title from URL
+    const pathMatch = url.pathname.match(/\/wiki\/(.+)/);
+    if (!pathMatch) return null;
+    
+    const title = decodeURIComponent(pathMatch[1]);
+    const lang = url.hostname.split('.')[0]; // e.g., 'en', 'nl'
+    
+    // Use Wikipedia API to get page images
+    const apiUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&format=json&pithumbsize=${THUMB_WIDTH}&origin=*`;
+    
+    const response = await fetch(apiUrl);
+    if (!response.ok) return null;
+    
+    const data = await response.json();
+    const pages = data.query?.pages;
+    if (!pages) return null;
+    
+    // Get the first page (there should only be one)
+    const pageId = Object.keys(pages)[0];
+    if (!pageId || pageId === '-1') return null;
+    
+    const thumbnail = pages[pageId]?.thumbnail?.source;
+    if (thumbnail && isAllowedImageUrl(thumbnail)) {
+      return thumbnail;
+    }
+    
+    return null;
+  } catch (e) {
+    console.error("Error fetching Wikipedia image:", e);
+    return null;
+  }
+}
+
 // Convert Wikipedia/Commons File: page URLs to Special:FilePath URL
 function toSpecialFilePath(maybeUrl: string): string | null {
   try {
@@ -276,23 +314,36 @@ serve(async (req) => {
           }
         }
 
+        // Try Wikipedia API directly for the first Wikipedia result (faster than scraping)
+        const wikiResult = results.find(
+          (r: any) => r?.url?.includes("wikipedia.org") && !r?.url?.includes("wikimedia.org")
+        );
+        
+        if (wikiResult?.url) {
+          const wikiImage = await getWikipediaMainImage(wikiResult.url);
+          if (wikiImage) {
+            console.log(`Found Wikipedia API image for "${query}": ${wikiImage}`);
+            return { eventId, imageUrl: wikiImage, source: wikiResult.url };
+          }
+        }
+
         // Full mode: optionally scrape the top Wikipedia result for extra image links.
         // Fast mode: skip scraping entirely (much faster first images).
         if (mode === "full") {
-          const wikiResult = results.find(
+          const wikiOrMediaResult = results.find(
             (r: any) => r?.url?.includes("wikipedia.org") || r?.url?.includes("wikimedia.org")
           );
 
-          if (wikiResult?.url) {
+          if (wikiOrMediaResult?.url) {
             try {
-              console.log(`Scraping ${wikiResult.url} for images...`);
+              console.log(`Scraping ${wikiOrMediaResult.url} for images...`);
               const scrapeResponse = await fetch("https://api.firecrawl.dev/v1/scrape", {
                 method: "POST",
                 headers: {
                   "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
                   "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ url: wikiResult.url, formats: ["links"], onlyMainContent: true }),
+                body: JSON.stringify({ url: wikiOrMediaResult.url, formats: ["links"], onlyMainContent: true }),
               });
 
               if (scrapeResponse.ok) {
@@ -304,7 +355,7 @@ serve(async (req) => {
                   const resolved = await resolveWikimediaUrl(bestImageCandidate);
                   if (resolved) {
                     console.log(`Found best image for "${query}": ${resolved}`);
-                    return { eventId, imageUrl: resolved, source: wikiResult.url };
+                    return { eventId, imageUrl: resolved, source: wikiOrMediaResult.url };
                   }
                 }
               }
