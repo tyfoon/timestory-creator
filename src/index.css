@@ -147,6 +147,13 @@
 
   html {
     scroll-behavior: smooth;
+    /* Prevent browser back/forward navigation gestures on horizontal scroll */
+    overscroll-behavior-x: none;
+  }
+  
+  body {
+    /* Prevent pull-to-refresh on mobile */
+    overscroll-behavior-y: contain;
   }
 
   body {
