@@ -50,99 +50,69 @@ function isAllowedImageUrl(maybeUrl: string): boolean {
   }
 }
 
-function toWikimediaThumbUrl(uploadUrl: string, width: number): string | null {
+// ============== WIKIPEDIA API (most reliable source) ==============
+async function searchWikipediaWithImages(
+  query: string, 
+  year: number | undefined,
+  lang: string
+): Promise<{ imageUrl: string; source: string } | null> {
   try {
-    if (!isAllowedImageUrl(uploadUrl)) return null;
-
-    const url = new URL(uploadUrl);
-    if (url.hostname !== "upload.wikimedia.org") return null;
-
-    const parts = url.pathname.split("/").filter(Boolean);
-    if (parts.length < 5) return null;
-    if (parts[0] !== "wikipedia" && parts[0] !== "commons") return null;
-
-    if (parts[2] === "thumb" || parts[1] === "thumb") return uploadUrl;
-
-    // Handle both /wikipedia/commons/ and /commons/ paths
-    if (parts[0] === "commons") {
-      const hash1 = parts[1];
-      const hash2 = parts[2];
-      const filename = parts.slice(3).join("/");
-      const thumbPath = `/commons/thumb/${hash1}/${hash2}/${filename}/${width}px-${filename.split("/").pop()}`;
-      return `${url.origin}${thumbPath}`;
-    }
-
-    const project = parts[1];
-    const hash1 = parts[2];
-    const hash2 = parts[3];
-    const filename = parts.slice(4).join("/");
-
-    const thumbPath = `/wikipedia/${project}/thumb/${hash1}/${hash2}/${filename}/${width}px-${filename.split("/").pop()}`;
-    return `${url.origin}${thumbPath}`;
-  } catch {
-    return null;
-  }
-}
-
-// ============== SOURCE 1: Wikipedia API (fastest) ==============
-async function searchWikipediaAPI(query: string, year?: number): Promise<string | null> {
-  try {
+    // Step 1: Search for the most relevant article
     const searchQuery = year ? `${query} ${year}` : query;
+    const searchUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&format=json&srlimit=5&origin=*`;
     
-    // Try multiple language Wikipedias in parallel
-    const langs = ['nl', 'en', 'de'];
-    const searches = langs.map(async (lang) => {
-      try {
-        // First search for articles
-        const searchUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&format=json&srlimit=3&origin=*`;
-        const searchRes = await fetch(searchUrl);
-        if (!searchRes.ok) return null;
-        
-        const searchData = await searchRes.json();
-        const results = searchData.query?.search || [];
-        
-        // Get images for top results in parallel
-        const imagePromises = results.slice(0, 2).map(async (result: any) => {
-          const imageUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(result.title)}&prop=pageimages&format=json&pithumbsize=${THUMB_WIDTH}&origin=*`;
-          const imageRes = await fetch(imageUrl);
-          if (!imageRes.ok) return null;
-          
-          const imageData = await imageRes.json();
-          const pages = imageData.query?.pages;
-          if (!pages) return null;
-          
-          const pageId = Object.keys(pages)[0];
-          if (!pageId || pageId === '-1') return null;
-          
-          const thumbnail = pages[pageId]?.thumbnail?.source;
-          if (thumbnail && isAllowedImageUrl(thumbnail)) {
-            return { imageUrl: thumbnail, source: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(result.title)}` };
-          }
-          return null;
-        });
-        
-        const images = await Promise.all(imagePromises);
-        return images.find(img => img !== null) || null;
-      } catch {
-        return null;
+    const searchRes = await fetch(searchUrl);
+    if (!searchRes.ok) return null;
+    
+    const searchData = await searchRes.json();
+    const results = searchData.query?.search || [];
+    
+    if (results.length === 0) return null;
+    
+    // Step 2: Get images for top 3 results, pick the best one
+    for (const result of results.slice(0, 3)) {
+      const title = result.title;
+      
+      // Get the page thumbnail directly
+      const imageUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&format=json&pithumbsize=${THUMB_WIDTH}&piprop=thumbnail|original&origin=*`;
+      
+      const imageRes = await fetch(imageUrl);
+      if (!imageRes.ok) continue;
+      
+      const imageData = await imageRes.json();
+      const pages = imageData.query?.pages;
+      if (!pages) continue;
+      
+      const pageId = Object.keys(pages)[0];
+      if (!pageId || pageId === '-1') continue;
+      
+      const page = pages[pageId];
+      const thumbnail = page?.thumbnail?.source;
+      
+      if (thumbnail && isAllowedImageUrl(thumbnail)) {
+        return {
+          imageUrl: thumbnail,
+          source: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title)}`
+        };
       }
-    });
+    }
     
-    const results = await Promise.all(searches);
-    const found = results.find(r => r !== null);
-    return found?.imageUrl || null;
+    return null;
   } catch (e) {
-    console.error("Wikipedia API error:", e);
+    console.error(`Wikipedia ${lang} API error:`, e);
     return null;
   }
 }
 
-// ============== SOURCE 2: Wikimedia Commons (huge archive) ==============
-async function searchWikimediaCommons(query: string, year?: number): Promise<{ imageUrl: string; source: string } | null> {
+// ============== WIKIMEDIA COMMONS (large historical archive) ==============
+async function searchWikimediaCommons(
+  query: string, 
+  year: number | undefined
+): Promise<{ imageUrl: string; source: string } | null> {
   try {
-    const searchQuery = year ? `${query} ${year}` : query;
+    // Search Commons for images - be specific to avoid unrelated results
+    const searchQuery = year ? `"${query}" ${year}` : `"${query}"`;
     
-    // Search Commons for images
     const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srnamespace=6&format=json&srlimit=5&origin=*`;
     const searchRes = await fetch(searchUrl);
     if (!searchRes.ok) return null;
@@ -150,10 +120,11 @@ async function searchWikimediaCommons(query: string, year?: number): Promise<{ i
     const searchData = await searchRes.json();
     const results = searchData.query?.search || [];
     
-    // Get image info for top results
     for (const result of results.slice(0, 3)) {
       try {
         const title = result.title;
+        
+        // Get image info with thumbnail
         const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=${THUMB_WIDTH}&format=json&origin=*`;
         const infoRes = await fetch(infoUrl);
         if (!infoRes.ok) continue;
@@ -186,84 +157,17 @@ async function searchWikimediaCommons(query: string, year?: number): Promise<{ i
   }
 }
 
-// ============== SOURCE 3: OpenVerse (Creative Commons search) ==============
-async function searchOpenVerse(query: string, year?: number): Promise<{ imageUrl: string; source: string } | null> {
-  try {
-    const searchQuery = year ? `${query} ${year}` : query;
-    
-    // OpenVerse API (no key required for basic search)
-    const searchUrl = `https://api.openverse.org/v1/images/?q=${encodeURIComponent(searchQuery)}&page_size=5&license_type=all`;
-    const searchRes = await fetch(searchUrl, {
-      headers: {
-        'User-Agent': 'TimelineApp/1.0'
-      }
-    });
-    
-    if (!searchRes.ok) return null;
-    
-    const data = await searchRes.json();
-    const results = data.results || [];
-    
-    for (const result of results) {
-      // Prefer high-resolution thumbnails
-      const imageUrl = result.thumbnail || result.url;
-      if (imageUrl && isAllowedImageUrl(imageUrl)) {
-        return {
-          imageUrl,
-          source: result.foreign_landing_url || result.url
-        };
-      }
-    }
-    
-    return null;
-  } catch (e) {
-    console.error("OpenVerse API error:", e);
-    return null;
-  }
-}
-
-// ============== SOURCE 4: Flickr Commons (public domain historical) ==============
-async function searchFlickrCommons(query: string, year?: number): Promise<{ imageUrl: string; source: string } | null> {
-  try {
-    const searchQuery = year ? `${query} ${year}` : query;
-    
-    // Flickr Commons uses the regular Flickr API but filters for The Commons
-    // This is a public endpoint that doesn't require API key for basic access
-    const searchUrl = `https://api.flickr.com/services/feeds/photos_public.gne?tags=${encodeURIComponent(searchQuery)}&format=json&nojsoncallback=1`;
-    const searchRes = await fetch(searchUrl);
-    
-    if (!searchRes.ok) return null;
-    
-    const data = await searchRes.json();
-    const items = data.items || [];
-    
-    for (const item of items.slice(0, 3)) {
-      // Get a medium-sized image
-      const imageUrl = item.media?.m?.replace('_m.', '_c.'); // Get larger size
-      if (imageUrl && isAllowedImageUrl(imageUrl)) {
-        return {
-          imageUrl,
-          source: item.link
-        };
-      }
-    }
-    
-    return null;
-  } catch (e) {
-    console.error("Flickr API error:", e);
-    return null;
-  }
-}
-
-// ============== FIRECRAWL FALLBACK (only if API key available) ==============
-async function searchFirecrawl(
+// ============== FIRECRAWL WIKIPEDIA ONLY (no generic sources) ==============
+async function searchFirecrawlWikipediaOnly(
   query: string, 
   year: number | undefined, 
-  apiKey: string,
-  mode: "fast" | "full"
+  apiKey: string
 ): Promise<{ imageUrl: string; source: string } | null> {
   try {
-    const searchQuery = year ? `${query} ${year} wikipedia` : `${query} wikipedia`;
+    // Search specifically for Wikipedia articles only
+    const searchQuery = year 
+      ? `site:wikipedia.org "${query}" ${year}` 
+      : `site:wikipedia.org "${query}"`;
     
     const response = await fetch("https://api.firecrawl.dev/v1/search", {
       method: "POST",
@@ -279,56 +183,38 @@ async function searchFirecrawl(
     const data = await response.json();
     const results = data.data || [];
 
-    // Check metadata images first (fastest)
+    // Only use Wikipedia results
     for (const result of results) {
-      if (result.metadata?.ogImage) {
-        const candidate = result.metadata.ogImage;
-        if (isAllowedImageUrl(candidate)) {
-          const thumbUrl = toWikimediaThumbUrl(candidate, THUMB_WIDTH) || candidate;
-          return { imageUrl: thumbUrl, source: result.url };
-        }
-      }
-      if (result.metadata?.image) {
-        const candidate = result.metadata.image;
-        if (isAllowedImageUrl(candidate)) {
-          const thumbUrl = toWikimediaThumbUrl(candidate, THUMB_WIDTH) || candidate;
-          return { imageUrl: thumbUrl, source: result.url };
-        }
-      }
-    }
-
-    // In fast mode, skip scraping entirely
-    if (mode === "fast") return null;
-
-    // In full mode, try scraping for more images (slower)
-    const wikiResult = results.find(
-      (r: any) => r?.url?.includes("wikipedia.org") || r?.url?.includes("wikimedia.org")
-    );
-
-    if (wikiResult?.url) {
+      if (!result?.url?.includes("wikipedia.org")) continue;
+      
+      // Extract the article title and fetch image via Wikipedia API
       try {
-        const scrapeResponse = await fetch("https://api.firecrawl.dev/v1/scrape", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ url: wikiResult.url, formats: ["links"], onlyMainContent: true }),
-        });
-
-        if (scrapeResponse.ok) {
-          const scrapeData = await scrapeResponse.json();
-          const links = scrapeData.data?.links || [];
-
-          for (const link of links) {
-            if (link?.includes("upload.wikimedia.org") && isAllowedImageUrl(link)) {
-              const thumbUrl = toWikimediaThumbUrl(link, THUMB_WIDTH) || link;
-              return { imageUrl: thumbUrl, source: wikiResult.url };
-            }
-          }
+        const urlObj = new URL(result.url);
+        const pathMatch = urlObj.pathname.match(/\/wiki\/(.+)/);
+        if (!pathMatch) continue;
+        
+        const title = decodeURIComponent(pathMatch[1]);
+        const lang = urlObj.hostname.split('.')[0];
+        
+        // Use Wikipedia API to get the actual article image
+        const imageUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&format=json&pithumbsize=${THUMB_WIDTH}&origin=*`;
+        
+        const imageRes = await fetch(imageUrl);
+        if (!imageRes.ok) continue;
+        
+        const imageData = await imageRes.json();
+        const pages = imageData.query?.pages;
+        if (!pages) continue;
+        
+        const pageId = Object.keys(pages)[0];
+        if (!pageId || pageId === '-1') continue;
+        
+        const thumbnail = pages[pageId]?.thumbnail?.source;
+        if (thumbnail && isAllowedImageUrl(thumbnail)) {
+          return { imageUrl: thumbnail, source: result.url };
         }
       } catch {
-        // Ignore scrape errors
+        continue;
       }
     }
 
@@ -344,48 +230,38 @@ async function searchAllSources(
   eventId: string,
   query: string,
   year: number | undefined,
-  firecrawlKey: string | undefined,
-  mode: "fast" | "full"
+  firecrawlKey: string | undefined
 ): Promise<ImageResult> {
   console.log(`Searching for: "${query}" (${year || 'no year'})`);
   
-  // Race all free sources in parallel - first one wins
-  const freeSources = [
-    searchWikipediaAPI(query, year).then(url => url ? { imageUrl: url, source: 'Wikipedia' } : null),
+  // Search Wikipedia in multiple languages in parallel
+  const wikipediaSources = [
+    searchWikipediaWithImages(query, year, 'nl'),
+    searchWikipediaWithImages(query, year, 'en'),
+    searchWikipediaWithImages(query, year, 'de'),
     searchWikimediaCommons(query, year),
-    searchOpenVerse(query, year),
-    searchFlickrCommons(query, year),
   ];
   
-  // Add Firecrawl if available
+  // Add Firecrawl Wikipedia-only search if available
   if (firecrawlKey) {
-    freeSources.push(searchFirecrawl(query, year, firecrawlKey, mode));
+    wikipediaSources.push(searchFirecrawlWikipediaOnly(query, year, firecrawlKey));
   }
 
   // Use Promise.any to get the first successful result
   try {
     const result = await Promise.any(
-      freeSources.map(async (promise) => {
+      wikipediaSources.map(async (promise) => {
         const res = await promise;
         if (!res) throw new Error('No result');
         return res;
       })
     );
     
-    console.log(`Found image for "${query}": ${result.imageUrl?.substring(0, 60)}...`);
+    console.log(`Found image for "${query}": ${result.imageUrl?.substring(0, 80)}...`);
     return { eventId, imageUrl: result.imageUrl, source: result.source };
   } catch {
-    // All sources failed, wait for all to complete and check
-    const allResults = await Promise.allSettled(freeSources);
-    const firstSuccess = allResults.find(
-      r => r.status === 'fulfilled' && r.value !== null
-    );
-    
-    if (firstSuccess && firstSuccess.status === 'fulfilled' && firstSuccess.value) {
-      return { eventId, imageUrl: firstSuccess.value.imageUrl, source: firstSuccess.value.source };
-    }
-    
-    console.log(`No image found for "${query}"`);
+    // All sources failed - return null (better no image than wrong image)
+    console.log(`No Wikipedia/Commons image found for "${query}"`);
     return { eventId, imageUrl: null, source: null };
   }
 }
@@ -396,18 +272,18 @@ serve(async (req) => {
   }
 
   try {
-    const { queries, mode = "fast" }: ImageSearchRequest = await req.json();
-    console.log(`Searching images for ${queries.length} events (mode: ${mode})`);
+    const { queries }: ImageSearchRequest = await req.json();
+    console.log(`Searching images for ${queries.length} events (Wikipedia/Commons only)`);
 
     const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
 
     // Limit to prevent abuse
     const limitedQueries = queries.slice(0, 20);
 
-    // Process all queries in parallel with all sources
+    // Process all queries in parallel
     const results = await Promise.all(
       limitedQueries.map(({ eventId, query, year }) =>
-        searchAllSources(eventId, query, year, FIRECRAWL_API_KEY, mode)
+        searchAllSources(eventId, query, year, FIRECRAWL_API_KEY)
       )
     );
 
