@@ -117,11 +117,16 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
   const srcSet = event.imageUrl ? buildWikimediaThumbSrcSet(event.imageUrl) : undefined;
   const sizes = "(min-width: 1024px) 420px, (min-width: 640px) 380px, 320px";
 
-  const emptyStateLabel = (() => {
+  const emptyStateLabel: string | null = (() => {
     if (!shouldLoadImage) return 'Scroll om foto’s te laden';
     if (imageError) return 'Afbeelding niet beschikbaar';
-    if (event.imageStatus === 'none' || event.imageStatus === 'error') return 'Geen foto gevonden';
-    return 'Foto zoeken...';
+    // Only show "Geen foto gevonden" when we actually tried searching (i.e. there's a query).
+    if (event.imageSearchQuery && (event.imageStatus === 'none' || event.imageStatus === 'error')) {
+      return 'Geen foto gevonden';
+    }
+    if (event.imageStatus === 'loading') return 'Foto zoeken...';
+    // Idle (no query / not attempted): don't show a noisy label.
+    return null;
   })();
 
   return (
@@ -152,9 +157,11 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-muted to-secondary/30">
             <ImageOff className="h-10 w-10 text-muted-foreground/30" />
-            <span className="text-xs text-muted-foreground/50">
-              {emptyStateLabel}
-            </span>
+            {emptyStateLabel && (
+              <span className="text-xs text-muted-foreground/50">
+                {emptyStateLabel}
+              </span>
+            )}
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />

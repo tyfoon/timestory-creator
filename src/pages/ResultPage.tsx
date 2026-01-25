@@ -44,15 +44,23 @@ const ResultPage = () => {
       const cached = getCachedTimeline(data, language);
       if (cached) {
         console.log('Using cached timeline');
-        setEvents(cached.events);
+        // Normalize older cached data: events without imageSearchQuery should not show "Geen foto gevonden".
+        const normalizedCachedEvents = cached.events.map((e) => {
+          if (!e.imageSearchQuery && (e.imageStatus === 'none' || e.imageStatus === 'error')) {
+            return { ...e, imageStatus: 'idle' as const };
+          }
+          return e;
+        });
+
+        setEvents(normalizedCachedEvents);
         setSummary(cached.summary);
         setFamousBirthdays(cached.famousBirthdays);
         setIsLoading(false);
 
         // If some images are still marked as 'loading', resume loading them
-        const needImages = cached.events.some(e => e.imageStatus === 'loading');
+        const needImages = normalizedCachedEvents.some(e => e.imageStatus === 'loading');
         if (needImages) {
-          loadImages(cached.events);
+          loadImages(normalizedCachedEvents);
         }
         return;
       }
@@ -81,7 +89,8 @@ const ResultPage = () => {
 
         // Frontend-only: mark image loading state so cards don't show an infinite spinner.
         const eventsWithImageStatus = sortedEvents.map((e) => {
-          if (!e.imageSearchQuery) return { ...e, imageStatus: 'none' as const };
+          // No search query means: we never attempted an image search, so don't show "Geen foto gevonden".
+          if (!e.imageSearchQuery) return { ...e, imageStatus: 'idle' as const };
           return { ...e, imageStatus: 'loading' as const };
         });
         
