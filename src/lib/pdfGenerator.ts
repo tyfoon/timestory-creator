@@ -144,7 +144,7 @@ const getLayoutForIndex = (index: number): LayoutType => {
 const monthNames = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 
                     'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
 
-// Draw the creative timeline ribbon on page edge
+// Draw the creative timeline ribbon on page edge - shows MONTH prominently
 const drawTimelineRibbon = (
   pdf: jsPDF,
   event: TimelineEvent,
@@ -152,70 +152,83 @@ const drawTimelineRibbon = (
   accentColor: [number, number, number],
   primaryColor: [number, number, number]
 ) => {
-  const ribbonWidth = 18;
+  const ribbonWidth = 22;
   const ribbonX = 0;
   
   // Golden ribbon background
   pdf.setFillColor(...accentColor);
   pdf.rect(ribbonX, 25, ribbonWidth, pageHeight - 35, 'F');
   
-  // Timeline dots and line
+  // Timeline vertical line
   pdf.setDrawColor(255, 255, 255);
-  pdf.setLineWidth(1);
-  pdf.line(ribbonX + ribbonWidth / 2, 40, ribbonX + ribbonWidth / 2, pageHeight - 20);
+  pdf.setLineWidth(1.5);
+  pdf.line(ribbonX + ribbonWidth / 2, 35, ribbonX + ribbonWidth / 2, pageHeight - 15);
   
-  // Top dot
+  // Top connection dot
   pdf.setFillColor(255, 255, 255);
-  pdf.circle(ribbonX + ribbonWidth / 2, 40, 3, 'F');
+  pdf.circle(ribbonX + ribbonWidth / 2, 35, 4, 'F');
   
-  // Main date marker
-  const markerY = 80;
+  // === MONTH DISPLAY (main feature) ===
+  const monthBoxY = 55;
+  const monthBoxHeight = event.month ? 90 : 50;
+  
+  // Month background box
   pdf.setFillColor(...primaryColor);
-  pdf.circle(ribbonX + ribbonWidth / 2, markerY, 6, 'F');
-  pdf.setFillColor(255, 255, 255);
-  pdf.circle(ribbonX + ribbonWidth / 2, markerY, 3, 'F');
+  pdf.roundedRect(ribbonX + 2, monthBoxY, ribbonWidth - 4, monthBoxHeight, 3, 3, 'F');
   
-  // Month text (vertical)
+  // Day number at top (if available)
+  if (event.day) {
+    pdf.setFontSize(14);
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(event.day.toString(), ribbonX + ribbonWidth / 2, monthBoxY + 14, { align: 'center' });
+  }
+  
+  // Month name - displayed vertically and prominently
   if (event.month) {
     const monthName = monthNames[event.month - 1].toUpperCase();
-    pdf.setFontSize(7);
+    const startY = event.day ? monthBoxY + 25 : monthBoxY + 12;
+    
+    pdf.setFontSize(9);
     pdf.setTextColor(255, 255, 255);
     pdf.setFont('helvetica', 'bold');
     
     // Draw each letter vertically
     const letters = monthName.split('');
-    let letterY = markerY + 20;
+    let letterY = startY;
     for (const letter of letters) {
       pdf.text(letter, ribbonX + ribbonWidth / 2, letterY, { align: 'center' });
-      letterY += 8;
+      letterY += 7;
     }
   }
   
-  // Year at bottom of ribbon
-  pdf.setFontSize(9);
+  // Timeline marker dot after month box
+  const markerY = monthBoxY + monthBoxHeight + 15;
+  pdf.setFillColor(255, 255, 255);
+  pdf.circle(ribbonX + ribbonWidth / 2, markerY, 5, 'F');
+  pdf.setFillColor(...primaryColor);
+  pdf.circle(ribbonX + ribbonWidth / 2, markerY, 3, 'F');
+  
+  // === YEAR at bottom ===
+  const yearBoxY = pageHeight - 55;
+  pdf.setFillColor(...primaryColor);
+  pdf.roundedRect(ribbonX + 2, yearBoxY, ribbonWidth - 4, 35, 3, 3, 'F');
+  
+  pdf.setFontSize(11);
   pdf.setTextColor(255, 255, 255);
   pdf.setFont('helvetica', 'bold');
   
   // Draw year vertically
   const yearStr = event.year.toString();
-  let yearY = pageHeight - 60;
+  let yearY = yearBoxY + 10;
   for (const digit of yearStr) {
     pdf.text(digit, ribbonX + ribbonWidth / 2, yearY, { align: 'center' });
-    yearY += 10;
+    yearY += 7;
   }
   
-  // Bottom dot
+  // Bottom connection dot
   pdf.setFillColor(255, 255, 255);
-  pdf.circle(ribbonX + ribbonWidth / 2, pageHeight - 20, 3, 'F');
-  
-  // Day marker if available
-  if (event.day) {
-    pdf.setFillColor(...primaryColor);
-    pdf.roundedRect(ribbonX + 2, markerY - 25, ribbonWidth - 4, 16, 2, 2, 'F');
-    pdf.setFontSize(10);
-    pdf.setTextColor(255, 255, 255);
-    pdf.text(event.day.toString(), ribbonX + ribbonWidth / 2, markerY - 14, { align: 'center' });
-  }
+  pdf.circle(ribbonX + ribbonWidth / 2, pageHeight - 15, 4, 'F');
 };
 
 export const generateTimelinePdf = async (
@@ -676,7 +689,7 @@ async function renderFullBleedLayout(
   fullName: string
 ) {
   // Full bleed image at top (55% of page), offset for ribbon
-  const ribbonWidth = 18;
+  const ribbonWidth = 22;
   const imageHeight = pageHeight * 0.55;
   const imageWidth = pageWidth - ribbonWidth;
   
@@ -769,7 +782,7 @@ async function renderLeftHeroLayout(
   // Header
   renderPageHeader(pdf, fullName, event.year, pageWidth, margin, primaryColor);
 
-  const ribbonWidth = 18;
+  const ribbonWidth = 22;
   const contentTop = 35;
   const imageWidth = (pageWidth - ribbonWidth) * 0.55;
   const imageHeight = pageHeight - contentTop - 50;
@@ -952,7 +965,7 @@ async function renderDiagonalLayout(
   renderPageHeader(pdf, fullName, event.year, pageWidth, margin, primaryColor);
 
   // Large image area (top portion), offset for ribbon
-  const ribbonWidth = 18;
+  const ribbonWidth = 22;
   const imageAreaHeight = pageHeight * 0.48;
   const imageAreaX = ribbonWidth + 5;
   const imageAreaWidth = pageWidth - imageAreaX - 12;
@@ -1048,7 +1061,7 @@ async function renderPolaroidLayout(
   renderPageHeader(pdf, fullName, event.year, pageWidth, margin, primaryColor);
 
   // Polaroid frame - offset for ribbon
-  const ribbonWidth = 18;
+  const ribbonWidth = 22;
   const polaroidWidth = 130;
   const polaroidHeight = 160;
   const polaroidX = ribbonWidth + ((pageWidth - ribbonWidth - polaroidWidth) / 2);
@@ -1151,7 +1164,7 @@ function renderPageHeader(
   margin: number,
   primaryColor: [number, number, number]
 ) {
-  const ribbonWidth = 18;
+  const ribbonWidth = 22;
   
   pdf.setFillColor(...primaryColor);
   pdf.rect(ribbonWidth, 0, pageWidth - ribbonWidth, 25, 'F');
