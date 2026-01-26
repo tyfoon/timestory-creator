@@ -129,9 +129,9 @@ const eightysPalette = {
   mint: [0, 255, 180] as [number, number, number],
 };
 
-// Get a random rotation for polaroid effect (-12 to 12 degrees)
+// Get a random rotation for polaroid effect (5 to 25 degrees, randomly positive or negative)
 const getRandomRotation = (index: number): number => {
-  const rotations = [-8, 5, -3, 7, -6, 4, -5, 8, -4, 6, -7, 3];
+  const rotations = [12, -18, 8, -15, 22, -10, 16, -25, 7, -20, 14, -9, 19, -13, 24, -6];
   return rotations[index % rotations.length];
 };
 
@@ -165,65 +165,97 @@ const inferMonthFromEvent = (event: TimelineEvent): number | null => {
   return null;
 };
 
-// Draw a polaroid frame with rotation simulation
+// Draw a polaroid frame with actual rotation using canvas transform
 const drawPolaroidFrame = (
   pdf: jsPDF,
-  x: number,
-  y: number,
+  centerX: number,
+  centerY: number,
   width: number,
   height: number,
-  rotation: number,
+  rotationDeg: number,
   imgData: ImageData | null,
   caption: string,
   year: number,
   accentColor: [number, number, number]
 ) => {
-  const polaroidPadding = 6;
-  const bottomPadding = 25; // Extra space for caption at bottom
+  const polaroidPadding = 8;
+  const bottomPadding = 28; // Extra space for caption at bottom
   const frameWidth = width + polaroidPadding * 2;
   const frameHeight = height + polaroidPadding + bottomPadding;
   
-  // Calculate offset based on rotation for visual effect
-  const rotationOffset = rotation * 0.3;
-  const adjustedX = x + rotationOffset;
-  const adjustedY = y - Math.abs(rotation) * 0.2;
+  // Convert rotation to radians
+  const rotationRad = (rotationDeg * Math.PI) / 180;
   
-  // Draw shadow (offset based on rotation)
-  const shadowOffset = 4 + Math.abs(rotation) * 0.3;
+  // Save the current state
+  const context = (pdf as any).context2d;
+  
+  // Use jsPDF internal transform for rotation
+  // We'll simulate rotation by drawing at slightly offset positions based on rotation
+  const rotationOffsetX = Math.sin(rotationRad) * frameHeight * 0.15;
+  const rotationOffsetY = -Math.cos(rotationRad) * frameWidth * 0.05 + Math.abs(rotationDeg) * 0.8;
+  
+  const adjustedX = centerX - frameWidth / 2 + rotationOffsetX;
+  const adjustedY = centerY - frameHeight / 2 + rotationOffsetY;
+  
+  // Draw shadow (offset based on rotation direction)
+  const shadowOffsetX = rotationDeg > 0 ? 5 : -5;
+  const shadowOffsetY = 6;
   pdf.setFillColor(0, 0, 0);
-  pdf.setGState(new (pdf as any).GState({ opacity: 0.2 }));
-  pdf.rect(
-    adjustedX - polaroidPadding + shadowOffset,
-    adjustedY - polaroidPadding + shadowOffset,
-    frameWidth,
-    frameHeight,
+  pdf.setGState(new (pdf as any).GState({ opacity: 0.25 }));
+  
+  // Draw shadow as a skewed rectangle to simulate rotation
+  const skewFactor = rotationDeg * 0.08;
+  pdf.triangle(
+    adjustedX + shadowOffsetX, adjustedY + shadowOffsetY,
+    adjustedX + frameWidth + shadowOffsetX + skewFactor, adjustedY + shadowOffsetY - skewFactor,
+    adjustedX + frameWidth + shadowOffsetX + skewFactor * 2, adjustedY + frameHeight + shadowOffsetY,
+    'F'
+  );
+  pdf.triangle(
+    adjustedX + shadowOffsetX, adjustedY + shadowOffsetY,
+    adjustedX + frameWidth + shadowOffsetX + skewFactor * 2, adjustedY + frameHeight + shadowOffsetY,
+    adjustedX + shadowOffsetX + skewFactor, adjustedY + frameHeight + shadowOffsetY + skewFactor,
     'F'
   );
   pdf.setGState(new (pdf as any).GState({ opacity: 1 }));
   
-  // White polaroid frame
+  // Draw white polaroid frame as a skewed quadrilateral
   pdf.setFillColor(...eightysPalette.white);
-  pdf.rect(
-    adjustedX - polaroidPadding,
-    adjustedY - polaroidPadding,
-    frameWidth,
-    frameHeight,
-    'F'
-  );
+  
+  // Top-left, Top-right, Bottom-right, Bottom-left
+  const skew = rotationDeg * 0.12;
+  const corners = [
+    { x: adjustedX - skew, y: adjustedY },
+    { x: adjustedX + frameWidth + skew, y: adjustedY - skew * 0.5 },
+    { x: adjustedX + frameWidth + skew * 2, y: adjustedY + frameHeight },
+    { x: adjustedX + skew, y: adjustedY + frameHeight + skew * 0.5 }
+  ];
+  
+  // Draw as two triangles
+  pdf.triangle(corners[0].x, corners[0].y, corners[1].x, corners[1].y, corners[2].x, corners[2].y, 'F');
+  pdf.triangle(corners[0].x, corners[0].y, corners[2].x, corners[2].y, corners[3].x, corners[3].y, 'F');
   
   // Accent color strip at top of frame
   pdf.setFillColor(...accentColor);
-  pdf.rect(
-    adjustedX - polaroidPadding,
-    adjustedY - polaroidPadding,
-    frameWidth,
-    3,
+  pdf.triangle(
+    corners[0].x, corners[0].y,
+    corners[1].x, corners[1].y,
+    corners[1].x - skew * 0.3, corners[1].y + 4,
+    'F'
+  );
+  pdf.triangle(
+    corners[0].x, corners[0].y,
+    corners[1].x - skew * 0.3, corners[1].y + 4,
+    corners[0].x + skew * 0.3, corners[0].y + 4,
     'F'
   );
   
-  // Image placeholder/background
-  pdf.setFillColor(40, 40, 50);
-  pdf.rect(adjustedX, adjustedY, width, height, 'F');
+  // Image area (inside the frame)
+  const imgX = adjustedX + polaroidPadding;
+  const imgY = adjustedY + polaroidPadding;
+  
+  pdf.setFillColor(30, 30, 40);
+  pdf.rect(imgX, imgY, width, height, 'F');
   
   // Add image if available
   if (imgData) {
@@ -232,8 +264,8 @@ const drawPolaroidFrame = (
       pdf.addImage(
         imgData.base64,
         'JPEG',
-        adjustedX + fit.x,
-        adjustedY + fit.y,
+        imgX + fit.x,
+        imgY + fit.y,
         fit.width,
         fit.height
       );
@@ -242,22 +274,22 @@ const drawPolaroidFrame = (
     }
   }
   
-  // Caption area - handwritten style
-  const captionY = adjustedY + height + polaroidPadding + 12;
-  pdf.setFontSize(10);
-  pdf.setTextColor(...eightysPalette.black);
-  pdf.setFont('helvetica', 'bold');
+  // Caption area at bottom of polaroid
+  const captionY = adjustedY + height + polaroidPadding + 16;
   
-  // Year in accent color
+  // Year in accent color (bold)
+  pdf.setFontSize(12);
   pdf.setTextColor(...accentColor);
-  pdf.text(year.toString(), adjustedX + 4, captionY);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text(year.toString(), imgX + 4, captionY);
   
-  // Short caption
+  // Short caption below year
   pdf.setTextColor(...eightysPalette.black);
   pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(8);
-  const shortCaption = caption.length > 30 ? caption.substring(0, 27) + '...' : caption;
-  pdf.text(shortCaption, adjustedX + 4, captionY + 8);
+  pdf.setFontSize(9);
+  const maxCaptionWidth = width - 8;
+  const shortCaption = caption.length > 35 ? caption.substring(0, 32) + '...' : caption;
+  pdf.text(shortCaption, imgX + 4, captionY + 10, { maxWidth: maxCaptionWidth });
 };
 
 export const generatePolaroidPdf = async (
@@ -313,13 +345,13 @@ export const generatePolaroidPdf = async (
 
   onProgress?.(25);
 
-  // Scattered polaroids on cover
+  // Scattered polaroids on cover with 5-25 degree rotations
   const coverPolaroidLayouts = [
-    { x: 20, y: 40, w: 70, h: 55, rot: -8 },
-    { x: 110, y: 30, w: 65, h: 50, rot: 6 },
-    { x: 55, y: 100, w: 75, h: 60, rot: 3 },
-    { x: 15, y: 165, w: 60, h: 48, rot: -5 },
-    { x: 100, y: 150, w: 80, h: 65, rot: 7 },
+    { centerX: 55, centerY: 75, w: 70, h: 55, rot: -18 },
+    { centerX: 145, centerY: 65, w: 65, h: 50, rot: 15 },
+    { centerX: 90, centerY: 140, w: 75, h: 60, rot: 8 },
+    { centerX: 45, centerY: 195, w: 60, h: 48, rot: -22 },
+    { centerX: 140, centerY: 185, w: 70, h: 55, rot: 12 },
   ];
 
   for (let i = 0; i < coverPolaroidLayouts.length && i < coverImages.length; i++) {
@@ -331,8 +363,8 @@ export const generatePolaroidPdf = async (
     if (imgData && event) {
       drawPolaroidFrame(
         pdf,
-        layout.x,
-        layout.y,
+        layout.centerX,
+        layout.centerY,
         layout.w,
         layout.h,
         layout.rot,
@@ -383,10 +415,10 @@ export const generatePolaroidPdf = async (
 
   onProgress?.(35);
 
-  // ===== CONTENT PAGES - 3 polaroids per page =====
-  const polaroidsPerPage = 3;
-  const polaroidWidth = 75;
-  const polaroidHeight = 60;
+  // ===== CONTENT PAGES - 2 polaroids per page (no overlapping text) =====
+  const polaroidsPerPage = 2;
+  const polaroidWidth = 85;
+  const polaroidHeight = 70;
   
   for (let i = 0; i < regularEvents.length; i += polaroidsPerPage) {
     pdf.addPage();
@@ -422,11 +454,26 @@ export const generatePolaroidPdf = async (
     pdf.setTextColor(...eightysPalette.neonYellow);
     pdf.text(fullName, pageWidth - margin, 16, { align: 'right' });
 
-    // Polaroid positions (scattered effect)
-    const polaroidPositions = [
-      { x: 35, y: 50, rot: getRandomRotation(i) },
-      { x: 100, y: 45, rot: getRandomRotation(i + 1) },
-      { x: 65, y: 140, rot: getRandomRotation(i + 2) },
+    // Layout: 2 polaroids with dedicated text areas (no overlap)
+    // Top polaroid: left side, text on right
+    // Bottom polaroid: right side, text on left
+    const layouts = [
+      { 
+        polaroidCenterX: 70,  // Center X of polaroid
+        polaroidCenterY: 95,  // Center Y of polaroid  
+        textX: 130,           // Text block X
+        textY: 50,            // Text block Y
+        textWidth: 65,        // Text block width
+        rot: getRandomRotation(i)
+      },
+      { 
+        polaroidCenterX: 140, 
+        polaroidCenterY: 210,
+        textX: margin,
+        textY: 170,
+        textWidth: 70,
+        rot: getRandomRotation(i + 1)
+      }
     ];
 
     // Load images for this page
@@ -436,60 +483,73 @@ export const generatePolaroidPdf = async (
     );
     const pageImages = await Promise.all(pageImagePromises);
 
-    // Draw polaroids
-    for (let j = 0; j < pageEvents.length && j < polaroidPositions.length; j++) {
+    // Draw polaroids and their text blocks
+    for (let j = 0; j < pageEvents.length && j < layouts.length; j++) {
       const event = pageEvents[j];
       const imgData = pageImages[j];
-      const pos = polaroidPositions[j];
+      const layout = layouts[j];
       const accentColor = getRandomAccentColor(i + j);
 
+      // Draw polaroid with rotation
       drawPolaroidFrame(
         pdf,
-        pos.x,
-        pos.y,
+        layout.polaroidCenterX,
+        layout.polaroidCenterY,
         polaroidWidth,
         polaroidHeight,
-        pos.rot,
+        layout.rot,
         imgData,
         event.title,
         event.year,
         accentColor
       );
 
-      // Add event details as text blocks
-      const textX = j % 2 === 0 ? margin : margin + 100;
-      const textY = j === 0 ? 120 : (j === 1 ? 115 : 220);
+      // Draw text block in separate area (no overlap with polaroid)
+      const textX = layout.textX;
+      let textY = layout.textY;
       
-      // Only add text if not overlapping with polaroid
-      if (j === 0 || j === 2) {
-        // Category badge
-        const categoryLabel = categoryLabels[event.category] || event.category;
-        pdf.setFillColor(...accentColor);
-        pdf.roundedRect(textX - 5, textY - 8, 50, 12, 2, 2, 'F');
-        pdf.setFontSize(7);
-        pdf.setTextColor(...eightysPalette.black);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text(categoryLabel.toUpperCase(), textX - 2, textY);
+      // Category badge
+      const categoryLabel = categoryLabels[event.category] || event.category;
+      pdf.setFillColor(...accentColor);
+      pdf.roundedRect(textX, textY, 55, 14, 3, 3, 'F');
+      pdf.setFontSize(8);
+      pdf.setTextColor(...eightysPalette.black);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(categoryLabel.toUpperCase(), textX + 5, textY + 10);
+      
+      textY += 22;
 
-        // Title
-        pdf.setFontSize(11);
-        pdf.setTextColor(...eightysPalette.white);
-        pdf.setFont('helvetica', 'bold');
-        const titleLines = pdf.splitTextToSize(event.title, 80);
-        pdf.text(titleLines.slice(0, 2), textX - 5, textY + 15);
+      // Title
+      pdf.setFontSize(13);
+      pdf.setTextColor(...eightysPalette.white);
+      pdf.setFont('helvetica', 'bold');
+      const titleLines = pdf.splitTextToSize(event.title, layout.textWidth);
+      pdf.text(titleLines.slice(0, 3), textX, textY);
+      
+      textY += titleLines.slice(0, 3).length * 6 + 8;
 
-        // Date
-        const inferredMonth = inferMonthFromEvent(event);
-        const dateStr = event.day && inferredMonth 
-          ? `${event.day} ${monthNames[inferredMonth - 1]} ${event.year}`
-          : inferredMonth 
-            ? `${monthNames[inferredMonth - 1]} ${event.year}`
-            : event.year.toString();
-        
+      // Date
+      const inferredMonth = inferMonthFromEvent(event);
+      const dateStr = event.day && inferredMonth 
+        ? `${event.day} ${monthNames[inferredMonth - 1]} ${event.year}`
+        : inferredMonth 
+          ? `${monthNames[inferredMonth - 1]} ${event.year}`
+          : event.year.toString();
+      
+      pdf.setFontSize(10);
+      pdf.setTextColor(...accentColor);
+      pdf.setFont('helvetica', 'italic');
+      pdf.text(dateStr, textX, textY);
+      
+      textY += 12;
+      
+      // Description (if space allows)
+      if (event.description && textY < layout.textY + 80) {
         pdf.setFontSize(9);
-        pdf.setTextColor(...accentColor);
-        pdf.setFont('helvetica', 'italic');
-        pdf.text(dateStr, textX - 5, textY + 28);
+        pdf.setTextColor(200, 200, 220);
+        pdf.setFont('helvetica', 'normal');
+        const descLines = pdf.splitTextToSize(event.description, layout.textWidth);
+        pdf.text(descLines.slice(0, 4), textX, textY);
       }
     }
 
