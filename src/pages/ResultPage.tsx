@@ -9,8 +9,9 @@ import { FormData } from '@/types/form';
 import { TimelineEvent, FamousBirthday } from '@/types/timeline';
 import { generateTimelineStreaming, searchImages } from '@/lib/api/timeline';
 import { generateTimelinePdf } from '@/lib/pdfGenerator';
+import { generatePolaroidPdf } from '@/lib/pdfGeneratorPolaroid';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents, getCacheKey } from '@/lib/timelineCache';
-import { ArrowLeft, Clock, Loader2, AlertCircle, RefreshCw, Cake, Star, Download } from 'lucide-react';
+import { ArrowLeft, Clock, Loader2, AlertCircle, RefreshCw, Cake, Star, Download, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const ResultPage = () => {
@@ -28,7 +29,9 @@ const ResultPage = () => {
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isGeneratingPolaroidPdf, setIsGeneratingPolaroidPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState(0);
+  const [polaroidPdfProgress, setPolaroidPdfProgress] = useState(0);
   const [streamingProgress, setStreamingProgress] = useState(0);
 
   // Track current formData for cache updates
@@ -326,6 +329,39 @@ const ResultPage = () => {
     }
   };
 
+  const handleDownloadPolaroidPdf = async () => {
+    if (!formData || events.length === 0) return;
+    
+    setIsGeneratingPolaroidPdf(true);
+    setPolaroidPdfProgress(0);
+    
+    try {
+      await generatePolaroidPdf({
+        events,
+        famousBirthdays,
+        formData,
+        summary
+      }, (progress) => {
+        setPolaroidPdfProgress(progress);
+      });
+      
+      toast({
+        title: "Polaroid PDF gedownload!",
+        description: "Je jaren 80 polaroid editie is klaar",
+      });
+    } catch (err) {
+      console.error('Error generating Polaroid PDF:', err);
+      toast({
+        variant: "destructive",
+        title: "Fout bij PDF genereren",
+        description: "Probeer het opnieuw",
+      });
+    } finally {
+      setIsGeneratingPolaroidPdf(false);
+      setPolaroidPdfProgress(0);
+    }
+  };
+
   const getTitle = () => {
     if (!formData) return 'Jouw Tijdreis';
     
@@ -422,7 +458,7 @@ const ResultPage = () => {
               {events.length > 0 && !isLoading && (
                 <Button
                   onClick={handleDownloadPdf}
-                  disabled={isGeneratingPdf || isLoadingImages}
+                  disabled={isGeneratingPdf || isGeneratingPolaroidPdf || isLoadingImages}
                   size="sm"
                   className="btn-vintage gap-2"
                 >
@@ -434,7 +470,30 @@ const ResultPage = () => {
                   ) : (
                     <>
                       <Download className="h-4 w-4" />
-                      <span className="hidden sm:inline">Download PDF</span>
+                      <span className="hidden sm:inline">Magazine PDF</span>
+                    </>
+                  )}
+                </Button>
+              )}
+              
+              {/* Download Polaroid PDF button */}
+              {events.length > 0 && !isLoading && (
+                <Button
+                  onClick={handleDownloadPolaroidPdf}
+                  disabled={isGeneratingPdf || isGeneratingPolaroidPdf || isLoadingImages}
+                  size="sm"
+                  variant="outline"
+                  className="gap-2 border-pink-500/50 text-pink-600 hover:bg-pink-500/10 hover:text-pink-700"
+                >
+                  {isGeneratingPolaroidPdf ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>{polaroidPdfProgress}%</span>
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="h-4 w-4" />
+                      <span className="hidden sm:inline">Polaroid PDF</span>
                     </>
                   )}
                 </Button>
