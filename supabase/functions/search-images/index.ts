@@ -157,6 +157,85 @@ async function searchWikimediaCommons(
   }
 }
 
+// ============== NATIONAAL ARCHIEF (Dutch historical photos - CC0/Public Domain) ==============
+async function searchNationaalArchief(
+  query: string,
+  year: number | undefined
+): Promise<{ imageUrl: string; source: string } | null> {
+  try {
+    // Search Nationaal Archief via their open data API
+    // Their photos are also mirrored to Wikimedia Commons under "Images from Nationaal Archief"
+    const searchQuery = year 
+      ? `${query} ${year} Nationaal Archief`
+      : `${query} Nationaal Archief`;
+    
+    // Search Commons specifically for Nationaal Archief images
+    const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srnamespace=6&format=json&srlimit=5&origin=*`;
+    const searchRes = await fetch(searchUrl);
+    if (!searchRes.ok) return null;
+    
+    const searchData = await searchRes.json();
+    const results = searchData.query?.search || [];
+    
+    for (const result of results.slice(0, 3)) {
+      try {
+        const title = result.title;
+        
+        // Verify it's actually from Nationaal Archief by checking categories
+        const catUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=categories&format=json&origin=*`;
+        const catRes = await fetch(catUrl);
+        if (!catRes.ok) continue;
+        
+        const catData = await catRes.json();
+        const pages = catData.query?.pages;
+        if (!pages) continue;
+        
+        const pageId = Object.keys(pages)[0];
+        if (!pageId || pageId === '-1') continue;
+        
+        const categories = pages[pageId]?.categories || [];
+        const isFromNA = categories.some((cat: { title: string }) => 
+          cat.title.toLowerCase().includes('nationaal archief') ||
+          cat.title.toLowerCase().includes('anefo') ||
+          cat.title.toLowerCase().includes('van de poll')
+        );
+        
+        if (!isFromNA) continue;
+        
+        // Get image info with thumbnail
+        const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=${THUMB_WIDTH}&format=json&origin=*`;
+        const infoRes = await fetch(infoUrl);
+        if (!infoRes.ok) continue;
+        
+        const infoData = await infoRes.json();
+        const infoPages = infoData.query?.pages;
+        if (!infoPages) continue;
+        
+        const infoPageId = Object.keys(infoPages)[0];
+        if (!infoPageId || infoPageId === '-1') continue;
+        
+        const imageInfo = infoPages[infoPageId]?.imageinfo?.[0];
+        const thumbUrl = imageInfo?.thumburl || imageInfo?.url;
+        
+        if (thumbUrl && isAllowedImageUrl(thumbUrl)) {
+          console.log(`Found Nationaal Archief image for "${query}"`);
+          return {
+            imageUrl: thumbUrl,
+            source: `https://commons.wikimedia.org/wiki/${encodeURIComponent(title)}`
+          };
+        }
+      } catch {
+        continue;
+      }
+    }
+    
+    return null;
+  } catch (e) {
+    console.error("Nationaal Archief search error:", e);
+    return null;
+  }
+}
+
 // ============== FIRECRAWL WIKIPEDIA ONLY (no generic sources) ==============
 async function searchFirecrawlWikipediaOnly(
   query: string, 
@@ -234,9 +313,12 @@ async function searchAllSources(
 ): Promise<ImageResult> {
   console.log(`Searching for: "${query}" (${year || 'no year'})`);
   
-  // Search Wikipedia in multiple languages in parallel
-  const wikipediaSources = [
+  // Search all sources in parallel - prioritize Dutch/historical sources
+  const allSources = [
+    // Dutch sources first (likely most relevant for Dutch app)
+    searchNationaalArchief(query, year),
     searchWikipediaWithImages(query, year, 'nl'),
+    // International sources
     searchWikipediaWithImages(query, year, 'en'),
     searchWikipediaWithImages(query, year, 'de'),
     searchWikimediaCommons(query, year),
@@ -244,13 +326,13 @@ async function searchAllSources(
   
   // Add Firecrawl Wikipedia-only search if available
   if (firecrawlKey) {
-    wikipediaSources.push(searchFirecrawlWikipediaOnly(query, year, firecrawlKey));
+    allSources.push(searchFirecrawlWikipediaOnly(query, year, firecrawlKey));
   }
 
   // Use Promise.any to get the first successful result
   try {
     const result = await Promise.any(
-      wikipediaSources.map(async (promise) => {
+      allSources.map(async (promise) => {
         const res = await promise;
         if (!res) throw new Error('No result');
         return res;
@@ -261,7 +343,7 @@ async function searchAllSources(
     return { eventId, imageUrl: result.imageUrl, source: result.source };
   } catch {
     // All sources failed - return null (better no image than wrong image)
-    console.log(`No Wikipedia/Commons image found for "${query}"`);
+    console.log(`No image found for "${query}" in any source`);
     return { eventId, imageUrl: null, source: null };
   }
 }
