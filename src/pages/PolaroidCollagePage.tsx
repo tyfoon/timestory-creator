@@ -36,49 +36,6 @@ const PolaroidCollagePage = () => {
   const totalPages = Math.ceil(events.length / eventsPerPage);
   const currentEvents = events.slice(currentPage * eventsPerPage, (currentPage + 1) * eventsPerPage);
 
-  useEffect(() => {
-    const stored = sessionStorage.getItem('timelineFormData');
-    const storedLength = sessionStorage.getItem('timelineLength') || 'short';
-    
-    if (stored) {
-      const data = JSON.parse(stored) as FormData;
-      setFormData(data);
-      formDataRef.current = data;
-
-      const cached = getCachedTimeline(data, language);
-      if (cached) {
-        const normalizedCachedEvents = cached.events.map((e) => {
-          if (e.imageSearchQuery && (e.imageStatus === 'none' || e.imageStatus === 'error' || !e.imageUrl)) {
-            return { ...e, imageStatus: 'loading' as const, imageUrl: undefined };
-          }
-          if (!e.imageSearchQuery && (e.imageStatus === 'none' || e.imageStatus === 'error')) {
-            return { ...e, imageStatus: 'idle' as const };
-          }
-          return e;
-        });
-
-        setEvents(normalizedCachedEvents);
-        setSummary(cached.summary);
-        setFamousBirthdays(cached.famousBirthdays);
-        setIsLoading(false);
-
-        const needImages = normalizedCachedEvents.filter(e => 
-          e.imageSearchQuery && (!e.imageUrl || e.imageStatus === 'loading')
-        );
-        if (needImages.length > 0) {
-          loadImagesForEvents(needImages);
-        }
-        return;
-      }
-
-      const maxEvents = storedLength === 'short' ? 20 : undefined;
-      loadTimelineStreaming(data, maxEvents);
-    } else {
-      setError('Geen gegevens gevonden');
-      setIsLoading(false);
-    }
-  }, []);
-
   const processImageQueue = useCallback(async () => {
     if (isProcessingImagesRef.current) return;
     if (imageQueueRef.current.length === 0) return;
@@ -175,14 +132,12 @@ const PolaroidCollagePage = () => {
     processImageQueue();
   }, [processImageQueue]);
 
-  const loadTimelineStreaming = async (data: FormData, maxEvents?: number) => {
+  const loadTimelineStreaming = useCallback(async (data: FormData, maxEvents?: number) => {
     setIsLoading(true);
     setError(null);
     setStreamingProgress(0);
     
     const receivedEvents: TimelineEvent[] = [];
-    let receivedSummary = '';
-    let receivedFamousBirthdays: FamousBirthday[] = [];
     
     try {
       await generateTimelineStreaming(data, language, {
@@ -207,12 +162,10 @@ const PolaroidCollagePage = () => {
             loadImagesForEvents([eventWithStatus]);
           }
         },
-        onSummary: (summary) => {
-          receivedSummary = summary;
-          setSummary(summary);
+        onSummary: (summaryText) => {
+          setSummary(summaryText);
         },
         onFamousBirthdays: (birthdays) => {
-          receivedFamousBirthdays = birthdays;
           setFamousBirthdays(birthdays);
         },
         onComplete: (completeData) => {
@@ -255,7 +208,51 @@ const PolaroidCollagePage = () => {
       setError(err instanceof Error ? err.message : 'Er ging iets mis');
       setIsLoading(false);
     }
-  };
+  }, [language, loadImagesForEvents, toast]);
+
+  // Initialize - now placed AFTER function definitions
+  useEffect(() => {
+    const stored = sessionStorage.getItem('timelineFormData');
+    const storedLength = sessionStorage.getItem('timelineLength') || 'short';
+    
+    if (stored) {
+      const data = JSON.parse(stored) as FormData;
+      setFormData(data);
+      formDataRef.current = data;
+
+      const cached = getCachedTimeline(data, language);
+      if (cached) {
+        const normalizedCachedEvents = cached.events.map((e) => {
+          if (e.imageSearchQuery && (e.imageStatus === 'none' || e.imageStatus === 'error' || !e.imageUrl)) {
+            return { ...e, imageStatus: 'loading' as const, imageUrl: undefined };
+          }
+          if (!e.imageSearchQuery && (e.imageStatus === 'none' || e.imageStatus === 'error')) {
+            return { ...e, imageStatus: 'idle' as const };
+          }
+          return e;
+        });
+
+        setEvents(normalizedCachedEvents);
+        setSummary(cached.summary);
+        setFamousBirthdays(cached.famousBirthdays);
+        setIsLoading(false);
+
+        const needImages = normalizedCachedEvents.filter(e => 
+          e.imageSearchQuery && (!e.imageUrl || e.imageStatus === 'loading')
+        );
+        if (needImages.length > 0) {
+          loadImagesForEvents(needImages);
+        }
+        return;
+      }
+
+      const maxEvents = storedLength === 'short' ? 20 : undefined;
+      loadTimelineStreaming(data, maxEvents);
+    } else {
+      setError('Geen gegevens gevonden');
+      setIsLoading(false);
+    }
+  }, [language, loadImagesForEvents, loadTimelineStreaming]);
 
   const handleClearCache = () => {
     if (formData) {
