@@ -8,25 +8,28 @@ interface PolaroidCardProps {
 
 const monthNames = ['JAN', 'FEB', 'MRT', 'APR', 'MEI', 'JUN', 'JUL', 'AUG', 'SEP', 'OKT', 'NOV', 'DEC'];
 
-// Random rotations between 5 and 25 degrees
-const getRotation = (index: number): number => {
-  const rotations = [-18, 12, -8, 22, -15, 10, -25, 16, -6, 20, -12, 14, -20, 8, -14, 24];
-  return rotations[index % rotations.length];
+// Generate pseudo-random rotation based on event id for consistency
+const getRotation = (id: string): number => {
+  const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  // Range: -25 to +25 degrees
+  return ((hash % 50) - 25);
 };
 
-// Random position offsets for scattered effect
-const getOffset = (index: number): { x: number; y: number } => {
-  const offsets = [
-    { x: -20, y: 10 },
-    { x: 30, y: -15 },
-    { x: -10, y: 25 },
-    { x: 25, y: 5 },
-    { x: -25, y: -10 },
-    { x: 15, y: 20 },
-    { x: -15, y: -20 },
-    { x: 20, y: -5 },
-  ];
-  return offsets[index % offsets.length];
+// Generate pseudo-random position offsets based on event id
+const getOffset = (id: string, index: number): { x: number; y: number } => {
+  const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  // Create scattered effect with larger offsets
+  const xBase = ((hash * 7) % 80) - 40; // -40 to +40
+  const yBase = ((hash * 13) % 60) - 30; // -30 to +30
+  // Add index-based variation for grid positions
+  const indexOffset = {
+    x: (index % 3 - 1) * 15,
+    y: Math.floor(index / 3) * 10 - 10
+  };
+  return { 
+    x: xBase + indexOffset.x, 
+    y: yBase + indexOffset.y 
+  };
 };
 
 // Get neon accent color
@@ -43,11 +46,12 @@ const getAccentColor = (index: number): string => {
 };
 
 export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
-  const rotation = getRotation(index);
-  const offset = getOffset(index);
+  const rotation = getRotation(event.id);
+  const offset = getOffset(event.id, index);
   const accentColor = getAccentColor(index);
   
   const monthLabel = event.month ? monthNames[event.month - 1] : '';
+  const dateDisplay = monthLabel ? `${monthLabel} '${String(event.year).slice(-2)}` : `'${String(event.year).slice(-2)}`;
 
   return (
     <div 
@@ -80,9 +84,9 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
           )}
           
           {/* Date stamp on image edge */}
-          <div className="absolute bottom-2 right-2 flex items-center gap-1">
+          <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/40 px-2 py-0.5 rounded">
             <span className={`font-handwriting text-lg font-bold drop-shadow-lg ${accentColor}`}>
-              {monthLabel} {event.year}
+              {dateDisplay}
             </span>
           </div>
         </div>

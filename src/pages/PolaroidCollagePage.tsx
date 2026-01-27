@@ -31,8 +31,8 @@ const PolaroidCollagePage = () => {
   const imageQueueRef = useRef<TimelineEvent[]>([]);
   const isProcessingImagesRef = useRef(false);
 
-  // 2-3 events per page
-  const eventsPerPage = 3;
+  // 5 events per page for more dense collage
+  const eventsPerPage = 5;
   const totalPages = Math.ceil(events.length / eventsPerPage);
   const currentEvents = events.slice(currentPage * eventsPerPage, (currentPage + 1) * eventsPerPage);
 
