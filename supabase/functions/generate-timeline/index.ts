@@ -126,7 +126,20 @@ async function handleStreamingResponse(
   let lastSentEventCount = 0;
   let sentSummary = false;
   let sentFamousBirthdays = false;
+  let sentComplete = false;
   let buffer = "";
+  let isStreamClosed = false;
+
+  // Safe enqueue helper that checks if stream is still open
+  const safeEnqueue = (controller: ReadableStreamDefaultController, data: string) => {
+    if (isStreamClosed) return;
+    try {
+      controller.enqueue(encoder.encode(data));
+    } catch (e) {
+      console.error('Enqueue error (stream likely closed):', e);
+      isStreamClosed = true;
+    }
+  };
 
   const readable = new ReadableStream({
     async start(controller) {
@@ -142,29 +155,34 @@ async function handleStreamingResponse(
           buffer = lines.pop() || "";
           
           for (const line of lines) {
+            if (isStreamClosed) break;
             if (!line.startsWith('data: ')) continue;
             const data = line.slice(6).trim();
             
             if (data === '[DONE]') {
               // Send final complete message
-              try {
-                const finalData = JSON.parse(functionArguments);
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-                  type: 'complete', 
-                  data: finalData 
-                })}\n\n`));
-              } catch (e) {
-                console.error('Error parsing final data:', e);
-                // Try to send what we have
-                const partialData = tryParsePartialTimeline(functionArguments);
-                if (partialData) {
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+              if (!sentComplete) {
+                try {
+                  const finalData = JSON.parse(functionArguments);
+                  safeEnqueue(controller, `data: ${JSON.stringify({ 
                     type: 'complete', 
-                    data: partialData 
-                  })}\n\n`));
+                    data: finalData 
+                  })}\n\n`);
+                  sentComplete = true;
+                } catch (e) {
+                  console.error('Error parsing final data:', e);
+                  // Try to send what we have
+                  const partialData = tryParsePartialTimeline(functionArguments);
+                  if (partialData) {
+                    safeEnqueue(controller, `data: ${JSON.stringify({ 
+                      type: 'complete', 
+                      data: partialData 
+                    })}\n\n`);
+                    sentComplete = true;
+                  }
                 }
               }
-              controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+              safeEnqueue(controller, 'data: [DONE]\n\n');
               continue;
             }
             
@@ -183,29 +201,29 @@ async function handleStreamingResponse(
                   if (partialData.events && partialData.events.length > lastSentEventCount) {
                     const newEvents = partialData.events.slice(lastSentEventCount);
                     for (const event of newEvents) {
-                      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                      safeEnqueue(controller, `data: ${JSON.stringify({ 
                         type: 'event', 
                         event 
-                      })}\n\n`));
+                      })}\n\n`);
                     }
                     lastSentEventCount = partialData.events.length;
                   }
                   
                   // Send summary once available
                   if (partialData.summary && !sentSummary) {
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                    safeEnqueue(controller, `data: ${JSON.stringify({ 
                       type: 'summary', 
                       summary: partialData.summary 
-                    })}\n\n`));
+                    })}\n\n`);
                     sentSummary = true;
                   }
                   
                   // Send famous birthdays once available
                   if (partialData.famousBirthdays && partialData.famousBirthdays.length > 0 && !sentFamousBirthdays) {
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                    safeEnqueue(controller, `data: ${JSON.stringify({ 
                       type: 'famousBirthdays', 
                       famousBirthdays: partialData.famousBirthdays 
-                    })}\n\n`));
+                    })}\n\n`);
                     sentFamousBirthdays = true;
                   }
                 }
@@ -217,7 +235,7 @@ async function handleStreamingResponse(
         }
         
         // Process any remaining buffer
-        if (buffer.trim()) {
+        if (buffer.trim() && !isStreamClosed) {
           if (buffer.startsWith('data: ')) {
             const data = buffer.slice(6).trim();
             if (data !== '[DONE]') {
@@ -235,41 +253,49 @@ async function handleStreamingResponse(
         }
         
         // Final flush - make sure we send complete data
-        if (!sentSummary || lastSentEventCount === 0) {
+        if (!isStreamClosed && (!sentComplete || lastSentEventCount === 0)) {
           const finalData = tryParsePartialTimeline(functionArguments);
           if (finalData) {
             if (finalData.events && finalData.events.length > lastSentEventCount) {
               const newEvents = finalData.events.slice(lastSentEventCount);
               for (const event of newEvents) {
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                safeEnqueue(controller, `data: ${JSON.stringify({ 
                   type: 'event', 
                   event 
-                })}\n\n`));
+                })}\n\n`);
               }
             }
             if (finalData.summary && !sentSummary) {
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+              safeEnqueue(controller, `data: ${JSON.stringify({ 
                 type: 'summary', 
                 summary: finalData.summary 
-              })}\n\n`));
+              })}\n\n`);
             }
             if (finalData.famousBirthdays && !sentFamousBirthdays) {
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+              safeEnqueue(controller, `data: ${JSON.stringify({ 
                 type: 'famousBirthdays', 
                 famousBirthdays: finalData.famousBirthdays 
-              })}\n\n`));
+              })}\n\n`);
             }
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-              type: 'complete', 
-              data: finalData 
-            })}\n\n`));
+            if (!sentComplete) {
+              safeEnqueue(controller, `data: ${JSON.stringify({ 
+                type: 'complete', 
+                data: finalData 
+              })}\n\n`);
+            }
           }
         }
         
-        controller.close();
+        if (!isStreamClosed) {
+          isStreamClosed = true;
+          controller.close();
+        }
       } catch (e) {
         console.error('Stream error:', e);
-        controller.error(e);
+        if (!isStreamClosed) {
+          isStreamClosed = true;
+          controller.error(e);
+        }
       }
     }
   });
