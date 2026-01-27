@@ -48,8 +48,17 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
   const accentColor = getAccentColor(index);
   const backAccent = getBackAccent(index);
   
-  const monthLabel = event.month ? monthNames[event.month - 1] : '';
-  const dateDisplay = monthLabel ? `${monthLabel} '${String(event.year).slice(-2)}` : `'${String(event.year).slice(-2)}`;
+  // Get month - if no month provided, generate a pseudo-random one based on event id for consistency
+  const getMonthFromEvent = (): number => {
+    if (event.month) return event.month;
+    // Generate pseudo-random month (1-12) based on event id hash
+    const hash = event.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return (hash % 12) + 1;
+  };
+  
+  const month = getMonthFromEvent();
+  const monthLabel = monthNames[month - 1];
+  const dateDisplay = `${monthLabel} '${String(event.year).slice(-2)}`;
 
   const handleClick = () => {
     setIsFlipped(!isFlipped);
