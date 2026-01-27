@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import Index from "./pages/Index";
 import ResultPage from "./pages/ResultPage";
+import PolaroidCollagePage from "./pages/PolaroidCollagePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,6 +21,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/resultaat" element={<ResultPage />} />
+            <Route path="/polaroid" element={<PolaroidCollagePage />} />
             {/* Redirect old routes to home */}
             <Route path="/keuze" element={<Navigate to="/" replace />} />
             <Route path="/invoer" element={<Navigate to="/" replace />} />

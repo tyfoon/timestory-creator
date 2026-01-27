@@ -7,7 +7,7 @@ import { YearRangeInput } from '@/components/YearRangeInput';
 import { OptionalInfoForm } from '@/components/OptionalInfoForm';
 import { Button } from '@/components/ui/button';
 import { TimelineType, FormData, BirthDateData, YearRangeData, OptionalData } from '@/types/form';
-import { Calendar, Clock, ArrowRight, ChevronDown, ChevronUp, Sparkles, Zap, Crown } from 'lucide-react';
+import { Calendar, Clock, ArrowRight, ChevronDown, ChevronUp, Sparkles, Zap, Crown, Camera } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import heroBg from '@/assets/hero-bg.jpg';
 
@@ -63,7 +63,7 @@ const Index = () => {
     return true;
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = (targetRoute: string = '/resultaat') => {
     if (!validateForm()) return;
     const formData: FormData = {
       type,
@@ -73,7 +73,7 @@ const Index = () => {
     };
     sessionStorage.setItem('timelineFormData', JSON.stringify(formData));
     sessionStorage.setItem('timelineLength', timelineLength);
-    navigate('/resultaat');
+    navigate(targetRoute);
   };
 
   return (
@@ -182,11 +182,21 @@ const Index = () => {
               </CollapsibleContent>
             </Collapsible>
 
-            {/* Generate button */}
-            <div className="mt-4 pt-4 border-t border-border">
-              <Button onClick={handleGenerate} className="w-full btn-vintage h-12 text-base font-semibold text-primary-foreground rounded-lg">
+            {/* Generate buttons */}
+            <div className="mt-4 pt-4 border-t border-border space-y-3">
+              <Button onClick={() => handleGenerate('/resultaat')} className="w-full btn-vintage h-12 text-base font-semibold text-primary-foreground rounded-lg">
                 <Sparkles className="mr-2 h-4 w-4" />
                 <span>{t('generateButton') as string}</span>
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              
+              <Button 
+                onClick={() => handleGenerate('/polaroid')} 
+                variant="outline"
+                className="w-full h-11 text-base font-semibold rounded-lg border-2 border-accent/50 bg-gradient-to-r from-accent/10 to-primary/10 hover:from-accent/20 hover:to-primary/20 text-foreground"
+              >
+                <Camera className="mr-2 h-4 w-4 text-accent" />
+                <span>Polaroid Collage</span>
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
