@@ -30,12 +30,6 @@ const PolaroidCollagePage = () => {
   const imageQueueRef = useRef<TimelineEvent[]>([]);
   const isProcessingImagesRef = useRef(false);
 
-  // Group events into chunks of 5 for collage sections
-  const eventsPerSection = 5;
-  const eventSections: TimelineEvent[][] = [];
-  for (let i = 0; i < events.length; i += eventsPerSection) {
-    eventSections.push(events.slice(i, i + eventsPerSection));
-  }
 
   const processImageQueue = useCallback(async () => {
     if (isProcessingImagesRef.current) return;
@@ -382,27 +376,15 @@ const PolaroidCollagePage = () => {
               <Button onClick={() => navigate('/')}>Terug naar start</Button>
             </div>
           ) : (
-            <>
-              {/* Polaroid collage - continuous scroll */}
-              <div className="space-y-8 pb-16">
-                {eventSections.map((section, sectionIndex) => (
-                  <div 
-                    key={sectionIndex}
-                    className="relative min-h-[50vh] flex items-center justify-center"
-                  >
-                    <div className="polaroid-grid w-full max-w-4xl mx-auto py-8">
-                      {section.map((event, index) => (
-                        <PolaroidCard 
-                          key={event.id} 
-                          event={event} 
-                          index={sectionIndex * eventsPerSection + index}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
+            <div className="polaroid-collage w-full max-w-5xl mx-auto pb-16">
+              {events.map((event, index) => (
+                <PolaroidCard 
+                  key={event.id} 
+                  event={event} 
+                  index={index}
+                />
+              ))}
+            </div>
           )}
         </div>
       </section>

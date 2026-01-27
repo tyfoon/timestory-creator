@@ -380,35 +380,40 @@
       linear-gradient(-45deg, transparent 45%, rgba(0,0,0,0.05) 50%, transparent 55%);
   }
 
-  /* Polaroid grid layout - mobile first, responsive */
-  .polaroid-grid {
-    @apply grid gap-3 sm:gap-4 p-4 sm:p-8;
-    /* Mobile: 2 columns, centered */
-    grid-template-columns: repeat(2, auto);
-    justify-content: center;
-    align-items: start;
+  /* Polaroid continuous collage - scattered layout */
+  .polaroid-collage {
+    @apply relative flex flex-wrap justify-center gap-2 p-4;
+    /* Allow natural flow with slight randomness via CSS custom properties */
   }
 
-  @media (min-width: 640px) {
-    .polaroid-grid {
-      grid-template-columns: repeat(3, auto);
-    }
+  /* Each polaroid gets pseudo-random positioning via nth-child patterns */
+  .polaroid-collage > * {
+    @apply relative;
+    flex: 0 0 auto;
   }
 
-  /* Remove the random positioning on mobile for cleaner look */
+  /* Mobile: tighter spacing, subtle offsets */
   @media (max-width: 639px) {
-    .polaroid-grid > * {
-      justify-self: center !important;
-      align-self: start !important;
-      margin: 0 !important;
-    }
+    .polaroid-collage > *:nth-child(4n+1) { margin-top: 0.5rem; margin-left: -0.25rem; }
+    .polaroid-collage > *:nth-child(4n+2) { margin-top: -0.5rem; margin-right: 0.25rem; }
+    .polaroid-collage > *:nth-child(4n+3) { margin-top: 0.75rem; margin-left: 0.5rem; }
+    .polaroid-collage > *:nth-child(4n) { margin-top: -0.25rem; margin-right: -0.25rem; }
+    .polaroid-collage > *:nth-child(6n+1) { margin-bottom: 0.5rem; }
+    .polaroid-collage > *:nth-child(6n+4) { margin-bottom: -0.5rem; }
   }
 
+  /* Desktop: more dramatic scattered effect */
   @media (min-width: 640px) {
-    .polaroid-grid > *:nth-child(1) { justify-self: start; align-self: start; }
-    .polaroid-grid > *:nth-child(2) { justify-self: end; align-self: start; margin-top: 2rem; }
-    .polaroid-grid > *:nth-child(3) { justify-self: center; align-self: center; }
-    .polaroid-grid > *:nth-child(4) { justify-self: start; align-self: end; margin-top: -1rem; }
-    .polaroid-grid > *:nth-child(5) { justify-self: end; align-self: end; }
+    .polaroid-collage {
+      @apply gap-4 p-8;
+    }
+    .polaroid-collage > *:nth-child(5n+1) { margin-top: 1rem; margin-left: -0.5rem; }
+    .polaroid-collage > *:nth-child(5n+2) { margin-top: -1.5rem; margin-right: 0.75rem; }
+    .polaroid-collage > *:nth-child(5n+3) { margin-top: 2rem; margin-left: 1rem; }
+    .polaroid-collage > *:nth-child(5n+4) { margin-top: -0.5rem; margin-right: -0.5rem; }
+    .polaroid-collage > *:nth-child(5n) { margin-top: 1.5rem; margin-left: -0.25rem; }
+    .polaroid-collage > *:nth-child(7n+1) { margin-bottom: 1rem; }
+    .polaroid-collage > *:nth-child(7n+4) { margin-bottom: -0.75rem; }
+    .polaroid-collage > *:nth-child(7n+6) { margin-bottom: 0.5rem; }
   }
 }
