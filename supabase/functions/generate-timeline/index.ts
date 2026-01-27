@@ -584,13 +584,17 @@ Voeg toe:
   } else if (data.type === 'range' && data.yearRange) {
     const { startYear, endYear } = data.yearRange;
     const yearSpan = endYear - startYear;
+    const isShort = data.maxEvents && data.maxEvents <= 20;
     
-    prompt = `Maak een uitgebreide tijdlijn van ${startYear} tot ${endYear}.
+    // For short version, generate exactly maxEvents. For long, scale with year span.
+    const targetEvents = isShort ? data.maxEvents : Math.max(50, yearSpan * 5);
+    
+    prompt = `Maak een ${isShort ? 'KORTE' : 'uitgebreide'} tijdlijn van ${startYear} tot ${endYear}.
 
-Dit is een periode van ${yearSpan} jaar. Genereer minimaal ${Math.max(50, yearSpan * 5)} gebeurtenissen.
+Dit is een periode van ${yearSpan} jaar. Genereer ${isShort ? 'PRECIES' : 'minimaal'} ${targetEvents} gebeurtenissen.
 Markeer alle gebeurtenissen met eventScope="period".
 
-Zorg voor een goede spreiding over alle jaren en verschillende categorieën:
+${isShort ? 'Selecteer alleen de meest iconische en memorabele momenten uit deze periode.' : 'Zorg voor een goede spreiding over alle jaren en verschillende categorieën:'}
 - Belangrijke politieke gebeurtenissen
 - Culturele mijlpalen (muziek, film, kunst)
 - Sportmomenten
