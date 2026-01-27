@@ -210,8 +210,15 @@ const PolaroidCollagePage = () => {
     }
   }, [language, loadImagesForEvents, toast]);
 
-  // Initialize - now placed AFTER function definitions
+  // Track if we've already initialized to prevent re-runs
+  const hasInitialized = useRef(false);
+
+  // Initialize - runs once on mount
   useEffect(() => {
+    // Only run once
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
     const stored = sessionStorage.getItem('timelineFormData');
     const storedLength = sessionStorage.getItem('timelineLength') || 'short';
     
@@ -252,7 +259,8 @@ const PolaroidCollagePage = () => {
       setError('Geen gegevens gevonden');
       setIsLoading(false);
     }
-  }, [language, loadImagesForEvents, loadTimelineStreaming]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleClearCache = () => {
     if (formData) {
