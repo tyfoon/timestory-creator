@@ -21,6 +21,24 @@ export const generateTimelineStreaming = async (
 ): Promise<void> => {
   try {
     console.log('Calling generate-timeline edge function with streaming...');
+
+    // If the SSE connection stalls (no chunks), we should abort so the UI doesn't hang forever.
+    const controller = new AbortController();
+    const STREAM_STALL_TIMEOUT_MS = 120_000;
+    let stallTimer: number | undefined;
+    const resetStallTimer = () => {
+      if (stallTimer) window.clearTimeout(stallTimer);
+      stallTimer = window.setTimeout(() => {
+        controller.abort();
+      }, STREAM_STALL_TIMEOUT_MS);
+    };
+    resetStallTimer();
+
+    // Collect streamed content as a fallback in case the server closes without sending a "complete" message.
+    const collectedEvents: TimelineEvent[] = [];
+    let collectedSummary = '';
+    let collectedBirthdays: FamousBirthday[] = [];
+    let receivedComplete = false;
     
     const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-timeline`, {
       method: 'POST',
@@ -29,6 +47,7 @@ export const generateTimelineStreaming = async (
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         'apikey': SUPABASE_ANON_KEY,
       },
+      signal: controller.signal,
       body: JSON.stringify({
         type: formData.type,
         birthDate: formData.birthDate,
@@ -40,7 +59,11 @@ export const generateTimelineStreaming = async (
       })
     });
 
+    // Response came back; keep the stall timer (we still want to detect stalled streams)
+    resetStallTimer();
+
     if (!response.ok) {
+      if (stallTimer) window.clearTimeout(stallTimer);
       const errorText = await response.text();
       console.error('Edge function error:', response.status, errorText);
       
@@ -59,6 +82,7 @@ export const generateTimelineStreaming = async (
 
     const reader = response.body?.getReader();
     if (!reader) {
+      if (stallTimer) window.clearTimeout(stallTimer);
       callbacks.onError('No response stream');
       return;
     }
@@ -69,6 +93,9 @@ export const generateTimelineStreaming = async (
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
+
+      // We received a chunk; reset stall timer.
+      resetStallTimer();
       
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
@@ -84,15 +111,19 @@ export const generateTimelineStreaming = async (
           
           switch (parsed.type) {
             case 'event':
+              if (parsed.event) collectedEvents.push(parsed.event);
               callbacks.onEvent(parsed.event);
               break;
             case 'summary':
+              if (typeof parsed.summary === 'string') collectedSummary = parsed.summary;
               callbacks.onSummary(parsed.summary);
               break;
             case 'famousBirthdays':
+              if (Array.isArray(parsed.famousBirthdays)) collectedBirthdays = parsed.famousBirthdays;
               callbacks.onFamousBirthdays(parsed.famousBirthdays);
               break;
             case 'complete':
+              receivedComplete = true;
               callbacks.onComplete(parsed.data);
               break;
           }
@@ -101,10 +132,28 @@ export const generateTimelineStreaming = async (
         }
       }
     }
+
+    if (stallTimer) window.clearTimeout(stallTimer);
+
+    // Fallback: if the server ends the stream without a complete message, don't leave the UI hanging.
+    if (!receivedComplete) {
+      if (collectedEvents.length === 0) {
+        callbacks.onError('De verbinding is beëindigd voordat er resultaten binnenkwamen. Probeer opnieuw.');
+        return;
+      }
+
+      callbacks.onComplete({
+        events: collectedEvents,
+        summary: collectedSummary,
+        famousBirthdays: collectedBirthdays,
+      });
+    }
     
   } catch (err) {
+    // If we aborted due to stall timeout, show a friendlier message.
+    const isAbort = err instanceof DOMException && err.name === 'AbortError';
     console.error('Error in streaming timeline:', err);
-    callbacks.onError(err instanceof Error ? err.message : 'Onbekende fout');
+    callbacks.onError(isAbort ? 'Het laden duurde te lang en is gestopt. Probeer opnieuw.' : (err instanceof Error ? err.message : 'Onbekende fout'));
   }
 };
 
