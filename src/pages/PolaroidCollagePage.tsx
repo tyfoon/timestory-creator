@@ -93,10 +93,21 @@ const PolaroidCollagePage = () => {
   }, []);
 
   const applyImageResults = useCallback((images: { eventId: string; imageUrl: string | null; source: string | null }[]) => {
+    // Debug logging to track image matching
+    console.log('Applying image results:', images.map(img => ({
+      eventId: img.eventId,
+      hasImage: !!img.imageUrl,
+      url: img.imageUrl?.substring(0, 50)
+    })));
+    
     setEvents(prev => {
       const updated = prev.map(event => {
         const imageResult = images.find(img => img.eventId === event.id);
         if (!imageResult) return event;
+
+        // Debug: log the match
+        console.log(`Matching image for event "${event.title}" (id: ${event.id}):`, 
+          imageResult.imageUrl ? 'found' : 'not found');
 
         if (imageResult.imageUrl) {
           return {
