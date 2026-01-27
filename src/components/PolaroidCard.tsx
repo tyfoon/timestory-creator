@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { TimelineEvent } from '@/types/timeline';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RotateCcw } from 'lucide-react';
 
 interface PolaroidCardProps {
   event: TimelineEvent;
@@ -12,25 +12,8 @@ const monthNames = ['JAN', 'FEB', 'MRT', 'APR', 'MEI', 'JUN', 'JUL', 'AUG', 'SEP
 // Generate pseudo-random rotation based on event id for consistency
 const getRotation = (id: string): number => {
   const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  // Range: -15 to +15 degrees (reduced for better readability when flipped)
-  return ((hash % 30) - 15);
-};
-
-// Generate pseudo-random position offsets based on event id
-const getOffset = (id: string, index: number): { x: number; y: number } => {
-  const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  // Create scattered effect with larger offsets
-  const xBase = ((hash * 7) % 60) - 30; // -30 to +30
-  const yBase = ((hash * 13) % 40) - 20; // -20 to +20
-  // Add index-based variation for grid positions
-  const indexOffset = {
-    x: (index % 3 - 1) * 10,
-    y: Math.floor(index / 3) * 8 - 8
-  };
-  return { 
-    x: xBase + indexOffset.x, 
-    y: yBase + indexOffset.y 
-  };
+  // Range: -8 to +8 degrees (reduced for mobile)
+  return ((hash % 16) - 8);
 };
 
 // Get neon accent color
@@ -62,7 +45,6 @@ const getBackAccent = (index: number): string => {
 export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const rotation = getRotation(event.id);
-  const offset = getOffset(event.id, index);
   const accentColor = getAccentColor(index);
   const backAccent = getBackAccent(index);
   
@@ -77,7 +59,7 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
     <div 
       className="polaroid-card group cursor-pointer"
       style={{
-        transform: `rotate(${rotation}deg) translate(${offset.x}px, ${offset.y}px)`,
+        transform: `rotate(${rotation}deg)`,
         perspective: '1000px',
       }}
       onClick={handleClick}
@@ -105,17 +87,17 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
                 />
               ) : event.imageStatus === 'loading' ? (
                 <div className="w-full h-full flex items-center justify-center bg-polaroid-dark/50">
-                  <Loader2 className="h-8 w-8 animate-spin text-polaroid-pink" />
+                  <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-polaroid-pink" />
                 </div>
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-polaroid-dark/50">
-                  <span className="text-white/30 text-4xl">📷</span>
+                  <span className="text-white/30 text-3xl sm:text-4xl">📷</span>
                 </div>
               )}
               
               {/* Date stamp on image edge */}
-              <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/40 px-2 py-0.5 rounded">
-                <span className={`font-handwriting text-lg font-bold drop-shadow-lg ${accentColor}`}>
+              <div className="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 flex items-center gap-1 bg-black/40 px-1.5 sm:px-2 py-0.5 rounded">
+                <span className={`font-handwriting text-sm sm:text-lg font-bold drop-shadow-lg ${accentColor}`}>
                   {dateDisplay}
                 </span>
               </div>
@@ -123,7 +105,7 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
             
             {/* Caption area */}
             <div className="polaroid-caption">
-              <p className="font-handwriting text-lg leading-snug text-polaroid-dark line-clamp-3">
+              <p className="font-handwriting text-sm sm:text-lg leading-snug text-polaroid-dark line-clamp-2">
                 {event.title}
               </p>
             </div>
@@ -131,9 +113,9 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
             {/* Polaroid imperfections */}
             <div className="polaroid-scratches" />
             
-            {/* Flip hint */}
-            <div className="absolute bottom-1 right-2 text-xs text-polaroid-dark/40 font-handwriting">
-              klik om te draaien →
+            {/* Flip icon hint */}
+            <div className="absolute bottom-1 right-2 text-polaroid-dark/30 group-hover:text-polaroid-dark/50 transition-colors">
+              <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
             </div>
           </div>
         </div>
@@ -144,36 +126,32 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
             {/* Top accent strip */}
             <div className={`absolute top-0 left-0 right-0 h-1 ${accentColor.replace('text-', 'bg-')}`} />
             
-            {/* Content */}
-            <div className="p-4 h-full flex flex-col">
-              {/* Date header */}
-              <div className={`font-handwriting text-xl font-bold mb-2 ${accentColor}`}>
+            {/* Content - better use of space */}
+            <div className="p-3 sm:p-4 h-full flex flex-col">
+              {/* Date header - smaller */}
+              <div className={`font-handwriting text-base sm:text-lg font-bold ${accentColor}`}>
                 {dateDisplay}
               </div>
               
-              {/* Title */}
-              <h3 className="font-handwriting text-lg font-bold text-polaroid-dark mb-3 leading-tight">
+              {/* Title - more compact */}
+              <h3 className="font-handwriting text-sm sm:text-base font-bold text-polaroid-dark mt-1 mb-2 leading-tight line-clamp-2">
                 {event.title}
               </h3>
               
-              {/* Description */}
-              <div className="flex-1 overflow-y-auto">
-                <p className="text-sm text-polaroid-dark/80 leading-relaxed">
+              {/* Description - takes most space */}
+              <div className="flex-1 overflow-y-auto min-h-0">
+                <p className="text-xs sm:text-sm text-polaroid-dark/80 leading-relaxed">
                   {event.description}
                 </p>
               </div>
               
-              {/* Category badge */}
-              <div className="mt-3 pt-2 border-t border-polaroid-dark/10">
-                <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${accentColor} bg-polaroid-dark/5`}>
+              {/* Footer with category and flip icon */}
+              <div className="mt-2 pt-2 border-t border-polaroid-dark/10 flex items-center justify-between">
+                <span className={`inline-block px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${accentColor} bg-polaroid-dark/5`}>
                   {event.category}
                 </span>
+                <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4 text-polaroid-dark/30" />
               </div>
-            </div>
-            
-            {/* Flip hint */}
-            <div className="absolute bottom-1 right-2 text-xs text-polaroid-dark/40 font-handwriting">
-              ← klik om terug te draaien
             </div>
           </div>
         </div>
