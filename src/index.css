@@ -341,7 +341,7 @@
   }
 
   .polaroid-frame {
-    @apply relative bg-white p-3 pb-16 rounded-sm;
+    @apply relative bg-white p-2 pb-10 sm:p-3 sm:pb-14 rounded-sm;
     box-shadow: 
       0 4px 20px -4px rgba(0, 0, 0, 0.4),
       0 8px 40px -8px rgba(0, 0, 0, 0.3),
@@ -349,20 +349,21 @@
   }
 
   .polaroid-frame-back {
-    @apply relative bg-white p-3 rounded-sm h-full;
+    @apply relative bg-white p-2 sm:p-3 rounded-sm h-full;
     box-shadow: 
       0 4px 20px -4px rgba(0, 0, 0, 0.4),
       0 8px 40px -8px rgba(0, 0, 0, 0.3),
       inset 0 0 0 1px rgba(0, 0, 0, 0.05);
-    min-height: 260px;
+    min-height: 180px;
   }
 
+  /* Responsive image container */
   .polaroid-image-container {
-    @apply relative w-40 h-32 sm:w-48 sm:h-40 md:w-52 md:h-44 overflow-hidden bg-gray-900;
+    @apply relative w-28 h-24 sm:w-40 sm:h-32 md:w-48 md:h-40 overflow-hidden bg-gray-900;
   }
 
   .polaroid-caption {
-    @apply absolute bottom-3 left-3 right-3 text-center;
+    @apply absolute bottom-2 sm:bottom-3 left-2 sm:left-3 right-2 sm:right-3 text-center;
   }
 
   /* Polaroid scratches and imperfections */
@@ -379,16 +380,35 @@
       linear-gradient(-45deg, transparent 45%, rgba(0,0,0,0.05) 50%, transparent 55%);
   }
 
-  /* Polaroid grid layout - scattered collage */
+  /* Polaroid grid layout - mobile first, responsive */
   .polaroid-grid {
-    @apply grid gap-2 sm:gap-4 p-8;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(2, auto);
+    @apply grid gap-3 sm:gap-4 p-4 sm:p-8;
+    /* Mobile: 2 columns, centered */
+    grid-template-columns: repeat(2, auto);
+    justify-content: center;
+    align-items: start;
   }
-  
-  .polaroid-grid > *:nth-child(1) { justify-self: start; align-self: start; }
-  .polaroid-grid > *:nth-child(2) { justify-self: end; align-self: start; margin-top: 2rem; }
-  .polaroid-grid > *:nth-child(3) { justify-self: center; align-self: center; }
-  .polaroid-grid > *:nth-child(4) { justify-self: start; align-self: end; margin-top: -1rem; }
-  .polaroid-grid > *:nth-child(5) { justify-self: end; align-self: end; }
+
+  @media (min-width: 640px) {
+    .polaroid-grid {
+      grid-template-columns: repeat(3, auto);
+    }
+  }
+
+  /* Remove the random positioning on mobile for cleaner look */
+  @media (max-width: 639px) {
+    .polaroid-grid > * {
+      justify-self: center !important;
+      align-self: start !important;
+      margin: 0 !important;
+    }
+  }
+
+  @media (min-width: 640px) {
+    .polaroid-grid > *:nth-child(1) { justify-self: start; align-self: start; }
+    .polaroid-grid > *:nth-child(2) { justify-self: end; align-self: start; margin-top: 2rem; }
+    .polaroid-grid > *:nth-child(3) { justify-self: center; align-self: center; }
+    .polaroid-grid > *:nth-child(4) { justify-self: start; align-self: end; margin-top: -1rem; }
+    .polaroid-grid > *:nth-child(5) { justify-self: end; align-self: end; }
+  }
 }
