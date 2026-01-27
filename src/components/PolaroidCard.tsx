@@ -126,27 +126,22 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
             {/* Top accent strip */}
             <div className={`absolute top-0 left-0 right-0 h-1 ${accentColor.replace('text-', 'bg-')}`} />
             
-            {/* Content - better use of space */}
-            <div className="p-3 sm:p-4 h-full flex flex-col">
-              {/* Date header - smaller */}
-              <div className={`font-handwriting text-base sm:text-lg font-bold ${accentColor}`}>
-                {dateDisplay}
-              </div>
-              
-              {/* Title - more compact */}
-              <h3 className="font-handwriting text-sm sm:text-base font-bold text-polaroid-dark mt-1 mb-2 leading-tight line-clamp-2">
+            {/* Content - maximized space */}
+            <div className="pt-1.5 pb-1.5 px-1.5 sm:pt-2 sm:pb-2 sm:px-2 h-full flex flex-col">
+              {/* Title at the very top */}
+              <h3 className="font-handwriting text-sm sm:text-base font-bold text-polaroid-dark leading-tight line-clamp-2 mb-1.5 sm:mb-2">
                 {event.title}
               </h3>
               
-              {/* Description - takes most space */}
-              <div className="flex-1 overflow-y-auto min-h-0">
+              {/* Description - maximized scroll area */}
+              <div className="flex-1 overflow-y-auto min-h-0 pr-0.5">
                 <p className="text-xs sm:text-sm text-polaroid-dark/80 leading-relaxed">
                   {event.description}
                 </p>
               </div>
               
-              {/* Footer with category and flip icon */}
-              <div className="mt-2 pt-2 border-t border-polaroid-dark/10 flex items-center justify-between">
+              {/* Footer with category and flip icon - at the very bottom */}
+              <div className="mt-1.5 pt-1.5 sm:mt-2 sm:pt-2 border-t border-polaroid-dark/10 flex items-center justify-between">
                 <span className={`inline-block px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${accentColor} bg-polaroid-dark/5`}>
                   {event.category}
                 </span>
