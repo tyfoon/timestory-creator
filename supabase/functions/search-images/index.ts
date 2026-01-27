@@ -50,6 +50,28 @@ function isAllowedImageUrl(maybeUrl: string): boolean {
   }
 }
 
+// ============== HELPER: Check if search result title matches query subject ==============
+function titleMatchesQuery(title: string, query: string): boolean {
+  const titleLower = title.toLowerCase();
+  const queryLower = query.toLowerCase();
+  
+  // Extract the main subject from the query (first few significant words)
+  // E.g., "Xi Jinping March 2013 inauguration" -> should match "Xi Jinping"
+  const queryWords = queryLower.split(/\s+/).filter(w => 
+    w.length > 2 && 
+    !['the', 'and', 'for', 'van', 'het', 'een', 'der', 'den', 'des'].includes(w) &&
+    !/^\d{4}$/.test(w) // Exclude years
+  );
+  
+  // Check if the title contains the first 2-3 significant words of the query
+  const mainSubjectWords = queryWords.slice(0, 3);
+  const matchCount = mainSubjectWords.filter(word => titleLower.includes(word)).length;
+  
+  // Require at least 2 matching words OR 1 word if only 1-2 significant words
+  const threshold = mainSubjectWords.length <= 2 ? 1 : 2;
+  return matchCount >= threshold;
+}
+
 // ============== WIKIPEDIA API (most reliable source) ==============
 async function searchWikipediaWithImages(
   query: string, 
@@ -57,8 +79,9 @@ async function searchWikipediaWithImages(
   lang: string
 ): Promise<{ imageUrl: string; source: string } | null> {
   try {
-    // Step 1: Search for the most relevant article
-    const searchQuery = year ? `${query} ${year}` : query;
+    // Use exact phrase search for better matching
+    // Quote the main subject to find exact matches
+    const searchQuery = year ? `"${query}" ${year}` : `"${query}"`;
     const searchUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&format=json&srlimit=5&origin=*`;
     
     const searchRes = await fetch(searchUrl);
@@ -69,9 +92,15 @@ async function searchWikipediaWithImages(
     
     if (results.length === 0) return null;
     
-    // Step 2: Get images for top 3 results, pick the best one
+    // Step 2: Get images for top 3 results, but VALIDATE title matches
     for (const result of results.slice(0, 3)) {
       const title = result.title;
+      
+      // CRITICAL: Validate that the article title matches what we're looking for
+      if (!titleMatchesQuery(title, query)) {
+        console.log(`Skipping "${title}" - doesn't match query "${query}"`);
+        continue;
+      }
       
       // Get the page thumbnail directly
       const imageUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&format=json&pithumbsize=${THUMB_WIDTH}&piprop=thumbnail|original&origin=*`;
@@ -90,6 +119,7 @@ async function searchWikipediaWithImages(
       const thumbnail = page?.thumbnail?.source;
       
       if (thumbnail && isAllowedImageUrl(thumbnail)) {
+        console.log(`Wikipedia ${lang}: matched "${title}" for query "${query}"`);
         return {
           imageUrl: thumbnail,
           source: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title)}`
@@ -110,7 +140,7 @@ async function searchWikimediaCommons(
   year: number | undefined
 ): Promise<{ imageUrl: string; source: string } | null> {
   try {
-    // Search Commons for images - be specific to avoid unrelated results
+    // Search Commons for images - be very specific with exact phrase
     const searchQuery = year ? `"${query}" ${year}` : `"${query}"`;
     
     const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srnamespace=6&format=json&srlimit=5&origin=*`;
@@ -123,6 +153,12 @@ async function searchWikimediaCommons(
     for (const result of results.slice(0, 3)) {
       try {
         const title = result.title;
+        
+        // CRITICAL: Validate that the file title contains the main subject
+        if (!titleMatchesQuery(title, query)) {
+          console.log(`Commons: Skipping "${title}" - doesn't match query "${query}"`);
+          continue;
+        }
         
         // Get image info with thumbnail
         const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=${THUMB_WIDTH}&format=json&origin=*`;
@@ -140,6 +176,7 @@ async function searchWikimediaCommons(
         const thumbUrl = imageInfo?.thumburl || imageInfo?.url;
         
         if (thumbUrl && isAllowedImageUrl(thumbUrl)) {
+          console.log(`Commons: matched "${title}" for query "${query}"`);
           return {
             imageUrl: thumbUrl,
             source: `https://commons.wikimedia.org/wiki/${encodeURIComponent(title)}`
