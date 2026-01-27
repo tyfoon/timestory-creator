@@ -7,7 +7,7 @@ import { FormData } from '@/types/form';
 import { TimelineEvent, FamousBirthday } from '@/types/timeline';
 import { generateTimelineStreaming, searchImages } from '@/lib/api/timeline';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents, getCacheKey } from '@/lib/timelineCache';
-import { ArrowLeft, Clock, Loader2, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Clock, Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PolaroidCard } from '@/components/PolaroidCard';
 
@@ -23,7 +23,6 @@ const PolaroidCollagePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(0);
   const [streamingProgress, setStreamingProgress] = useState(0);
 
   const formDataRef = useRef<FormData | null>(null);
@@ -31,10 +30,12 @@ const PolaroidCollagePage = () => {
   const imageQueueRef = useRef<TimelineEvent[]>([]);
   const isProcessingImagesRef = useRef(false);
 
-  // 5 events per page for more dense collage
-  const eventsPerPage = 5;
-  const totalPages = Math.ceil(events.length / eventsPerPage);
-  const currentEvents = events.slice(currentPage * eventsPerPage, (currentPage + 1) * eventsPerPage);
+  // Group events into chunks of 5 for collage sections
+  const eventsPerSection = 5;
+  const eventSections: TimelineEvent[][] = [];
+  for (let i = 0; i < events.length; i += eventsPerSection) {
+    eventSections.push(events.slice(i, i + eventsPerSection));
+  }
 
   const processImageQueue = useCallback(async () => {
     if (isProcessingImagesRef.current) return;
@@ -382,47 +383,25 @@ const PolaroidCollagePage = () => {
             </div>
           ) : (
             <>
-              {/* Polaroid collage grid */}
-              <div className="relative min-h-[60vh] flex items-center justify-center">
-                <div className="polaroid-grid w-full max-w-4xl mx-auto py-8">
-                  {currentEvents.map((event, index) => (
-                    <PolaroidCard 
-                      key={event.id} 
-                      event={event} 
-                      index={index + currentPage * eventsPerPage}
-                    />
-                  ))}
-                </div>
+              {/* Polaroid collage - continuous scroll */}
+              <div className="space-y-8 pb-16">
+                {eventSections.map((section, sectionIndex) => (
+                  <div 
+                    key={sectionIndex}
+                    className="relative min-h-[50vh] flex items-center justify-center"
+                  >
+                    <div className="polaroid-grid w-full max-w-4xl mx-auto py-8">
+                      {section.map((event, index) => (
+                        <PolaroidCard 
+                          key={event.id} 
+                          event={event} 
+                          index={sectionIndex * eventsPerSection + index}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-4 mt-8">
-                  <Button
-                    onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
-                    disabled={currentPage === 0}
-                    variant="outline"
-                    size="icon"
-                    className="border-white/20 text-white hover:bg-white/10 disabled:opacity-30"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </Button>
-                  
-                  <span className="font-handwriting text-xl text-white">
-                    {currentPage + 1} / {totalPages}
-                  </span>
-                  
-                  <Button
-                    onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
-                    disabled={currentPage >= totalPages - 1}
-                    variant="outline"
-                    size="icon"
-                    className="border-white/20 text-white hover:bg-white/10 disabled:opacity-30"
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </Button>
-                </div>
-              )}
             </>
           )}
         </div>
