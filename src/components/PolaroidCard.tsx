@@ -7,7 +7,7 @@ interface PolaroidCardProps {
   index: number;
 }
 
-const monthNames = ['JAN', 'FEB', 'MRT', 'APR', 'MEI', 'JUN', 'JUL', 'AUG', 'SEP', 'OKT', 'NOV', 'DEC'];
+const monthNames = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
 
 // Generate pseudo-random rotation based on event id for consistency
 const getRotation = (id: string): number => {
@@ -95,17 +95,17 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
                 </div>
               )}
               
-              {/* Date stamp on image edge */}
-              <div className="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 flex items-center gap-1 bg-black/40 px-1.5 sm:px-2 py-0.5 rounded">
-                <span className={`font-handwriting text-sm sm:text-lg font-bold drop-shadow-lg ${accentColor}`}>
+              {/* Date stamp on image edge - smaller font */}
+              <div className="absolute bottom-1 right-1 sm:bottom-1.5 sm:right-1.5 flex items-center gap-1 bg-black/50 px-1.5 py-0.5 rounded">
+                <span className={`font-handwriting text-[10px] sm:text-xs font-bold drop-shadow-lg ${accentColor}`}>
                   {dateDisplay}
                 </span>
               </div>
             </div>
             
-            {/* Caption area */}
-            <div className="polaroid-caption">
-              <p className="font-handwriting text-sm sm:text-lg leading-snug text-polaroid-dark line-clamp-2">
+            {/* Caption area - fixed position below image */}
+            <div className="pt-1.5 sm:pt-2 px-0.5">
+              <p className="font-handwriting text-xs sm:text-sm leading-tight text-polaroid-dark line-clamp-2 text-center">
                 {event.title}
               </p>
             </div>
@@ -113,9 +113,9 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
             {/* Polaroid imperfections */}
             <div className="polaroid-scratches" />
             
-            {/* Flip icon hint */}
-            <div className="absolute bottom-1 right-2 text-polaroid-dark/30 group-hover:text-polaroid-dark/50 transition-colors">
-              <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
+            {/* Flip icon hint - positioned in caption area */}
+            <div className="absolute bottom-0.5 right-1 text-polaroid-dark/30 group-hover:text-polaroid-dark/50 transition-colors">
+              <RotateCcw className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
             </div>
           </div>
         </div>
