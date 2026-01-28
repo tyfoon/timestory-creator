@@ -79,13 +79,24 @@ const Index = () => {
     custom?: string;
   }>({});
   const currentYear = new Date().getFullYear();
+  const [bgLoaded, setBgLoaded] = useState(false);
 
   // Determine which background to use based on birth year
-  const is70sEra = birthDate.year >= 1969 && birthDate.year <= 1979;
-  const is80sEra = birthDate.year >= 1980 && birthDate.year <= 1989;
-  const is90sEra = birthDate.year >= 1990 && birthDate.year <= 1999;
-  const is00sEra = birthDate.year >= 2000 && birthDate.year <= 2009;
-  const is10sEra = birthDate.year >= 2010 && birthDate.year <= 2019;
+  const getBackgroundImage = () => {
+    if (birthDate.year >= 1969 && birthDate.year <= 1979) return heroBg70s;
+    if (birthDate.year >= 1980 && birthDate.year <= 1989) return heroBg80s;
+    if (birthDate.year >= 1990 && birthDate.year <= 1999) return heroBg90s;
+    if (birthDate.year >= 2000 && birthDate.year <= 2009) return heroBg00s;
+    if (birthDate.year >= 2010 && birthDate.year <= 2019) return heroBg10s;
+    return heroBg;
+  };
+  
+  const currentBg = getBackgroundImage();
+  
+  // Reset loading state when background changes
+  useEffect(() => {
+    setBgLoaded(false);
+  }, [currentBg]);
   const calculateYearRange = (): {
     startYear: number;
     endYear: number;
@@ -193,24 +204,15 @@ const Index = () => {
   const periodOptions = getPeriodOptions(t);
   const isBirthDateComplete = birthDate.day > 0 && birthDate.month > 0 && birthDate.year > 0;
   return <div className="min-h-screen flex flex-col relative">
-      {/* Background image - positioned behind everything, changes based on birth year */}
-      <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${is70sEra ? 'opacity-100' : 'opacity-0'}`}>
-        <img src={heroBg70s} alt="" className="w-full h-full object-cover opacity-50" />
-      </div>
-      <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${is80sEra ? 'opacity-100' : 'opacity-0'}`}>
-        <img src={heroBg80s} alt="" className="w-full h-full object-cover opacity-50" />
-      </div>
-      <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${is90sEra ? 'opacity-100' : 'opacity-0'}`}>
-        <img src={heroBg90s} alt="" className="w-full h-full object-cover opacity-50" />
-      </div>
-      <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${is00sEra ? 'opacity-100' : 'opacity-0'}`}>
-        <img src={heroBg00s} alt="" className="w-full h-full object-cover opacity-50" />
-      </div>
-      <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${is10sEra ? 'opacity-100' : 'opacity-0'}`}>
-        <img src={heroBg10s} alt="" className="w-full h-full object-cover opacity-50" />
-      </div>
-      <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${!is70sEra && !is80sEra && !is90sEra && !is00sEra && !is10sEra ? 'opacity-100' : 'opacity-0'}`}>
-        <img src={heroBg} alt="" className="w-full h-full object-cover opacity-40" />
+      {/* Background image - lazy loaded, only renders the needed image */}
+      <div className="fixed inset-0 -z-20 bg-muted">
+        <img 
+          src={currentBg} 
+          alt="" 
+          className={`w-full h-full object-cover transition-opacity duration-700 ${bgLoaded ? 'opacity-50' : 'opacity-0'}`}
+          onLoad={() => setBgLoaded(true)}
+          loading="lazy"
+        />
       </div>
       
       {/* Gradient overlay - separate layer with stronger opacity for better contrast */}
