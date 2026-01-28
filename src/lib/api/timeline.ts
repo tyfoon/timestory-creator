@@ -1,7 +1,7 @@
 import { FormData } from '@/types/form';
 import { TimelineEvent, TimelineResponse, FamousBirthday } from '@/types/timeline';
 
-// Fallback Supabase configuration - used when env vars aren't loaded yet
+// Fallback Supabase configuration
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvZW9ib3lnc3NzeWFqcGRzdGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNTY2NjEsImV4cCI6MjA4NDgzMjY2MX0.KuFaWF4r_cxZRiOumPGMChLVmwgyhT9vR5s7L52zr5s';
 
@@ -13,32 +13,33 @@ export interface StreamCallbacks {
   onError: (error: string) => void;
 }
 
+/**
+ * Streams timeline events using NDJSON format for fast first-event display.
+ * Each event is sent as a complete JSON line, parsed immediately on arrival.
+ */
 export const generateTimelineStreaming = async (
   formData: FormData,
   language: string,
   callbacks: StreamCallbacks,
   options?: { maxEvents?: number }
 ): Promise<void> => {
+  const controller = new AbortController();
+  const STREAM_STALL_TIMEOUT_MS = 120_000;
+  let stallTimer: number | undefined;
+  
+  const resetStallTimer = () => {
+    if (stallTimer) window.clearTimeout(stallTimer);
+    stallTimer = window.setTimeout(() => controller.abort(), STREAM_STALL_TIMEOUT_MS);
+  };
+  resetStallTimer();
+
+  const collectedEvents: TimelineEvent[] = [];
+  let collectedSummary = '';
+  let collectedBirthdays: FamousBirthday[] = [];
+  let receivedComplete = false;
+
   try {
-    console.log('Calling generate-timeline edge function with streaming...');
-
-    // If the SSE connection stalls (no chunks), we should abort so the UI doesn't hang forever.
-    const controller = new AbortController();
-    const STREAM_STALL_TIMEOUT_MS = 120_000;
-    let stallTimer: number | undefined;
-    const resetStallTimer = () => {
-      if (stallTimer) window.clearTimeout(stallTimer);
-      stallTimer = window.setTimeout(() => {
-        controller.abort();
-      }, STREAM_STALL_TIMEOUT_MS);
-    };
-    resetStallTimer();
-
-    // Collect streamed content as a fallback in case the server closes without sending a "complete" message.
-    const collectedEvents: TimelineEvent[] = [];
-    let collectedSummary = '';
-    let collectedBirthdays: FamousBirthday[] = [];
-    let receivedComplete = false;
+    console.log('Starting NDJSON streaming timeline request...');
     
     const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-timeline`, {
       method: 'POST',
@@ -59,7 +60,6 @@ export const generateTimelineStreaming = async (
       })
     });
 
-    // Response came back; keep the stall timer (we still want to detect stalled streams)
     resetStallTimer();
 
     if (!response.ok) {
@@ -90,20 +90,21 @@ export const generateTimelineStreaming = async (
     const decoder = new TextDecoder();
     let buffer = '';
 
+    // Simple SSE line parser - each "data: {...}" line is processed immediately
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
 
-      // We received a chunk; reset stall timer.
       resetStallTimer();
-      
       buffer += decoder.decode(value, { stream: true });
+      
+      // Split on newlines and process complete lines
       const lines = buffer.split('\n');
       buffer = lines.pop() || '';
       
       for (const line of lines) {
         if (!line.startsWith('data: ')) continue;
-        const data = line.slice(6);
+        const data = line.slice(6).trim();
         if (data === '[DONE]') continue;
         
         try {
@@ -111,49 +112,64 @@ export const generateTimelineStreaming = async (
           
           switch (parsed.type) {
             case 'event':
-              if (parsed.event) collectedEvents.push(parsed.event);
-              callbacks.onEvent(parsed.event);
+              if (parsed.event) {
+                collectedEvents.push(parsed.event);
+                callbacks.onEvent(parsed.event);
+                console.log(`Received event ${collectedEvents.length}: ${parsed.event.title?.substring(0, 30)}`);
+              }
               break;
+              
             case 'summary':
-              if (typeof parsed.summary === 'string') collectedSummary = parsed.summary;
-              callbacks.onSummary(parsed.summary);
+              if (parsed.summary) {
+                collectedSummary = parsed.summary;
+                callbacks.onSummary(parsed.summary);
+              }
               break;
+              
             case 'famousBirthdays':
-              if (Array.isArray(parsed.famousBirthdays)) collectedBirthdays = parsed.famousBirthdays;
-              callbacks.onFamousBirthdays(parsed.famousBirthdays);
+              if (Array.isArray(parsed.famousBirthdays)) {
+                collectedBirthdays = parsed.famousBirthdays;
+                callbacks.onFamousBirthdays(parsed.famousBirthdays);
+              }
               break;
+              
             case 'complete':
               receivedComplete = true;
               callbacks.onComplete(parsed.data);
               break;
           }
-        } catch (e) {
-          // Ignore parse errors for incomplete data
+        } catch {
+          // Ignore malformed JSON lines
         }
       }
     }
 
     if (stallTimer) window.clearTimeout(stallTimer);
 
-    // Fallback: if the server ends the stream without a complete message, don't leave the UI hanging.
+    // Fallback: if stream ends without complete message, use collected data
     if (!receivedComplete) {
       if (collectedEvents.length === 0) {
         callbacks.onError('De verbinding is beëindigd voordat er resultaten binnenkwamen. Probeer opnieuw.');
         return;
       }
 
+      console.log(`Stream ended without complete message. Using ${collectedEvents.length} collected events.`);
       callbacks.onComplete({
         events: collectedEvents,
-        summary: collectedSummary,
+        summary: collectedSummary || 'Een overzicht van belangrijke gebeurtenissen.',
         famousBirthdays: collectedBirthdays,
       });
     }
     
   } catch (err) {
-    // If we aborted due to stall timeout, show a friendlier message.
+    if (stallTimer) window.clearTimeout(stallTimer);
     const isAbort = err instanceof DOMException && err.name === 'AbortError';
-    console.error('Error in streaming timeline:', err);
-    callbacks.onError(isAbort ? 'Het laden duurde te lang en is gestopt. Probeer opnieuw.' : (err instanceof Error ? err.message : 'Onbekende fout'));
+    console.error('Streaming error:', err);
+    callbacks.onError(
+      isAbort 
+        ? 'Het laden duurde te lang en is gestopt. Probeer opnieuw.' 
+        : (err instanceof Error ? err.message : 'Onbekende fout')
+    );
   }
 };
 
@@ -208,8 +224,8 @@ export const generateTimeline = async (
 };
 
 export const searchImages = async (
-  queries: { eventId: string; query: string; year?: number }[]
-  , options?: { mode?: 'fast' | 'full' }
+  queries: { eventId: string; query: string; year?: number }[],
+  options?: { mode?: 'fast' | 'full' }
 ): Promise<{ success: boolean; images?: { eventId: string; imageUrl: string | null; source: string | null }[] }> => {
   try {
     const response = await fetch(`${SUPABASE_URL}/functions/v1/search-images`, {
