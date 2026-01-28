@@ -79,7 +79,7 @@ export const OptionalInfoForm = ({ value, onChange }: OptionalInfoFormProps) => 
       <div className="space-y-4 p-4 rounded-lg bg-secondary/30 border border-border/50">
         <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
           <Heart className="h-4 w-4 text-accent" />
-          Partner
+          {t('partnerLabel') as string}
         </Label>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
@@ -104,7 +104,7 @@ export const OptionalInfoForm = ({ value, onChange }: OptionalInfoFormProps) => 
       <div className="space-y-4 p-4 rounded-lg bg-secondary/30 border border-border/50">
         <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
           <Users className="h-4 w-4 text-accent" />
-          Kinderen
+          {t('childrenLabel') as string}
         </Label>
         
         {[0, 1, 2].map((index) => (

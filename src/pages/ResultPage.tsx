@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const ResultPage = () => {
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState<FormData | null>(null);
@@ -167,7 +167,7 @@ const ResultPage = () => {
       const maxEvents = storedLength === 'short' ? 20 : undefined;
       loadTimelineStreaming(data, maxEvents);
     } else {
-      setError('Geen gegevens gevonden');
+      setError(t('noDataFound') as string);
       setIsLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -258,8 +258,8 @@ const ResultPage = () => {
           setIsLoading(false);
           
           toast({
-            title: "Tijdlijn geladen!",
-            description: `${completeData.events.length} gebeurtenissen gevonden`,
+            title: t('timelineLoaded') as string,
+            description: `${completeData.events.length} ${t('eventsFound') as string}`,
           });
         },
         onError: (errorMsg) => {
@@ -269,7 +269,7 @@ const ResultPage = () => {
           
           toast({
             variant: "destructive",
-            title: "Fout bij laden",
+            title: t('loadError') as string,
             description: errorMsg,
           });
         }
@@ -302,15 +302,15 @@ const ResultPage = () => {
       });
       
       toast({
-        title: "PDF gedownload!",
-        description: "Je tijdreis magazine is klaar",
+        title: t('pdfDownloaded') as string,
+        description: t('pdfMagazineReady') as string,
       });
     } catch (err) {
       console.error('Error generating PDF:', err);
       toast({
         variant: "destructive",
-        title: "Fout bij PDF genereren",
-        description: "Probeer het opnieuw",
+        title: t('pdfError') as string,
+        description: t('pdfTryAgain') as string,
       });
     } finally {
       setIsGeneratingPdf(false);
@@ -335,15 +335,15 @@ const ResultPage = () => {
       });
       
       toast({
-        title: "Polaroid PDF gedownload!",
-        description: "Je jaren 80 polaroid editie is klaar",
+        title: t('polaroidPdfDownloaded') as string,
+        description: t('polaroidReady') as string,
       });
     } catch (err) {
       console.error('Error generating Polaroid PDF:', err);
       toast({
         variant: "destructive",
-        title: "Fout bij PDF genereren",
-        description: "Probeer het opnieuw",
+        title: t('pdfError') as string,
+        description: t('pdfTryAgain') as string,
       });
     } finally {
       setIsGeneratingPolaroidPdf(false);
@@ -352,7 +352,7 @@ const ResultPage = () => {
   };
 
   const getTitle = () => {
-    if (!formData) return 'Jouw Tijdreis';
+    if (!formData) return t('yourTimeJourney') as string;
     
     if (formData.type === 'birthdate' && formData.birthDate) {
       const { day, month, year } = formData.birthDate;
@@ -360,7 +360,7 @@ const ResultPage = () => {
     } else if (formData.yearRange) {
       return `${formData.yearRange.startYear} - ${formData.yearRange.endYear}`;
     }
-    return 'Jouw Tijdreis';
+    return t('yourTimeJourney') as string;
   };
 
   // Count events by scope
@@ -393,8 +393,8 @@ const ResultPage = () => {
     return (
       <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted-foreground mb-4">Geen gegevens gevonden</p>
-          <Button onClick={() => navigate('/')}>Terug naar start</Button>
+          <p className="text-muted-foreground mb-4">{t('noDataFound') as string}</p>
+          <Button onClick={() => navigate('/')}>{t('backToStart') as string}</Button>
         </div>
       </div>
     );
@@ -413,7 +413,7 @@ const ResultPage = () => {
               className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              <span>Terug naar invoer</span>
+              <span>{t('backToInput') as string}</span>
             </button>
             
             <h1 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
@@ -439,7 +439,7 @@ const ResultPage = () => {
                 ) : (
                   <>
                     <Download className="h-4 w-4" />
-                    <span className="hidden sm:inline">Magazine PDF</span>
+                    <span className="hidden sm:inline">{t('magazinePdf') as string}</span>
                   </>
                 )}
               </Button>
@@ -462,7 +462,7 @@ const ResultPage = () => {
                 ) : (
                   <>
                     <Camera className="h-4 w-4" />
-                    <span className="hidden sm:inline">Polaroid PDF</span>
+                    <span className="hidden sm:inline">{t('polaroidPdf') as string}</span>
                   </>
                 )}
               </Button>
@@ -475,10 +475,10 @@ const ResultPage = () => {
                 variant="outline"
                 size="sm"
                 className="gap-1.5"
-                title="Genereer opnieuw met nieuwe afbeeldingen"
+                title={t('refreshButton') as string}
               >
                 <RefreshCw className="h-4 w-4" />
-                <span className="hidden sm:inline">Opnieuw</span>
+                <span className="hidden sm:inline">{t('refreshButton') as string}</span>
               </Button>
             )}
             
@@ -486,7 +486,7 @@ const ResultPage = () => {
             {isLoadingImages && imagesLoading > 0 && (
               <span className="text-xs text-muted-foreground flex items-center gap-1">
                 <Loader2 className="h-3 w-3 animate-spin" />
-                {imagesLoaded}/{events.length} foto's
+                {imagesLoaded}/{events.length} {t('photosCount') as string}
               </span>
             )}
           </div>
@@ -502,10 +502,10 @@ const ResultPage = () => {
                 <Clock className="h-8 w-8 text-primary-foreground" />
               </div>
               <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
-                We reizen terug in de tijd...
+                {t('loadingTitle') as string}
               </h2>
               <p className="text-muted-foreground text-sm mb-3">
-                Dit kan even duren
+                {t('loadingSubtitle') as string}
               </p>
               <Loader2 className="h-5 w-5 animate-spin text-accent" />
             </div>
@@ -515,7 +515,7 @@ const ResultPage = () => {
               <div className="container mx-auto max-w-6xl px-4 mb-2">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="h-3 w-3 animate-spin" />
-                  <span>{streamingProgress} gebeurtenissen geladen...</span>
+                  <span>{streamingProgress} {t('eventsLoaded') as string}</span>
                 </div>
               </div>
               
@@ -548,7 +548,7 @@ const ResultPage = () => {
           <div className="bg-card rounded-xl shadow-card border border-destructive/20 p-6 text-center max-w-md">
             <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
             <h3 className="font-serif text-lg font-semibold text-foreground mb-2">
-              Er ging iets mis
+              {t('errorTitle') as string}
             </h3>
             <p className="text-muted-foreground text-sm mb-4">{error}</p>
             <Button 
@@ -557,7 +557,7 @@ const ResultPage = () => {
               className="btn-vintage"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
-              Probeer opnieuw
+              {t('tryAgain') as string}
             </Button>
           </div>
         </div>
@@ -572,7 +572,7 @@ const ResultPage = () => {
               <div className="flex items-center justify-center gap-2 flex-wrap text-xs">
                 <span className="font-medium text-muted-foreground flex items-center gap-1">
                   <Star className="h-3 w-3 text-accent" />
-                  Ook jarig:
+                  {t('alsoborn') as string}
                 </span>
                 {famousBirthdays.slice(0, 5).map((celeb, idx) => (
                   <span 
@@ -584,7 +584,7 @@ const ResultPage = () => {
                   </span>
                 ))}
                 {famousBirthdays.length > 5 && (
-                  <span className="text-muted-foreground">+{famousBirthdays.length - 5} meer</span>
+                  <span className="text-muted-foreground">+{famousBirthdays.length - 5} {t('moreCount') as string}</span>
                 )}
               </div>
             </div>
@@ -595,7 +595,7 @@ const ResultPage = () => {
             <div className="container mx-auto max-w-6xl px-4 mb-2">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Loader2 className="h-3 w-3 animate-spin" />
-                <span>Afbeeldingen laden...</span>
+                <span>{t('loadingImages') as string}</span>
               </div>
             </div>
           )}

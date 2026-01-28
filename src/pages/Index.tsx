@@ -17,39 +17,40 @@ import heroBg90s from '@/assets/hero-bg-90s.png';
 import heroBg00s from '@/assets/hero-bg-00s.png';
 import heroBg10s from '@/assets/hero-bg-10s.png';
 
-const periodOptions: {
+// Period options will be translated dynamically
+const getPeriodOptions = (t: (key: any) => any): {
   id: PeriodType;
   label: string;
   description: string;
   icon: React.ReactNode;
   ageRange?: [number, number];
-}[] = [{
+}[] => [{
   id: 'birthyear',
-  label: 'Geboortejaar',
-  description: 'Het jaar waarin je geboren bent',
+  label: t('periodBirthyear') as string,
+  description: t('periodBirthyearDesc') as string,
   icon: <Baby className="h-5 w-5" />
 }, {
   id: 'childhood',
-  label: 'Jeugd',
-  description: '6-10 jaar',
+  label: t('periodChildhood') as string,
+  description: t('periodChildhoodDesc') as string,
   icon: <GraduationCap className="h-5 w-5" />,
   ageRange: [6, 10]
 }, {
   id: 'puberty',
-  label: 'Pubertijd',
-  description: '11-17 jaar',
+  label: t('periodPuberty') as string,
+  description: t('periodPubertyDesc') as string,
   icon: <Heart className="h-5 w-5" />,
   ageRange: [11, 17]
 }, {
   id: 'young-adult',
-  label: 'Jong volwassen',
-  description: '18-25 jaar',
+  label: t('periodYoungAdult') as string,
+  description: t('periodYoungAdultDesc') as string,
   icon: <Calendar className="h-5 w-5" />,
   ageRange: [18, 25]
 }, {
   id: 'custom',
-  label: 'Anders',
-  description: 'Kies zelf een periode',
+  label: t('periodCustom') as string,
+  description: t('periodCustomDesc') as string,
   icon: <Pencil className="h-5 w-5" />
 }];
 
@@ -114,20 +115,20 @@ const Index = () => {
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
     if (!birthDate.day || !birthDate.month || !birthDate.year) {
-      newErrors.birthDate = 'Vul je geboortedatum in';
+      newErrors.birthDate = t('fillBirthDate') as string;
     } else if (birthDate.year < 1900 || birthDate.year > currentYear) {
-      newErrors.birthDate = 'Voer een geldig geboortejaar in (1900-' + currentYear + ')';
+      newErrors.birthDate = (t('validYearRange') as string) + ' (1900-' + currentYear + ')';
     }
     if (!selectedPeriod) {
-      newErrors.period = 'Kies een periode';
+      newErrors.period = t('choosePeriod') as string;
     }
     if (selectedPeriod === 'custom') {
       if (!customStartYear || !customEndYear) {
-        newErrors.custom = 'Vul beide jaren in';
+        newErrors.custom = t('fillBothYears') as string;
       } else if (customEndYear <= customStartYear) {
-        newErrors.custom = 'Eindjaar moet na startjaar liggen';
+        newErrors.custom = t('endYearAfterStart') as string;
       } else if (customStartYear < 1900 || customEndYear > currentYear) {
-        newErrors.custom = 'Voer geldige jaren in (1900-' + currentYear + ')';
+        newErrors.custom = (t('validYears') as string) + ' (1900-' + currentYear + ')';
       }
     }
     setErrors(newErrors);
@@ -150,15 +151,15 @@ const Index = () => {
   const handleCustomDialogConfirm = () => {
     // Validate custom years before confirming
     if (!customStartYear || !customEndYear) {
-      setErrors({ ...errors, custom: 'Vul beide jaren in' });
+      setErrors({ ...errors, custom: t('fillBothYears') as string });
       return;
     }
     if (customEndYear <= customStartYear) {
-      setErrors({ ...errors, custom: 'Eindjaar moet na startjaar liggen' });
+      setErrors({ ...errors, custom: t('endYearAfterStart') as string });
       return;
     }
     if (customStartYear < 1900 || customEndYear > currentYear) {
-      setErrors({ ...errors, custom: 'Voer geldige jaren in (1900-' + currentYear + ')' });
+      setErrors({ ...errors, custom: (t('validYears') as string) + ' (1900-' + currentYear + ')' });
       return;
     }
     
@@ -189,6 +190,7 @@ const Index = () => {
     sessionStorage.setItem('timelineLength', timelineLength);
     navigate(targetRoute);
   };
+  const periodOptions = getPeriodOptions(t);
   const isBirthDateComplete = birthDate.day > 0 && birthDate.month > 0 && birthDate.year > 0;
   return <div className="min-h-screen flex flex-col relative">
       {/* Background image - positioned behind everything, changes based on birth year */}
@@ -234,13 +236,13 @@ const Index = () => {
             
             {/* Step 1: Birthdate */}
             <div>
-              <DateInput label="Wat is je geboortedatum?" value={birthDate} onChange={setBirthDate} error={errors.birthDate} />
+              <DateInput label={t('birthDateQuestion') as string} value={birthDate} onChange={setBirthDate} error={errors.birthDate} />
             </div>
 
             {/* Step 2: Period selection - only show if birthdate is complete */}
             {isBirthDateComplete && <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                 <Label className="text-sm font-medium text-foreground">
-                  Welke periode wil je herbeleven?
+                  {t('periodQuestion') as string}
                 </Label>
                 {errors.period && <p className="text-sm text-destructive">{errors.period}</p>}
                 
@@ -267,21 +269,21 @@ const Index = () => {
             {isBirthDateComplete && selectedPeriod && (
               <div ref={timelineLengthRef} className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                 <Label className="text-sm font-medium text-foreground">
-                  Hoeveel momenten wil je zien?
+                  {t('timelineLengthQuestion') as string}
                 </Label>
                 <div className="flex gap-2">
                   <button onClick={() => setTimelineLength('short')} className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg border-2 transition-all ${timelineLength === 'short' ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-secondary/30 text-muted-foreground hover:border-primary/50'}`}>
                     <Zap className="h-4 w-4" />
                     <div className="text-left">
-                      <span className="text-sm font-medium block">Kort</span>
-                      <span className="text-xs opacity-70">20 momenten</span>
+                      <span className="text-sm font-medium block">{t('timelineShort') as string}</span>
+                      <span className="text-xs opacity-70">{t('timelineShortDesc') as string}</span>
                     </div>
                   </button>
                   <button onClick={() => setTimelineLength('long')} className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg border-2 transition-all ${timelineLength === 'long' ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-secondary/30 text-muted-foreground hover:border-primary/50'}`}>
                     <Crown className="h-4 w-4" />
                     <div className="text-left">
-                      <span className="text-sm font-medium block">Uitgebreid</span>
-                      <span className="text-xs opacity-70">50 momenten</span>
+                      <span className="text-sm font-medium block">{t('timelineLong') as string}</span>
+                      <span className="text-xs opacity-70">{t('timelineLongDesc') as string}</span>
                     </div>
                   </button>
                 </div>
@@ -292,13 +294,13 @@ const Index = () => {
             <div className="pt-4 border-t border-border space-y-3">
               <Button onClick={() => handleGenerate('/resultaat')} className="w-full btn-vintage h-12 text-base font-semibold text-primary-foreground rounded-lg" disabled={!isBirthDateComplete || !selectedPeriod}>
                 <Sparkles className="mr-2 h-4 w-4" />
-                <span>Maak tijdreis overzicht</span>
+                <span>{t('createTimelineButton') as string}</span>
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               
               <Button onClick={() => handleGenerate('/polaroid')} variant="outline" className="w-full h-11 text-base font-semibold rounded-lg border-2 border-accent/50 bg-gradient-to-r from-accent/10 to-primary/10 hover:from-accent/20 hover:to-primary/20 text-foreground" disabled={!isBirthDateComplete || !selectedPeriod}>
                 <Camera className="mr-2 h-4 w-4 text-accent" />
-                <span>Maak tijdreis polaroid</span>
+                <span>{t('createPolaroidButton') as string}</span>
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
@@ -321,10 +323,10 @@ const Index = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pencil className="h-5 w-5 text-primary" />
-              Personaliseer je tijdreis
+              {t('customDialogTitle') as string}
             </DialogTitle>
             <DialogDescription>
-              Vul onderstaande gegevens in voor een persoonlijke tijdreis
+              {t('customDialogDescription') as string}
             </DialogDescription>
           </DialogHeader>
           
@@ -333,14 +335,14 @@ const Index = () => {
             <div className="space-y-3 p-4 rounded-lg bg-secondary/30 border border-border/50">
               <Label className="text-sm font-medium text-foreground flex items-center gap-2">
                 <span className="text-destructive">*</span>
-                Periode (jaren)
+                {t('customPeriodLabel') as string}
               </Label>
               <div className="flex gap-3 items-end">
                 <div className="flex-1">
-                  <Label className="text-xs text-muted-foreground">Van jaar</Label>
+                  <Label className="text-xs text-muted-foreground">{t('customFromYear') as string}</Label>
                   <Input 
                     type="number" 
-                    placeholder="bijv. 1985" 
+                    placeholder={t('customFromPlaceholder') as string}
                     value={customStartYear || ''} 
                     onChange={e => setCustomStartYear(parseInt(e.target.value) || 0)} 
                     min={1900} 
@@ -350,10 +352,10 @@ const Index = () => {
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground mb-2" />
                 <div className="flex-1">
-                  <Label className="text-xs text-muted-foreground">Tot jaar</Label>
+                  <Label className="text-xs text-muted-foreground">{t('customToYear') as string}</Label>
                   <Input 
                     type="number" 
-                    placeholder="bijv. 1995" 
+                    placeholder={t('customToPlaceholder') as string}
                     value={customEndYear || ''} 
                     onChange={e => setCustomEndYear(parseInt(e.target.value) || 0)} 
                     min={1900} 
@@ -377,11 +379,11 @@ const Index = () => {
                 setShowCustomDialog(false);
               }}
             >
-              Annuleren
+              {t('cancelButton') as string}
             </Button>
             <Button onClick={handleCustomDialogConfirm} className="btn-vintage">
               <Check className="mr-2 h-4 w-4" />
-              Bevestigen
+              {t('confirmButton') as string}
             </Button>
           </div>
         </DialogContent>
