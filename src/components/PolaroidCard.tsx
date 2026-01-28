@@ -2,12 +2,52 @@ import { useState } from 'react';
 import { TimelineEvent } from '@/types/timeline';
 import { Loader2, RotateCcw } from 'lucide-react';
 
+// Import category placeholder images
+import placeholderFireworks from '@/assets/placeholders/fireworks.jpg';
+import placeholderPolitics from '@/assets/placeholders/politics.jpg';
+import placeholderSports from '@/assets/placeholders/sports.jpg';
+import placeholderMusic from '@/assets/placeholders/music.jpg';
+import placeholderEntertainment from '@/assets/placeholders/entertainment.jpg';
+import placeholderScience from '@/assets/placeholders/science.jpg';
+import placeholderCulture from '@/assets/placeholders/culture.jpg';
+import placeholderWorld from '@/assets/placeholders/world.jpg';
+import placeholderLocal from '@/assets/placeholders/local.jpg';
+import placeholderTechnology from '@/assets/placeholders/technology.jpg';
+import placeholderCelebrity from '@/assets/placeholders/celebrity.jpg';
+import placeholderPersonal from '@/assets/placeholders/personal.jpg';
+
 interface PolaroidCardProps {
   event: TimelineEvent;
   index: number;
 }
 
 const monthNames = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
+
+// Map categories to placeholder images
+const categoryPlaceholders: Record<string, string> = {
+  politics: placeholderPolitics,
+  sports: placeholderSports,
+  music: placeholderMusic,
+  entertainment: placeholderEntertainment,
+  science: placeholderScience,
+  culture: placeholderCulture,
+  world: placeholderWorld,
+  local: placeholderLocal,
+  technology: placeholderTechnology,
+  celebrity: placeholderCelebrity,
+  personal: placeholderPersonal,
+};
+
+// Get placeholder image based on event category and scope
+const getPlaceholderImage = (event: TimelineEvent): string => {
+  // For birthdate events without a specific image, use fireworks
+  if (event.eventScope === 'birthdate' && !event.imageUrl) {
+    return placeholderFireworks;
+  }
+  
+  // Use category-specific placeholder
+  return categoryPlaceholders[event.category] || placeholderWorld;
+};
 
 // Generate pseudo-random rotation based on event id for consistency
 const getRotation = (id: string): number => {
@@ -47,6 +87,12 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
   const rotation = getRotation(event.id);
   const accentColor = getAccentColor(index);
   const backAccent = getBackAccent(index);
+  
+  // Determine which image to show
+  const displayImage = event.imageUrl || (event.imageStatus === 'none' || event.imageStatus === 'error' 
+    ? getPlaceholderImage(event) 
+    : null);
+  const isPlaceholder = !event.imageUrl && displayImage;
   
   // Get month - if no month provided, generate a pseudo-random one based on event id for consistency
   const getMonthFromEvent = (): number => {
@@ -88,12 +134,18 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
             
             {/* Image container */}
             <div className="polaroid-image-container">
-              {event.imageUrl ? (
-                <img 
-                  src={event.imageUrl} 
-                  alt={event.title}
-                  className="w-full h-full object-cover"
-                />
+              {displayImage ? (
+                <div className="relative w-full h-full">
+                  <img 
+                    src={displayImage} 
+                    alt={event.title}
+                    className={`w-full h-full object-cover ${isPlaceholder ? 'opacity-80' : ''}`}
+                  />
+                  {/* Subtle overlay for placeholders to indicate it's not the real image */}
+                  {isPlaceholder && (
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+                  )}
+                </div>
               ) : event.imageStatus === 'loading' ? (
                 <div className="w-full h-full flex items-center justify-center bg-polaroid-dark/50">
                   <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-polaroid-pink" />
