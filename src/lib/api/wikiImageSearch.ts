@@ -301,12 +301,14 @@ async function trySourceWithFallback(
 /**
  * Search for an image across all sources using parallel fallback strategy.
  * Uses English query for international sources, Dutch query for Nationaal Archief.
+ * For celebrities, will also try TMDB via edge function.
  */
 async function searchImageForEvent(
   eventId: string,
   queryNl: string,
   year: number | undefined,
-  queryEn?: string
+  queryEn?: string,
+  isCelebrity?: boolean
 ): Promise<ImageResult> {
   // Use English query for international sources, fall back to Dutch
   const enQuery = queryEn || queryNl;
@@ -343,7 +345,65 @@ async function searchImageForEvent(
     }
   }
   
+  // If no image found and this is a celebrity, try TMDB via edge function
+  if (isCelebrity) {
+    try {
+      const tmdbResult = await searchTMDBViaEdge(eventId, enQuery, year);
+      if (tmdbResult.imageUrl) {
+        return tmdbResult;
+      }
+    } catch (e) {
+      console.error('TMDB fallback error:', e);
+    }
+  }
+  
   return { eventId, imageUrl: null, source: null };
+}
+
+/**
+ * Call the edge function to search TMDB for celebrity portraits
+ */
+async function searchTMDBViaEdge(
+  eventId: string,
+  query: string,
+  year: number | undefined
+): Promise<ImageResult> {
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return { eventId, imageUrl: null, source: null };
+    }
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/search-images`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseKey}`,
+        'apikey': supabaseKey,
+      },
+      body: JSON.stringify({
+        queries: [{ eventId, query, year, isCelebrity: true }],
+      }),
+    });
+    
+    if (!response.ok) {
+      return { eventId, imageUrl: null, source: null };
+    }
+    
+    const data = await response.json();
+    const images = data.images || [];
+    const found = images.find((img: ImageResult) => img.eventId === eventId);
+    
+    if (found?.imageUrl) {
+      return found;
+    }
+    
+    return { eventId, imageUrl: null, source: null };
+  } catch {
+    return { eventId, imageUrl: null, source: null };
+  }
 }
 
 // ============== CONCURRENCY CONTROL ==============
@@ -426,7 +486,8 @@ export async function searchSingleImage(
   eventId: string,
   query: string,
   year?: number,
-  queryEn?: string
+  queryEn?: string,
+  isCelebrity?: boolean
 ): Promise<ImageResult> {
-  return searchImageForEvent(eventId, query, year, queryEn);
+  return searchImageForEvent(eventId, query, year, queryEn, isCelebrity);
 }
