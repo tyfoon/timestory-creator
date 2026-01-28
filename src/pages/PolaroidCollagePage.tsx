@@ -206,6 +206,15 @@ const PolaroidCollagePage = () => {
         // Ensure queue state is clean before (re)starting searches for cached events
         resetImageSearch();
 
+        // Cache compatibility: older cached timelines may not include imageSearchQuery fields,
+        // which means we can't auto-fetch images. In that case, treat cache as stale and
+        // regenerate (equivalent to the user pressing "Opnieuw").
+        const hasAnyImageQuery = cached.events.some(e => !!e.imageSearchQuery);
+        if (!hasAnyImageQuery) {
+          const key = getCacheKey(data, language);
+          sessionStorage.removeItem(key);
+        } else {
+
         const normalizedCachedEvents = cached.events.map((e) => {
           if (e.imageSearchQuery && (e.imageStatus === 'none' || e.imageStatus === 'error' || !e.imageUrl)) {
             return { ...e, imageStatus: 'loading' as const, imageUrl: undefined };
@@ -228,6 +237,7 @@ const PolaroidCollagePage = () => {
           loadImagesForEvents(needImages);
         }
         return;
+        }
       }
 
       const maxEvents = storedLength === 'short' ? 20 : undefined;
