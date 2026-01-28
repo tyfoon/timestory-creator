@@ -22,11 +22,36 @@ export const translations = {
 
     // Form labels
     birthDateLabel: "Geboortedatum",
+    birthDateQuestion: "Wat is je geboortedatum?",
     dayLabel: "Dag",
     monthLabel: "Maand",
     yearLabel: "Jaar",
     startYearLabel: "Startjaar",
     endYearLabel: "Eindjaar",
+
+    // Period selection
+    periodQuestion: "Welke periode wil je herbeleven?",
+    periodBirthyear: "Geboortejaar",
+    periodBirthyearDesc: "Het jaar waarin je geboren bent",
+    periodChildhood: "Jeugd",
+    periodChildhoodDesc: "6-10 jaar",
+    periodPuberty: "Pubertijd",
+    periodPubertyDesc: "11-17 jaar",
+    periodYoungAdult: "Jong volwassen",
+    periodYoungAdultDesc: "18-25 jaar",
+    periodCustom: "Anders",
+    periodCustomDesc: "Kies zelf een periode",
+
+    // Timeline length
+    timelineLengthQuestion: "Hoeveel momenten wil je zien?",
+    timelineShort: "Kort",
+    timelineShortDesc: "20 momenten",
+    timelineLong: "Uitgebreid",
+    timelineLongDesc: "50 momenten",
+
+    // Action buttons
+    createTimelineButton: "Maak tijdreis overzicht",
+    createPolaroidButton: "Maak tijdreis polaroid",
 
     // Optional info
     optionalInfoTitle: "Maak het persoonlijker",
@@ -39,6 +64,8 @@ export const translations = {
     cityLabel: "Woonplaats",
     cityPlaceholder: "Bijv. Amsterdam",
 
+    partnerLabel: "Partner",
+    childrenLabel: "Kinderen",
     child1NameLabel: "Naam kind 1",
     child1BirthLabel: "Geboortedatum kind 1",
     child2NameLabel: "Naam kind 2",
@@ -61,12 +88,63 @@ export const translations = {
     backButton: "Terug",
     skipButton: "Overslaan",
     generateButton: "Maak Mijn Tijdreis",
+    confirmButton: "Bevestigen",
+    cancelButton: "Annuleren",
+    refreshButton: "Opnieuw",
+
+    // Custom dialog
+    customDialogTitle: "Personaliseer je tijdreis",
+    customDialogDescription: "Vul onderstaande gegevens in voor een persoonlijke tijdreis",
+    customPeriodLabel: "Periode (jaren)",
+    customFromYear: "Van jaar",
+    customToYear: "Tot jaar",
+    customFromPlaceholder: "bijv. 1985",
+    customToPlaceholder: "bijv. 1995",
+
+    // Result page
+    backToInput: "Terug naar invoer",
+    yourTimeJourney: "Jouw Tijdreis",
+    magazinePdf: "Magazine PDF",
+    polaroidPdf: "Polaroid PDF",
+    alsoborn: "Ook jarig:",
+    moreCount: "meer",
+    loadingImages: "Afbeeldingen laden...",
+    photosCount: "foto's",
+
+    // Loading states
+    loadingTitle: "We reizen terug in de tijd...",
+    loadingSubtitle: "Dit kan even duren",
+    eventsLoaded: "gebeurtenissen geladen...",
+    timelineLoaded: "Tijdlijn geladen!",
+    eventsFound: "gebeurtenissen gevonden",
+
+    // Error states
+    errorTitle: "Er ging iets mis",
+    tryAgain: "Probeer opnieuw",
+    noDataFound: "Geen gegevens gevonden",
+    backToStart: "Terug naar start",
+
+    // PDF
+    pdfDownloaded: "PDF gedownload!",
+    pdfMagazineReady: "Je tijdreis magazine is klaar",
+    polaroidPdfDownloaded: "Polaroid PDF gedownload!",
+    polaroidReady: "Je jaren 80 polaroid editie is klaar",
+    pdfError: "Fout bij PDF genereren",
+    pdfTryAgain: "Probeer het opnieuw",
+
+    // Toast messages
+    loadError: "Fout bij laden",
 
     // Validation
     required: "Dit veld is verplicht",
     invalidDate: "Ongeldige datum",
     yearRange: "Jaar moet tussen 1900 en huidig jaar liggen",
     endYearAfterStart: "Eindjaar moet na startjaar liggen",
+    fillBirthDate: "Vul je geboortedatum in",
+    validYearRange: "Voer een geldig geboortejaar in",
+    choosePeriod: "Kies een periode",
+    fillBothYears: "Vul beide jaren in",
+    validYears: "Voer geldige jaren in",
 
     // Months
     months: [
@@ -98,11 +176,37 @@ export const translations = {
     option2Description:
       "Create a historical overview of an entire period, perfect for anniversaries or reliving an era.",
     birthDateLabel: "Birth date",
+    birthDateQuestion: "What is your birth date?",
     dayLabel: "Day",
     monthLabel: "Month",
     yearLabel: "Year",
     startYearLabel: "Start year",
     endYearLabel: "End year",
+    
+    // Period selection
+    periodQuestion: "Which period do you want to relive?",
+    periodBirthyear: "Birth year",
+    periodBirthyearDesc: "The year you were born",
+    periodChildhood: "Childhood",
+    periodChildhoodDesc: "6-10 years",
+    periodPuberty: "Puberty",
+    periodPubertyDesc: "11-17 years",
+    periodYoungAdult: "Young adult",
+    periodYoungAdultDesc: "18-25 years",
+    periodCustom: "Custom",
+    periodCustomDesc: "Choose your own period",
+
+    // Timeline length
+    timelineLengthQuestion: "How many moments do you want to see?",
+    timelineShort: "Short",
+    timelineShortDesc: "20 moments",
+    timelineLong: "Extended",
+    timelineLongDesc: "50 moments",
+
+    // Action buttons
+    createTimelineButton: "Create timeline overview",
+    createPolaroidButton: "Create timeline polaroid",
+
     optionalInfoTitle: "Make it more personal",
     optionalInfoSubtitle: "This information is optional, but helps us create a richer story",
     nameLabel: "Name",
@@ -112,6 +216,9 @@ export const translations = {
     lastNamePlaceholder: "E.g. Smith",
     cityLabel: "City",
     cityPlaceholder: "E.g. Amsterdam",
+    
+    partnerLabel: "Partner",
+    childrenLabel: "Children",
     child1NameLabel: "Name child 1",
     child1BirthLabel: "Birth date child 1",
     child2NameLabel: "Name child 2",
@@ -130,10 +237,63 @@ export const translations = {
     backButton: "Back",
     skipButton: "Skip",
     generateButton: "Create My Time Journey",
+    confirmButton: "Confirm",
+    cancelButton: "Cancel",
+    refreshButton: "Refresh",
+
+    // Custom dialog
+    customDialogTitle: "Personalize your time journey",
+    customDialogDescription: "Fill in the details below for a personal time journey",
+    customPeriodLabel: "Period (years)",
+    customFromYear: "From year",
+    customToYear: "To year",
+    customFromPlaceholder: "e.g. 1985",
+    customToPlaceholder: "e.g. 1995",
+
+    // Result page
+    backToInput: "Back to input",
+    yourTimeJourney: "Your Time Journey",
+    magazinePdf: "Magazine PDF",
+    polaroidPdf: "Polaroid PDF",
+    alsoborn: "Also born:",
+    moreCount: "more",
+    loadingImages: "Loading images...",
+    photosCount: "photos",
+
+    // Loading states
+    loadingTitle: "Traveling back in time...",
+    loadingSubtitle: "This may take a moment",
+    eventsLoaded: "events loaded...",
+    timelineLoaded: "Timeline loaded!",
+    eventsFound: "events found",
+
+    // Error states
+    errorTitle: "Something went wrong",
+    tryAgain: "Try again",
+    noDataFound: "No data found",
+    backToStart: "Back to start",
+
+    // PDF
+    pdfDownloaded: "PDF downloaded!",
+    pdfMagazineReady: "Your time journey magazine is ready",
+    polaroidPdfDownloaded: "Polaroid PDF downloaded!",
+    polaroidReady: "Your 80s polaroid edition is ready",
+    pdfError: "Error generating PDF",
+    pdfTryAgain: "Please try again",
+
+    // Toast messages
+    loadError: "Loading error",
+
     required: "This field is required",
     invalidDate: "Invalid date",
     yearRange: "Year must be between 1900 and current year",
     endYearAfterStart: "End year must be after start year",
+    fillBirthDate: "Please fill in your birth date",
+    validYearRange: "Please enter a valid birth year",
+    choosePeriod: "Please choose a period",
+    fillBothYears: "Please fill in both years",
+    validYears: "Please enter valid years",
+    
     months: [
       "January",
       "February",
@@ -163,11 +323,34 @@ export const translations = {
     option2Description:
       "Erstelle einen historischen Überblick über eine ganze Periode, perfekt für Jubiläen oder um eine Ära wiederzuerleben.",
     birthDateLabel: "Geburtsdatum",
+    birthDateQuestion: "Was ist dein Geburtsdatum?",
     dayLabel: "Tag",
     monthLabel: "Monat",
     yearLabel: "Jahr",
     startYearLabel: "Startjahr",
     endYearLabel: "Endjahr",
+
+    periodQuestion: "Welche Periode möchtest du wiedererleben?",
+    periodBirthyear: "Geburtsjahr",
+    periodBirthyearDesc: "Das Jahr, in dem du geboren wurdest",
+    periodChildhood: "Kindheit",
+    periodChildhoodDesc: "6-10 Jahre",
+    periodPuberty: "Pubertät",
+    periodPubertyDesc: "11-17 Jahre",
+    periodYoungAdult: "Junger Erwachsener",
+    periodYoungAdultDesc: "18-25 Jahre",
+    periodCustom: "Anders",
+    periodCustomDesc: "Wähle selbst eine Periode",
+
+    timelineLengthQuestion: "Wie viele Momente möchtest du sehen?",
+    timelineShort: "Kurz",
+    timelineShortDesc: "20 Momente",
+    timelineLong: "Ausführlich",
+    timelineLongDesc: "50 Momente",
+
+    createTimelineButton: "Zeitreise-Übersicht erstellen",
+    createPolaroidButton: "Zeitreise-Polaroid erstellen",
+
     optionalInfoTitle: "Mach es persönlicher",
     optionalInfoSubtitle: "Diese Informationen sind optional, helfen uns aber, eine reichere Geschichte zu erstellen",
     nameLabel: "Name",
@@ -177,6 +360,9 @@ export const translations = {
     lastNamePlaceholder: "Z.B. Müller",
     cityLabel: "Stadt",
     cityPlaceholder: "Z.B. Amsterdam",
+    
+    partnerLabel: "Partner",
+    childrenLabel: "Kinder",
     child1NameLabel: "Name Kind 1",
     child1BirthLabel: "Geburtsdatum Kind 1",
     child2NameLabel: "Name Kind 2",
@@ -195,10 +381,57 @@ export const translations = {
     backButton: "Zurück",
     skipButton: "Überspringen",
     generateButton: "Erstelle Meine Zeitreise",
+    confirmButton: "Bestätigen",
+    cancelButton: "Abbrechen",
+    refreshButton: "Neu laden",
+
+    customDialogTitle: "Personalisiere deine Zeitreise",
+    customDialogDescription: "Fülle die folgenden Angaben für eine persönliche Zeitreise aus",
+    customPeriodLabel: "Zeitraum (Jahre)",
+    customFromYear: "Von Jahr",
+    customToYear: "Bis Jahr",
+    customFromPlaceholder: "z.B. 1985",
+    customToPlaceholder: "z.B. 1995",
+
+    backToInput: "Zurück zur Eingabe",
+    yourTimeJourney: "Deine Zeitreise",
+    magazinePdf: "Magazin PDF",
+    polaroidPdf: "Polaroid PDF",
+    alsoborn: "Auch geboren:",
+    moreCount: "mehr",
+    loadingImages: "Bilder laden...",
+    photosCount: "Fotos",
+
+    loadingTitle: "Wir reisen zurück in der Zeit...",
+    loadingSubtitle: "Das kann einen Moment dauern",
+    eventsLoaded: "Ereignisse geladen...",
+    timelineLoaded: "Zeitlinie geladen!",
+    eventsFound: "Ereignisse gefunden",
+
+    errorTitle: "Etwas ist schiefgelaufen",
+    tryAgain: "Erneut versuchen",
+    noDataFound: "Keine Daten gefunden",
+    backToStart: "Zurück zum Start",
+
+    pdfDownloaded: "PDF heruntergeladen!",
+    pdfMagazineReady: "Dein Zeitreise-Magazin ist fertig",
+    polaroidPdfDownloaded: "Polaroid PDF heruntergeladen!",
+    polaroidReady: "Deine 80er Polaroid-Edition ist fertig",
+    pdfError: "Fehler beim PDF-Generieren",
+    pdfTryAgain: "Bitte versuche es erneut",
+
+    loadError: "Ladefehler",
+
     required: "Dieses Feld ist erforderlich",
     invalidDate: "Ungültiges Datum",
     yearRange: "Jahr muss zwischen 1900 und aktuellem Jahr liegen",
     endYearAfterStart: "Endjahr muss nach Startjahr liegen",
+    fillBirthDate: "Bitte gib dein Geburtsdatum ein",
+    validYearRange: "Bitte gib ein gültiges Geburtsjahr ein",
+    choosePeriod: "Bitte wähle eine Periode",
+    fillBothYears: "Bitte fülle beide Jahre aus",
+    validYears: "Bitte gib gültige Jahre ein",
+    
     months: [
       "Januar",
       "Februar",
@@ -228,11 +461,34 @@ export const translations = {
     option2Description:
       "Créez un aperçu historique d'une période entière, parfait pour les anniversaires ou pour revivre une époque.",
     birthDateLabel: "Date de naissance",
+    birthDateQuestion: "Quelle est votre date de naissance?",
     dayLabel: "Jour",
     monthLabel: "Mois",
     yearLabel: "Année",
     startYearLabel: "Année de début",
     endYearLabel: "Année de fin",
+
+    periodQuestion: "Quelle période voulez-vous revivre?",
+    periodBirthyear: "Année de naissance",
+    periodBirthyearDesc: "L'année de votre naissance",
+    periodChildhood: "Enfance",
+    periodChildhoodDesc: "6-10 ans",
+    periodPuberty: "Puberté",
+    periodPubertyDesc: "11-17 ans",
+    periodYoungAdult: "Jeune adulte",
+    periodYoungAdultDesc: "18-25 ans",
+    periodCustom: "Autre",
+    periodCustomDesc: "Choisissez votre propre période",
+
+    timelineLengthQuestion: "Combien de moments voulez-vous voir?",
+    timelineShort: "Court",
+    timelineShortDesc: "20 moments",
+    timelineLong: "Étendu",
+    timelineLongDesc: "50 moments",
+
+    createTimelineButton: "Créer un aperçu chronologique",
+    createPolaroidButton: "Créer un polaroid chronologique",
+
     optionalInfoTitle: "Rendez-le plus personnel",
     optionalInfoSubtitle: "Ces informations sont optionnelles, mais nous aident à créer une histoire plus riche",
     nameLabel: "Nom",
@@ -242,6 +498,9 @@ export const translations = {
     lastNamePlaceholder: "Ex. Dupont",
     cityLabel: "Ville",
     cityPlaceholder: "Ex. Amsterdam",
+    
+    partnerLabel: "Partenaire",
+    childrenLabel: "Enfants",
     child1NameLabel: "Nom enfant 1",
     child1BirthLabel: "Date de naissance enfant 1",
     child2NameLabel: "Nom enfant 2",
@@ -260,10 +519,57 @@ export const translations = {
     backButton: "Retour",
     skipButton: "Passer",
     generateButton: "Créer Mon Voyage dans le Temps",
+    confirmButton: "Confirmer",
+    cancelButton: "Annuler",
+    refreshButton: "Actualiser",
+
+    customDialogTitle: "Personnalisez votre voyage dans le temps",
+    customDialogDescription: "Remplissez les détails ci-dessous pour un voyage personnalisé",
+    customPeriodLabel: "Période (années)",
+    customFromYear: "De l'année",
+    customToYear: "À l'année",
+    customFromPlaceholder: "ex. 1985",
+    customToPlaceholder: "ex. 1995",
+
+    backToInput: "Retour à la saisie",
+    yourTimeJourney: "Votre Voyage dans le Temps",
+    magazinePdf: "Magazine PDF",
+    polaroidPdf: "Polaroid PDF",
+    alsoborn: "Aussi né:",
+    moreCount: "de plus",
+    loadingImages: "Chargement des images...",
+    photosCount: "photos",
+
+    loadingTitle: "Nous voyageons dans le temps...",
+    loadingSubtitle: "Cela peut prendre un moment",
+    eventsLoaded: "événements chargés...",
+    timelineLoaded: "Chronologie chargée!",
+    eventsFound: "événements trouvés",
+
+    errorTitle: "Quelque chose s'est mal passé",
+    tryAgain: "Réessayer",
+    noDataFound: "Aucune donnée trouvée",
+    backToStart: "Retour au début",
+
+    pdfDownloaded: "PDF téléchargé!",
+    pdfMagazineReady: "Votre magazine de voyage dans le temps est prêt",
+    polaroidPdfDownloaded: "Polaroid PDF téléchargé!",
+    polaroidReady: "Votre édition polaroid des années 80 est prête",
+    pdfError: "Erreur lors de la génération du PDF",
+    pdfTryAgain: "Veuillez réessayer",
+
+    loadError: "Erreur de chargement",
+
     required: "Ce champ est obligatoire",
     invalidDate: "Date invalide",
     yearRange: "L'année doit être entre 1900 et l'année actuelle",
     endYearAfterStart: "L'année de fin doit être après l'année de début",
+    fillBirthDate: "Veuillez remplir votre date de naissance",
+    validYearRange: "Veuillez entrer une année de naissance valide",
+    choosePeriod: "Veuillez choisir une période",
+    fillBothYears: "Veuillez remplir les deux années",
+    validYears: "Veuillez entrer des années valides",
+    
     months: [
       "Janvier",
       "Février",

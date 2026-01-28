@@ -9,11 +9,13 @@ import {
 } from '@/components/ui/select';
 import { Globe } from 'lucide-react';
 
+// Only Dutch and English are currently active
 const languages: { code: Language; label: string; flag: string }[] = [
   { code: 'nl', label: 'Nederlands', flag: '🇳🇱' },
   { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  // Temporarily disabled:
+  // { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  // { code: 'fr', label: 'Français', flag: '🇫🇷' },
 ];
 
 export const LanguageSelector = () => {
