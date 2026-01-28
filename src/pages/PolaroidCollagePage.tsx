@@ -120,29 +120,47 @@ const PolaroidCollagePage = () => {
           setFamousBirthdays(birthdays);
         },
         onComplete: (completeData) => {
-          const sorted = completeData.events
-            .map(e => ({
-              ...e,
-              imageStatus: (receivedEvents.find(re => re.id === e.id)?.imageStatus || 
-                           (e.imageSearchQuery ? 'loading' : 'idle')) as TimelineEvent['imageStatus']
-            }))
-            .sort((a, b) => {
-              if (a.year !== b.year) return a.year - b.year;
-              if ((a.month || 0) !== (b.month || 0)) return (a.month || 0) - (b.month || 0);
-              return (a.day || 0) - (b.day || 0);
-            });
+          // Merge with current events to preserve already-found images
+          setEvents(prev => {
+            const prevMap = new Map(prev.map(e => [e.id, e]));
+            
+            const sorted = completeData.events
+              .map(e => {
+                const existing = prevMap.get(e.id);
+                // Preserve imageUrl and imageStatus from existing event if found
+                if (existing && existing.imageUrl) {
+                  return {
+                    ...e,
+                    imageUrl: existing.imageUrl,
+                    source: existing.source,
+                    imageStatus: 'found' as const
+                  };
+                }
+                return {
+                  ...e,
+                  imageStatus: (e.imageSearchQuery ? 'loading' : 'idle') as TimelineEvent['imageStatus']
+                };
+              })
+              .sort((a, b) => {
+                if (a.year !== b.year) return a.year - b.year;
+                if ((a.month || 0) !== (b.month || 0)) return (a.month || 0) - (b.month || 0);
+                return (a.day || 0) - (b.day || 0);
+              });
+            
+            // Cache the merged result
+            cacheTimeline(data, language, sorted, completeData.summary, completeData.famousBirthdays || []);
+            
+            return sorted;
+          });
           
-          setEvents(sorted);
           setSummary(completeData.summary);
           setFamousBirthdays(completeData.famousBirthdays || []);
           setIsLoading(false);
           
           toast({
             title: "Tijdlijn geladen!",
-            description: `${sorted.length} gebeurtenissen gevonden`,
+            description: `${completeData.events.length} gebeurtenissen gevonden`,
           });
-          
-          cacheTimeline(data, language, sorted, completeData.summary, completeData.famousBirthdays || []);
         },
         onError: (errorMsg) => {
           setError(errorMsg);
