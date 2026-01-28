@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { FormData, BirthDateData, OptionalData, PeriodType } from '@/types/form';
 import { ArrowRight, Sparkles, Camera, Baby, GraduationCap, Heart, Calendar, Pencil, Zap, Crown } from 'lucide-react';
 import heroBg from '@/assets/hero-bg-new.png';
+import heroBg70s from '@/assets/hero-bg-70s.png';
 import heroBg80s from '@/assets/hero-bg-80s.png';
 const periodOptions: {
   id: PeriodType;
@@ -66,9 +67,9 @@ const Index = () => {
   }>({});
   const currentYear = new Date().getFullYear();
 
-  // Determine which background to use based on birth year (80s theme for 1979-1989)
-  const is80sEra = birthDate.year >= 1979 && birthDate.year <= 1989;
-  const backgroundImage = is80sEra ? heroBg80s : heroBg;
+  // Determine which background to use based on birth year
+  const is70sEra = birthDate.year >= 1969 && birthDate.year <= 1979;
+  const is80sEra = birthDate.year >= 1980 && birthDate.year <= 1989;
   const calculateYearRange = (): {
     startYear: number;
     endYear: number;
@@ -138,10 +139,13 @@ const Index = () => {
   const isBirthDateComplete = birthDate.day > 0 && birthDate.month > 0 && birthDate.year > 0;
   return <div className="min-h-screen flex flex-col relative">
       {/* Background image - positioned behind everything, changes based on birth year */}
+      <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${is70sEra ? 'opacity-100' : 'opacity-0'}`}>
+        <img src={heroBg70s} alt="" className="w-full h-full object-cover opacity-50" />
+      </div>
       <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${is80sEra ? 'opacity-100' : 'opacity-0'}`}>
         <img src={heroBg80s} alt="" className="w-full h-full object-cover opacity-50" />
       </div>
-      <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${is80sEra ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${!is70sEra && !is80sEra ? 'opacity-100' : 'opacity-0'}`}>
         <img src={heroBg} alt="" className="w-full h-full object-cover opacity-40" />
       </div>
       
