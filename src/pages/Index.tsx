@@ -114,9 +114,13 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col relative">
-      {/* Background image - positioned behind everything */}
-      <div className="fixed inset-0 -z-20">
+      {/* Background image - positioned behind everything, changes based on birth year */}
+      <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${is80sEra ? 'opacity-100' : 'opacity-0'}`}>
+        <img src={heroBg80s} alt="" className="w-full h-full object-cover opacity-50" />
+      </div>
+      <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${is80sEra ? 'opacity-0' : 'opacity-100'}`}>
         <img src={heroBg} alt="" className="w-full h-full object-cover opacity-40" />
+      </div>
       </div>
       
       {/* Gradient overlay - separate layer */}
