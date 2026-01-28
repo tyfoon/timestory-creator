@@ -90,6 +90,10 @@ EVENTSCOPE WAARDES:
 - "birthyear": in het geboortejaar
 - "period": in de bredere periode
 
+SPECIALE VELDEN:
+- isCelebrityBirthday: true voor beroemde jarigen (category="celebrity")
+- isMovie: true voor film-gerelateerde events (filmpremières, Oscar-winnaars, etc.)
+
 KWALITEIT:
 - Maak beschrijvingen levendig en persoonlijk
 - Voeg context toe die de gebeurtenis memorabel maakt
@@ -100,7 +104,8 @@ AFBEELDING ZOEKTERMEN (BELANGRIJK):
 - imageSearchQueryEn: ALTIJD een Engelse vertaling van de zoekterm, specifiek voor Wikimedia Commons
   - Gebruik exacte namen van personen, evenementen, plaatsen in het Engels
   - Voeg het jaar toe voor historische context
-  - Voorbeeld: "Queen Beatrix inauguration 1980 Amsterdam" of "Elvis Presley concert 1977"`;
+  - Voorbeeld: "Queen Beatrix inauguration 1980 Amsterdam" of "Elvis Presley concert 1977"
+  - Voor films: gebruik de originele Engelse filmtitel, bijv. "Star Wars film 1977" of "The Godfather movie 1972"`;
 }
 
 // =============================================================================
@@ -126,6 +131,7 @@ BELANGRIJKE INSTRUCTIES:
 7. Voor elke gebeurtenis, geef TWEE zoektermen:
    - imageSearchQuery: in de taal van de gebruiker
    - imageSearchQueryEn: ALTIJD in het Engels voor Wikimedia Commons (met exacte namen en jaar)
+     - Voor films: gebruik de originele Engelse filmtitel
 
 KRITIEK - EVENTSCOPE VELD:
 - Markeer elke gebeurtenis met het juiste eventScope:
@@ -133,6 +139,10 @@ KRITIEK - EVENTSCOPE VELD:
   - "birthmonth": gebeurtenissen die in de geboortemaand plaatsvonden
   - "birthyear": gebeurtenissen die in het geboortejaar plaatsvonden
   - "period": gebeurtenissen uit de bredere tijdsperiode
+
+SPECIALE VELDEN:
+- isCelebrityBirthday: true voor beroemde jarigen (acteurs, muzikanten, etc.)
+- isMovie: true voor film-gerelateerde events (filmpremières, Oscar-winnaars, bioscoophits, etc.)
 
 BEROEMDE JARIGEN:
 - Zoek naar bekende personen (acteurs, muzikanten, sporters, politici, etc.) die op DEZELFDE DAG EN MAAND jarig zijn

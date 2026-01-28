@@ -19,6 +19,8 @@ export interface TimelineEvent {
   eventScope: 'birthdate' | 'birthmonth' | 'birthyear' | 'period';
   // For celebrity birthdays
   isCelebrityBirthday?: boolean;
+  // For movie/film events (use TMDB for images)
+  isMovie?: boolean;
 }
 
 export interface FamousBirthday {

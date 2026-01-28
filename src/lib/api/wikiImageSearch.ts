@@ -301,14 +301,15 @@ async function trySourceWithFallback(
 /**
  * Search for an image across all sources using parallel fallback strategy.
  * Uses English query for international sources, Dutch query for Nationaal Archief.
- * For celebrities, will also try TMDB via edge function.
+ * For celebrities and movies, will also try TMDB via edge function.
  */
 async function searchImageForEvent(
   eventId: string,
   queryNl: string,
   year: number | undefined,
   queryEn?: string,
-  isCelebrity?: boolean
+  isCelebrity?: boolean,
+  isMovie?: boolean
 ): Promise<ImageResult> {
   // Use English query for international sources, fall back to Dutch
   const enQuery = queryEn || queryNl;
@@ -345,10 +346,10 @@ async function searchImageForEvent(
     }
   }
   
-  // If no image found and this is a celebrity, try TMDB via edge function
-  if (isCelebrity) {
+  // If no image found and this is a celebrity or movie, try TMDB via edge function
+  if (isCelebrity || isMovie) {
     try {
-      const tmdbResult = await searchTMDBViaEdge(eventId, enQuery, year);
+      const tmdbResult = await searchTMDBViaEdge(eventId, enQuery, year, isCelebrity, isMovie);
       if (tmdbResult.imageUrl) {
         return tmdbResult;
       }
@@ -361,12 +362,14 @@ async function searchImageForEvent(
 }
 
 /**
- * Call the edge function to search TMDB for celebrity portraits
+ * Call the edge function to search TMDB for celebrity portraits or movie images
  */
 async function searchTMDBViaEdge(
   eventId: string,
   query: string,
-  year: number | undefined
+  year: number | undefined,
+  isCelebrity?: boolean,
+  isMovie?: boolean
 ): Promise<ImageResult> {
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -384,7 +387,7 @@ async function searchTMDBViaEdge(
         'apikey': supabaseKey,
       },
       body: JSON.stringify({
-        queries: [{ eventId, query, year, isCelebrity: true }],
+        queries: [{ eventId, query, year, isCelebrity: !!isCelebrity, isMovie: !!isMovie }],
       }),
     });
     
@@ -487,7 +490,8 @@ export async function searchSingleImage(
   query: string,
   year?: number,
   queryEn?: string,
-  isCelebrity?: boolean
+  isCelebrity?: boolean,
+  isMovie?: boolean
 ): Promise<ImageResult> {
-  return searchImageForEvent(eventId, query, year, queryEn, isCelebrity);
+  return searchImageForEvent(eventId, query, year, queryEn, isCelebrity, isMovie);
 }
