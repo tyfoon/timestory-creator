@@ -1,6 +1,12 @@
 /**
  * Client-side Wikipedia/Wikimedia image search
  * Runs directly in the browser to avoid server timeouts
+ * 
+ * Fallback strategy:
+ * 1. Try with quotes (exact match) + year
+ * 2. Try without quotes + year
+ * 3. Try without year
+ * 4. Relax title matching in later phases
  */
 
 const THUMB_WIDTH = 960;
@@ -43,31 +49,59 @@ function isAllowedImageUrl(maybeUrl: string): boolean {
   }
 }
 
-function titleMatchesQuery(title: string, query: string): boolean {
+/**
+ * Check if a Wikipedia/Commons page title matches the search query.
+ * @param strict - If true, require more keywords to match. If false (fallback), be lenient.
+ */
+function titleMatchesQuery(title: string, query: string, strict: boolean = true): boolean {
   const titleLower = title.toLowerCase();
   const queryLower = query.toLowerCase();
   
+  // Extract meaningful words from query
   const queryWords = queryLower.split(/\s+/).filter(w => 
     w.length > 2 && 
-    !['the', 'and', 'for', 'van', 'het', 'een', 'der', 'den', 'des'].includes(w) &&
-    !/^\d{4}$/.test(w)
+    !['the', 'and', 'for', 'van', 'het', 'een', 'der', 'den', 'des', 'von', 'und'].includes(w) &&
+    !/^\d{4}$/.test(w) // Exclude year numbers
   );
   
-  const mainSubjectWords = queryWords.slice(0, 3);
+  if (queryWords.length === 0) return true; // No meaningful words, allow anything
+  
+  const mainSubjectWords = queryWords.slice(0, 4);
   const matchCount = mainSubjectWords.filter(word => titleLower.includes(word)).length;
   
-  const threshold = mainSubjectWords.length <= 2 ? 1 : 2;
-  return matchCount >= threshold;
+  if (strict) {
+    // Strict mode: require at least half of the main words to match
+    const threshold = Math.max(1, Math.ceil(mainSubjectWords.length / 2));
+    return matchCount >= threshold;
+  } else {
+    // Lenient mode (fallback): require just 1 word to match
+    return matchCount >= 1;
+  }
+}
+
+interface SearchOptions {
+  useQuotes?: boolean;
+  includeYear?: boolean;
+  strictMatch?: boolean;
 }
 
 async function searchWikipedia(
   query: string, 
   year: number | undefined,
-  lang: string
+  lang: string,
+  options: SearchOptions = {}
 ): Promise<{ imageUrl: string; source: string } | null> {
+  const { useQuotes = false, includeYear = true, strictMatch = true } = options;
+  
   try {
-    // Use loose search (no quotes) for better results
-    const searchQuery = year ? `${query} ${year}` : query;
+    let searchQuery = query;
+    if (useQuotes) {
+      searchQuery = `"${query}"`;
+    }
+    if (includeYear && year) {
+      searchQuery = `${searchQuery} ${year}`;
+    }
+    
     const searchUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&format=json&srlimit=5&origin=*`;
     
     const searchRes = await fetch(searchUrl);
@@ -81,7 +115,7 @@ async function searchWikipedia(
     for (const result of results.slice(0, 3)) {
       const title = result.title;
       
-      if (!titleMatchesQuery(title, query)) {
+      if (!titleMatchesQuery(title, query, strictMatch)) {
         continue;
       }
       
@@ -116,11 +150,19 @@ async function searchWikipedia(
 
 async function searchWikimediaCommons(
   query: string, 
-  year: number | undefined
+  year: number | undefined,
+  options: SearchOptions = {}
 ): Promise<{ imageUrl: string; source: string } | null> {
+  const { useQuotes = false, includeYear = true, strictMatch = true } = options;
+  
   try {
-    // Use loose search for better results
-    const searchQuery = year ? `${query} ${year}` : query;
+    let searchQuery = query;
+    if (useQuotes) {
+      searchQuery = `"${query}"`;
+    }
+    if (includeYear && year) {
+      searchQuery = `${searchQuery} ${year}`;
+    }
     
     const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srnamespace=6&format=json&srlimit=5&origin=*`;
     const searchRes = await fetch(searchUrl);
@@ -133,7 +175,7 @@ async function searchWikimediaCommons(
       try {
         const title = result.title;
         
-        if (!titleMatchesQuery(title, query)) {
+        if (!titleMatchesQuery(title, query, strictMatch)) {
           continue;
         }
         
@@ -170,12 +212,16 @@ async function searchWikimediaCommons(
 
 async function searchNationaalArchief(
   query: string,
-  year: number | undefined
+  year: number | undefined,
+  options: SearchOptions = {}
 ): Promise<{ imageUrl: string; source: string } | null> {
+  const { includeYear = true, strictMatch = true } = options;
+  
   try {
-    const searchQuery = year 
-      ? `${query} ${year} Nationaal Archief`
-      : `${query} Nationaal Archief`;
+    let searchQuery = `${query} Nationaal Archief`;
+    if (includeYear && year) {
+      searchQuery = `${query} ${year} Nationaal Archief`;
+    }
     
     const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srnamespace=6&format=json&srlimit=3&origin=*`;
     const searchRes = await fetch(searchUrl);
@@ -187,6 +233,11 @@ async function searchNationaalArchief(
     for (const result of results.slice(0, 2)) {
       try {
         const title = result.title;
+        
+        // For Nationaal Archief, use the strictMatch setting
+        if (!titleMatchesQuery(title, query, strictMatch)) {
+          continue;
+        }
         
         const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=${THUMB_WIDTH}&format=json&origin=*`;
         const infoRes = await fetch(infoUrl);
@@ -220,64 +271,79 @@ async function searchNationaalArchief(
 }
 
 /**
- * Search for an image across all sources using Promise.any
+ * Try a single source with fallback strategy:
+ * 1. With quotes + year (strict)
+ * 2. Without quotes + year (strict)
+ * 3. Without quotes + without year (lenient)
  */
-/**
- * Polyfill for Promise.any - returns first successful result
- */
-async function promiseAny<T>(promises: Promise<T>[]): Promise<T> {
-  return new Promise((resolve, reject) => {
-    let rejectionCount = 0;
-    
-    promises.forEach((promise) => {
-      promise
-        .then(resolve)
-        .catch(() => {
-          rejectionCount++;
-          if (rejectionCount === promises.length) {
-            reject(new Error('All promises were rejected'));
-          }
-        });
-    });
-  });
+async function trySourceWithFallback(
+  searchFn: (query: string, year: number | undefined, options: SearchOptions) => Promise<{ imageUrl: string; source: string } | null>,
+  query: string,
+  year: number | undefined
+): Promise<{ imageUrl: string; source: string } | null> {
+  // Phase 1: With quotes + year (strict matching)
+  let result = await searchFn(query, year, { useQuotes: true, includeYear: true, strictMatch: true });
+  if (result) return result;
+  
+  // Phase 2: Without quotes + year (strict matching)
+  result = await searchFn(query, year, { useQuotes: false, includeYear: true, strictMatch: true });
+  if (result) return result;
+  
+  // Phase 3: Without quotes + without year (lenient matching)
+  if (year) {
+    result = await searchFn(query, year, { useQuotes: false, includeYear: false, strictMatch: false });
+    if (result) return result;
+  }
+  
+  return null;
 }
 
 /**
- * Search for an image across all sources - returns first successful result
- * Uses English query for international sources when available
+ * Search for an image across all sources using parallel fallback strategy.
+ * Uses English query for international sources, Dutch query for Nationaal Archief.
  */
 async function searchImageForEvent(
   eventId: string,
-  query: string,
+  queryNl: string,
   year: number | undefined,
   queryEn?: string
 ): Promise<ImageResult> {
-  // Use English query for international sources, fall back to original
-  const enQuery = queryEn || query;
+  // Use English query for international sources, fall back to Dutch
+  const enQuery = queryEn || queryNl;
   
-  const sources = [
-    // Dutch sources use original query
-    searchNationaalArchief(query, year),
-    searchWikipedia(query, year, 'nl'),
+  // Try all sources in parallel with their fallback strategies
+  const sourcePromises = [
+    // Dutch sources use Dutch query
+    trySourceWithFallback(searchNationaalArchief, queryNl, year),
+    trySourceWithFallback(
+      (q, y, opts) => searchWikipedia(q, y, 'nl', opts),
+      queryNl,
+      year
+    ),
     // International sources use English query for better results
-    searchWikipedia(enQuery, year, 'en'),
-    searchWikipedia(enQuery, year, 'de'),
-    searchWikimediaCommons(enQuery, year),
+    trySourceWithFallback(
+      (q, y, opts) => searchWikipedia(q, y, 'en', opts),
+      enQuery,
+      year
+    ),
+    trySourceWithFallback(
+      (q, y, opts) => searchWikipedia(q, y, 'de', opts),
+      enQuery,
+      year
+    ),
+    trySourceWithFallback(searchWikimediaCommons, enQuery, year),
   ];
 
-  try {
-    const result = await promiseAny(
-      sources.map(async (promise) => {
-        const res = await promise;
-        if (!res) throw new Error('No result');
-        return res;
-      })
-    );
-    
-    return { eventId, imageUrl: result.imageUrl, source: result.source };
-  } catch {
-    return { eventId, imageUrl: null, source: null };
+  // Use Promise.allSettled to get all results, then pick the first successful one
+  const results = await Promise.allSettled(sourcePromises);
+  
+  for (const result of results) {
+    if (result.status === 'fulfilled' && result.value) {
+      return { eventId, imageUrl: result.value.imageUrl, source: result.value.source };
+    }
   }
+  
+  return { eventId, imageUrl: null, source: null };
 }
 
 // ============== CONCURRENCY CONTROL ==============
