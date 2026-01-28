@@ -21,7 +21,7 @@ interface TimelineRequest {
   };
   language: string;
   stream?: boolean;
-  maxEvents?: number; // For short version (20 items)
+  maxEvents?: number;
 }
 
 serve(async (req) => {
@@ -38,16 +38,15 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Build the prompt based on request type
     const prompt = buildPrompt(requestData);
     console.log("Generated prompt (first 500 chars):", prompt.substring(0, 500));
 
-    // If streaming is requested, use streaming response
+    // Always use NDJSON streaming for speed
     if (requestData.stream) {
-      return handleStreamingResponse(requestData, prompt, LOVABLE_API_KEY);
+      return handleNDJSONStreaming(requestData, prompt, LOVABLE_API_KEY);
     }
 
-    // Non-streaming: original behavior
+    // Non-streaming fallback
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -92,7 +91,11 @@ serve(async (req) => {
   }
 });
 
-async function handleStreamingResponse(
+/**
+ * NDJSON Streaming: Uses message-based streaming to send each event as a complete JSON line
+ * immediately when parsed, eliminating complex partial JSON parsing.
+ */
+async function handleNDJSONStreaming(
   requestData: TimelineRequest,
   prompt: string,
   apiKey: string
@@ -107,11 +110,9 @@ async function handleStreamingResponse(
       model: "google/gemini-3-flash-preview",
       stream: true,
       messages: [
-        { role: "system", content: getSystemPrompt(requestData.language, requestData.maxEvents) },
+        { role: "system", content: getNDJSONSystemPrompt(requestData.language, requestData.maxEvents) },
         { role: "user", content: prompt },
       ],
-      tools: [getTimelineTool()],
-      tool_choice: { type: "function", function: { name: "create_timeline" } }
     }),
   });
 
@@ -122,21 +123,22 @@ async function handleStreamingResponse(
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
   
-  let functionArguments = "";
-  let lastSentEventCount = 0;
+  let buffer = "";
+  let contentBuffer = "";
+  let isStreamClosed = false;
+  let eventCount = 0;
   let sentSummary = false;
   let sentFamousBirthdays = false;
-  let sentComplete = false;
-  let buffer = "";
-  let isStreamClosed = false;
+  const allEvents: any[] = [];
+  let summary = "";
+  let famousBirthdays: any[] = [];
 
-  // Safe enqueue helper that checks if stream is still open
   const safeEnqueue = (controller: ReadableStreamDefaultController, data: string) => {
     if (isStreamClosed) return;
     try {
       controller.enqueue(encoder.encode(data));
     } catch (e) {
-      console.error('Enqueue error (stream likely closed):', e);
+      console.error('Enqueue error:', e);
       isStreamClosed = true;
     }
   };
@@ -160,29 +162,6 @@ async function handleStreamingResponse(
             const data = line.slice(6).trim();
             
             if (data === '[DONE]') {
-              // Send final complete message
-              if (!sentComplete) {
-                try {
-                  const finalData = JSON.parse(functionArguments);
-                  safeEnqueue(controller, `data: ${JSON.stringify({ 
-                    type: 'complete', 
-                    data: finalData 
-                  })}\n\n`);
-                  sentComplete = true;
-                } catch (e) {
-                  console.error('Error parsing final data:', e);
-                  // Try to send what we have
-                  const partialData = tryParsePartialTimeline(functionArguments);
-                  if (partialData) {
-                    safeEnqueue(controller, `data: ${JSON.stringify({ 
-                      type: 'complete', 
-                      data: partialData 
-                    })}\n\n`);
-                    sentComplete = true;
-                  }
-                }
-              }
-              safeEnqueue(controller, 'data: [DONE]\n\n');
               continue;
             }
             
@@ -190,101 +169,86 @@ async function handleStreamingResponse(
               const parsed = JSON.parse(data);
               const delta = parsed.choices?.[0]?.delta;
               
-              if (delta?.tool_calls?.[0]?.function?.arguments) {
-                functionArguments += delta.tool_calls[0].function.arguments;
+              if (delta?.content) {
+                contentBuffer += delta.content;
                 
-                // Try to extract complete events from the partial JSON
-                const partialData = tryParsePartialTimeline(functionArguments);
+                // Process complete NDJSON lines
+                const ndjsonLines = contentBuffer.split('\n');
+                contentBuffer = ndjsonLines.pop() || "";
                 
-                if (partialData) {
-                  // Send new events incrementally
-                  if (partialData.events && partialData.events.length > lastSentEventCount) {
-                    const newEvents = partialData.events.slice(lastSentEventCount);
-                    for (const event of newEvents) {
-                      safeEnqueue(controller, `data: ${JSON.stringify({ 
-                        type: 'event', 
-                        event 
-                      })}\n\n`);
+                for (const ndjsonLine of ndjsonLines) {
+                  const trimmed = ndjsonLine.trim();
+                  if (!trimmed) continue;
+                  
+                  try {
+                    const obj = JSON.parse(trimmed);
+                    
+                    if (obj.type === 'event' && obj.data) {
+                      eventCount++;
+                      allEvents.push(obj.data);
+                      safeEnqueue(controller, `data: ${JSON.stringify({ type: 'event', event: obj.data })}\n\n`);
+                      console.log(`Streamed event ${eventCount}: ${obj.data.title?.substring(0, 40)}`);
+                    } else if (obj.type === 'summary' && obj.data && !sentSummary) {
+                      summary = obj.data;
+                      safeEnqueue(controller, `data: ${JSON.stringify({ type: 'summary', summary: obj.data })}\n\n`);
+                      sentSummary = true;
+                    } else if (obj.type === 'famousBirthdays' && obj.data && !sentFamousBirthdays) {
+                      famousBirthdays = obj.data;
+                      safeEnqueue(controller, `data: ${JSON.stringify({ type: 'famousBirthdays', famousBirthdays: obj.data })}\n\n`);
+                      sentFamousBirthdays = true;
                     }
-                    lastSentEventCount = partialData.events.length;
-                  }
-                  
-                  // Send summary once available
-                  if (partialData.summary && !sentSummary) {
-                    safeEnqueue(controller, `data: ${JSON.stringify({ 
-                      type: 'summary', 
-                      summary: partialData.summary 
-                    })}\n\n`);
-                    sentSummary = true;
-                  }
-                  
-                  // Send famous birthdays once available
-                  if (partialData.famousBirthdays && partialData.famousBirthdays.length > 0 && !sentFamousBirthdays) {
-                    safeEnqueue(controller, `data: ${JSON.stringify({ 
-                      type: 'famousBirthdays', 
-                      famousBirthdays: partialData.famousBirthdays 
-                    })}\n\n`);
-                    sentFamousBirthdays = true;
+                  } catch {
+                    // Not valid JSON line yet, ignore
                   }
                 }
               }
-            } catch (e) {
-              // Ignore parse errors for incomplete chunks
+            } catch {
+              // Ignore SSE parse errors
             }
           }
         }
         
-        // Process any remaining buffer
-        if (buffer.trim() && !isStreamClosed) {
-          if (buffer.startsWith('data: ')) {
-            const data = buffer.slice(6).trim();
-            if (data !== '[DONE]') {
-              try {
-                const parsed = JSON.parse(data);
-                const delta = parsed.choices?.[0]?.delta;
-                if (delta?.tool_calls?.[0]?.function?.arguments) {
-                  functionArguments += delta.tool_calls[0].function.arguments;
-                }
-              } catch (e) {
-                // Ignore
+        // Process any remaining content in buffer
+        if (contentBuffer.trim()) {
+          const remainingLines = contentBuffer.split('\n');
+          for (const ndjsonLine of remainingLines) {
+            const trimmed = ndjsonLine.trim();
+            if (!trimmed) continue;
+            
+            try {
+              const obj = JSON.parse(trimmed);
+              
+              if (obj.type === 'event' && obj.data) {
+                eventCount++;
+                allEvents.push(obj.data);
+                safeEnqueue(controller, `data: ${JSON.stringify({ type: 'event', event: obj.data })}\n\n`);
+              } else if (obj.type === 'summary' && obj.data && !sentSummary) {
+                summary = obj.data;
+                safeEnqueue(controller, `data: ${JSON.stringify({ type: 'summary', summary: obj.data })}\n\n`);
+                sentSummary = true;
+              } else if (obj.type === 'famousBirthdays' && obj.data && !sentFamousBirthdays) {
+                famousBirthdays = obj.data;
+                safeEnqueue(controller, `data: ${JSON.stringify({ type: 'famousBirthdays', famousBirthdays: obj.data })}\n\n`);
+                sentFamousBirthdays = true;
               }
+            } catch {
+              // Ignore
             }
           }
         }
         
-        // Final flush - make sure we send complete data
-        if (!isStreamClosed && (!sentComplete || lastSentEventCount === 0)) {
-          const finalData = tryParsePartialTimeline(functionArguments);
-          if (finalData) {
-            if (finalData.events && finalData.events.length > lastSentEventCount) {
-              const newEvents = finalData.events.slice(lastSentEventCount);
-              for (const event of newEvents) {
-                safeEnqueue(controller, `data: ${JSON.stringify({ 
-                  type: 'event', 
-                  event 
-                })}\n\n`);
-              }
-            }
-            if (finalData.summary && !sentSummary) {
-              safeEnqueue(controller, `data: ${JSON.stringify({ 
-                type: 'summary', 
-                summary: finalData.summary 
-              })}\n\n`);
-            }
-            if (finalData.famousBirthdays && !sentFamousBirthdays) {
-              safeEnqueue(controller, `data: ${JSON.stringify({ 
-                type: 'famousBirthdays', 
-                famousBirthdays: finalData.famousBirthdays 
-              })}\n\n`);
-            }
-            if (!sentComplete) {
-              safeEnqueue(controller, `data: ${JSON.stringify({ 
-                type: 'complete', 
-                data: finalData 
-              })}\n\n`);
-            }
-          }
-        }
+        // Send complete message with all collected data
+        console.log(`Stream complete: ${eventCount} events, summary: ${!!summary}, birthdays: ${famousBirthdays.length}`);
+        safeEnqueue(controller, `data: ${JSON.stringify({ 
+          type: 'complete', 
+          data: { 
+            events: allEvents, 
+            summary: summary || "Een overzicht van belangrijke gebeurtenissen uit deze periode.",
+            famousBirthdays 
+          } 
+        })}\n\n`);
+        
+        safeEnqueue(controller, 'data: [DONE]\n\n');
         
         if (!isStreamClosed) {
           isStreamClosed = true;
@@ -308,95 +272,6 @@ async function handleStreamingResponse(
       "Connection": "keep-alive",
     }
   });
-}
-
-function tryParsePartialTimeline(partial: string): { events?: any[]; summary?: string; famousBirthdays?: any[] } | null {
-  // Try to extract complete events array from partial JSON
-  // The AI generates: {"events":[{...},{...}],"summary":"...","famousBirthdays":[...]}
-  
-  try {
-    // First try full parse
-    return JSON.parse(partial);
-  } catch {
-    // Try to extract events array
-    const eventsMatch = partial.match(/"events"\s*:\s*\[/);
-    if (!eventsMatch) return null;
-    
-    const eventsStart = eventsMatch.index! + eventsMatch[0].length - 1;
-    let bracketCount = 0;
-    let inString = false;
-    let escape = false;
-    let lastCompleteEvent = -1;
-    
-    const events: any[] = [];
-    let currentEventStart = -1;
-    
-    for (let i = eventsStart; i < partial.length; i++) {
-      const char = partial[i];
-      
-      if (escape) {
-        escape = false;
-        continue;
-      }
-      
-      if (char === '\\') {
-        escape = true;
-        continue;
-      }
-      
-      if (char === '"' && !escape) {
-        inString = !inString;
-        continue;
-      }
-      
-      if (inString) continue;
-      
-      if (char === '[' || char === '{') {
-        if (bracketCount === 1 && char === '{') {
-          currentEventStart = i;
-        }
-        bracketCount++;
-      } else if (char === ']' || char === '}') {
-        bracketCount--;
-        if (bracketCount === 1 && char === '}' && currentEventStart !== -1) {
-          // Complete event object
-          try {
-            const eventStr = partial.substring(currentEventStart, i + 1);
-            const event = JSON.parse(eventStr);
-            events.push(event);
-            lastCompleteEvent = i;
-          } catch {
-            // Incomplete event, ignore
-          }
-          currentEventStart = -1;
-        }
-      }
-    }
-    
-    // Try to extract summary
-    let summary: string | undefined;
-    const summaryMatch = partial.match(/"summary"\s*:\s*"([^"]+)"/);
-    if (summaryMatch) {
-      summary = summaryMatch[1];
-    }
-    
-    // Try to extract famousBirthdays
-    let famousBirthdays: any[] | undefined;
-    const fbMatch = partial.match(/"famousBirthdays"\s*:\s*\[([^\]]*)\]/);
-    if (fbMatch) {
-      try {
-        famousBirthdays = JSON.parse(`[${fbMatch[1]}]`);
-      } catch {
-        // Incomplete array
-      }
-    }
-    
-    if (events.length > 0 || summary || famousBirthdays) {
-      return { events: events.length > 0 ? events : undefined, summary, famousBirthdays };
-    }
-    
-    return null;
-  }
 }
 
 async function handleErrorResponse(response: Response): Promise<Response> {
@@ -479,6 +354,60 @@ function getTimelineTool() {
   };
 }
 
+/**
+ * NDJSON System Prompt: Instructs AI to output one JSON object per line
+ * for immediate streaming to the client.
+ */
+function getNDJSONSystemPrompt(language: string, maxEvents?: number): string {
+  const langInstructions = {
+    nl: "Schrijf alle tekst in het Nederlands.",
+    en: "Write all text in English.",
+    de: "Schreibe alle Texte auf Deutsch.",
+    fr: "Écrivez tout le texte en français."
+  };
+
+  const isShort = maxEvents && maxEvents <= 20;
+  const eventCount = isShort ? maxEvents : 50;
+
+  return `Je bent een historicus die boeiende tijdlijnen maakt.
+
+${langInstructions[language as keyof typeof langInstructions] || langInstructions.nl}
+
+KRITISCH - OUTPUT FORMAAT (NDJSON):
+Je MOET je output formatteren als NDJSON (Newline Delimited JSON).
+Stuur ELKE gebeurtenis als een apart JSON-object op een NIEUWE regel.
+Begin ONMIDDELLIJK met het eerste event - geen inleiding, geen markdown.
+
+FORMAT PER REGEL:
+{"type":"event","data":{"id":"evt_1","date":"1973-03-28","year":1973,"month":3,"day":28,"title":"Titel hier","description":"Beschrijving hier","category":"politics","imageSearchQuery":"zoekterm voor afbeelding","importance":"high","eventScope":"birthyear"}}
+{"type":"event","data":{"id":"evt_2","date":"1973-03","year":1973,"month":3,"title":"Nog een event","description":"...","category":"music","imageSearchQuery":"...","importance":"medium","eventScope":"birthmonth"}}
+
+NA ALLE EVENTS, stuur op aparte regels:
+{"type":"summary","data":"Een samenvatting van de periode..."}
+{"type":"famousBirthdays","data":[{"name":"Persoon","profession":"Beroep","birthYear":1950,"imageSearchQuery":"persoon naam portret"}]}
+
+REGELS:
+1. GEEN markdown, GEEN code blocks, ALLEEN JSON regels
+2. Elke regel is een compleet, geldig JSON object
+3. Begin DIRECT met het eerste {"type":"event",...} - geen tekst ervoor
+4. Genereer ${eventCount} events
+5. Stuur summary en famousBirthdays als laatste regels
+
+CATEGORIEËN: politics, sports, entertainment, science, culture, world, local, personal, music, technology, celebrity
+
+EVENTSCOPE WAARDES:
+- "birthdate": exact op de geboortedag
+- "birthmonth": in de geboortemaand
+- "birthyear": in het geboortejaar
+- "period": in de bredere periode
+
+KWALITEIT:
+- Maak beschrijvingen levendig en persoonlijk
+- Voeg context toe die de gebeurtenis memorabel maakt
+- Zorg voor een mix van categorieën
+- imageSearchQuery moet specifiek genoeg zijn om relevante afbeeldingen te vinden`;
+}
+
 function getSystemPrompt(language: string, maxEvents?: number): string {
   const langInstructions = {
     nl: "Schrijf alle tekst in het Nederlands.",
@@ -488,8 +417,6 @@ function getSystemPrompt(language: string, maxEvents?: number): string {
   };
 
   const isShort = maxEvents && maxEvents <= 20;
-  const eventCount = isShort ? "15-20" : "30-50";
-  const rangeEventCount = isShort ? "15-20" : "50-100";
 
   return `Je bent een historicus die gedetailleerde, accurate en boeiende tijdlijnen maakt over historische gebeurtenissen.
 
@@ -514,21 +441,7 @@ KRITIEK - EVENTSCOPE VELD:
 BEROEMDE JARIGEN:
 - Zoek naar bekende personen (acteurs, muzikanten, sporters, politici, etc.) die op DEZELFDE DAG EN MAAND jarig zijn
 - Voeg deze toe als events met category="celebrity" en isCelebrityBirthday=true
-- Voeg ook een aparte famousBirthdays array toe met de belangrijkste beroemdheden
-
-VOOR GEBOORTEDATUM:
-${isShort ? `- Selecteer de ${maxEvents} meest interessante en iconische gebeurtenissen
-- Verdeel over: 50% geboortejaar, 20% geboortemaand, 30% exacte geboortedag
-- Minstens 2-3 beroemde jarigen` : `- 55% van de gebeurtenissen: het geboortejaar (eventScope="birthyear")
-- 15% van de gebeurtenissen: de geboortemaand (eventScope="birthmonth")  
-- 30% van de gebeurtenissen: de specifieke geboortedag (eventScope="birthdate")
-- Minstens 5 beroemde jarigen met dezelfde verjaardag`}
-
-VOOR TIJDSPERIODE:
-- Verdeel gebeurtenissen gelijkmatig over de jaren
-- Focus op de belangrijkste momenten per jaar
-- Voeg decennium-specifieke cultuur toe (mode, muziek, technologie)
-- Gebruik eventScope="period" voor alle gebeurtenissen`;
+- Voeg ook een aparte famousBirthdays array toe met de belangrijkste beroemdheden`;
 }
 
 function buildPrompt(data: TimelineRequest): string {
@@ -544,68 +457,42 @@ function buildPrompt(data: TimelineRequest): string {
     if (isShort) {
       prompt = `Maak een KORTE tijdlijn voor iemand geboren op ${day} ${monthName} ${year}.
 
-Genereer PRECIES ${data.maxEvents} gebeurtenissen - niet meer, niet minder.
-Selecteer alleen de meest iconische en memorabele momenten:
-- 10 gebeurtenissen over het jaar ${year} - markeer met eventScope="birthyear"
-- 3 gebeurtenissen specifiek over ${monthName} ${year} - markeer met eventScope="birthmonth"
-- 5 gebeurtenissen over de exacte dag ${day} ${monthName} ${year} - markeer met eventScope="birthdate"
-- 2 beroemde personen die ook op ${day} ${monthName} jarig zijn
+Genereer PRECIES ${data.maxEvents} events in NDJSON formaat.
+Verdeling:
+- 10 gebeurtenissen over het jaar ${year} (eventScope="birthyear")
+- 3 gebeurtenissen over ${monthName} ${year} (eventScope="birthmonth")
+- 5 gebeurtenissen over ${day} ${monthName} ${year} (eventScope="birthdate")
+- 2 beroemde jarigen die ook op ${day} ${monthName} jarig zijn (category="celebrity", isCelebrityBirthday=true)
 
-Focus op:
-- De #1 hit van die dag/week
-- De belangrijkste nieuwsgebeurtenissen
-- Iconische films of tv-shows
-- Belangrijke sportmomenten`;
+Focus op: #1 hits, belangrijke nieuws, iconische films/tv, sportmomenten.`;
     } else {
       prompt = `Maak een uitgebreide tijdlijn voor iemand geboren op ${day} ${monthName} ${year}.
 
-Genereer minimaal 50 gebeurtenissen:
-- Minstens 25 gebeurtenissen over het jaar ${year} (politiek, cultuur, sport, wetenschap, entertainment) - markeer met eventScope="birthyear"
-- Minstens 8 gebeurtenissen specifiek over ${monthName} ${year} - markeer met eventScope="birthmonth"
-- Minstens 15 gebeurtenissen over de exacte dag ${day} ${monthName} ${year} - markeer met eventScope="birthdate"
+Genereer minimaal 50 events in NDJSON formaat:
+- 25+ over ${year} (eventScope="birthyear")
+- 8+ over ${monthName} ${year} (eventScope="birthmonth")
+- 15+ over ${day} ${monthName} ${year} (eventScope="birthdate")
+- 5-10 beroemde jarigen op ${day} ${monthName} (category="celebrity", isCelebrityBirthday=true)
 
-BELANGRIJK - BEROEMDE JARIGEN:
-Zoek naar minstens 5-10 bekende personen die ook op ${day} ${monthName} jarig zijn (niet per se hetzelfde jaar).
-Dit kunnen zijn: acteurs, muzikanten, atleten, politici, wetenschappers, schrijvers, etc.
-Voeg deze toe als aparte events met:
-- category: "celebrity"
-- isCelebrityBirthday: true
-- eventScope: "birthdate"
-EN voeg ze ook toe aan de famousBirthdays array.
-
-Voeg toe:
-- Nummer 1 hits in de hitparade rond die tijd
-- Populaire films en tv-shows
-- Belangrijke sportmomenten
-- Politieke gebeurtenissen
-- Wetenschappelijke doorbraken
-- Culturele fenomenen`;
+Voeg toe: nummer 1 hits, films, tv-shows, sport, politiek, wetenschap, cultuur.`;
     }
   } else if (data.type === 'range' && data.yearRange) {
     const { startYear, endYear } = data.yearRange;
     const yearSpan = endYear - startYear;
-    const isShort = data.maxEvents && data.maxEvents <= 20;
-    
-    // For short version, generate exactly maxEvents. For long, scale with year span.
     const targetEvents = isShort ? data.maxEvents : Math.max(50, yearSpan * 5);
     
     prompt = `Maak een ${isShort ? 'KORTE' : 'uitgebreide'} tijdlijn van ${startYear} tot ${endYear}.
 
-Dit is een periode van ${yearSpan} jaar. Genereer ${isShort ? 'PRECIES' : 'minimaal'} ${targetEvents} gebeurtenissen.
-Markeer alle gebeurtenissen met eventScope="period".
+Genereer ${isShort ? 'PRECIES' : 'minimaal'} ${targetEvents} events in NDJSON formaat.
+Alle events krijgen eventScope="period".
 
-${isShort ? 'Selecteer alleen de meest iconische en memorabele momenten uit deze periode.' : 'Zorg voor een goede spreiding over alle jaren en verschillende categorieën:'}
-- Belangrijke politieke gebeurtenissen
-- Culturele mijlpalen (muziek, film, kunst)
-- Sportmomenten
-- Wetenschappelijke ontdekkingen
-- Technologische innovaties
-- Sociale veranderingen`;
+${isShort ? 'Selecteer alleen de meest iconische momenten.' : 'Zorg voor goede spreiding over alle jaren.'}
+Categorieën: politiek, cultuur (muziek, film), sport, wetenschap, technologie, sociale veranderingen.`;
 
     if (data.birthDate) {
-      const { day, month, year } = data.birthDate;
+      const { year } = data.birthDate;
       if (year >= startYear && year <= endYear) {
-        prompt += `\n\nBELANGRIJK: Het geboortejaar ${year} valt in deze periode. Besteed extra aandacht aan dit jaar (circa 20% van alle gebeurtenissen). Markeer gebeurtenissen uit dat jaar met eventScope="birthyear".`;
+        prompt += `\n\nBelangrijk: Geboortejaar ${year} valt in deze periode. Besteed extra aandacht hieraan (eventScope="birthyear" voor dat jaar).`;
       }
     }
   }
@@ -614,33 +501,33 @@ ${isShort ? 'Selecteer alleen de meest iconische en memorabele momenten uit deze
 
   if (optionalData.firstName || optionalData.lastName) {
     const fullName = [optionalData.firstName, optionalData.lastName].filter(Boolean).join(' ');
-    prompt += `\n\nDe tijdlijn is voor: ${fullName}. Maak de beschrijvingen persoonlijk door soms de naam te noemen.`;
+    prompt += `\n\nTijdlijn voor: ${fullName}. Maak beschrijvingen persoonlijk.`;
   }
   
   if (optionalData.focus) {
     const focusMap = {
-      netherlands: "Focus vooral op Nederlandse gebeurtenissen en context.",
-      europe: "Focus vooral op Europese gebeurtenissen en context.",
+      netherlands: "Focus op Nederlandse gebeurtenissen.",
+      europe: "Focus op Europese gebeurtenissen.",
       world: "Focus op wereldwijde gebeurtenissen."
     };
     prompt += `\n\n${focusMap[optionalData.focus]}`;
   }
 
   if (optionalData.interests) {
-    prompt += `\n\nDe persoon heeft interesse in: ${optionalData.interests}. Voeg extra gebeurtenissen toe die hierbij aansluiten.`;
+    prompt += `\n\nInteresses: ${optionalData.interests}. Voeg relevante gebeurtenissen toe.`;
   }
 
   if (optionalData.city) {
-    prompt += `\n\nDe persoon woont in ${optionalData.city}. Voeg indien mogelijk lokale/regionale gebeurtenissen toe.`;
+    prompt += `\n\nWoonplaats: ${optionalData.city}. Voeg lokale gebeurtenissen toe indien mogelijk.`;
   }
 
   if (optionalData.children && optionalData.children.length > 0) {
     const childrenInfo = optionalData.children
       .filter(c => c.name && c.birthDate?.year)
-      .map(c => `${c.name} (geboren ${c.birthDate?.day}-${c.birthDate?.month}-${c.birthDate?.year})`);
+      .map(c => `${c.name} (${c.birthDate?.day}-${c.birthDate?.month}-${c.birthDate?.year})`);
     
     if (childrenInfo.length > 0) {
-      prompt += `\n\nVoeg deze persoonlijke mijlpalen toe aan de tijdlijn: kinderen: ${childrenInfo.join(", ")}`;
+      prompt += `\n\nPersoonlijke mijlpalen - kinderen: ${childrenInfo.join(", ")}`;
     }
   }
 
