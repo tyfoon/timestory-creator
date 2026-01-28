@@ -66,7 +66,8 @@ async function searchWikipedia(
   lang: string
 ): Promise<{ imageUrl: string; source: string } | null> {
   try {
-    const searchQuery = year ? `"${query}" ${year}` : `"${query}"`;
+    // Use loose search (no quotes) for better results
+    const searchQuery = year ? `${query} ${year}` : query;
     const searchUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&format=json&srlimit=5&origin=*`;
     
     const searchRes = await fetch(searchUrl);
@@ -118,7 +119,8 @@ async function searchWikimediaCommons(
   year: number | undefined
 ): Promise<{ imageUrl: string; source: string } | null> {
   try {
-    const searchQuery = year ? `"${query}" ${year}` : `"${query}"`;
+    // Use loose search for better results
+    const searchQuery = year ? `${query} ${year}` : query;
     
     const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srnamespace=6&format=json&srlimit=5&origin=*`;
     const searchRes = await fetch(searchUrl);
