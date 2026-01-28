@@ -18,6 +18,7 @@ interface TimelineRequest {
     partnerBirthDate?: { day: number; month: number; year: number };
     interests?: string;
     focus: 'netherlands' | 'europe' | 'world';
+    periodType?: 'birthyear' | 'childhood' | 'puberty' | 'young-adult' | 'custom';
   };
   language: string;
   stream?: boolean;
@@ -456,6 +457,10 @@ BEROEMDE JARIGEN:
 function buildPrompt(data: TimelineRequest): string {
   let prompt = "";
   const isShort = data.maxEvents && data.maxEvents <= 20;
+  const periodType = data.optionalData?.periodType;
+  
+  // Get content focus based on period type
+  const contentFocus = getContentFocusForPeriod(periodType);
   
   if (data.type === 'birthdate' && data.birthDate) {
     const { day, month, year } = data.birthDate;
@@ -473,7 +478,7 @@ Verdeling:
 - 5 gebeurtenissen over ${day} ${monthName} ${year} (eventScope="birthdate")
 - 2 beroemde jarigen die ook op ${day} ${monthName} jarig zijn (category="celebrity", isCelebrityBirthday=true)
 
-Focus op: #1 hits, belangrijke nieuws, iconische films/tv, sportmomenten.`;
+${contentFocus}`;
     } else {
       prompt = `Maak een uitgebreide tijdlijn voor iemand geboren op ${day} ${monthName} ${year}.
 
@@ -483,7 +488,7 @@ Genereer minimaal 50 events in NDJSON formaat:
 - 15+ over ${day} ${monthName} ${year} (eventScope="birthdate")
 - 5-10 beroemde jarigen op ${day} ${monthName} (category="celebrity", isCelebrityBirthday=true)
 
-Voeg toe: nummer 1 hits, films, tv-shows, sport, politiek, wetenschap, cultuur.`;
+${contentFocus}`;
     }
   } else if (data.type === 'range' && data.yearRange) {
     const { startYear, endYear } = data.yearRange;
@@ -496,12 +501,24 @@ Genereer ${isShort ? 'PRECIES' : 'minimaal'} ${targetEvents} events in NDJSON fo
 Alle events krijgen eventScope="period".
 
 ${isShort ? 'Selecteer alleen de meest iconische momenten.' : 'Zorg voor goede spreiding over alle jaren.'}
-Categorieën: politiek, cultuur (muziek, film), sport, wetenschap, technologie, sociale veranderingen.`;
 
+${contentFocus}`;
+
+    // Always add famous birthdays for the user's birthday
     if (data.birthDate) {
-      const { year } = data.birthDate;
+      const { day, month, year } = data.birthDate;
+      const monthNames = ["januari", "februari", "maart", "april", "mei", "juni", 
+                          "juli", "augustus", "september", "oktober", "november", "december"];
+      const monthName = monthNames[month - 1];
+      
+      prompt += `
+
+BELANGRIJK - BEROEMDE JARIGEN:
+Voeg 3-5 beroemde personen toe die op ${day} ${monthName} jarig zijn (category="celebrity", isCelebrityBirthday=true).
+Deze personen hoeven NIET in de tijdsperiode ${startYear}-${endYear} geboren te zijn, maar moeten wel op dezelfde dag en maand jarig zijn.`;
+      
       if (year >= startYear && year <= endYear) {
-        prompt += `\n\nBelangrijk: Geboortejaar ${year} valt in deze periode. Besteed extra aandacht hieraan (eventScope="birthyear" voor dat jaar).`;
+        prompt += `\n\nHet geboortejaar ${year} valt in deze periode. Besteed extra aandacht hieraan (eventScope="birthyear" voor dat jaar).`;
       }
     }
   }
@@ -515,9 +532,9 @@ Categorieën: politiek, cultuur (muziek, film), sport, wetenschap, technologie, 
   
   if (optionalData.focus) {
     const focusMap = {
-      netherlands: "Focus op Nederlandse gebeurtenissen.",
-      europe: "Focus op Europese gebeurtenissen.",
-      world: "Focus op wereldwijde gebeurtenissen."
+      netherlands: "Geografische focus: Nederlandse gebeurtenissen.",
+      europe: "Geografische focus: Europese gebeurtenissen.",
+      world: "Geografische focus: wereldwijde gebeurtenissen."
     };
     prompt += `\n\n${focusMap[optionalData.focus]}`;
   }
@@ -541,4 +558,77 @@ Categorieën: politiek, cultuur (muziek, film), sport, wetenschap, technologie, 
   }
 
   return prompt;
+}
+
+/**
+ * Returns content focus instructions based on the selected period type.
+ */
+function getContentFocusForPeriod(periodType?: string): string {
+  switch (periodType) {
+    case 'birthyear':
+      return `CONTENT FOCUS - GEBOORTEJAAR:
+Focus op een brede mix van alles wat er dat jaar gebeurde:
+- Nummer 1 hits en populaire muziek
+- Belangrijke nieuws en politieke gebeurtenissen  
+- Iconische films en tv-shows
+- Sportmomenten en kampioenschappen
+- Technologische ontwikkelingen
+- Culturele gebeurtenissen
+
+BEROEMDE JARIGEN: Voeg bekende mensen toe die op dezelfde dag en maand jarig zijn (acteurs, muzikanten, sporters, politici, etc.)`;
+
+    case 'childhood':
+      return `CONTENT FOCUS - JEUGD (6-10 jaar):
+Focus op zaken die een kind tussen 6-10 jaar zou herinneren en leuk vinden:
+- SPEELGOED: Populair speelgoed, actiefiguren, poppen, bordspellen, buitenspeelgoed
+- TV-PROGRAMMA'S: Kinderseries, tekenfilms, jeugdprogramma's, zaterdagochtend cartoons
+- FILMS: Kinderfilms, Disney, animatiefilms
+- BOEKEN: Populaire kinderboeken, stripboeken
+- SNOEP & ETEN: Populaire snacks, snoepjes, ontbijtgranen voor kinderen
+- GROTE WERELDGEBEURTENISSEN: Alleen de allergrootste gebeurtenissen die ook een kind zou opvallen (rampen, koningshuis, grote sportevenementen)
+
+BEROEMDE JARIGEN: Voeg bekende mensen toe die op dezelfde dag en maand jarig zijn.`;
+
+    case 'puberty':
+      return `CONTENT FOCUS - PUBERTIJD (11-17 jaar):
+Focus op zaken die relevant zijn voor tieners:
+- MUZIEK: Populaire artiesten, bands, muziekstromingen, eerste concerten, hitlijsten
+- UITGAAN: Disco's, clubs, feesten, festivals die populair waren
+- FILMS: Tienerfilms, bioscoophits, cultfilms
+- GAMES & GADGETS: Gameboys, spelcomputers, walkmans, discmans, eerste computers, nieuwe technologie
+- TV & ENTERTAINMENT: Populaire series, MTV, muziekprogramma's
+- MODE: Kledingtrends, kapseltrends
+- WERELDGEBEURTENISSEN: Belangrijke politieke en sociale gebeurtenissen
+
+BEROEMDE JARIGEN: Voeg bekende mensen toe die op dezelfde dag en maand jarig zijn.`;
+
+    case 'young-adult':
+      return `CONTENT FOCUS - JONG VOLWASSEN (18-25 jaar):
+Focus op zaken die relevant zijn voor jong volwassenen:
+- MUZIEK: Populaire artiesten, bands, festivals, concerten, muziektrends
+- UITGAAN: Clubs, festivals, nachtleven, populaire uitgaansgelegenheden
+- FILMS: Grote bioscoopfilms, cultfilms, filmgenres die populair waren
+- GADGETS & TECHNOLOGIE: Computers, mobiele telefoons, internet, mp3-spelers, iPods, nieuwe technologie
+- GAMES: Spelcomputers, populaire games, online gaming
+- POLITIEK: Verkiezingen, regeringen, politieke gebeurtenissen, sociale bewegingen
+- WERELDGEBEURTENISSEN: Oorlogen, crises, grote nieuwsgebeurtenissen
+- ECONOMIE: Economische trends, werkgelegenheid, huizenmarkt
+
+BEROEMDE JARIGEN: Voeg bekende mensen toe die op dezelfde dag en maand jarig zijn.`;
+
+    case 'custom':
+    default:
+      return `CONTENT FOCUS - BREDE MIX:
+Zorg voor een gevarieerde mix van alle categorieën:
+- Politiek en wereldnieuws
+- Muziek en entertainment  
+- Films en tv-shows
+- Sport
+- Technologie en gadgets
+- Wetenschap en ontdekkingen
+- Cultuur en maatschappij
+- Mode en trends
+
+BEROEMDE JARIGEN: Voeg bekende mensen toe die op dezelfde dag en maand jarig zijn.`;
+  }
 }
