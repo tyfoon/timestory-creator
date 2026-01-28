@@ -15,6 +15,24 @@ import { getCachedTimeline, cacheTimeline, updateCachedEvents, getCacheKey } fro
 import { ArrowLeft, Clock, Loader2, AlertCircle, RefreshCw, Cake, Star, Download, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+// Era-themed background images
+import heroBg from '@/assets/hero-bg-new.png';
+import heroBg70s from '@/assets/hero-bg-70s.png';
+import heroBg80s from '@/assets/hero-bg-80s.png';
+import heroBg90s from '@/assets/hero-bg-90s.png';
+import heroBg00s from '@/assets/hero-bg-00s.png';
+import heroBg10s from '@/assets/hero-bg-10s.png';
+
+// Get era-themed background based on birth year
+const getBackgroundForYear = (year: number): string => {
+  if (year >= 1969 && year <= 1979) return heroBg70s;
+  if (year >= 1980 && year <= 1989) return heroBg80s;
+  if (year >= 1990 && year <= 1999) return heroBg90s;
+  if (year >= 2000 && year <= 2009) return heroBg00s;
+  if (year >= 2010 && year <= 2019) return heroBg10s;
+  return heroBg;
+};
+
 const ResultPage = () => {
   const navigate = useNavigate();
   const { language, t } = useLanguage();
@@ -389,6 +407,10 @@ const ResultPage = () => {
     }
   };
 
+  // Get the era-themed background based on birth year
+  const birthYear = formData?.birthDate?.year || formData?.yearRange?.startYear;
+  const backgroundImage = birthYear ? getBackgroundForYear(birthYear) : heroBg;
+
   if (!formData && !isLoading) {
     return (
       <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
@@ -401,10 +423,23 @@ const ResultPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-hero flex flex-col">
+    <div className="min-h-screen bg-gradient-hero flex flex-col relative overflow-hidden">
+      {/* Era-themed background image - more visible than homepage */}
+      <div 
+        className="fixed inset-0 z-0 transition-opacity duration-700"
+        style={{
+          backgroundImage: `url(${backgroundImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          opacity: 0.25,
+        }}
+      />
+      {/* Gradient overlay for better content readability */}
+      <div className="fixed inset-0 z-0 bg-gradient-to-b from-background/60 via-background/40 to-background/70" />
       
-      {/* Compact header section */}
-      <section className="pt-3 pb-1 px-4">
+      {/* Compact header section - relative z-10 to appear above background */}
+      <section className="pt-3 pb-1 px-4 relative z-10">
         <div className="container mx-auto max-w-6xl">
           {/* Top row: Back button left, Date right */}
           <div className="flex items-center justify-between mb-2 fade-in">
@@ -495,7 +530,7 @@ const ResultPage = () => {
 
       {/* Loading state - now shows events as they stream in */}
       {isLoading && (
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col relative z-10">
           {events.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center py-12 fade-in">
               <div className="w-16 h-16 rounded-full bg-gradient-gold flex items-center justify-center mb-4 animate-pulse">
@@ -544,7 +579,7 @@ const ResultPage = () => {
 
       {/* Error state */}
       {error && !isLoading && (
-        <div className="flex-1 flex items-center justify-center px-4">
+        <div className="flex-1 flex items-center justify-center px-4 relative z-10">
           <div className="bg-card rounded-xl shadow-card border border-destructive/20 p-6 text-center max-w-md">
             <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
             <h3 className="font-serif text-lg font-semibold text-foreground mb-2">
@@ -565,7 +600,7 @@ const ResultPage = () => {
 
       {/* Timeline content - takes remaining space */}
       {!isLoading && !error && events.length > 0 && (
-        <div className="flex-1 flex flex-col min-h-0 pb-16">
+        <div className="flex-1 flex flex-col min-h-0 pb-16 relative z-10">
           {/* Famous birthdays - compact inline */}
           {famousBirthdays.length > 0 && (
             <div className="container mx-auto max-w-6xl px-4 mb-2">
