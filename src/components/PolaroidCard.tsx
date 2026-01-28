@@ -107,15 +107,16 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
   const isWelcome = isWelcomeEvent(event);
   
   // Determine which image to show
-  // For welcome events, always use birthday placeholder (no image search needed)
-  const shouldShowPlaceholder = !event.imageUrl && (
-    isWelcome || 
-    event.imageStatus === 'none' || 
-    event.imageStatus === 'error'
+  // For welcome events, ALWAYS use birthday placeholder - ignore any searched images
+  const shouldShowPlaceholder = isWelcome || (
+    !event.imageUrl && (event.imageStatus === 'none' || event.imageStatus === 'error')
   );
   
-  const displayImage = event.imageUrl || (shouldShowPlaceholder ? getPlaceholderImage(event) : null);
-  const isPlaceholder = !event.imageUrl && displayImage;
+  // For welcome events, always use placeholder regardless of imageUrl
+  const displayImage = isWelcome 
+    ? getPlaceholderImage(event) 
+    : (event.imageUrl || (shouldShowPlaceholder ? getPlaceholderImage(event) : null));
+  const isPlaceholder = isWelcome || (!event.imageUrl && displayImage);
   
   // Get month - if no month provided, generate a pseudo-random one based on event id for consistency
   const getMonthFromEvent = (): number => {
