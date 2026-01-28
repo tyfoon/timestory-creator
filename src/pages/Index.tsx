@@ -211,8 +211,8 @@ const Index = () => {
         <img src={heroBg} alt="" className="w-full h-full object-cover opacity-40" />
       </div>
       
-      {/* Gradient overlay - separate layer */}
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-background/40 via-background/60 to-background" />
+      {/* Gradient overlay - separate layer with stronger opacity for better contrast */}
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-background/70 via-background/85 to-background" />
       
       <Header />
       
@@ -221,16 +221,16 @@ const Index = () => {
         <div className="container mx-auto max-w-lg relative z-10">
           {/* Header text */}
           <div className="text-center mb-4">
-            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-2 leading-tight">
+            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-ink mb-2 leading-tight drop-shadow-sm">
               {t('heroTitle') as string}
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-foreground/80 font-medium">
               {t('heroSubtitle') as string}
             </p>
           </div>
 
-          {/* Form card - solid background */}
-          <div className="bg-card rounded-xl shadow-card border border-border/50 p-4 sm:p-5 space-y-5">
+          {/* Form card - solid background with strong contrast */}
+          <div className="bg-card rounded-xl shadow-elevated border border-border p-4 sm:p-5 space-y-5">
             
             {/* Step 1: Birthdate */}
             <div>
