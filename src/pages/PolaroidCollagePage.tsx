@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Header } from '@/components/Header';
+
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { FormData } from '@/types/form';
@@ -304,7 +304,6 @@ const PolaroidCollagePage = () => {
 
   return (
     <div className="min-h-screen bg-polaroid-dark flex flex-col">
-      <Header />
       
       {/* Header section */}
       <section className="pt-24 pb-4 px-4">

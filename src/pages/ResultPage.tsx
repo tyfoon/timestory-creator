@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Header } from '@/components/Header';
+
 import { TimelineCarousel } from '@/components/TimelineCarousel';
 import { TimelineScrubberBottom } from '@/components/TimelineScrubberBottom';
 import { Button } from '@/components/ui/button';
@@ -402,7 +402,6 @@ const ResultPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero flex flex-col">
-      <Header />
       
       {/* Compact header section */}
       <section className="pt-24 pb-2 px-4">
