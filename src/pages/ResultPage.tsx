@@ -404,7 +404,7 @@ const ResultPage = () => {
     <div className="min-h-screen bg-gradient-hero flex flex-col">
       
       {/* Compact header section */}
-      <section className="pt-24 pb-2 px-4">
+      <section className="pt-4 pb-2 px-4">
         <div className="container mx-auto max-w-6xl">
           {/* Back button - smaller */}
           <button
