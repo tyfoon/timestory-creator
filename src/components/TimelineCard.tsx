@@ -14,7 +14,7 @@ import {
   Cake,
   Loader2
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 // Import category placeholder images
 import placeholderBirthday from '@/assets/placeholders/birthday.jpg';
@@ -128,10 +128,15 @@ const scopeColors = {
 
 export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = true }: TimelineCardProps) => {
   const [imageError, setImageError] = useState(false);
+  // Track which URL we've attempted to load to prevent unnecessary resets
+  const lastAttemptedUrl = useRef<string | undefined>(undefined);
 
-  // If a previous URL failed (e.g. a non-image URL), allow retry when we later set a new imageUrl.
+  // Only reset error state when imageUrl actually changes to a NEW value
   useEffect(() => {
-    setImageError(false);
+    if (event.imageUrl && event.imageUrl !== lastAttemptedUrl.current) {
+      setImageError(false);
+      lastAttemptedUrl.current = event.imageUrl;
+    }
   }, [event.imageUrl]);
 
   const Icon = categoryIcons[event.category] || Globe;
