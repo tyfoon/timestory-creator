@@ -11,6 +11,7 @@ import { ArrowRight, Sparkles, Camera, Baby, GraduationCap, Heart, Calendar, Pen
 import heroBg from '@/assets/hero-bg-new.png';
 import heroBg70s from '@/assets/hero-bg-70s.png';
 import heroBg80s from '@/assets/hero-bg-80s.png';
+import heroBg90s from '@/assets/hero-bg-90s.png';
 const periodOptions: {
   id: PeriodType;
   label: string;
@@ -70,6 +71,7 @@ const Index = () => {
   // Determine which background to use based on birth year
   const is70sEra = birthDate.year >= 1969 && birthDate.year <= 1979;
   const is80sEra = birthDate.year >= 1980 && birthDate.year <= 1989;
+  const is90sEra = birthDate.year >= 1990 && birthDate.year <= 1999;
   const calculateYearRange = (): {
     startYear: number;
     endYear: number;
@@ -145,7 +147,10 @@ const Index = () => {
       <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${is80sEra ? 'opacity-100' : 'opacity-0'}`}>
         <img src={heroBg80s} alt="" className="w-full h-full object-cover opacity-50" />
       </div>
-      <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${!is70sEra && !is80sEra ? 'opacity-100' : 'opacity-0'}`}>
+      <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${is90sEra ? 'opacity-100' : 'opacity-0'}`}>
+        <img src={heroBg90s} alt="" className="w-full h-full object-cover opacity-50" />
+      </div>
+      <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${!is70sEra && !is80sEra && !is90sEra ? 'opacity-100' : 'opacity-0'}`}>
         <img src={heroBg} alt="" className="w-full h-full object-cover opacity-40" />
       </div>
       
