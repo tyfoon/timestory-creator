@@ -97,6 +97,7 @@ const Index = () => {
   useEffect(() => {
     setBgLoaded(false);
   }, [currentBg]);
+
   const calculateYearRange = (): {
     startYear: number;
     endYear: number;
