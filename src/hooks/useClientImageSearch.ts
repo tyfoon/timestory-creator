@@ -41,7 +41,8 @@ export function useClientImageSearch(options: UseClientImageSearchOptions = {}) 
         activeWorkersRef.current++;
         
         // Start search without awaiting (runs in parallel)
-        searchSingleImage(event.id, event.imageSearchQuery, event.year)
+        // Use English query for better international results
+        searchSingleImage(event.id, event.imageSearchQuery, event.year, event.imageSearchQueryEn)
           .then((result: ImageResult) => {
             setSearchedCount(c => c + 1);
             

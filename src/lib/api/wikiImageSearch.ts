@@ -242,18 +242,25 @@ async function promiseAny<T>(promises: Promise<T>[]): Promise<T> {
 
 /**
  * Search for an image across all sources - returns first successful result
+ * Uses English query for international sources when available
  */
 async function searchImageForEvent(
   eventId: string,
   query: string,
-  year: number | undefined
+  year: number | undefined,
+  queryEn?: string
 ): Promise<ImageResult> {
+  // Use English query for international sources, fall back to original
+  const enQuery = queryEn || query;
+  
   const sources = [
+    // Dutch sources use original query
     searchNationaalArchief(query, year),
     searchWikipedia(query, year, 'nl'),
-    searchWikipedia(query, year, 'en'),
-    searchWikipedia(query, year, 'de'),
-    searchWikimediaCommons(query, year),
+    // International sources use English query for better results
+    searchWikipedia(enQuery, year, 'en'),
+    searchWikipedia(enQuery, year, 'de'),
+    searchWikimediaCommons(enQuery, year),
   ];
 
   try {
@@ -313,6 +320,8 @@ async function runWithConcurrency<T>(
 export interface SearchQuery {
   eventId: string;
   query: string;
+  /** English query for better Wikimedia Commons results */
+  queryEn?: string;
   year?: number;
 }
 
@@ -329,8 +338,8 @@ export async function searchImagesClientSide(
 ): Promise<ImageResult[]> {
   const { maxConcurrent = 3, onResult } = options || {};
   
-  const tasks = queries.map(({ eventId, query, year }) => 
-    () => searchImageForEvent(eventId, query, year)
+  const tasks = queries.map(({ eventId, query, queryEn, year }) => 
+    () => searchImageForEvent(eventId, query, year, queryEn)
   );
   
   const results = await runWithConcurrency(tasks, maxConcurrent, (result) => {
@@ -348,7 +357,8 @@ export async function searchImagesClientSide(
 export async function searchSingleImage(
   eventId: string,
   query: string,
-  year?: number
+  year?: number,
+  queryEn?: string
 ): Promise<ImageResult> {
-  return searchImageForEvent(eventId, query, year);
+  return searchImageForEvent(eventId, query, year, queryEn);
 }
