@@ -148,7 +148,24 @@ const Index = () => {
   };
 
   const handleCustomDialogConfirm = () => {
+    // Validate custom years before confirming
+    if (!customStartYear || !customEndYear) {
+      setErrors({ ...errors, custom: 'Vul beide jaren in' });
+      return;
+    }
+    if (customEndYear <= customStartYear) {
+      setErrors({ ...errors, custom: 'Eindjaar moet na startjaar liggen' });
+      return;
+    }
+    if (customStartYear < 1900 || customEndYear > currentYear) {
+      setErrors({ ...errors, custom: 'Voer geldige jaren in (1900-' + currentYear + ')' });
+      return;
+    }
+    
+    // Clear custom errors and close dialog
+    setErrors({ ...errors, custom: undefined });
     setShowCustomDialog(false);
+    
     // Scroll to timeline length section after closing dialog
     setTimeout(() => {
       timelineLengthRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -293,7 +310,13 @@ const Index = () => {
       </section>
 
       {/* Custom Period Dialog with OptionalInfoForm */}
-      <Dialog open={showCustomDialog} onOpenChange={setShowCustomDialog}>
+      <Dialog open={showCustomDialog} onOpenChange={(open) => {
+        if (!open && (!customStartYear || !customEndYear || customEndYear <= customStartYear)) {
+          // If closing without valid years, deselect custom period
+          setSelectedPeriod(null);
+        }
+        setShowCustomDialog(open);
+      }}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -308,7 +331,8 @@ const Index = () => {
           <div className="space-y-6 py-4">
             {/* Custom year range */}
             <div className="space-y-3 p-4 rounded-lg bg-secondary/30 border border-border/50">
-              <Label className="text-sm font-medium text-foreground">
+              <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <span className="text-destructive">*</span>
                 Periode (jaren)
               </Label>
               <div className="flex gap-3 items-end">
@@ -345,7 +369,16 @@ const Index = () => {
             <OptionalInfoForm value={optionalData} onChange={setOptionalData} />
           </div>
 
-          <div className="flex justify-end pt-4 border-t border-border">
+          <div className="flex justify-between gap-3 pt-4 border-t border-border">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setSelectedPeriod(null);
+                setShowCustomDialog(false);
+              }}
+            >
+              Annuleren
+            </Button>
             <Button onClick={handleCustomDialogConfirm} className="btn-vintage">
               <Check className="mr-2 h-4 w-4" />
               Bevestigen
