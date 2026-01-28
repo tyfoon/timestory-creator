@@ -172,18 +172,17 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
   };
 
   // Determine image to display
+  // For welcome events, ALWAYS use birthday placeholder - ignore any searched images
   const isImageFound = event.imageStatus ? event.imageStatus === 'found' : !!event.imageUrl;
-  const hasRealImage = shouldLoadImage && isImageFound && !!event.imageUrl && !imageError;
+  const hasRealImage = shouldLoadImage && isImageFound && !!event.imageUrl && !imageError && !isWelcome;
   const srcSet = event.imageUrl ? buildWikimediaThumbSrcSet(event.imageUrl) : undefined;
   const sizes = "(min-width: 1024px) 420px, (min-width: 640px) 380px, 320px";
   
   // Determine if we should show a placeholder
   // For welcome events, always show birthday placeholder (no image search needed)
-  const shouldShowPlaceholder = shouldLoadImage && !hasRealImage && (
+  const shouldShowPlaceholder = shouldLoadImage && (
     isWelcome ||
-    event.imageStatus === 'none' || 
-    event.imageStatus === 'error' || 
-    imageError
+    (!hasRealImage && (event.imageStatus === 'none' || event.imageStatus === 'error' || imageError))
   );
   const placeholderImage = shouldShowPlaceholder ? getPlaceholderImage(event) : null;
   

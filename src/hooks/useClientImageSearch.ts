@@ -7,6 +7,20 @@ interface UseClientImageSearchOptions {
   onImageFound?: (eventId: string, imageUrl: string, source: string | null) => void;
 }
 
+// Check if this is the "Welcome to the world" / birth announcement event
+// These events should NEVER have image search - they always use the birthday placeholder
+const isWelcomeEvent = (event: TimelineEvent): boolean => {
+  const titleLower = event.title.toLowerCase();
+  return (
+    titleLower.includes('welkom op de wereld') ||
+    titleLower.includes('welcome to the world') ||
+    titleLower.includes('geboren') ||
+    titleLower.includes('geboorte') ||
+    (event.category === 'personal' && event.eventScope === 'birthdate' && 
+     (titleLower.includes('birth') || titleLower.includes('born')))
+  );
+};
+
 /**
  * Hook for client-side image searching with concurrency control.
  * Uses a queue system with configurable parallel workers.
@@ -80,9 +94,14 @@ export function useClientImageSearch(options: UseClientImageSearchOptions = {}) 
   }, [maxConcurrent]);
   
   const addToQueue = useCallback((events: TimelineEvent[]) => {
+    // Filter out events that don't need image search:
+    // - Already processed
+    // - No search query
+    // - Welcome/birth events (they always use birthday placeholder)
     const newEvents = events.filter(e => 
       e.imageSearchQuery && 
-      !processedIdsRef.current.has(e.id)
+      !processedIdsRef.current.has(e.id) &&
+      !isWelcomeEvent(e)
     );
     
     if (newEvents.length === 0) return;
