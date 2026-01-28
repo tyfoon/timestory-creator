@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { FormData } from '@/types/form';
 import { TimelineEvent, FamousBirthday } from '@/types/timeline';
-import { generateTimelineStreaming, searchImages } from '@/lib/api/timeline';
+import { generateTimelineStreaming } from '@/lib/api/timeline';
+import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { generateTimelinePdf } from '@/lib/pdfGenerator';
 import { generatePolaroidPdf } from '@/lib/pdfGeneratorPolaroid';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents, getCacheKey } from '@/lib/timelineCache';
@@ -24,7 +25,6 @@ const ResultPage = () => {
   const [famousBirthdays, setFamousBirthdays] = useState<FamousBirthday[]>([]);
   const [summary, setSummary] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
   const [isScrubbing, setIsScrubbing] = useState(false);
@@ -37,10 +37,61 @@ const ResultPage = () => {
   // Track current formData for cache updates
   const formDataRef = useRef<FormData | null>(null);
   
-  // Track events being loaded for images to avoid duplicate requests
-  const pendingImageRequests = useRef<Set<string>>(new Set());
-  const imageQueueRef = useRef<TimelineEvent[]>([]);
-  const isProcessingImagesRef = useRef(false);
+  // Client-side image search with concurrency control
+  const handleImageFound = useCallback((eventId: string, imageUrl: string, source: string | null) => {
+    setEvents(prev => {
+      const updated = prev.map(event => {
+        if (event.id !== eventId) return event;
+        return {
+          ...event,
+          imageUrl,
+          source: source || undefined,
+          imageStatus: 'found' as const,
+        };
+      });
+
+      // Persist to cache
+      if (formDataRef.current) {
+        updateCachedEvents(formDataRef.current, language, () => updated);
+      }
+
+      return updated;
+    });
+  }, [language]);
+
+  const { 
+    addToQueue: addImagesToQueue, 
+    reset: resetImageSearch,
+    isSearching: isLoadingImages,
+    searchedCount,
+    foundCount 
+  } = useClientImageSearch({
+    maxConcurrent: 3,
+    onImageFound: handleImageFound,
+  });
+
+  // Mark events without images as 'none' after search completes
+  useEffect(() => {
+    if (!isLoadingImages && searchedCount > 0) {
+      setEvents(prev => prev.map(event => {
+        if (event.imageStatus === 'loading' && !event.imageUrl) {
+          return { ...event, imageStatus: 'none' as const };
+        }
+        return event;
+      }));
+    }
+  }, [isLoadingImages, searchedCount]);
+
+  const loadImagesForEvents = useCallback((newEvents: TimelineEvent[]) => {
+    const eventsNeedingImages = newEvents.filter(
+      e => e.imageSearchQuery && 
+           e.imageStatus !== 'found' && 
+           e.imageStatus !== 'none'
+    );
+    
+    if (eventsNeedingImages.length === 0) return;
+    addImagesToQueue(eventsNeedingImages);
+  }, [addImagesToQueue]);
 
   useEffect(() => {
     const stored = sessionStorage.getItem('timelineFormData');
@@ -58,9 +109,7 @@ const ResultPage = () => {
       const cached = getCachedTimeline(data, language);
       if (cached) {
         console.log('Using cached timeline');
-        // Normalize older cached data and reset images that need to be refetched
         const normalizedCachedEvents = cached.events.map((e) => {
-          // Reset 'none' or 'error' status to 'loading' so we retry fetching
           if (e.imageSearchQuery && (e.imageStatus === 'none' || e.imageStatus === 'error' || !e.imageUrl)) {
             return { ...e, imageStatus: 'loading' as const, imageUrl: undefined };
           }
@@ -75,131 +124,25 @@ const ResultPage = () => {
         setFamousBirthdays(cached.famousBirthdays);
         setIsLoading(false);
 
-        // Reload images for events that don't have an image yet
+        // Reload images using client-side search
         const needImages = normalizedCachedEvents.filter(e => 
           e.imageSearchQuery && (!e.imageUrl || e.imageStatus === 'loading')
         );
         if (needImages.length > 0) {
-          console.log('Refetching images for', needImages.length, 'events');
-          loadImagesForEvents(needImages);
+          console.log('Refetching images client-side for', needImages.length, 'events');
+          addImagesToQueue(needImages);
         }
         return;
       }
 
-      // Determine max events based on length selection
       const maxEvents = storedLength === 'short' ? 20 : undefined;
       loadTimelineStreaming(data, maxEvents);
     } else {
       setError('Geen gegevens gevonden');
       setIsLoading(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Process image queue - fetch images in larger parallel batches for speed
-  const processImageQueue = useCallback(async () => {
-    if (isProcessingImagesRef.current) return;
-    if (imageQueueRef.current.length === 0) return;
-    
-    isProcessingImagesRef.current = true;
-    setIsLoadingImages(true);
-    
-    while (imageQueueRef.current.length > 0) {
-      // Take up to 10 events at a time (increased from 5 for parallel processing)
-      const batch = imageQueueRef.current.splice(0, 10);
-      const queries = batch
-        .filter(e => e.imageSearchQuery && !pendingImageRequests.current.has(e.id))
-        .map(e => {
-          pendingImageRequests.current.add(e.id);
-          return {
-            eventId: e.id,
-            query: e.imageSearchQuery!,
-            year: e.year
-          };
-        });
-      
-      if (queries.length === 0) continue;
-      
-      console.log('Fetching images for batch:', queries.length);
-      
-      try {
-        // Use fast mode for quick first results
-        const result = await searchImages(queries, { mode: 'fast' });
-        if (result.success && result.images) {
-          applyImageResults(result.images);
-          
-          // For events that didn't get images in fast mode, try full mode
-          const missingImages = result.images.filter(img => !img.imageUrl);
-          if (missingImages.length > 0) {
-            // Retry missing ones with full mode in background
-            const retryQueries = missingImages.map(img => {
-              const originalQuery = queries.find(q => q.eventId === img.eventId);
-              return originalQuery;
-            }).filter(Boolean) as typeof queries;
-            
-            if (retryQueries.length > 0) {
-              // Don't await - let this run in background
-              searchImages(retryQueries, { mode: 'full' })
-                .then(retryResult => {
-                  if (retryResult.success && retryResult.images) {
-                    applyImageResults(retryResult.images);
-                  }
-                })
-                .catch(err => console.error('Retry image fetch error:', err));
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching images:', err);
-      }
-      
-      // Remove from pending
-      queries.forEach(q => pendingImageRequests.current.delete(q.eventId));
-    }
-    
-    isProcessingImagesRef.current = false;
-    setIsLoadingImages(false);
-  }, []);
-
-  const applyImageResults = useCallback((images: { eventId: string; imageUrl: string | null; source: string | null }[]) => {
-    setEvents(prev => {
-      const updated = prev.map(event => {
-        const imageResult = images.find(img => img.eventId === event.id);
-        if (!imageResult) return event;
-
-        if (imageResult.imageUrl) {
-          return {
-            ...event,
-            imageUrl: imageResult.imageUrl,
-            source: imageResult.source || undefined,
-            imageStatus: 'found' as const,
-          };
-        }
-
-        return { ...event, imageStatus: 'none' as const };
-      });
-
-      // Persist updated events to cache
-      if (formDataRef.current) {
-        updateCachedEvents(formDataRef.current, language, () => updated);
-      }
-
-      return updated;
-    });
-  }, [language]);
-
-  const loadImagesForEvents = useCallback((newEvents: TimelineEvent[]) => {
-    const eventsNeedingImages = newEvents.filter(
-      e => e.imageSearchQuery && 
-           e.imageStatus !== 'found' && 
-           e.imageStatus !== 'none' &&
-           !pendingImageRequests.current.has(e.id)
-    );
-    
-    if (eventsNeedingImages.length === 0) return;
-    
-    imageQueueRef.current.push(...eventsNeedingImages);
-    processImageQueue();
-  }, [processImageQueue]);
 
   const loadTimelineStreaming = async (data: FormData, maxEvents?: number) => {
     setIsLoading(true);
