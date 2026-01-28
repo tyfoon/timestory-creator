@@ -15,7 +15,7 @@ import woodTableBg from '@/assets/wood-table-bg.jpg';
 
 const PolaroidCollagePage = () => {
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState<FormData | null>(null);
@@ -279,7 +279,7 @@ const PolaroidCollagePage = () => {
   };
 
   const getTitle = () => {
-    if (!formData) return 'Jouw Tijdreis';
+    if (!formData) return t('yourTimeJourney') as string;
     
     if (formData.type === 'birthdate' && formData.birthDate) {
       const { day, month, year } = formData.birthDate;
@@ -287,7 +287,7 @@ const PolaroidCollagePage = () => {
     } else if (formData.yearRange) {
       return `${formData.yearRange.startYear} - ${formData.yearRange.endYear}`;
     }
-    return 'Jouw Tijdreis';
+    return t('yourTimeJourney') as string;
   };
 
   const imagesLoaded = events.filter(e => e.imageStatus === 'found' && e.imageUrl).length;
@@ -298,9 +298,9 @@ const PolaroidCollagePage = () => {
         className="min-h-screen flex items-center justify-center bg-cover bg-center bg-fixed"
         style={{ backgroundImage: `url(${woodTableBg})` }}
       >
-        <div className="text-center">
-          <p className="text-white/70 mb-4">Geen gegevens gevonden</p>
-          <Button onClick={() => navigate('/')}>Terug naar start</Button>
+        <div className="text-center bg-black/50 p-6 rounded-xl">
+          <p className="text-white/70 mb-4">{t('noDataFound') as string}</p>
+          <Button onClick={() => navigate('/')}>{t('backToStart') as string}</Button>
         </div>
       </div>
     );
@@ -312,48 +312,47 @@ const PolaroidCollagePage = () => {
       style={{ backgroundImage: `url(${woodTableBg})` }}
     >
       
-      {/* Header section */}
-      <section className="pt-4 pb-4 px-4">
+      {/* Header with semi-transparent background for readability */}
+      <section className="pt-3 pb-1 px-4 bg-black/40 backdrop-blur-sm">
         <div className="container mx-auto max-w-6xl">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-1.5 text-sm text-white/60 hover:text-white transition-colors mb-3"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Terug naar invoer</span>
-          </button>
-
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-            <div className="flex items-center gap-3">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs">
-                <Clock className="h-3.5 w-3.5 text-polaroid-pink" />
-                <span className="text-white/70 font-medium">Polaroid Collage</span>
-              </div>
-              <h1 className="font-handwriting text-3xl sm:text-4xl font-bold text-white">
-                {getTitle()}
-              </h1>
-            </div>
+          {/* Top row: Back button left, Date right */}
+          <div className="flex items-center justify-between mb-2">
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>{t('backToInput') as string}</span>
+            </button>
             
-            <div className="flex items-center gap-2">
-              {events.length > 0 && !isLoading && (
-                <Button
-                  onClick={handleClearCache}
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 border-white/20 text-white hover:bg-white/10"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  <span className="hidden sm:inline">Opnieuw</span>
-                </Button>
-              )}
-              
-              {isLoadingImages && (
-                <div className="flex items-center gap-2 text-sm text-white/60">
-                  <Loader2 className="h-4 w-4 animate-spin text-polaroid-pink" />
-                  <span>{imagesLoaded}/{events.length} foto's</span>
-                </div>
-              )}
-            </div>
+            <h1 className="font-handwriting text-xl sm:text-2xl font-bold text-white">
+              {getTitle()}
+            </h1>
+          </div>
+
+          {/* Action buttons row */}
+          <div className="flex items-center justify-end gap-2 mb-2">
+            {/* Refresh button */}
+            {events.length > 0 && !isLoading && (
+              <Button
+                onClick={handleClearCache}
+                variant="secondary"
+                size="sm"
+                className="gap-1.5 bg-white/90 text-gray-800 hover:bg-white"
+                title={t('refreshButton') as string}
+              >
+                <RefreshCw className="h-4 w-4" />
+                <span className="hidden sm:inline">{t('refreshButton') as string}</span>
+              </Button>
+            )}
+            
+            {/* Image loading indicator */}
+            {isLoadingImages && (
+              <span className="text-xs text-white/80 flex items-center gap-1 bg-black/30 px-2 py-1 rounded">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {imagesLoaded}/{events.length} {t('photosCount') as string}
+              </span>
+            )}
           </div>
         </div>
       </section>
@@ -363,18 +362,24 @@ const PolaroidCollagePage = () => {
         <div className="container mx-auto max-w-6xl">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-              <Loader2 className="h-12 w-12 animate-spin text-polaroid-pink" />
-              <div className="text-center">
-                <p className="text-xl font-handwriting text-white">Herinneringen verzamelen...</p>
-                {streamingProgress > 0 && (
-                  <p className="text-white/60 mt-2">{streamingProgress} gebeurtenissen gevonden</p>
-                )}
+              <div className="bg-black/40 p-8 rounded-xl backdrop-blur-sm">
+                <Loader2 className="h-12 w-12 animate-spin text-white mx-auto mb-4" />
+                <div className="text-center">
+                  <p className="text-xl font-handwriting text-white">{t('loadingTitle') as string}</p>
+                  {streamingProgress > 0 && (
+                    <p className="text-white/70 mt-2">{streamingProgress} {t('eventsLoaded') as string}</p>
+                  )}
+                </div>
               </div>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-              <p className="text-white/70">{error}</p>
-              <Button onClick={() => navigate('/')}>Terug naar start</Button>
+              <div className="bg-black/40 p-6 rounded-xl backdrop-blur-sm text-center">
+                <p className="text-white/80 mb-4">{error}</p>
+                <Button onClick={() => navigate('/')} variant="secondary" className="bg-white/90 text-gray-800 hover:bg-white">
+                  {t('backToStart') as string}
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="polaroid-collage w-full max-w-5xl mx-auto pb-16">
