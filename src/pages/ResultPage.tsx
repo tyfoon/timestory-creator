@@ -404,121 +404,91 @@ const ResultPage = () => {
     <div className="min-h-screen bg-gradient-hero flex flex-col">
       
       {/* Compact header section */}
-      <section className="pt-4 pb-2 px-4">
+      <section className="pt-3 pb-1 px-4">
         <div className="container mx-auto max-w-6xl">
-          {/* Back button - smaller */}
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 fade-in"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Terug naar invoer</span>
-          </button>
-
-          {/* Compact title row */}
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-3 fade-in">
-            <div className="flex items-center gap-3">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary/80 border border-border text-xs">
-                <Clock className="h-3.5 w-3.5 text-accent" />
-                <span className="text-muted-foreground font-medium">
-                  {formData?.type === 'birthdate' ? 'Geboortedatum' : 'Tijdperiode'}
-                </span>
-              </div>
-              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
-                {getTitle()}
-              </h1>
-            </div>
+          {/* Top row: Back button left, Date right */}
+          <div className="flex items-center justify-between mb-2 fade-in">
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>Terug naar invoer</span>
+            </button>
             
-            <div className="flex items-center gap-2">
-              {/* Refresh button */}
-              {events.length > 0 && !isLoading && (
-                <Button
-                  onClick={handleClearCache}
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                  title="Genereer opnieuw met nieuwe afbeeldingen"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  <span className="hidden sm:inline">Opnieuw</span>
-                </Button>
-              )}
-              
-              {/* Download PDF button */}
-              {events.length > 0 && !isLoading && (
-                <Button
-                  onClick={handleDownloadPdf}
-                  disabled={isGeneratingPdf || isGeneratingPolaroidPdf || isLoadingImages}
-                  size="sm"
-                  className="btn-vintage gap-2"
-                >
-                  {isGeneratingPdf ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>{pdfProgress}%</span>
-                    </>
-                  ) : (
-                    <>
-                      <Download className="h-4 w-4" />
-                      <span className="hidden sm:inline">Magazine PDF</span>
-                    </>
-                  )}
-                </Button>
-              )}
-              
-              {/* Download Polaroid PDF button */}
-              {events.length > 0 && !isLoading && (
-                <Button
-                  onClick={handleDownloadPolaroidPdf}
-                  disabled={isGeneratingPdf || isGeneratingPolaroidPdf || isLoadingImages}
-                  size="sm"
-                  variant="outline"
-                  className="gap-2 border-pink-500/50 text-pink-600 hover:bg-pink-500/10 hover:text-pink-700"
-                >
-                  {isGeneratingPolaroidPdf ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>{polaroidPdfProgress}%</span>
-                    </>
-                  ) : (
-                    <>
-                      <Camera className="h-4 w-4" />
-                      <span className="hidden sm:inline">Polaroid PDF</span>
-                    </>
-                  )}
-                </Button>
-              )}
-              
-              {/* Image loading indicator */}
-              {isLoadingImages && imagesLoading > 0 && (
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  {imagesLoaded}/{events.length} foto's
-                </span>
-              )}
+            <h1 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
+              {getTitle()}
+            </h1>
+          </div>
 
-              {/* Event scope badges - inline */}
-              {formData?.type === 'birthdate' && events.length > 0 && (
-                <div className="hidden lg:flex flex-wrap gap-2 text-xs">
-                  {birthdateEvents > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-accent-foreground">
-                      <Cake className="h-3 w-3" />
-                      {birthdateEvents} op je dag
-                    </span>
-                  )}
-                  {birthmonthEvents > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/70 text-accent-foreground">
-                      {birthmonthEvents} in je maand
-                    </span>
-                  )}
-                  {birthyearEvents > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-                      {birthyearEvents} in je jaar
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
+          {/* Action buttons row */}
+          <div className="flex items-center justify-end gap-2 mb-2 fade-in">
+            {/* Download PDF button */}
+            {events.length > 0 && !isLoading && (
+              <Button
+                onClick={handleDownloadPdf}
+                disabled={isGeneratingPdf || isGeneratingPolaroidPdf || isLoadingImages}
+                size="sm"
+                className="btn-vintage gap-2"
+              >
+                {isGeneratingPdf ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>{pdfProgress}%</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4" />
+                    <span className="hidden sm:inline">Magazine PDF</span>
+                  </>
+                )}
+              </Button>
+            )}
+            
+            {/* Download Polaroid PDF button */}
+            {events.length > 0 && !isLoading && (
+              <Button
+                onClick={handleDownloadPolaroidPdf}
+                disabled={isGeneratingPdf || isGeneratingPolaroidPdf || isLoadingImages}
+                size="sm"
+                variant="outline"
+                className="gap-2 border-pink-500/50 text-pink-600 hover:bg-pink-500/10 hover:text-pink-700"
+              >
+                {isGeneratingPolaroidPdf ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>{polaroidPdfProgress}%</span>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="h-4 w-4" />
+                    <span className="hidden sm:inline">Polaroid PDF</span>
+                  </>
+                )}
+              </Button>
+            )}
+            
+            {/* Refresh button - now at far right */}
+            {events.length > 0 && !isLoading && (
+              <Button
+                onClick={handleClearCache}
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                title="Genereer opnieuw met nieuwe afbeeldingen"
+              >
+                <RefreshCw className="h-4 w-4" />
+                <span className="hidden sm:inline">Opnieuw</span>
+              </Button>
+            )}
+            
+            {/* Image loading indicator */}
+            {isLoadingImages && imagesLoading > 0 && (
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {imagesLoaded}/{events.length} foto's
+              </span>
+            )}
           </div>
         </div>
       </section>
@@ -599,7 +569,7 @@ const ResultPage = () => {
           {/* Famous birthdays - compact inline */}
           {famousBirthdays.length > 0 && (
             <div className="container mx-auto max-w-6xl px-4 mb-2">
-              <div className="flex items-center gap-2 flex-wrap text-xs">
+              <div className="flex items-center justify-center gap-2 flex-wrap text-xs">
                 <span className="font-medium text-muted-foreground flex items-center gap-1">
                   <Star className="h-3 w-3 text-accent" />
                   Ook jarig:
