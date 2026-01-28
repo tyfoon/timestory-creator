@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { TimelineType, FormData, BirthDateData, YearRangeData, OptionalData } from '@/types/form';
 import { Calendar, Clock, ArrowRight, ChevronDown, ChevronUp, Sparkles, Zap, Crown, Camera } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import heroBg from '@/assets/hero-bg.jpg';
+import heroBg from '@/assets/hero-bg-new.png';
 
 export type TimelineLength = 'short' | 'long';
 
