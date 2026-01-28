@@ -77,16 +77,17 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-hero flex flex-col">
+    <div className="min-h-screen flex flex-col relative">
+      {/* Background image with overlay - full page */}
+      <div className="fixed inset-0 -z-10">
+        <img src={heroBg} alt="" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/70 to-background/95" />
+      </div>
+      
       <Header />
       
       {/* Hero Section with Form - compact */}
       <section className="relative flex-1 pt-20 pb-4 px-4 overflow-hidden flex items-center">
-        {/* Background image with overlay */}
-        <div className="absolute inset-0 -z-10">
-          <img src={heroBg} alt="" className="w-full h-full object-cover opacity-40" />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/50 to-background/90" />
-        </div>
         
         <div className="container mx-auto max-w-lg relative z-10">
           {/* Header text - compact */}
