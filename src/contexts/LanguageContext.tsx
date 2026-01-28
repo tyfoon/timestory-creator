@@ -9,16 +9,30 @@ type LanguageContextType = {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-// Determine initial language based on domain
+// Determine initial language based on domain or referrer
 const getInitialLanguage = (): Language => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    // If visiting from seemyyear.com, default to English
+    const referrer = document.referrer;
+    
+    // If visiting from seemyyear.com domain, default to English
     if (hostname.includes('seemyyear.com')) {
       return 'en';
     }
+    
+    // If referred from seemyyear.com, default to English
+    if (referrer && referrer.includes('seemyyear.com')) {
+      return 'en';
+    }
+    
+    // Check URL parameter for language override (e.g., ?lang=en)
+    const urlParams = new URLSearchParams(window.location.search);
+    const langParam = urlParams.get('lang');
+    if (langParam === 'en') {
+      return 'en';
+    }
   }
-  // Default to Dutch for other domains
+  // Default to Dutch for other cases
   return 'nl';
 };
 
