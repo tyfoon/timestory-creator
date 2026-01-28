@@ -121,7 +121,6 @@ const Index = () => {
       <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${is80sEra ? 'opacity-0' : 'opacity-100'}`}>
         <img src={heroBg} alt="" className="w-full h-full object-cover opacity-40" />
       </div>
-      </div>
       
       {/* Gradient overlay - separate layer */}
       <div className="fixed inset-0 -z-10 bg-gradient-to-b from-background/40 via-background/60 to-background" />
