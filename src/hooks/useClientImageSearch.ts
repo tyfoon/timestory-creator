@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { searchSingleImage, ImageResult } from '@/lib/api/wikiImageSearch';
 import { TimelineEvent } from '@/types/timeline';
 
@@ -22,6 +22,12 @@ export function useClientImageSearch(options: UseClientImageSearchOptions = {}) 
   const activeWorkersRef = useRef(0);
   const processedIdsRef = useRef<Set<string>>(new Set());
   const isProcessingRef = useRef(false);
+  
+  // Use ref to always have the latest callback without recreating processQueue
+  const onImageFoundRef = useRef(onImageFound);
+  useEffect(() => {
+    onImageFoundRef.current = onImageFound;
+  }, [onImageFound]);
   
   const processQueue = useCallback(async () => {
     if (isProcessingRef.current) return;
@@ -48,8 +54,9 @@ export function useClientImageSearch(options: UseClientImageSearchOptions = {}) 
             
             if (result.imageUrl) {
               setFoundCount(c => c + 1);
-              if (onImageFound) {
-                onImageFound(result.eventId, result.imageUrl, result.source);
+              // Use ref to get latest callback
+              if (onImageFoundRef.current) {
+                onImageFoundRef.current(result.eventId, result.imageUrl, result.source);
               }
             }
           })
@@ -69,7 +76,7 @@ export function useClientImageSearch(options: UseClientImageSearchOptions = {}) 
     
     isProcessingRef.current = false;
     setIsSearching(false);
-  }, [maxConcurrent, onImageFound]);
+  }, [maxConcurrent]);
   
   const addToQueue = useCallback((events: TimelineEvent[]) => {
     const newEvents = events.filter(e => 
