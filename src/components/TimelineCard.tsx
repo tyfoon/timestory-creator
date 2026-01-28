@@ -143,6 +143,9 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
   const colorClass = categoryColors[event.category] || categoryColors.world;
   const label = categoryLabels[event.category] || event.category;
 
+  // Check if this is the welcome/birth event - these ALWAYS use the birthday placeholder
+  const isWelcome = isWelcomeEvent(event);
+
   const buildWikimediaThumbSrcSet = (url: string) => {
     // If we received a Wikimedia thumb url like .../960px-Filename.jpg, derive other sizes.
     // This avoids shipping large images on small screens.
@@ -175,16 +178,21 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
   const sizes = "(min-width: 1024px) 420px, (min-width: 640px) 380px, 320px";
   
   // Determine if we should show a placeholder
-  const shouldShowPlaceholder = shouldLoadImage && !hasRealImage && 
-    (event.imageStatus === 'none' || event.imageStatus === 'error' || imageError);
+  // For welcome events, always show birthday placeholder (no image search needed)
+  const shouldShowPlaceholder = shouldLoadImage && !hasRealImage && (
+    isWelcome ||
+    event.imageStatus === 'none' || 
+    event.imageStatus === 'error' || 
+    imageError
+  );
   const placeholderImage = shouldShowPlaceholder ? getPlaceholderImage(event) : null;
   
   // Determine display image (real or placeholder)
   const displayImage = hasRealImage ? event.imageUrl : placeholderImage;
   const isPlaceholder = !hasRealImage && !!placeholderImage;
   
-  // Loading state
-  const isLoading = shouldLoadImage && event.imageStatus === 'loading' && !hasRealImage && !shouldShowPlaceholder;
+  // Loading state - but NOT for welcome events (they always show placeholder)
+  const isLoading = shouldLoadImage && !isWelcome && event.imageStatus === 'loading' && !hasRealImage && !shouldShowPlaceholder;
 
   return (
     <article 
