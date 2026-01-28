@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { FormData, BirthDateData, OptionalData, PeriodType } from '@/types/form';
 import { ArrowRight, Sparkles, Camera, Baby, GraduationCap, Heart, Calendar, Pencil, Zap, Crown } from 'lucide-react';
 import heroBg from '@/assets/hero-bg-new.png';
+import heroBg80s from '@/assets/hero-bg-80s.png';
 
 const periodOptions: { id: PeriodType; label: string; description: string; icon: React.ReactNode; ageRange?: [number, number] }[] = [
   { id: 'birthyear', label: 'Geboortejaar', description: 'Het jaar waarin je geboren bent', icon: <Baby className="h-5 w-5" /> },
