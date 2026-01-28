@@ -84,8 +84,8 @@ const Index = () => {
       <section className="relative flex-1 pt-20 pb-4 px-4 overflow-hidden flex items-center">
         {/* Background image with overlay */}
         <div className="absolute inset-0 -z-10">
-          <img src={heroBg} alt="" className="w-full h-full object-cover opacity-15" />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
+          <img src={heroBg} alt="" className="w-full h-full object-cover opacity-40" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/50 to-background/90" />
         </div>
         
         <div className="container mx-auto max-w-lg relative z-10">
