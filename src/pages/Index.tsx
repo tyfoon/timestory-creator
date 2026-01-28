@@ -6,11 +6,9 @@ import { DateInput } from '@/components/DateInput';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FormData, BirthDateData, OptionalData } from '@/types/form';
+import { FormData, BirthDateData, OptionalData, PeriodType } from '@/types/form';
 import { ArrowRight, Sparkles, Camera, Baby, GraduationCap, Heart, Calendar, Pencil, Zap, Crown } from 'lucide-react';
 import heroBg from '@/assets/hero-bg-new.png';
-
-type PeriodType = 'birthyear' | 'childhood' | 'puberty' | 'young-adult' | 'custom';
 
 const periodOptions: { id: PeriodType; label: string; description: string; icon: React.ReactNode; ageRange?: [number, number] }[] = [
   { id: 'birthyear', label: 'Geboortejaar', description: 'Het jaar waarin je geboren bent', icon: <Baby className="h-5 w-5" /> },
@@ -92,14 +90,18 @@ const Index = () => {
     if (!yearRange) return;
     
     const formData: FormData = {
-      type: 'range',
+      type: selectedPeriod === 'birthyear' ? 'birthdate' : 'range',
       birthDate: birthDate,
       yearRange: yearRange,
-      optionalData: { children: [], focus: 'netherlands' } as OptionalData
+      optionalData: { 
+        children: [], 
+        focus: 'world',
+        periodType: selectedPeriod || undefined
+      } as OptionalData
     };
     
     sessionStorage.setItem('timelineFormData', JSON.stringify(formData));
-    sessionStorage.setItem('timelineLength', 'short');
+    sessionStorage.setItem('timelineLength', timelineLength);
     navigate(targetRoute);
   };
 
