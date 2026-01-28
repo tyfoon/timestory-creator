@@ -11,6 +11,7 @@ import { getCachedTimeline, cacheTimeline, updateCachedEvents, getCacheKey } fro
 import { ArrowLeft, Clock, Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PolaroidCard } from '@/components/PolaroidCard';
+import woodTableBg from '@/assets/wood-table-bg.jpg';
 
 const PolaroidCollagePage = () => {
   const navigate = useNavigate();
@@ -293,7 +294,10 @@ const PolaroidCollagePage = () => {
 
   if (!formData && !isLoading) {
     return (
-      <div className="min-h-screen bg-polaroid-dark flex items-center justify-center">
+      <div 
+        className="min-h-screen flex items-center justify-center bg-cover bg-center bg-fixed"
+        style={{ backgroundImage: `url(${woodTableBg})` }}
+      >
         <div className="text-center">
           <p className="text-white/70 mb-4">Geen gegevens gevonden</p>
           <Button onClick={() => navigate('/')}>Terug naar start</Button>
@@ -303,7 +307,10 @@ const PolaroidCollagePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-polaroid-dark flex flex-col">
+    <div 
+      className="min-h-screen flex flex-col bg-cover bg-center bg-fixed"
+      style={{ backgroundImage: `url(${woodTableBg})` }}
+    >
       
       {/* Header section */}
       <section className="pt-4 pb-4 px-4">
