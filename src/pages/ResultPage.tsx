@@ -70,15 +70,24 @@ const ResultPage = () => {
     onImageFound: handleImageFound,
   });
 
-  // Mark events without images as 'none' after search completes
+  // Track whether we've already finalized image statuses to prevent flicker
+  const hasFinalized = useRef(false);
+  
+  // Mark events without images as 'none' ONLY once when search completes
   useEffect(() => {
-    if (!isLoadingImages && searchedCount > 0) {
+    // Only finalize once when loading transitions from true to false
+    if (!isLoadingImages && searchedCount > 0 && !hasFinalized.current) {
+      hasFinalized.current = true;
       setEvents(prev => prev.map(event => {
         if (event.imageStatus === 'loading' && !event.imageUrl) {
           return { ...event, imageStatus: 'none' as const };
         }
         return event;
       }));
+    }
+    // Reset the flag when loading starts again
+    if (isLoadingImages) {
+      hasFinalized.current = false;
     }
   }, [isLoadingImages, searchedCount]);
 
