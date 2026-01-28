@@ -109,11 +109,13 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col relative">
-      {/* Background image with overlay - full page */}
-      <div className="fixed inset-0 -z-10">
-        <img src={heroBg} alt="" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/70 to-background/95" />
+      {/* Background image - positioned behind everything */}
+      <div className="fixed inset-0 -z-20">
+        <img src={heroBg} alt="" className="w-full h-full object-cover opacity-40" />
       </div>
+      
+      {/* Gradient overlay - separate layer */}
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-background/40 via-background/60 to-background" />
       
       <Header />
       
@@ -130,8 +132,8 @@ const Index = () => {
             </p>
           </div>
 
-          {/* Form card */}
-          <div className="bg-card rounded-xl shadow-card border border-border/50 p-4 sm:p-5 space-y-5">
+          {/* Form card - solid background */}
+          <div className="bg-card/95 backdrop-blur-sm rounded-xl shadow-card border border-border/50 p-4 sm:p-5 space-y-5">
             
             {/* Step 1: Birthdate */}
             <div>
