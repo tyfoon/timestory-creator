@@ -3,6 +3,7 @@ import { TimelineEvent } from '@/types/timeline';
 import { Loader2, RotateCcw } from 'lucide-react';
 
 // Import category placeholder images
+import placeholderBirthday from '@/assets/placeholders/birthday.jpg';
 import placeholderFireworks from '@/assets/placeholders/fireworks.jpg';
 import placeholderPolitics from '@/assets/placeholders/politics.jpg';
 import placeholderSports from '@/assets/placeholders/sports.jpg';
@@ -38,13 +39,27 @@ const categoryPlaceholders: Record<string, string> = {
   personal: placeholderPersonal,
 };
 
+// Check if this is the "Welcome to the world" / birth announcement event
+const isWelcomeEvent = (event: TimelineEvent): boolean => {
+  const titleLower = event.title.toLowerCase();
+  return (
+    titleLower.includes('welkom op de wereld') ||
+    titleLower.includes('welcome to the world') ||
+    titleLower.includes('geboren') ||
+    titleLower.includes('geboorte') ||
+    (event.category === 'personal' && event.eventScope === 'birthdate' && 
+     (titleLower.includes('birth') || titleLower.includes('born')))
+  );
+};
+
 // Get placeholder image based on event category and scope
 const getPlaceholderImage = (event: TimelineEvent): string => {
-  // For birthdate events without a specific image, use fireworks
-  if (event.eventScope === 'birthdate' && !event.imageUrl) {
-    return placeholderFireworks;
+  // For the "Welcome to the world" birth event, use colorful birthday image
+  if (isWelcomeEvent(event)) {
+    return placeholderBirthday;
   }
   
+  // For other birthdate events without a specific image, use category fallback
   // Use category-specific placeholder
   return categoryPlaceholders[event.category] || placeholderWorld;
 };
