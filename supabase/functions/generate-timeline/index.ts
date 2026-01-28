@@ -317,7 +317,8 @@ function getTimelineTool() {
                   type: "string", 
                   enum: ["politics", "sports", "entertainment", "science", "culture", "world", "local", "personal", "music", "technology", "celebrity"] 
                 },
-                imageSearchQuery: { type: "string", description: "Search query to find a relevant image for this event" },
+                imageSearchQuery: { type: "string", description: "Search query in the user's language to find a relevant image for this event" },
+                imageSearchQueryEn: { type: "string", description: "English search query for finding images on Wikimedia Commons (translated from imageSearchQuery)" },
                 importance: { type: "string", enum: ["high", "medium", "low"] },
                 eventScope: { 
                   type: "string", 
@@ -379,8 +380,8 @@ Stuur ELKE gebeurtenis als een apart JSON-object op een NIEUWE regel.
 Begin ONMIDDELLIJK met het eerste event - geen inleiding, geen markdown.
 
 FORMAT PER REGEL:
-{"type":"event","data":{"id":"evt_1","date":"1973-03-28","year":1973,"month":3,"day":28,"title":"Titel hier","description":"Beschrijving hier","category":"politics","imageSearchQuery":"zoekterm voor afbeelding","importance":"high","eventScope":"birthyear"}}
-{"type":"event","data":{"id":"evt_2","date":"1973-03","year":1973,"month":3,"title":"Nog een event","description":"...","category":"music","imageSearchQuery":"...","importance":"medium","eventScope":"birthmonth"}}
+{"type":"event","data":{"id":"evt_1","date":"1973-03-28","year":1973,"month":3,"day":28,"title":"Titel hier","description":"Beschrijving hier","category":"politics","imageSearchQuery":"Nederlandse zoekterm","imageSearchQueryEn":"English search term for Wikimedia","importance":"high","eventScope":"birthyear"}}
+{"type":"event","data":{"id":"evt_2","date":"1973-03","year":1973,"month":3,"title":"Nog een event","description":"...","category":"music","imageSearchQuery":"...","imageSearchQueryEn":"...","importance":"medium","eventScope":"birthmonth"}}
 
 NA ALLE EVENTS, stuur op aparte regels:
 {"type":"summary","data":"Een samenvatting van de periode..."}
@@ -405,7 +406,13 @@ KWALITEIT:
 - Maak beschrijvingen levendig en persoonlijk
 - Voeg context toe die de gebeurtenis memorabel maakt
 - Zorg voor een mix van categorieën
-- imageSearchQuery moet specifiek genoeg zijn om relevante afbeeldingen te vinden`;
+
+AFBEELDING ZOEKTERMEN (BELANGRIJK):
+- imageSearchQuery: zoekterm in de taal van de gebruiker (${language})
+- imageSearchQueryEn: ALTIJD een Engelse vertaling van de zoekterm, specifiek voor Wikimedia Commons
+  - Gebruik exacte namen van personen, evenementen, plaatsen in het Engels
+  - Voeg het jaar toe voor historische context
+  - Voorbeeld: "Queen Beatrix inauguration 1980 Amsterdam" of "Elvis Presley concert 1977"`;
 }
 
 function getSystemPrompt(language: string, maxEvents?: number): string {
@@ -429,7 +436,9 @@ BELANGRIJKE INSTRUCTIES:
 4. Voeg ook culturele momenten toe: populaire muziek, films, tv-shows, boeken
 5. Maak de beschrijvingen levendig en persoonlijk - alsof je het aan iemand vertelt
 6. Voeg context toe die de gebeurtenis memorabel maakt
-7. Voor elke gebeurtenis, geef een zoekterm (imageSearchQuery) die een relevante afbeelding zou vinden
+7. Voor elke gebeurtenis, geef TWEE zoektermen:
+   - imageSearchQuery: in de taal van de gebruiker
+   - imageSearchQueryEn: ALTIJD in het Engels voor Wikimedia Commons (met exacte namen en jaar)
 
 KRITIEK - EVENTSCOPE VELD:
 - Markeer elke gebeurtenis met het juiste eventScope:
