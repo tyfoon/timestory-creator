@@ -26,9 +26,22 @@ const PolaroidCollagePage = () => {
   const [streamingProgress, setStreamingProgress] = useState(0);
 
   const formDataRef = useRef<FormData | null>(null);
+  // Holds the incremental stream list so later onEvent updates don't overwrite image updates.
+  const receivedEventsRef = useRef<TimelineEvent[]>([]);
 
   // Client-side image search with concurrency control
   const handleImageFound = useCallback((eventId: string, imageUrl: string, source: string | null) => {
+    // Keep the stream buffer in sync, otherwise subsequent onEvent renders can overwrite images.
+    receivedEventsRef.current = receivedEventsRef.current.map(event => {
+      if (event.id !== eventId) return event;
+      return {
+        ...event,
+        imageUrl,
+        source: source || undefined,
+        imageStatus: 'found' as const,
+      };
+    });
+
     setEvents(prev => {
       const updated = prev.map(event => {
         if (event.id !== eventId) return event;
@@ -92,8 +105,8 @@ const PolaroidCollagePage = () => {
     setIsLoading(true);
     setError(null);
     setStreamingProgress(0);
-    
-    const receivedEvents: TimelineEvent[] = [];
+    // Reset the incremental stream buffer for this run
+    receivedEventsRef.current = [];
     
     try {
       await generateTimelineStreaming(data, language, {
@@ -102,17 +115,17 @@ const PolaroidCollagePage = () => {
             ...event,
             imageStatus: event.imageSearchQuery ? 'loading' : 'idle'
           };
-          
-          receivedEvents.push(eventWithStatus);
-          
-          const sorted = [...receivedEvents].sort((a, b) => {
+
+          receivedEventsRef.current.push(eventWithStatus);
+
+          const sorted = [...receivedEventsRef.current].sort((a, b) => {
             if (a.year !== b.year) return a.year - b.year;
             if ((a.month || 0) !== (b.month || 0)) return (a.month || 0) - (b.month || 0);
             return (a.day || 0) - (b.day || 0);
           });
           
           setEvents(sorted);
-          setStreamingProgress(receivedEvents.length);
+          setStreamingProgress(receivedEventsRef.current.length);
           
           if (event.imageSearchQuery) {
             loadImagesForEvents([eventWithStatus]);
