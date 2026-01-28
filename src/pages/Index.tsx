@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { FormData, BirthDateData, OptionalData, PeriodType } from '@/types/form';
 import { ArrowRight, Sparkles, Camera, Baby, GraduationCap, Heart, Calendar, Pencil, Zap, Crown } from 'lucide-react';
 import heroBg from '@/assets/hero-bg-new.png';
+import heroBg80s from '@/assets/hero-bg-80s.png';
 
 const periodOptions: { id: PeriodType; label: string; description: string; icon: React.ReactNode; ageRange?: [number, number] }[] = [
   { id: 'birthyear', label: 'Geboortejaar', description: 'Het jaar waarin je geboren bent', icon: <Baby className="h-5 w-5" /> },
@@ -33,6 +34,10 @@ const Index = () => {
   const [errors, setErrors] = useState<{ birthDate?: string; period?: string; custom?: string }>({});
 
   const currentYear = new Date().getFullYear();
+  
+  // Determine which background to use based on birth year (80s theme for 1979-1989)
+  const is80sEra = birthDate.year >= 1979 && birthDate.year <= 1989;
+  const backgroundImage = is80sEra ? heroBg80s : heroBg;
 
   const calculateYearRange = (): { startYear: number; endYear: number } | null => {
     if (!birthDate.year) return null;
@@ -109,8 +114,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col relative">
-      {/* Background image - positioned behind everything */}
-      <div className="fixed inset-0 -z-20">
+      {/* Background image - positioned behind everything, changes based on birth year */}
+      <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${is80sEra ? 'opacity-100' : 'opacity-0'}`}>
+        <img src={heroBg80s} alt="" className="w-full h-full object-cover opacity-50" />
+      </div>
+      <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${is80sEra ? 'opacity-0' : 'opacity-100'}`}>
         <img src={heroBg} alt="" className="w-full h-full object-cover opacity-40" />
       </div>
       
