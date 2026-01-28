@@ -1,19 +1,22 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Header } from '@/components/Header';
 import { DateInput } from '@/components/DateInput';
+import { OptionalInfoForm } from '@/components/OptionalInfoForm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { FormData, BirthDateData, OptionalData, PeriodType } from '@/types/form';
-import { ArrowRight, Sparkles, Camera, Baby, GraduationCap, Heart, Calendar, Pencil, Zap, Crown } from 'lucide-react';
+import { ArrowRight, Sparkles, Camera, Baby, GraduationCap, Heart, Calendar, Pencil, Zap, Crown, Check } from 'lucide-react';
 import heroBg from '@/assets/hero-bg-new.png';
 import heroBg70s from '@/assets/hero-bg-70s.png';
 import heroBg80s from '@/assets/hero-bg-80s.png';
 import heroBg90s from '@/assets/hero-bg-90s.png';
 import heroBg00s from '@/assets/hero-bg-00s.png';
 import heroBg10s from '@/assets/hero-bg-10s.png';
+
 const periodOptions: {
   id: PeriodType;
   label: string;
@@ -49,11 +52,12 @@ const periodOptions: {
   description: 'Kies zelf een periode',
   icon: <Pencil className="h-5 w-5" />
 }];
+
 const Index = () => {
-  const {
-    t
-  } = useLanguage();
+  const { t } = useLanguage();
   const navigate = useNavigate();
+  const timelineLengthRef = useRef<HTMLDivElement>(null);
+  
   const [birthDate, setBirthDate] = useState<BirthDateData>({
     day: 0,
     month: 0,
@@ -63,6 +67,11 @@ const Index = () => {
   const [customStartYear, setCustomStartYear] = useState<number>(0);
   const [customEndYear, setCustomEndYear] = useState<number>(0);
   const [timelineLength, setTimelineLength] = useState<'short' | 'long'>('short');
+  const [showCustomDialog, setShowCustomDialog] = useState(false);
+  const [optionalData, setOptionalData] = useState<OptionalData>({
+    children: [],
+    focus: 'world'
+  });
   const [errors, setErrors] = useState<{
     birthDate?: string;
     period?: string;
@@ -124,6 +133,28 @@ const Index = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+  const handlePeriodSelect = (periodId: PeriodType) => {
+    if (periodId === 'custom') {
+      setShowCustomDialog(true);
+    }
+    setSelectedPeriod(periodId);
+    
+    // Auto-scroll to timeline length section after a short delay
+    if (periodId !== 'custom') {
+      setTimeout(() => {
+        timelineLengthRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  };
+
+  const handleCustomDialogConfirm = () => {
+    setShowCustomDialog(false);
+    // Scroll to timeline length section after closing dialog
+    setTimeout(() => {
+      timelineLengthRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  };
+
   const handleGenerate = (targetRoute: string) => {
     if (!validateForm()) return;
     const yearRange = calculateYearRange();
@@ -133,10 +164,9 @@ const Index = () => {
       birthDate: birthDate,
       yearRange: yearRange,
       optionalData: {
-        children: [],
-        focus: 'world',
+        ...optionalData,
         periodType: selectedPeriod || undefined
-      } as OptionalData
+      }
     };
     sessionStorage.setItem('timelineFormData', JSON.stringify(formData));
     sessionStorage.setItem('timelineLength', timelineLength);
@@ -198,7 +228,12 @@ const Index = () => {
                 {errors.period && <p className="text-sm text-destructive">{errors.period}</p>}
                 
                 <div className="grid grid-cols-1 gap-2">
-                  {periodOptions.map(option => <button key={option.id} onClick={() => setSelectedPeriod(option.id)} className={`flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all ${selectedPeriod === option.id ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-secondary/30 text-muted-foreground hover:border-primary/50 hover:bg-secondary/50'}`}>
+                  {periodOptions.map(option => (
+                    <button 
+                      key={option.id} 
+                      onClick={() => handlePeriodSelect(option.id)} 
+                      className={`flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all ${selectedPeriod === option.id ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-secondary/30 text-muted-foreground hover:border-primary/50 hover:bg-secondary/50'}`}
+                    >
                       <div className={`p-2 rounded-full ${selectedPeriod === option.id ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
                         {option.icon}
                       </div>
@@ -206,28 +241,14 @@ const Index = () => {
                         <span className="font-medium block">{option.label}</span>
                         <span className="text-xs opacity-70">{option.description}</span>
                       </div>
-                    </button>)}
+                    </button>
+                  ))}
                 </div>
-
-                {/* Custom period inputs */}
-                {selectedPeriod === 'custom' && <div className="pl-4 border-l-2 border-primary/30 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="flex gap-3 items-end">
-                      <div className="flex-1">
-                        <Label className="text-xs text-muted-foreground">Van jaar</Label>
-                        <Input type="number" placeholder="bijv. 1985" value={customStartYear || ''} onChange={e => setCustomStartYear(parseInt(e.target.value) || 0)} min={1900} max={currentYear} className="bg-card text-center" />
-                      </div>
-                      <ArrowRight className="h-5 w-5 text-muted-foreground mb-2" />
-                      <div className="flex-1">
-                        <Label className="text-xs text-muted-foreground">Tot jaar</Label>
-                        <Input type="number" placeholder="bijv. 1995" value={customEndYear || ''} onChange={e => setCustomEndYear(parseInt(e.target.value) || 0)} min={1900} max={currentYear} className="bg-card text-center" />
-                      </div>
-                    </div>
-                    {errors.custom && <p className="text-sm text-destructive">{errors.custom}</p>}
-                  </div>}
               </div>}
 
             {/* Timeline length selector */}
-            {isBirthDateComplete && selectedPeriod && <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+            {isBirthDateComplete && selectedPeriod && (
+              <div ref={timelineLengthRef} className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                 <Label className="text-sm font-medium text-foreground">
                   Hoeveel momenten wil je zien?
                 </Label>
@@ -247,7 +268,8 @@ const Index = () => {
                     </div>
                   </button>
                 </div>
-              </div>}
+              </div>
+            )}
 
             {/* Action buttons */}
             <div className="pt-4 border-t border-border space-y-3">
@@ -269,6 +291,68 @@ const Index = () => {
           
         </div>
       </section>
+
+      {/* Custom Period Dialog with OptionalInfoForm */}
+      <Dialog open={showCustomDialog} onOpenChange={setShowCustomDialog}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5 text-primary" />
+              Personaliseer je tijdreis
+            </DialogTitle>
+            <DialogDescription>
+              Vul onderstaande gegevens in voor een persoonlijke tijdreis
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Custom year range */}
+            <div className="space-y-3 p-4 rounded-lg bg-secondary/30 border border-border/50">
+              <Label className="text-sm font-medium text-foreground">
+                Periode (jaren)
+              </Label>
+              <div className="flex gap-3 items-end">
+                <div className="flex-1">
+                  <Label className="text-xs text-muted-foreground">Van jaar</Label>
+                  <Input 
+                    type="number" 
+                    placeholder="bijv. 1985" 
+                    value={customStartYear || ''} 
+                    onChange={e => setCustomStartYear(parseInt(e.target.value) || 0)} 
+                    min={1900} 
+                    max={currentYear} 
+                    className="bg-card text-center" 
+                  />
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground mb-2" />
+                <div className="flex-1">
+                  <Label className="text-xs text-muted-foreground">Tot jaar</Label>
+                  <Input 
+                    type="number" 
+                    placeholder="bijv. 1995" 
+                    value={customEndYear || ''} 
+                    onChange={e => setCustomEndYear(parseInt(e.target.value) || 0)} 
+                    min={1900} 
+                    max={currentYear} 
+                    className="bg-card text-center" 
+                  />
+                </div>
+              </div>
+              {errors.custom && <p className="text-sm text-destructive">{errors.custom}</p>}
+            </div>
+
+            {/* Optional Info Form */}
+            <OptionalInfoForm value={optionalData} onChange={setOptionalData} />
+          </div>
+
+          <div className="flex justify-end pt-4 border-t border-border">
+            <Button onClick={handleCustomDialogConfirm} className="btn-vintage">
+              <Check className="mr-2 h-4 w-4" />
+              Bevestigen
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>;
 };
 export default Index;
