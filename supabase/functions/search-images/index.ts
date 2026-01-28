@@ -51,37 +51,56 @@ function isAllowedImageUrl(maybeUrl: string): boolean {
 }
 
 // ============== HELPER: Check if search result title matches query subject ==============
-function titleMatchesQuery(title: string, query: string): boolean {
+function titleMatchesQuery(title: string, query: string, strict: boolean = true): boolean {
   const titleLower = title.toLowerCase();
   const queryLower = query.toLowerCase();
   
   // Extract the main subject from the query (first few significant words)
-  // E.g., "Xi Jinping March 2013 inauguration" -> should match "Xi Jinping"
   const queryWords = queryLower.split(/\s+/).filter(w => 
     w.length > 2 && 
-    !['the', 'and', 'for', 'van', 'het', 'een', 'der', 'den', 'des'].includes(w) &&
+    !['the', 'and', 'for', 'van', 'het', 'een', 'der', 'den', 'des', 'von', 'und'].includes(w) &&
     !/^\d{4}$/.test(w) // Exclude years
   );
   
-  // Check if the title contains the first 2-3 significant words of the query
-  const mainSubjectWords = queryWords.slice(0, 3);
+  if (queryWords.length === 0) return true;
+  
+  const mainSubjectWords = queryWords.slice(0, 4);
   const matchCount = mainSubjectWords.filter(word => titleLower.includes(word)).length;
   
-  // Require at least 2 matching words OR 1 word if only 1-2 significant words
-  const threshold = mainSubjectWords.length <= 2 ? 1 : 2;
-  return matchCount >= threshold;
+  if (strict) {
+    // Strict mode: require at least half of the main words to match
+    const threshold = Math.max(1, Math.ceil(mainSubjectWords.length / 2));
+    return matchCount >= threshold;
+  } else {
+    // Lenient mode (fallback): require just 1 word to match
+    return matchCount >= 1;
+  }
+}
+
+interface SearchOptions {
+  useQuotes?: boolean;
+  includeYear?: boolean;
+  strictMatch?: boolean;
 }
 
 // ============== WIKIPEDIA API (most reliable source) ==============
 async function searchWikipediaWithImages(
   query: string, 
   year: number | undefined,
-  lang: string
+  lang: string,
+  options: SearchOptions = {}
 ): Promise<{ imageUrl: string; source: string } | null> {
+  const { useQuotes = false, includeYear = true, strictMatch = true } = options;
+  
   try {
-    // Use exact phrase search for better matching
-    // Quote the main subject to find exact matches
-    const searchQuery = year ? `"${query}" ${year}` : `"${query}"`;
+    let searchQuery = query;
+    if (useQuotes) {
+      searchQuery = `"${query}"`;
+    }
+    if (includeYear && year) {
+      searchQuery = `${searchQuery} ${year}`;
+    }
+    
     const searchUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&format=json&srlimit=5&origin=*`;
     
     const searchRes = await fetch(searchUrl);
@@ -92,17 +111,13 @@ async function searchWikipediaWithImages(
     
     if (results.length === 0) return null;
     
-    // Step 2: Get images for top 3 results, but VALIDATE title matches
     for (const result of results.slice(0, 3)) {
       const title = result.title;
       
-      // CRITICAL: Validate that the article title matches what we're looking for
-      if (!titleMatchesQuery(title, query)) {
-        console.log(`Skipping "${title}" - doesn't match query "${query}"`);
+      if (!titleMatchesQuery(title, query, strictMatch)) {
         continue;
       }
       
-      // Get the page thumbnail directly
       const imageUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&format=json&pithumbsize=${THUMB_WIDTH}&piprop=thumbnail|original&origin=*`;
       
       const imageRes = await fetch(imageUrl);
@@ -137,11 +152,19 @@ async function searchWikipediaWithImages(
 // ============== WIKIMEDIA COMMONS (large historical archive) ==============
 async function searchWikimediaCommons(
   query: string, 
-  year: number | undefined
+  year: number | undefined,
+  options: SearchOptions = {}
 ): Promise<{ imageUrl: string; source: string } | null> {
+  const { useQuotes = false, includeYear = true, strictMatch = true } = options;
+  
   try {
-    // Search Commons for images - be very specific with exact phrase
-    const searchQuery = year ? `"${query}" ${year}` : `"${query}"`;
+    let searchQuery = query;
+    if (useQuotes) {
+      searchQuery = `"${query}"`;
+    }
+    if (includeYear && year) {
+      searchQuery = `${searchQuery} ${year}`;
+    }
     
     const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srnamespace=6&format=json&srlimit=5&origin=*`;
     const searchRes = await fetch(searchUrl);
@@ -154,13 +177,10 @@ async function searchWikimediaCommons(
       try {
         const title = result.title;
         
-        // CRITICAL: Validate that the file title contains the main subject
-        if (!titleMatchesQuery(title, query)) {
-          console.log(`Commons: Skipping "${title}" - doesn't match query "${query}"`);
+        if (!titleMatchesQuery(title, query, strictMatch)) {
           continue;
         }
         
-        // Get image info with thumbnail
         const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=${THUMB_WIDTH}&format=json&origin=*`;
         const infoRes = await fetch(infoUrl);
         if (!infoRes.ok) continue;
@@ -197,16 +217,17 @@ async function searchWikimediaCommons(
 // ============== NATIONAAL ARCHIEF (Dutch historical photos - CC0/Public Domain) ==============
 async function searchNationaalArchief(
   query: string,
-  year: number | undefined
+  year: number | undefined,
+  options: SearchOptions = {}
 ): Promise<{ imageUrl: string; source: string } | null> {
+  const { includeYear = true, strictMatch = true } = options;
+  
   try {
-    // Search Nationaal Archief via their open data API
-    // Their photos are also mirrored to Wikimedia Commons under "Images from Nationaal Archief"
-    const searchQuery = year 
-      ? `${query} ${year} Nationaal Archief`
-      : `${query} Nationaal Archief`;
+    let searchQuery = `${query} Nationaal Archief`;
+    if (includeYear && year) {
+      searchQuery = `${query} ${year} Nationaal Archief`;
+    }
     
-    // Search Commons specifically for Nationaal Archief images
     const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srnamespace=6&format=json&srlimit=5&origin=*`;
     const searchRes = await fetch(searchUrl);
     if (!searchRes.ok) return null;
@@ -239,7 +260,11 @@ async function searchNationaalArchief(
         
         if (!isFromNA) continue;
         
-        // Get image info with thumbnail
+        // Check title match with strictMatch setting
+        if (!titleMatchesQuery(title, query, strictMatch)) {
+          continue;
+        }
+        
         const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=${THUMB_WIDTH}&format=json&origin=*`;
         const infoRes = await fetch(infoUrl);
         if (!infoRes.ok) continue;
@@ -341,6 +366,29 @@ async function searchFirecrawlWikipediaOnly(
   }
 }
 
+// ============== FALLBACK HELPER ==============
+async function trySourceWithFallback(
+  searchFn: (query: string, year: number | undefined, options: SearchOptions) => Promise<{ imageUrl: string; source: string } | null>,
+  query: string,
+  year: number | undefined
+): Promise<{ imageUrl: string; source: string } | null> {
+  // Phase 1: With quotes + year (strict matching)
+  let result = await searchFn(query, year, { useQuotes: true, includeYear: true, strictMatch: true });
+  if (result) return result;
+  
+  // Phase 2: Without quotes + year (strict matching)
+  result = await searchFn(query, year, { useQuotes: false, includeYear: true, strictMatch: true });
+  if (result) return result;
+  
+  // Phase 3: Without quotes + without year (lenient matching)
+  if (year) {
+    result = await searchFn(query, year, { useQuotes: false, includeYear: false, strictMatch: false });
+    if (result) return result;
+  }
+  
+  return null;
+}
+
 // ============== MAIN SEARCH FUNCTION ==============
 async function searchAllSources(
   eventId: string,
@@ -350,39 +398,46 @@ async function searchAllSources(
 ): Promise<ImageResult> {
   console.log(`Searching for: "${query}" (${year || 'no year'})`);
   
-  // Search all sources in parallel - prioritize Dutch/historical sources
+  // Search all sources in parallel with fallback strategy
   const allSources = [
     // Dutch sources first (likely most relevant for Dutch app)
-    searchNationaalArchief(query, year),
-    searchWikipediaWithImages(query, year, 'nl'),
+    trySourceWithFallback(searchNationaalArchief, query, year),
+    trySourceWithFallback(
+      (q, y, opts) => searchWikipediaWithImages(q, y, 'nl', opts),
+      query,
+      year
+    ),
     // International sources
-    searchWikipediaWithImages(query, year, 'en'),
-    searchWikipediaWithImages(query, year, 'de'),
-    searchWikimediaCommons(query, year),
+    trySourceWithFallback(
+      (q, y, opts) => searchWikipediaWithImages(q, y, 'en', opts),
+      query,
+      year
+    ),
+    trySourceWithFallback(
+      (q, y, opts) => searchWikipediaWithImages(q, y, 'de', opts),
+      query,
+      year
+    ),
+    trySourceWithFallback(searchWikimediaCommons, query, year),
   ];
   
-  // Add Firecrawl Wikipedia-only search if available
+  // Add Firecrawl Wikipedia-only search if available (already has its own fallback)
   if (firecrawlKey) {
     allSources.push(searchFirecrawlWikipediaOnly(query, year, firecrawlKey));
   }
 
-  // Use Promise.any to get the first successful result
-  try {
-    const result = await Promise.any(
-      allSources.map(async (promise) => {
-        const res = await promise;
-        if (!res) throw new Error('No result');
-        return res;
-      })
-    );
-    
-    console.log(`Found image for "${query}": ${result.imageUrl?.substring(0, 80)}...`);
-    return { eventId, imageUrl: result.imageUrl, source: result.source };
-  } catch {
-    // All sources failed - return null (better no image than wrong image)
-    console.log(`No image found for "${query}" in any source`);
-    return { eventId, imageUrl: null, source: null };
+  // Use Promise.allSettled to get all results, then pick the first successful one
+  const results = await Promise.allSettled(allSources);
+  
+  for (const result of results) {
+    if (result.status === 'fulfilled' && result.value) {
+      console.log(`Found image for "${query}": ${result.value.imageUrl?.substring(0, 80)}...`);
+      return { eventId, imageUrl: result.value.imageUrl, source: result.value.source };
+    }
   }
+  
+  console.log(`No image found for "${query}" in any source`);
+  return { eventId, imageUrl: null, source: null };
 }
 
 serve(async (req) => {
