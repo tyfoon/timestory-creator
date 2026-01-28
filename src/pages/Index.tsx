@@ -13,6 +13,7 @@ import heroBg70s from '@/assets/hero-bg-70s.png';
 import heroBg80s from '@/assets/hero-bg-80s.png';
 import heroBg90s from '@/assets/hero-bg-90s.png';
 import heroBg00s from '@/assets/hero-bg-00s.png';
+import heroBg10s from '@/assets/hero-bg-10s.png';
 const periodOptions: {
   id: PeriodType;
   label: string;
@@ -74,6 +75,7 @@ const Index = () => {
   const is80sEra = birthDate.year >= 1980 && birthDate.year <= 1989;
   const is90sEra = birthDate.year >= 1990 && birthDate.year <= 1999;
   const is00sEra = birthDate.year >= 2000 && birthDate.year <= 2009;
+  const is10sEra = birthDate.year >= 2010 && birthDate.year <= 2019;
   const calculateYearRange = (): {
     startYear: number;
     endYear: number;
@@ -155,7 +157,10 @@ const Index = () => {
       <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${is00sEra ? 'opacity-100' : 'opacity-0'}`}>
         <img src={heroBg00s} alt="" className="w-full h-full object-cover opacity-50" />
       </div>
-      <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${!is70sEra && !is80sEra && !is90sEra && !is00sEra ? 'opacity-100' : 'opacity-0'}`}>
+      <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${is10sEra ? 'opacity-100' : 'opacity-0'}`}>
+        <img src={heroBg10s} alt="" className="w-full h-full object-cover opacity-50" />
+      </div>
+      <div className={`fixed inset-0 -z-20 transition-opacity duration-700 ${!is70sEra && !is80sEra && !is90sEra && !is00sEra && !is10sEra ? 'opacity-100' : 'opacity-0'}`}>
         <img src={heroBg} alt="" className="w-full h-full object-cover opacity-40" />
       </div>
       
