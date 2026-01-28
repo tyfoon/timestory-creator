@@ -103,10 +103,18 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
   const accentColor = getAccentColor(index);
   const backAccent = getBackAccent(index);
   
+  // Check if this is the welcome/birth event - these ALWAYS use the birthday placeholder
+  const isWelcome = isWelcomeEvent(event);
+  
   // Determine which image to show
-  const displayImage = event.imageUrl || (event.imageStatus === 'none' || event.imageStatus === 'error' 
-    ? getPlaceholderImage(event) 
-    : null);
+  // For welcome events, always use birthday placeholder (no image search needed)
+  const shouldShowPlaceholder = !event.imageUrl && (
+    isWelcome || 
+    event.imageStatus === 'none' || 
+    event.imageStatus === 'error'
+  );
+  
+  const displayImage = event.imageUrl || (shouldShowPlaceholder ? getPlaceholderImage(event) : null);
   const isPlaceholder = !event.imageUrl && displayImage;
   
   // Get month - if no month provided, generate a pseudo-random one based on event id for consistency
