@@ -36,9 +36,22 @@ const ResultPage = () => {
 
   // Track current formData for cache updates
   const formDataRef = useRef<FormData | null>(null);
+  // Holds the incremental stream list so later onEvent updates don't overwrite image updates.
+  const receivedEventsRef = useRef<TimelineEvent[]>([]);
   
   // Client-side image search with concurrency control
   const handleImageFound = useCallback((eventId: string, imageUrl: string, source: string | null) => {
+    // Keep the stream buffer in sync, otherwise subsequent onEvent renders can overwrite images.
+    receivedEventsRef.current = receivedEventsRef.current.map(event => {
+      if (event.id !== eventId) return event;
+      return {
+        ...event,
+        imageUrl,
+        source: source || undefined,
+        imageStatus: 'found' as const,
+      };
+    });
+
     setEvents(prev => {
       const updated = prev.map(event => {
         if (event.id !== eventId) return event;
@@ -118,6 +131,10 @@ const ResultPage = () => {
       const cached = getCachedTimeline(data, language);
       if (cached) {
         console.log('Using cached timeline');
+        // Ensure ref state is clean before (re)starting searches for cached events
+        resetImageSearch();
+        receivedEventsRef.current = [];
+        
         const normalizedCachedEvents = cached.events.map((e) => {
           if (e.imageSearchQuery && (e.imageStatus === 'none' || e.imageStatus === 'error' || !e.imageUrl)) {
             return { ...e, imageStatus: 'loading' as const, imageUrl: undefined };
@@ -128,6 +145,9 @@ const ResultPage = () => {
           return e;
         });
 
+        // Initialize the ref with normalized events so handleImageFound can update them
+        receivedEventsRef.current = normalizedCachedEvents;
+        
         setEvents(normalizedCachedEvents);
         setSummary(cached.summary);
         setFamousBirthdays(cached.famousBirthdays);
@@ -157,8 +177,9 @@ const ResultPage = () => {
     setIsLoading(true);
     setError(null);
     setStreamingProgress(0);
+    // Reset the incremental stream buffer for this run
+    receivedEventsRef.current = [];
     
-    const receivedEvents: TimelineEvent[] = [];
     let receivedSummary = '';
     let receivedFamousBirthdays: FamousBirthday[] = [];
     
@@ -171,17 +192,17 @@ const ResultPage = () => {
             imageStatus: event.imageSearchQuery ? 'loading' : 'idle'
           };
           
-          receivedEvents.push(eventWithStatus);
+          receivedEventsRef.current.push(eventWithStatus);
           
           // Sort and update state
-          const sorted = [...receivedEvents].sort((a, b) => {
+          const sorted = [...receivedEventsRef.current].sort((a, b) => {
             if (a.year !== b.year) return a.year - b.year;
             if ((a.month || 0) !== (b.month || 0)) return (a.month || 0) - (b.month || 0);
             return (a.day || 0) - (b.day || 0);
           });
           
           setEvents(sorted);
-          setStreamingProgress(receivedEvents.length);
+          setStreamingProgress(receivedEventsRef.current.length);
           
           // Start loading image for this event immediately
           if (event.imageSearchQuery) {
@@ -199,14 +220,14 @@ const ResultPage = () => {
         onComplete: (completeData) => {
           console.log('Streaming complete:', completeData.events.length, 'events');
           
-          // Merge with current events to preserve already-found images
-          setEvents(prev => {
-            const prevMap = new Map(prev.map(e => [e.id, e]));
+          // Merge with receivedEventsRef to preserve already-found images
+          setEvents(() => {
+            const refMap = new Map(receivedEventsRef.current.map(e => [e.id, e]));
             
             const sorted = completeData.events
               .map(e => {
-                const existing = prevMap.get(e.id);
-                // Preserve imageUrl and imageStatus from existing event if found
+                const existing = refMap.get(e.id);
+                // Preserve imageUrl and imageStatus from ref if found
                 if (existing && existing.imageUrl) {
                   return {
                     ...e,
@@ -355,9 +376,11 @@ const ResultPage = () => {
     if (formData) {
       const key = getCacheKey(formData, language);
       sessionStorage.removeItem(key);
-      // Reload the page to trigger fresh generation
+      // Reset all state
       const storedLength = sessionStorage.getItem('timelineLength') || 'short';
       const maxEvents = storedLength === 'short' ? 20 : undefined;
+      resetImageSearch();
+      receivedEventsRef.current = [];
       setEvents([]);
       setSummary('');
       setFamousBirthdays([]);
