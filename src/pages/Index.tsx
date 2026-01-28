@@ -34,6 +34,10 @@ const Index = () => {
   const [errors, setErrors] = useState<{ birthDate?: string; period?: string; custom?: string }>({});
 
   const currentYear = new Date().getFullYear();
+  
+  // Determine which background to use based on birth year (80s theme for 1979-1989)
+  const is80sEra = birthDate.year >= 1979 && birthDate.year <= 1989;
+  const backgroundImage = is80sEra ? heroBg80s : heroBg;
 
   const calculateYearRange = (): { startYear: number; endYear: number } | null => {
     if (!birthDate.year) return null;
