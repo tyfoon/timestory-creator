@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FormData, BirthDateData, OptionalData } from '@/types/form';
-import { ArrowRight, Sparkles, Camera, Baby, GraduationCap, Heart, Calendar, Pencil } from 'lucide-react';
+import { ArrowRight, Sparkles, Camera, Baby, GraduationCap, Heart, Calendar, Pencil, Zap, Crown } from 'lucide-react';
 import heroBg from '@/assets/hero-bg-new.png';
 
 type PeriodType = 'birthyear' | 'childhood' | 'puberty' | 'young-adult' | 'custom';
@@ -31,6 +31,7 @@ const Index = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType | null>(null);
   const [customStartYear, setCustomStartYear] = useState<number>(0);
   const [customEndYear, setCustomEndYear] = useState<number>(0);
+  const [timelineLength, setTimelineLength] = useState<'short' | 'long'>('short');
   const [errors, setErrors] = useState<{ birthDate?: string; period?: string; custom?: string }>({});
 
   const currentYear = new Date().getFullYear();
@@ -203,6 +204,45 @@ const Index = () => {
                     {errors.custom && <p className="text-sm text-destructive">{errors.custom}</p>}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Timeline length selector */}
+            {isBirthDateComplete && selectedPeriod && (
+              <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                <Label className="text-sm font-medium text-foreground">
+                  Hoeveel momenten wil je zien?
+                </Label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setTimelineLength('short')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg border-2 transition-all ${
+                      timelineLength === 'short' 
+                        ? 'border-primary bg-primary/10 text-foreground' 
+                        : 'border-border bg-secondary/30 text-muted-foreground hover:border-primary/50'
+                    }`}
+                  >
+                    <Zap className="h-4 w-4" />
+                    <div className="text-left">
+                      <span className="text-sm font-medium block">Kort</span>
+                      <span className="text-xs opacity-70">20 momenten</span>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setTimelineLength('long')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg border-2 transition-all ${
+                      timelineLength === 'long' 
+                        ? 'border-primary bg-primary/10 text-foreground' 
+                        : 'border-border bg-secondary/30 text-muted-foreground hover:border-primary/50'
+                    }`}
+                  >
+                    <Crown className="h-4 w-4" />
+                    <div className="text-left">
+                      <span className="text-sm font-medium block">Uitgebreid</span>
+                      <span className="text-xs opacity-70">50 momenten</span>
+                    </div>
+                  </button>
+                </div>
               </div>
             )}
 
