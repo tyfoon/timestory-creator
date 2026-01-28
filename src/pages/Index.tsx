@@ -230,7 +230,7 @@ const Index = () => {
           </div>
 
           {/* Form card - solid background */}
-          <div className="bg-card/95 backdrop-blur-sm rounded-xl shadow-card border border-border/50 p-4 sm:p-5 space-y-5">
+          <div className="bg-card rounded-xl shadow-card border border-border/50 p-4 sm:p-5 space-y-5">
             
             {/* Step 1: Birthdate */}
             <div>
