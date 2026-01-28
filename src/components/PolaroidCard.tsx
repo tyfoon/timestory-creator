@@ -139,7 +139,7 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
                   <img 
                     src={displayImage} 
                     alt={event.title}
-                    className={`w-full h-full object-cover ${isPlaceholder ? 'opacity-80' : ''}`}
+                    className={`w-full h-full object-cover object-top ${isPlaceholder ? 'opacity-80' : ''}`}
                   />
                   {/* Subtle overlay for placeholders to indicate it's not the real image */}
                   {isPlaceholder && (
