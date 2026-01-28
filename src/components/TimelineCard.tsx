@@ -12,9 +12,62 @@ import {
   Palette,
   Star,
   Cake,
-  ImageOff
+  Loader2
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+
+// Import category placeholder images
+import placeholderBirthday from '@/assets/placeholders/birthday.jpg';
+import placeholderPolitics from '@/assets/placeholders/politics.jpg';
+import placeholderSports from '@/assets/placeholders/sports.jpg';
+import placeholderMusic from '@/assets/placeholders/music.jpg';
+import placeholderEntertainment from '@/assets/placeholders/entertainment.jpg';
+import placeholderScience from '@/assets/placeholders/science.jpg';
+import placeholderCulture from '@/assets/placeholders/culture.jpg';
+import placeholderWorld from '@/assets/placeholders/world.jpg';
+import placeholderLocal from '@/assets/placeholders/local.jpg';
+import placeholderTechnology from '@/assets/placeholders/technology.jpg';
+import placeholderCelebrity from '@/assets/placeholders/celebrity.jpg';
+import placeholderPersonal from '@/assets/placeholders/personal.jpg';
+
+// Category to placeholder mapping
+const categoryPlaceholders: Record<string, string> = {
+  politics: placeholderPolitics,
+  sports: placeholderSports,
+  music: placeholderMusic,
+  entertainment: placeholderEntertainment,
+  science: placeholderScience,
+  culture: placeholderCulture,
+  world: placeholderWorld,
+  local: placeholderLocal,
+  technology: placeholderTechnology,
+  celebrity: placeholderCelebrity,
+  personal: placeholderPersonal,
+};
+
+// Check if this is the "Welcome to the world" / birth announcement event
+const isWelcomeEvent = (event: TimelineEvent): boolean => {
+  const titleLower = event.title.toLowerCase();
+  return (
+    titleLower.includes('welkom op de wereld') ||
+    titleLower.includes('welcome to the world') ||
+    titleLower.includes('geboren') ||
+    titleLower.includes('geboorte') ||
+    (event.category === 'personal' && event.eventScope === 'birthdate' && 
+     (titleLower.includes('birth') || titleLower.includes('born')))
+  );
+};
+
+// Get placeholder image based on event category and type
+const getPlaceholderImage = (event: TimelineEvent): string => {
+  // For the "Welcome to the world" birth event, use colorful birthday image
+  if (isWelcomeEvent(event)) {
+    return placeholderBirthday;
+  }
+  
+  // Use category-specific placeholder
+  return categoryPlaceholders[event.category] || placeholderWorld;
+};
 
 interface TimelineCardProps {
   event: TimelineEvent;
@@ -110,24 +163,23 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
     return event.year.toString();
   };
 
-  // Only show real images - no generic placeholders
-  // Also: do not start image requests for off-screen cards.
+  // Determine image to display
   const isImageFound = event.imageStatus ? event.imageStatus === 'found' : !!event.imageUrl;
   const hasRealImage = shouldLoadImage && isImageFound && !!event.imageUrl && !imageError;
   const srcSet = event.imageUrl ? buildWikimediaThumbSrcSet(event.imageUrl) : undefined;
   const sizes = "(min-width: 1024px) 420px, (min-width: 640px) 380px, 320px";
-
-  const emptyStateLabel: string | null = (() => {
-    if (!shouldLoadImage) return 'Scroll om foto’s te laden';
-    if (imageError) return 'Afbeelding niet beschikbaar';
-    // Only show "Geen foto gevonden" when we actually tried searching (i.e. there's a query).
-    if (event.imageSearchQuery && (event.imageStatus === 'none' || event.imageStatus === 'error')) {
-      return 'Geen foto gevonden';
-    }
-    if (event.imageStatus === 'loading') return 'Foto zoeken...';
-    // Idle (no query / not attempted): don't show a noisy label.
-    return null;
-  })();
+  
+  // Determine if we should show a placeholder
+  const shouldShowPlaceholder = shouldLoadImage && !hasRealImage && 
+    (event.imageStatus === 'none' || event.imageStatus === 'error' || imageError);
+  const placeholderImage = shouldShowPlaceholder ? getPlaceholderImage(event) : null;
+  
+  // Determine display image (real or placeholder)
+  const displayImage = hasRealImage ? event.imageUrl : placeholderImage;
+  const isPlaceholder = !hasRealImage && !!placeholderImage;
+  
+  // Loading state
+  const isLoading = shouldLoadImage && event.imageStatus === 'loading' && !hasRealImage && !shouldShowPlaceholder;
 
   return (
     <article 
@@ -140,31 +192,39 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
         ${event.importance === 'high' ? 'ring-2 ring-accent/20' : ''}
       `}
     >
-      {/* Image section - only real event images, no generic placeholders */}
+      {/* Image section - real images or category-based placeholders */}
       <div className="relative h-64 sm:h-80 lg:h-96 overflow-hidden bg-muted flex-shrink-0">
-        {hasRealImage ? (
-          <img 
-            src={event.imageUrl!}
-            srcSet={srcSet}
-            sizes={srcSet ? sizes : undefined}
-            alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            onError={() => setImageError(true)}
-            loading={isActive ? "eager" : "lazy"}
-            decoding="async"
-            fetchPriority={isActive ? "high" : "low"}
-          />
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-muted to-secondary/30">
-            <ImageOff className="h-10 w-10 text-muted-foreground/30" />
-            {emptyStateLabel && (
-              <span className="text-xs text-muted-foreground/50">
-                {emptyStateLabel}
-              </span>
+        {displayImage ? (
+          <>
+            <img 
+              src={displayImage}
+              srcSet={!isPlaceholder ? srcSet : undefined}
+              sizes={!isPlaceholder && srcSet ? sizes : undefined}
+              alt={event.title}
+              className={`w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105 ${isPlaceholder ? 'opacity-70' : ''}`}
+              onError={() => setImageError(true)}
+              loading={isActive ? "eager" : "lazy"}
+              decoding="async"
+              fetchPriority={isActive ? "high" : "low"}
+            />
+            {/* Overlay for placeholders to make them more subtle */}
+            {isPlaceholder && (
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-card/60" />
             )}
+          </>
+        ) : isLoading ? (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-muted to-secondary/30">
+            <Loader2 className="h-8 w-8 text-muted-foreground/40 animate-spin" />
+            <span className="text-xs text-muted-foreground/50">Foto zoeken...</span>
+          </div>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-secondary/30">
+            <span className="text-xs text-muted-foreground/40">
+              {!shouldLoadImage ? 'Scroll om foto te laden' : ''}
+            </span>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent pointer-events-none" />
         
         {/* Scope badge on image */}
         {scopeLabel && (
