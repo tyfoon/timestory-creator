@@ -306,7 +306,7 @@ const PolaroidCollagePage = () => {
     <div className="min-h-screen bg-polaroid-dark flex flex-col">
       
       {/* Header section */}
-      <section className="pt-24 pb-4 px-4">
+      <section className="pt-4 pb-4 px-4">
         <div className="container mx-auto max-w-6xl">
           <button
             onClick={() => navigate('/')}
