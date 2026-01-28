@@ -58,9 +58,13 @@ const PolaroidCollagePage = () => {
     onImageFound: handleImageFound,
   });
 
-  // Mark events without images as 'none' after search completes
+  // Mark events without images as 'none' only AFTER a search cycle actually ran.
+  // (Otherwise, on first mount `isLoadingImages` is false and we'd incorrectly mark
+  // everything as 'none' before the queue starts.)
+  const wasLoadingImagesRef = useRef(false);
   useEffect(() => {
-    if (!isLoadingImages && events.length > 0) {
+    const wasLoading = wasLoadingImagesRef.current;
+    if (wasLoading && !isLoadingImages && events.length > 0) {
       setEvents(prev => prev.map(event => {
         if (event.imageStatus === 'loading' && !event.imageUrl) {
           return { ...event, imageStatus: 'none' as const };
@@ -68,6 +72,7 @@ const PolaroidCollagePage = () => {
         return event;
       }));
     }
+    wasLoadingImagesRef.current = isLoadingImages;
   }, [isLoadingImages, events.length]);
 
   const loadImagesForEvents = useCallback((newEvents: TimelineEvent[]) => {
@@ -198,6 +203,9 @@ const PolaroidCollagePage = () => {
 
       const cached = getCachedTimeline(data, language);
       if (cached) {
+        // Ensure queue state is clean before (re)starting searches for cached events
+        resetImageSearch();
+
         const normalizedCachedEvents = cached.events.map((e) => {
           if (e.imageSearchQuery && (e.imageStatus === 'none' || e.imageStatus === 'error' || !e.imageUrl)) {
             return { ...e, imageStatus: 'loading' as const, imageUrl: undefined };
@@ -237,6 +245,7 @@ const PolaroidCollagePage = () => {
       sessionStorage.removeItem(key);
       const storedLength = sessionStorage.getItem('timelineLength') || 'short';
       const maxEvents = storedLength === 'short' ? 20 : undefined;
+      resetImageSearch();
       setEvents([]);
       setSummary('');
       setFamousBirthdays([]);
