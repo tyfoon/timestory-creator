@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 interface ImageSearchRequest {
-  queries: { eventId: string; query: string; year?: number; isCelebrity?: boolean }[];
+  queries: { eventId: string; query: string; year?: number; isCelebrity?: boolean; isMovie?: boolean }[];
   mode?: "fast" | "full";
 }
 
@@ -299,7 +299,7 @@ async function searchNationaalArchief(
 }
 
 // ============== TMDB API (celebrity portraits) ==============
-async function searchTMDB(
+async function searchTMDBPerson(
   query: string
 ): Promise<{ imageUrl: string; source: string } | null> {
   const TMDB_API_KEY = Deno.env.get("TMDB_API_KEY");
@@ -333,7 +333,63 @@ async function searchTMDB(
     
     return null;
   } catch (e) {
-    console.error("TMDB API error:", e);
+    console.error("TMDB Person API error:", e);
+    return null;
+  }
+}
+
+// ============== TMDB API (movie posters/backdrops) ==============
+async function searchTMDBMovie(
+  query: string,
+  year?: number
+): Promise<{ imageUrl: string; source: string } | null> {
+  const TMDB_API_KEY = Deno.env.get("TMDB_API_KEY");
+  if (!TMDB_API_KEY) {
+    console.log("TMDB Movie: API key not configured");
+    return null;
+  }
+  
+  try {
+    // Search for a movie on TMDB, optionally filter by year
+    let searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=en-US&page=1`;
+    if (year) {
+      searchUrl += `&year=${year}`;
+    }
+    
+    console.log(`TMDB Movie: searching for "${query}" (${year || 'no year'})`);
+    
+    const searchRes = await fetch(searchUrl);
+    if (!searchRes.ok) {
+      console.log(`TMDB Movie: API returned ${searchRes.status}`);
+      return null;
+    }
+    
+    const searchData = await searchRes.json();
+    const results = searchData.results || [];
+    
+    console.log(`TMDB Movie: found ${results.length} results`);
+    
+    if (results.length === 0) return null;
+    
+    // Get the first matching movie with a backdrop or poster
+    for (const movie of results.slice(0, 3)) {
+      // Prefer backdrop (wider, more cinematic) over poster
+      const imagePath = movie.backdrop_path || movie.poster_path;
+      if (imagePath) {
+        // Use w780 for backdrops (good quality, not too large)
+        const size = movie.backdrop_path ? 'w780' : 'w500';
+        const imageUrl = `https://image.tmdb.org/t/p/${size}${imagePath}`;
+        const source = `https://www.themoviedb.org/movie/${movie.id}`;
+        
+        console.log(`TMDB: found movie image for "${movie.title}" (query: "${query}")`);
+        return { imageUrl, source };
+      }
+    }
+    
+    console.log("TMDB Movie: no results with images found");
+    return null;
+  } catch (e) {
+    console.error("TMDB Movie API error:", e);
     return null;
   }
 }
@@ -435,15 +491,25 @@ async function searchAllSources(
   query: string,
   year: number | undefined,
   firecrawlKey: string | undefined,
-  isCelebrity: boolean = false
+  isCelebrity: boolean = false,
+  isMovie: boolean = false
 ): Promise<ImageResult> {
-  console.log(`Searching for: "${query}" (${year || 'no year'})${isCelebrity ? ' [celebrity]' : ''}`);
+  console.log(`Searching for: "${query}" (${year || 'no year'})${isCelebrity ? ' [celebrity]' : ''}${isMovie ? ' [movie]' : ''}`);
   
   // For celebrities, try TMDB first as it's optimized for person portraits
   if (isCelebrity) {
-    const tmdbResult = await searchTMDB(query);
+    const tmdbResult = await searchTMDBPerson(query);
     if (tmdbResult) {
       console.log(`Found celebrity image via TMDB for "${query}"`);
+      return { eventId, imageUrl: tmdbResult.imageUrl, source: tmdbResult.source };
+    }
+  }
+  
+  // For movies, try TMDB first as it has the best movie posters/backdrops
+  if (isMovie) {
+    const tmdbResult = await searchTMDBMovie(query, year);
+    if (tmdbResult) {
+      console.log(`Found movie image via TMDB for "${query}"`);
       return { eventId, imageUrl: tmdbResult.imageUrl, source: tmdbResult.source };
     }
   }
@@ -474,11 +540,6 @@ async function searchAllSources(
   // Add Firecrawl Wikipedia-only search if available (already has its own fallback)
   if (firecrawlKey) {
     allSources.push(searchFirecrawlWikipediaOnly(query, year, firecrawlKey));
-  }
-  
-  // If celebrity search failed via TMDB, also try TMDB as fallback after other sources
-  if (isCelebrity) {
-    // Already tried TMDB first, no need to add again
   }
 
   // Use Promise.allSettled to get all results, then pick the first successful one
@@ -511,8 +572,8 @@ serve(async (req) => {
 
     // Process all queries in parallel
     const results = await Promise.all(
-      limitedQueries.map(({ eventId, query, year, isCelebrity }) =>
-        searchAllSources(eventId, query, year, FIRECRAWL_API_KEY, isCelebrity)
+      limitedQueries.map(({ eventId, query, year, isCelebrity, isMovie }) =>
+        searchAllSources(eventId, query, year, FIRECRAWL_API_KEY, isCelebrity, isMovie)
       )
     );
 
