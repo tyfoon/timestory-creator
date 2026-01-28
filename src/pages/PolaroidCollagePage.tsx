@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { FormData } from '@/types/form';
 import { TimelineEvent, FamousBirthday } from '@/types/timeline';
-import { generateTimelineStreaming, searchImages } from '@/lib/api/timeline';
+import { generateTimelineStreaming } from '@/lib/api/timeline';
+import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents, getCacheKey } from '@/lib/timelineCache';
 import { ArrowLeft, Clock, Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -21,99 +22,22 @@ const PolaroidCollagePage = () => {
   const [famousBirthdays, setFamousBirthdays] = useState<FamousBirthday[]>([]);
   const [summary, setSummary] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [streamingProgress, setStreamingProgress] = useState(0);
 
   const formDataRef = useRef<FormData | null>(null);
-  const pendingImageRequests = useRef<Set<string>>(new Set());
-  const imageQueueRef = useRef<TimelineEvent[]>([]);
-  const isProcessingImagesRef = useRef(false);
 
-
-  const processImageQueue = useCallback(async () => {
-    if (isProcessingImagesRef.current) return;
-    if (imageQueueRef.current.length === 0) return;
-    
-    isProcessingImagesRef.current = true;
-    setIsLoadingImages(true);
-    
-    while (imageQueueRef.current.length > 0) {
-      const batch = imageQueueRef.current.splice(0, 10);
-      const queries = batch
-        .filter(e => e.imageSearchQuery && !pendingImageRequests.current.has(e.id))
-        .map(e => {
-          pendingImageRequests.current.add(e.id);
-          return {
-            eventId: e.id,
-            query: e.imageSearchQuery!,
-            year: e.year
-          };
-        });
-      
-      if (queries.length === 0) continue;
-      
-      try {
-        const result = await searchImages(queries, { mode: 'fast' });
-        if (result.success && result.images) {
-          applyImageResults(result.images);
-          
-          const missingImages = result.images.filter(img => !img.imageUrl);
-          if (missingImages.length > 0) {
-            const retryQueries = missingImages.map(img => {
-              const originalQuery = queries.find(q => q.eventId === img.eventId);
-              return originalQuery;
-            }).filter(Boolean) as typeof queries;
-            
-            if (retryQueries.length > 0) {
-              searchImages(retryQueries, { mode: 'full' })
-                .then(retryResult => {
-                  if (retryResult.success && retryResult.images) {
-                    applyImageResults(retryResult.images);
-                  }
-                })
-                .catch(err => console.error('Retry image fetch error:', err));
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching images:', err);
-      }
-      
-      queries.forEach(q => pendingImageRequests.current.delete(q.eventId));
-    }
-    
-    isProcessingImagesRef.current = false;
-    setIsLoadingImages(false);
-  }, []);
-
-  const applyImageResults = useCallback((images: { eventId: string; imageUrl: string | null; source: string | null }[]) => {
-    // Debug logging to track image matching
-    console.log('Applying image results:', images.map(img => ({
-      eventId: img.eventId,
-      hasImage: !!img.imageUrl,
-      url: img.imageUrl?.substring(0, 50)
-    })));
-    
+  // Client-side image search with concurrency control
+  const handleImageFound = useCallback((eventId: string, imageUrl: string, source: string | null) => {
     setEvents(prev => {
       const updated = prev.map(event => {
-        const imageResult = images.find(img => img.eventId === event.id);
-        if (!imageResult) return event;
-
-        // Debug: log the match
-        console.log(`Matching image for event "${event.title}" (id: ${event.id}):`, 
-          imageResult.imageUrl ? 'found' : 'not found');
-
-        if (imageResult.imageUrl) {
-          return {
-            ...event,
-            imageUrl: imageResult.imageUrl,
-            source: imageResult.source || undefined,
-            imageStatus: 'found' as const,
-          };
-        }
-
-        return { ...event, imageStatus: 'none' as const };
+        if (event.id !== eventId) return event;
+        return {
+          ...event,
+          imageUrl,
+          source: source || undefined,
+          imageStatus: 'found' as const,
+        };
       });
 
       if (formDataRef.current) {
@@ -124,19 +48,40 @@ const PolaroidCollagePage = () => {
     });
   }, [language]);
 
+  const { 
+    addToQueue: addImagesToQueue, 
+    reset: resetImageSearch,
+    isSearching: isLoadingImages,
+    foundCount 
+  } = useClientImageSearch({
+    maxConcurrent: 3,
+    onImageFound: handleImageFound,
+  });
+
+  // Mark events without images as 'none' after search completes
+  useEffect(() => {
+    if (!isLoadingImages && events.length > 0) {
+      setEvents(prev => prev.map(event => {
+        if (event.imageStatus === 'loading' && !event.imageUrl) {
+          return { ...event, imageStatus: 'none' as const };
+        }
+        return event;
+      }));
+    }
+  }, [isLoadingImages, events.length]);
+
   const loadImagesForEvents = useCallback((newEvents: TimelineEvent[]) => {
     const eventsNeedingImages = newEvents.filter(
       e => e.imageSearchQuery && 
            e.imageStatus !== 'found' && 
-           e.imageStatus !== 'none' &&
-           !pendingImageRequests.current.has(e.id)
+           e.imageStatus !== 'none'
     );
     
     if (eventsNeedingImages.length === 0) return;
-    
-    imageQueueRef.current.push(...eventsNeedingImages);
-    processImageQueue();
-  }, [processImageQueue]);
+    addImagesToQueue(eventsNeedingImages);
+  }, [addImagesToQueue]);
+
+
 
   const loadTimelineStreaming = useCallback(async (data: FormData, maxEvents?: number) => {
     setIsLoading(true);
