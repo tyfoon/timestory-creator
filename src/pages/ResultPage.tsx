@@ -12,8 +12,8 @@ import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { generateTimelinePdf } from '@/lib/pdfGenerator';
 import { generatePolaroidPdf } from '@/lib/pdfGeneratorPolaroid';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents, getCacheKey } from '@/lib/timelineCache';
-import { shareTikTokHighlights, canShareToTikTok } from '@/lib/tiktokGenerator';
-import { ArrowLeft, Clock, Loader2, AlertCircle, RefreshCw, Cake, Star, Download, Camera, Share2 } from 'lucide-react';
+import { generateTikTokSlides, shareGeneratedFiles, canShareToTikTok } from '@/lib/tiktokGenerator';
+import { ArrowLeft, Clock, Loader2, AlertCircle, RefreshCw, Cake, Star, Download, Camera, Share2, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 // Era-themed background images
@@ -55,6 +55,7 @@ const ResultPage = () => {
   const [canShare, setCanShare] = useState(false);
   const [isGeneratingTikTok, setIsGeneratingTikTok] = useState(false);
   const [tikTokProgress, setTikTokProgress] = useState({ current: 0, total: 0 });
+  const [generatedTikTokFiles, setGeneratedTikTokFiles] = useState<File[] | null>(null);
 
   // Track current formData for cache updates
   const formDataRef = useRef<FormData | null>(null);
@@ -378,14 +379,16 @@ const ResultPage = () => {
     }
   };
 
-  const handleShareTikTok = async () => {
+  // Step 1: Generate TikTok slides (async, can take time)
+  const handlePrepareTikTok = async () => {
     if (!formData || events.length === 0) return;
     
     setIsGeneratingTikTok(true);
     setTikTokProgress({ current: 0, total: 0 });
+    setGeneratedTikTokFiles(null);
     
     try {
-      await shareTikTokHighlights(
+      const files = await generateTikTokSlides(
         events,
         famousBirthdays,
         summary,
@@ -394,12 +397,35 @@ const ResultPage = () => {
         }
       );
       
+      setGeneratedTikTokFiles(files);
       toast({
-        title: t('shareSuccess') as string || 'Gedeeld!',
-        description: t('tikTokReady') as string || 'Je TikTok slides zijn klaar',
+        title: t('slidesReady') as string || 'Slides klaar!',
+        description: t('tapToShare') as string || 'Tik op de knop om te delen',
       });
     } catch (err) {
-      console.error('Error sharing to TikTok:', err);
+      console.error('Error generating TikTok slides:', err);
+      toast({
+        variant: "destructive",
+        title: t('shareError') as string || 'Genereren mislukt',
+        description: err instanceof Error ? err.message : 'Onbekende fout',
+      });
+    } finally {
+      setIsGeneratingTikTok(false);
+      setTikTokProgress({ current: 0, total: 0 });
+    }
+  };
+
+  // Step 2: Share files (MUST be called directly from user gesture for browser compliance)
+  const handleShareTikTok = async () => {
+    if (!generatedTikTokFiles || generatedTikTokFiles.length === 0) return;
+    
+    try {
+      await shareGeneratedFiles(generatedTikTokFiles);
+      toast({
+        title: t('shareSuccess') as string || 'Gedeeld!',
+      });
+      setGeneratedTikTokFiles(null); // Reset after successful share
+    } catch (err) {
       // Don't show error if user cancelled the share
       if (err instanceof Error && err.name !== 'AbortError') {
         toast({
@@ -408,9 +434,6 @@ const ResultPage = () => {
           description: err.message,
         });
       }
-    } finally {
-      setIsGeneratingTikTok(false);
-      setTikTokProgress({ current: 0, total: 0 });
     }
   };
 
@@ -497,20 +520,36 @@ const ResultPage = () => {
             </button>
             
             <div className="flex items-center gap-2">
-              {/* TikTok share button - only on mobile with Web Share API */}
+              {/* TikTok share buttons - two-step flow for user gesture compliance */}
               {canShare && events.length > 0 && !isLoading && (
-                <button
-                  onClick={handleShareTikTok}
-                  disabled={isGeneratingTikTok}
-                  className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50 disabled:opacity-50"
-                  title={t('shareToTikTok') as string}
-                >
-                  {isGeneratingTikTok ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Share2 className="h-3.5 w-3.5" />
+                <>
+                  {/* Step 2: Share button (only shown when files are ready) */}
+                  {generatedTikTokFiles && generatedTikTokFiles.length > 0 && (
+                    <button
+                      onClick={handleShareTikTok}
+                      className="p-1.5 text-primary-foreground bg-green-500 hover:bg-green-600 transition-colors rounded-md animate-pulse"
+                      title={t('shareNow') as string}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </button>
                   )}
-                </button>
+                  
+                  {/* Step 1: Prepare button (generates slides) */}
+                  {!generatedTikTokFiles && (
+                    <button
+                      onClick={handlePrepareTikTok}
+                      disabled={isGeneratingTikTok}
+                      className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50 disabled:opacity-50"
+                      title={t('prepareSlides') as string}
+                    >
+                      {isGeneratingTikTok ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Share2 className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  )}
+                </>
               )}
               
               {/* Compact refresh button */}

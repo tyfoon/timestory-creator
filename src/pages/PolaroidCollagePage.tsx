@@ -8,8 +8,8 @@ import { TimelineEvent, FamousBirthday } from '@/types/timeline';
 import { generateTimelineStreaming } from '@/lib/api/timeline';
 import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents, getCacheKey } from '@/lib/timelineCache';
-import { ArrowLeft, Clock, Loader2, RefreshCw, Share2 } from 'lucide-react';
-import { shareTikTokHighlights, canShareToTikTok } from '@/lib/tiktokGenerator';
+import { ArrowLeft, Clock, Loader2, RefreshCw, Share2, Check } from 'lucide-react';
+import { generateTikTokSlides, shareGeneratedFiles, canShareToTikTok } from '@/lib/tiktokGenerator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { PolaroidCard } from '@/components/PolaroidCard';
@@ -48,6 +48,7 @@ const PolaroidCollagePage = () => {
   const [canShare, setCanShare] = useState(false);
   const [isGeneratingTikTok, setIsGeneratingTikTok] = useState(false);
   const [tikTokProgress, setTikTokProgress] = useState({ current: 0, total: 0 });
+  const [generatedTikTokFiles, setGeneratedTikTokFiles] = useState<File[] | null>(null);
 
   const formDataRef = useRef<FormData | null>(null);
   // Holds the incremental stream list so later onEvent updates don't overwrite image updates.
@@ -320,22 +321,50 @@ const PolaroidCollagePage = () => {
     setCanShare(canShareToTikTok());
   }, []);
 
-  const handleShareTikTok = async () => {
+  // Step 1: Generate TikTok slides (async, can take time)
+  const handlePrepareTikTok = async () => {
     if (events.length === 0) return;
     
     setIsGeneratingTikTok(true);
     setTikTokProgress({ current: 0, total: 0 });
+    setGeneratedTikTokFiles(null);
     
     try {
-      await shareTikTokHighlights(
+      const files = await generateTikTokSlides(
         events,
         famousBirthdays,
         summary,
         (current, total) => setTikTokProgress({ current, total })
       );
+      
+      setGeneratedTikTokFiles(files);
+      toast({
+        title: t('slidesReady') as string,
+        description: t('tapToShare') as string,
+      });
+    } catch (err) {
+      console.error('Error generating TikTok slides:', err);
+      toast({
+        variant: "destructive",
+        title: t('shareError') as string,
+        description: err instanceof Error ? err.message : 'Onbekende fout',
+      });
+    } finally {
+      setIsGeneratingTikTok(false);
+      setTikTokProgress({ current: 0, total: 0 });
+    }
+  };
+
+  // Step 2: Share files (MUST be called directly from user gesture for browser compliance)
+  const handleShareTikTok = async () => {
+    if (!generatedTikTokFiles || generatedTikTokFiles.length === 0) return;
+    
+    try {
+      await shareGeneratedFiles(generatedTikTokFiles);
       toast({
         title: t('shareSuccess') as string,
       });
+      setGeneratedTikTokFiles(null); // Reset after successful share
     } catch (err) {
       if (err instanceof Error && err.name !== 'AbortError') {
         toast({
@@ -344,8 +373,6 @@ const PolaroidCollagePage = () => {
           description: err.message,
         });
       }
-    } finally {
-      setIsGeneratingTikTok(false);
     }
   };
 
@@ -407,20 +434,36 @@ const PolaroidCollagePage = () => {
             </button>
             
             <div className="flex items-center gap-2">
-              {/* TikTok Share button - mobile only */}
+              {/* TikTok share buttons - two-step flow for user gesture compliance */}
               {canShare && isMobile && events.length > 0 && !isLoading && (
-                <button
-                  onClick={handleShareTikTok}
-                  disabled={isGeneratingTikTok}
-                  className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50 disabled:opacity-50"
-                  title={t('shareToTikTok') as string}
-                >
-                  {isGeneratingTikTok ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Share2 className="h-3.5 w-3.5" />
+                <>
+                  {/* Step 2: Share button (only shown when files are ready) */}
+                  {generatedTikTokFiles && generatedTikTokFiles.length > 0 && (
+                    <button
+                      onClick={handleShareTikTok}
+                      className="p-1.5 text-primary-foreground bg-green-500 hover:bg-green-600 transition-colors rounded-md animate-pulse"
+                      title={t('shareNow') as string}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </button>
                   )}
-                </button>
+                  
+                  {/* Step 1: Prepare button (generates slides) */}
+                  {!generatedTikTokFiles && (
+                    <button
+                      onClick={handlePrepareTikTok}
+                      disabled={isGeneratingTikTok}
+                      className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50 disabled:opacity-50"
+                      title={t('prepareSlides') as string}
+                    >
+                      {isGeneratingTikTok ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Share2 className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  )}
+                </>
               )}
               
               {/* Compact refresh button */}

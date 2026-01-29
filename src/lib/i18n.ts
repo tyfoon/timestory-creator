@@ -138,6 +138,10 @@ export const translations = {
     shareSuccess: "Gedeeld!",
     tikTokReady: "Je TikTok slides zijn klaar",
     shareError: "Delen mislukt",
+    slidesReady: "Slides klaar!",
+    tapToShare: "Tik op de groene knop om te delen",
+    prepareSlides: "Slides voorbereiden",
+    shareNow: "Deel nu",
 
     // Toast messages
     loadError: "Fout bij laden",
@@ -294,6 +298,10 @@ export const translations = {
     shareSuccess: "Shared!",
     tikTokReady: "Your TikTok slides are ready",
     shareError: "Share failed",
+    slidesReady: "Slides ready!",
+    tapToShare: "Tap the green button to share",
+    prepareSlides: "Prepare slides",
+    shareNow: "Share now",
 
     // Toast messages
     loadError: "Loading error",
@@ -440,6 +448,10 @@ export const translations = {
     shareSuccess: "Geteilt!",
     tikTokReady: "Deine TikTok-Slides sind fertig",
     shareError: "Teilen fehlgeschlagen",
+    slidesReady: "Slides fertig!",
+    tapToShare: "Tippe auf den grünen Button zum Teilen",
+    prepareSlides: "Slides vorbereiten",
+    shareNow: "Jetzt teilen",
 
     loadError: "Ladefehler",
 
@@ -585,6 +597,10 @@ export const translations = {
     shareSuccess: "Partagé!",
     tikTokReady: "Vos slides TikTok sont prêts",
     shareError: "Échec du partage",
+    slidesReady: "Slides prêts!",
+    tapToShare: "Appuyez sur le bouton vert pour partager",
+    prepareSlides: "Préparer les slides",
+    shareNow: "Partager maintenant",
 
     loadError: "Erreur de chargement",
 
