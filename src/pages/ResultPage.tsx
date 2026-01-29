@@ -12,7 +12,8 @@ import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { generateTimelinePdf } from '@/lib/pdfGenerator';
 import { generatePolaroidPdf } from '@/lib/pdfGeneratorPolaroid';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents, getCacheKey } from '@/lib/timelineCache';
-import { ArrowLeft, Clock, Loader2, AlertCircle, RefreshCw, Cake, Star, Download, Camera } from 'lucide-react';
+import { shareTikTokHighlights, canShareToTikTok } from '@/lib/tiktokGenerator';
+import { ArrowLeft, Clock, Loader2, AlertCircle, RefreshCw, Cake, Star, Download, Camera, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 // Era-themed background images
@@ -51,6 +52,9 @@ const ResultPage = () => {
   const [pdfProgress, setPdfProgress] = useState(0);
   const [polaroidPdfProgress, setPolaroidPdfProgress] = useState(0);
   const [streamingProgress, setStreamingProgress] = useState(0);
+  const [canShare, setCanShare] = useState(false);
+  const [isGeneratingTikTok, setIsGeneratingTikTok] = useState(false);
+  const [tikTokProgress, setTikTokProgress] = useState({ current: 0, total: 0 });
 
   // Track current formData for cache updates
   const formDataRef = useRef<FormData | null>(null);
@@ -132,6 +136,11 @@ const ResultPage = () => {
     if (eventsNeedingImages.length === 0) return;
     addImagesToQueue(eventsNeedingImages);
   }, [addImagesToQueue]);
+
+  // Check Web Share API support on mount
+  useEffect(() => {
+    setCanShare(canShareToTikTok());
+  }, []);
 
   useEffect(() => {
     const stored = sessionStorage.getItem('timelineFormData');
@@ -369,6 +378,42 @@ const ResultPage = () => {
     }
   };
 
+  const handleShareTikTok = async () => {
+    if (!formData || events.length === 0) return;
+    
+    setIsGeneratingTikTok(true);
+    setTikTokProgress({ current: 0, total: 0 });
+    
+    try {
+      await shareTikTokHighlights(
+        events,
+        famousBirthdays,
+        summary,
+        (current, total) => {
+          setTikTokProgress({ current, total });
+        }
+      );
+      
+      toast({
+        title: t('shareSuccess') as string || 'Gedeeld!',
+        description: t('tikTokReady') as string || 'Je TikTok slides zijn klaar',
+      });
+    } catch (err) {
+      console.error('Error sharing to TikTok:', err);
+      // Don't show error if user cancelled the share
+      if (err instanceof Error && err.name !== 'AbortError') {
+        toast({
+          variant: "destructive",
+          title: t('shareError') as string || 'Delen mislukt',
+          description: err.message,
+        });
+      }
+    } finally {
+      setIsGeneratingTikTok(false);
+      setTikTokProgress({ current: 0, total: 0 });
+    }
+  };
+
   const getTitle = () => {
     if (!formData) return t('yourTimeJourney') as string;
     
@@ -452,6 +497,22 @@ const ResultPage = () => {
             </button>
             
             <div className="flex items-center gap-2">
+              {/* TikTok share button - only on mobile with Web Share API */}
+              {canShare && events.length > 0 && !isLoading && (
+                <button
+                  onClick={handleShareTikTok}
+                  disabled={isGeneratingTikTok}
+                  className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50 disabled:opacity-50"
+                  title={t('shareToTikTok') as string}
+                >
+                  {isGeneratingTikTok ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Share2 className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              )}
+              
               {/* Compact refresh button */}
               {events.length > 0 && !isLoading && (
                 <button

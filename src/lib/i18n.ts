@@ -132,6 +132,13 @@ export const translations = {
     pdfError: "Fout bij PDF genereren",
     pdfTryAgain: "Probeer het opnieuw",
 
+    // TikTok sharing
+    shareToTikTok: "Deel op TikTok",
+    generatingSlides: "Beelden genereren...",
+    shareSuccess: "Gedeeld!",
+    tikTokReady: "Je TikTok slides zijn klaar",
+    shareError: "Delen mislukt",
+
     // Toast messages
     loadError: "Fout bij laden",
 
@@ -281,6 +288,13 @@ export const translations = {
     pdfError: "Error generating PDF",
     pdfTryAgain: "Please try again",
 
+    // TikTok sharing
+    shareToTikTok: "Share to TikTok",
+    generatingSlides: "Generating slides...",
+    shareSuccess: "Shared!",
+    tikTokReady: "Your TikTok slides are ready",
+    shareError: "Share failed",
+
     // Toast messages
     loadError: "Loading error",
 
@@ -420,6 +434,13 @@ export const translations = {
     pdfError: "Fehler beim PDF-Generieren",
     pdfTryAgain: "Bitte versuche es erneut",
 
+    // TikTok sharing
+    shareToTikTok: "Auf TikTok teilen",
+    generatingSlides: "Bilder werden generiert...",
+    shareSuccess: "Geteilt!",
+    tikTokReady: "Deine TikTok-Slides sind fertig",
+    shareError: "Teilen fehlgeschlagen",
+
     loadError: "Ladefehler",
 
     required: "Dieses Feld ist erforderlich",
@@ -557,6 +578,13 @@ export const translations = {
     polaroidReady: "Votre édition polaroid des années 80 est prête",
     pdfError: "Erreur lors de la génération du PDF",
     pdfTryAgain: "Veuillez réessayer",
+
+    // TikTok sharing
+    shareToTikTok: "Partager sur TikTok",
+    generatingSlides: "Génération des images...",
+    shareSuccess: "Partagé!",
+    tikTokReady: "Vos slides TikTok sont prêts",
+    shareError: "Échec du partage",
 
     loadError: "Erreur de chargement",
 
