@@ -388,26 +388,28 @@
     flex: 0 0 auto;
   }
 
-  /* Mobile: 2-column grid with alternating left/right offsets */
+  /* Mobile: 2-column grid with Z-pattern staggering */
   @media (max-width: 639px) {
     .polaroid-collage {
-      @apply grid grid-cols-2 gap-3 p-3;
+      @apply grid grid-cols-2 gap-2 p-3;
       justify-items: center;
     }
     
-    /* Alternating horizontal offsets for scattered look */
-    .polaroid-collage > *:nth-child(4n+1) { transform: translateX(-8px) rotate(-3deg); }
-    .polaroid-collage > *:nth-child(4n+2) { transform: translateX(10px) rotate(2deg); }
-    .polaroid-collage > *:nth-child(4n+3) { transform: translateX(6px) rotate(-2deg); }
-    .polaroid-collage > *:nth-child(4n) { transform: translateX(-12px) rotate(3deg); }
+    /* Z-pattern: left column lower, right column higher - creates diagonal flow */
+    /* Odd items (left column): push down */
+    .polaroid-collage > *:nth-child(odd) { 
+      transform: translateX(-6px) translateY(1.5rem) rotate(-2deg); 
+    }
+    /* Even items (right column): pull up */
+    .polaroid-collage > *:nth-child(even) { 
+      transform: translateX(8px) translateY(-1rem) rotate(2deg); 
+    }
     
-    /* Additional vertical variation */
-    .polaroid-collage > *:nth-child(6n+1) { margin-top: 0.5rem; }
-    .polaroid-collage > *:nth-child(6n+2) { margin-top: -0.25rem; }
-    .polaroid-collage > *:nth-child(6n+3) { margin-top: 0.75rem; }
-    .polaroid-collage > *:nth-child(6n+4) { margin-top: -0.5rem; }
-    .polaroid-collage > *:nth-child(6n+5) { margin-top: 0.25rem; }
-    .polaroid-collage > *:nth-child(6n) { margin-top: -0.75rem; }
+    /* Additional variation per row to keep it organic */
+    .polaroid-collage > *:nth-child(4n+1) { transform: translateX(-10px) translateY(1.25rem) rotate(-3deg); }
+    .polaroid-collage > *:nth-child(4n+2) { transform: translateX(6px) translateY(-0.75rem) rotate(1deg); }
+    .polaroid-collage > *:nth-child(4n+3) { transform: translateX(-4px) translateY(1.75rem) rotate(-1deg); }
+    .polaroid-collage > *:nth-child(4n) { transform: translateX(12px) translateY(-1.25rem) rotate(3deg); }
   }
 
   /* Desktop: more dramatic scattered effect */
