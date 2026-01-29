@@ -124,24 +124,41 @@ export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerPro
   if (error || !track) return null;
 
   // Show embedded player when no preview available and user clicked play
+  // For compact mode: just link to Spotify instead of showing an iframe that doesn't scale well
   if (showEmbed && !track.previewUrl) {
+    if (compact) {
+      return (
+        <a
+          href={track.spotifyUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex items-center gap-1 px-2 py-1 bg-[#1DB954] hover:bg-[#1ed760] text-white rounded-full text-[10px] font-medium transition-colors shadow-md"
+          title="Open in Spotify"
+        >
+          <ExternalLink className="h-2.5 w-2.5" />
+          <span>Spotify</span>
+        </a>
+      );
+    }
+    
     return (
       <div className="relative" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={handleClosePlayer}
-          className={`absolute z-10 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full shadow-lg transition-colors ${compact ? '-top-1 -right-1 p-0.5' : '-top-2 -right-2 p-1'}`}
+          className="absolute -top-2 -right-2 z-10 p-1 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full shadow-lg transition-colors"
           title="Sluiten"
         >
-          <X className={compact ? "h-2.5 w-2.5" : "h-3.5 w-3.5"} />
+          <X className="h-3.5 w-3.5" />
         </button>
         <iframe
           src={`https://open.spotify.com/embed/track/${track.trackId}?utm_source=generator&theme=0&autoplay=1`}
-          width={compact ? "140" : "100%"}
-          height={compact ? "80" : "152"}
+          width="100%"
+          height="152"
           frameBorder="0"
           allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
           loading="lazy"
-          className={compact ? "rounded-lg" : "rounded-xl min-w-[250px]"}
+          className="rounded-xl min-w-[250px]"
           title={`${track.trackName} - ${track.artistName}`}
         />
       </div>
