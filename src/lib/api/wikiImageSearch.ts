@@ -57,25 +57,39 @@ function titleMatchesQuery(title: string, query: string, strict: boolean = true)
   const titleLower = title.toLowerCase();
   const queryLower = query.toLowerCase();
   
-  // Extract meaningful words from query
+  // Common words to exclude from matching (stopwords in multiple languages)
+  const stopWords = new Set([
+    'the', 'and', 'for', 'van', 'het', 'een', 'der', 'den', 'des', 'von', 'und',
+    'with', 'from', 'that', 'this', 'was', 'were', 'been', 'have', 'has', 'had',
+    'are', 'is', 'am', 'be', 'being', 'their', 'them', 'they', 'what', 'when',
+    'where', 'which', 'who', 'will', 'would', 'could', 'should', 'into', 'over',
+    'great', 'big', 'new', 'old', 'first', 'last', 'best', 'most' // Generic adjectives
+  ]);
+  
+  // Extract meaningful words from query (exclude stopwords and years)
   const queryWords = queryLower.split(/\s+/).filter(w => 
     w.length > 2 && 
-    !['the', 'and', 'for', 'van', 'het', 'een', 'der', 'den', 'des', 'von', 'und'].includes(w) &&
+    !stopWords.has(w) &&
     !/^\d{4}$/.test(w) // Exclude year numbers
   );
   
   if (queryWords.length === 0) return true; // No meaningful words, allow anything
   
-  const mainSubjectWords = queryWords.slice(0, 4);
+  // Use up to 5 main subject words for matching
+  const mainSubjectWords = queryWords.slice(0, 5);
   const matchCount = mainSubjectWords.filter(word => titleLower.includes(word)).length;
   
+  // Log for debugging
+  console.log(`[Image Match] Query: "${query}" | Title: "${title}" | Words: [${mainSubjectWords.join(', ')}] | Matched: ${matchCount}/${mainSubjectWords.length} | Strict: ${strict}`);
+  
   if (strict) {
-    // Strict mode: require at least half of the main words to match
-    const threshold = Math.max(1, Math.ceil(mainSubjectWords.length / 2));
+    // Strict mode: require at least 60% of the main words to match
+    const threshold = Math.max(2, Math.ceil(mainSubjectWords.length * 0.6));
     return matchCount >= threshold;
   } else {
-    // Lenient mode (fallback): require just 1 word to match
-    return matchCount >= 1;
+    // Lenient mode (fallback): require at least 2 words to match, or 50% if fewer words
+    const threshold = Math.max(2, Math.ceil(mainSubjectWords.length * 0.5));
+    return matchCount >= threshold;
   }
 }
 
