@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Play, Loader2, ExternalLink } from 'lucide-react';
+import { Play, Loader2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SpotifyTrack {
@@ -22,6 +22,7 @@ export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerPro
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [showPlayer, setShowPlayer] = useState(false);
 
   useEffect(() => {
     if (!searchQuery || hasSearched) return;
@@ -58,51 +59,69 @@ export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerPro
     fetchTrack();
   }, [searchQuery, hasSearched]);
 
-  // Compact version - just a play button that opens Spotify
-  if (compact) {
-    if (isLoading) {
-      return (
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-[#1DB954]/20 text-[#1DB954] rounded-full text-xs">
-          <Loader2 className="h-3 w-3 animate-spin" />
-          <span>Zoeken...</span>
-        </div>
-      );
-    }
+  const handlePlayClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setShowPlayer(true);
+  };
 
-    if (!track) return null;
+  const handleClosePlayer = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setShowPlayer(false);
+  };
 
-    return (
-      <a
-        href={track.spotifyUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1DB954] hover:bg-[#1ed760] text-white rounded-full text-xs font-medium transition-colors shadow-md"
-        onClick={(e) => e.stopPropagation()}
-        title={`${track.trackName} - ${track.artistName}`}
-      >
-        <Play className="h-3 w-3 fill-current" />
-        <span>Beluister op Spotify</span>
-      </a>
-    );
-  }
-
-  // Full version with album art
   if (isLoading) {
     return (
-      <div className="flex items-center gap-3 p-3 bg-zinc-900/80 backdrop-blur rounded-lg">
-        <div className="w-12 h-12 bg-zinc-800 rounded flex items-center justify-center">
-          <Loader2 className="h-5 w-5 text-[#1DB954] animate-spin" />
-        </div>
-        <div className="flex-1">
-          <div className="h-4 w-24 bg-zinc-800 rounded animate-pulse" />
-          <div className="h-3 w-16 bg-zinc-800 rounded animate-pulse mt-1" />
-        </div>
+      <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-[#1DB954]/20 text-[#1DB954] rounded-full text-xs">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        <span>Zoeken...</span>
       </div>
     );
   }
 
   if (error || !track) return null;
 
+  // Show embedded player when activated
+  if (showPlayer) {
+    return (
+      <div className="relative" onClick={(e) => e.stopPropagation()}>
+        <button
+          onClick={handleClosePlayer}
+          className="absolute -top-2 -right-2 z-10 p-1 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full shadow-lg transition-colors"
+          title="Sluiten"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+        <iframe
+          src={`https://open.spotify.com/embed/track/${track.trackId}?utm_source=generator&theme=0`}
+          width="100%"
+          height={compact ? "80" : "152"}
+          frameBorder="0"
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          loading="lazy"
+          className="rounded-xl"
+          title={`${track.trackName} - ${track.artistName}`}
+        />
+      </div>
+    );
+  }
+
+  // Compact play button
+  if (compact) {
+    return (
+      <button
+        onClick={handlePlayClick}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1DB954] hover:bg-[#1ed760] text-white rounded-full text-xs font-medium transition-colors shadow-md"
+        title={`${track.trackName} - ${track.artistName}`}
+      >
+        <Play className="h-3 w-3 fill-current" />
+        <span>Afspelen</span>
+      </button>
+    );
+  }
+
+  // Full version with album art
   return (
     <div className="flex items-center gap-3 p-3 bg-zinc-900/90 backdrop-blur rounded-lg border border-zinc-800">
       {track.albumImage && (
@@ -116,17 +135,13 @@ export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerPro
         <p className="text-white text-sm font-medium truncate">{track.trackName}</p>
         <p className="text-zinc-400 text-xs truncate">{track.artistName}</p>
       </div>
-      <a
-        href={track.spotifyUrl}
-        target="_blank"
-        rel="noopener noreferrer"
+      <button
+        onClick={handlePlayClick}
         className="flex items-center gap-1.5 px-3 py-2 bg-[#1DB954] hover:bg-[#1ed760] text-white rounded-full text-xs font-medium transition-colors"
-        onClick={(e) => e.stopPropagation()}
       >
         <Play className="h-3.5 w-3.5 fill-current" />
-        <span className="hidden sm:inline">Spotify</span>
-        <ExternalLink className="h-3 w-3 sm:hidden" />
-      </a>
+        <span>Afspelen</span>
+      </button>
     </div>
   );
 };
