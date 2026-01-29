@@ -229,8 +229,8 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
                   )}
                   
                   {/* Play buttons container - bottom left */}
-                  <div className="absolute bottom-1 left-1 z-10 flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
-                    {/* Spotify Player - same as TimelineCard */}
+                  <div className="absolute bottom-1 left-1 z-10 flex flex-col gap-1 max-w-[120px] sm:max-w-[150px]" onClick={(e) => e.stopPropagation()}>
+                    {/* Spotify Player - constrained width for polaroid */}
                     {event.spotifySearchQuery && !isPlayingTrailer && (
                       <SpotifyPlayer searchQuery={event.spotifySearchQuery} compact />
                     )}
