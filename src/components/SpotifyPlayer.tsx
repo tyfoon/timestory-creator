@@ -126,13 +126,13 @@ export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerPro
   // Show embedded player when no preview available and user clicked play
   if (showEmbed && !track.previewUrl) {
     return (
-      <div className="relative" onClick={(e) => e.stopPropagation()}>
+      <div className={`relative ${compact ? 'max-w-[140px]' : ''}`} onClick={(e) => e.stopPropagation()}>
         <button
           onClick={handleClosePlayer}
-          className="absolute -top-2 -right-2 z-10 p-1 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full shadow-lg transition-colors"
+          className="absolute -top-1.5 -right-1.5 z-10 p-0.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full shadow-lg transition-colors"
           title="Sluiten"
         >
-          <X className="h-3.5 w-3.5" />
+          <X className="h-3 w-3" />
         </button>
         <iframe
           src={`https://open.spotify.com/embed/track/${track.trackId}?utm_source=generator&theme=0&autoplay=1`}
@@ -141,12 +141,9 @@ export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerPro
           frameBorder="0"
           allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
           loading="lazy"
-          className="rounded-xl"
+          className={compact ? "rounded-lg" : "rounded-xl"}
           title={`${track.trackName} - ${track.artistName}`}
         />
-        <p className="mt-2 text-xs text-muted-foreground">
-          Geen Spotify preview beschikbaar voor dit nummer; de Spotify speler kan daarom een extra klik vereisen.
-        </p>
       </div>
     );
   }
