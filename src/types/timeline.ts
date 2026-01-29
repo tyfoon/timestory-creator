@@ -21,6 +21,8 @@ export interface TimelineEvent {
   isCelebrityBirthday?: boolean;
   // For movie/film events (use TMDB for images)
   isMovie?: boolean;
+  // Search query for Spotify to find a relevant song/hit from that time
+  spotifySearchQuery?: string;
 }
 
 export interface FamousBirthday {
