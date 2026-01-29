@@ -281,19 +281,14 @@ async function elementToFile(element: HTMLElement, filename: string): Promise<Fi
 }
 
 /**
- * Generate TikTok slides and trigger native share
+ * Generate TikTok slide files (call this first, then shareGeneratedFiles on user gesture)
  */
-export async function shareTikTokHighlights(
+export async function generateTikTokSlides(
   events: TimelineEvent[],
   famousBirthdays: FamousBirthday[],
   summary: string,
   onProgress?: (current: number, total: number) => void
-): Promise<void> {
-  // Check if Web Share API with files is supported
-  if (!navigator.canShare) {
-    throw new Error('Web Share API niet beschikbaar');
-  }
-
+): Promise<File[]> {
   const slides = selectHighlights(events, famousBirthdays, summary);
   const files: File[] = [];
   
@@ -306,15 +301,39 @@ export async function shareTikTokHighlights(
     files.push(file);
   }
 
-  // Check if we can share these files
+  return files;
+}
+
+/**
+ * Share pre-generated files (MUST be called directly from user gesture)
+ */
+export async function shareGeneratedFiles(files: File[]): Promise<void> {
+  if (!navigator.canShare) {
+    throw new Error('Web Share API niet beschikbaar');
+  }
+
   const shareData = { files };
   
   if (!navigator.canShare(shareData)) {
     throw new Error('Kan deze bestanden niet delen');
   }
 
-  // Trigger native share
+  // This MUST be called synchronously from user gesture
   await navigator.share(shareData);
+}
+
+/**
+ * Legacy: Generate TikTok slides and trigger native share
+ * @deprecated Use generateTikTokSlides + shareGeneratedFiles for user gesture compliance
+ */
+export async function shareTikTokHighlights(
+  events: TimelineEvent[],
+  famousBirthdays: FamousBirthday[],
+  summary: string,
+  onProgress?: (current: number, total: number) => void
+): Promise<void> {
+  const files = await generateTikTokSlides(events, famousBirthdays, summary, onProgress);
+  await shareGeneratedFiles(files);
 }
 
 /**
