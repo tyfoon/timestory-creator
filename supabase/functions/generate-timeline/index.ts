@@ -342,7 +342,8 @@ function getTimelineTool() {
                   enum: ["birthdate", "birthmonth", "birthyear", "period"],
                   description: "Whether this event is from the exact birth date, birth month, birth year, or general period"
                 },
-                isCelebrityBirthday: { type: "boolean", description: "True if this is about a famous person born on the same date" }
+                isCelebrityBirthday: { type: "boolean", description: "True if this is about a famous person born on the same date" },
+                spotifySearchQuery: { type: "string", description: "Search query for a relevant song/hit from that time, e.g. 'artist - title'. Fill this for music events (category=music) or important cultural moments with a #1 hit of that moment." }
               },
               required: ["id", "date", "year", "title", "description", "category", "importance", "eventScope"]
             }
