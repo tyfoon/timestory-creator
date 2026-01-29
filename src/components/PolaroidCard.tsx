@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { TimelineEvent } from '@/types/timeline';
-import { Loader2, RotateCcw, Play, Pause, X, ExternalLink } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Loader2, RotateCcw, Play, X } from 'lucide-react';
 import { searchYouTube } from '@/lib/api/youtube';
+import { SpotifyPlayer } from './SpotifyPlayer';
 
 // Import category placeholder images
 import placeholderBirthday from '@/assets/placeholders/birthday.jpg';
@@ -18,16 +18,6 @@ import placeholderLocal from '@/assets/placeholders/local.jpg';
 import placeholderTechnology from '@/assets/placeholders/technology.jpg';
 import placeholderCelebrity from '@/assets/placeholders/celebrity.jpg';
 import placeholderPersonal from '@/assets/placeholders/personal.jpg';
-
-// Spotify track interface
-interface SpotifyTrack {
-  trackId: string;
-  trackName: string;
-  artistName: string;
-  albumImage: string | null;
-  previewUrl: string | null;
-  spotifyUrl: string;
-}
 
 interface PolaroidCardProps {
   event: TimelineEvent;
@@ -115,70 +105,10 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
   const accentColor = getAccentColor(index);
   const backAccent = getBackAccent(index);
   
-  // Spotify state
-  const [spotifyTrack, setSpotifyTrack] = useState<SpotifyTrack | null>(null);
-  const [isLoadingSpotify, setIsLoadingSpotify] = useState(false);
-  const [hasSearchedSpotify, setHasSearchedSpotify] = useState(false);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  
   // YouTube trailer state
   const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
   const [isLoadingTrailer, setIsLoadingTrailer] = useState(false);
   const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(event.youtubeVideoId || null);
-  
-  // Fetch Spotify track when component mounts
-  useEffect(() => {
-    if (!event.spotifySearchQuery || hasSearchedSpotify) return;
-    
-    const fetchSpotifyTrack = async () => {
-      setIsLoadingSpotify(true);
-      try {
-        const { data, error } = await supabase.functions.invoke('search-spotify', {
-          body: { query: event.spotifySearchQuery }
-        });
-        if (!error && data?.trackId) {
-          setSpotifyTrack(data as SpotifyTrack);
-        }
-      } catch (err) {
-        console.error('[PolaroidCard] Spotify error:', err);
-      } finally {
-        setIsLoadingSpotify(false);
-        setHasSearchedSpotify(true);
-      }
-    };
-    
-    fetchSpotifyTrack();
-  }, [event.spotifySearchQuery, hasSearchedSpotify]);
-  
-  // Cleanup audio on unmount
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, []);
-  
-  // Handle Spotify play/pause
-  const handleSpotifyPlay = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!spotifyTrack?.previewUrl) return;
-    
-    if (isPlayingAudio && audioRef.current) {
-      audioRef.current.pause();
-      setIsPlayingAudio(false);
-    } else {
-      if (!audioRef.current) {
-        audioRef.current = new Audio(spotifyTrack.previewUrl);
-        audioRef.current.addEventListener('ended', () => setIsPlayingAudio(false));
-        audioRef.current.addEventListener('pause', () => setIsPlayingAudio(false));
-        audioRef.current.addEventListener('play', () => setIsPlayingAudio(true));
-      }
-      audioRef.current.play().catch(console.error);
-    }
-  };
   
   // Handle YouTube trailer
   const handlePlayTrailer = async (e: React.MouseEvent) => {
@@ -299,39 +229,10 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
                   )}
                   
                   {/* Play buttons container - bottom left */}
-                  <div className="absolute bottom-1 left-1 z-10 flex flex-col gap-1">
-                    {/* Spotify Play button */}
+                  <div className="absolute bottom-1 left-1 z-10 flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+                    {/* Spotify Player - same as TimelineCard */}
                     {event.spotifySearchQuery && !isPlayingTrailer && (
-                      isLoadingSpotify ? (
-                        <div className="inline-flex items-center gap-1 px-2 py-1 bg-[#1DB954]/20 text-[#1DB954] rounded-full text-[10px]">
-                          <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                        </div>
-                      ) : spotifyTrack?.previewUrl ? (
-                        <button
-                          onClick={handleSpotifyPlay}
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-[#1DB954] hover:bg-[#1ed760] text-white rounded-full text-[10px] font-medium transition-colors shadow-md"
-                          title={`${spotifyTrack.trackName} - ${spotifyTrack.artistName}`}
-                        >
-                          {isPlayingAudio ? (
-                            <Pause className="h-2.5 w-2.5 fill-current" />
-                          ) : (
-                            <Play className="h-2.5 w-2.5 fill-current" />
-                          )}
-                          <span className="hidden sm:inline">{isPlayingAudio ? 'Pause' : 'Song'}</span>
-                        </button>
-                      ) : spotifyTrack ? (
-                        <a
-                          href={spotifyTrack.spotifyUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-[#1DB954] hover:bg-[#1ed760] text-white rounded-full text-[10px] font-medium transition-colors shadow-md"
-                          title="Open in Spotify"
-                        >
-                          <ExternalLink className="h-2.5 w-2.5" />
-                          <span className="hidden sm:inline">Spotify</span>
-                        </a>
-                      ) : null
+                      <SpotifyPlayer searchQuery={event.spotifySearchQuery} compact />
                     )}
                     
                     {/* YouTube Trailer button */}
