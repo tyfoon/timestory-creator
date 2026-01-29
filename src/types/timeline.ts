@@ -23,6 +23,10 @@ export interface TimelineEvent {
   isMovie?: boolean;
   // Search query for Spotify to find a relevant song/hit from that time
   spotifySearchQuery?: string;
+  // Search query for YouTube to find a movie trailer
+  movieSearchQuery?: string;
+  // YouTube video ID for movie trailer
+  youtubeVideoId?: string;
 }
 
 export interface FamousBirthday {
