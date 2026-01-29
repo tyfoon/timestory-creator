@@ -15,6 +15,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
+import { SpotifyPlayer } from './SpotifyPlayer';
 
 // Import category placeholder images
 import placeholderBirthday from '@/assets/placeholders/birthday.jpg';
@@ -274,6 +275,13 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
         <p className="text-muted-foreground text-sm sm:text-base leading-relaxed flex-1 line-clamp-4">
           {event.description}
         </p>
+
+        {/* Spotify Player for music events */}
+        {event.spotifySearchQuery && (
+          <div className="mt-4">
+            <SpotifyPlayer searchQuery={event.spotifySearchQuery} compact />
+          </div>
+        )}
 
         {/* Source link if available */}
         {event.source && (
