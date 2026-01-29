@@ -228,9 +228,9 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
                   )}
                   
-                  {/* Play buttons container - bottom left */}
-                  <div className="absolute bottom-1 left-1 z-10 flex flex-col gap-1 max-w-[120px] sm:max-w-[150px]" onClick={(e) => e.stopPropagation()}>
-                    {/* Spotify Player - constrained width for polaroid */}
+                  {/* Play buttons container - bottom left - no width constraint, let content flow naturally */}
+                  <div className="absolute bottom-1 left-1 z-10 flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+                    {/* Spotify Player */}
                     {event.spotifySearchQuery && !isPlayingTrailer && (
                       <SpotifyPlayer searchQuery={event.spotifySearchQuery} compact />
                     )}
