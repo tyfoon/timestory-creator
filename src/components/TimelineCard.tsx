@@ -293,28 +293,31 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
               </div>
             )}
             
-            {/* Play Trailer Button Overlay */}
+            {/* Play Trailer Button - positioned bottom-left, matching Spotify style */}
             {event.movieSearchQuery && !isPlayingTrailer && (
-              <button
-                onClick={handlePlayTrailer}
-                disabled={isLoadingTrailer}
-                className="absolute inset-0 flex items-center justify-center z-10 group/play"
-                aria-label="Trailer afspelen"
-              >
-                <div className="flex items-center gap-2 px-5 py-3 rounded-full bg-black/60 backdrop-blur-sm text-white font-medium transition-all duration-300 group-hover/play:bg-black/80 group-hover/play:scale-105 shadow-lg">
+              <div className="absolute bottom-3 left-3 z-10">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePlayTrailer();
+                  }}
+                  disabled={isLoadingTrailer}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-full text-xs font-medium transition-colors shadow-md"
+                  aria-label="Trailer afspelen"
+                >
                   {isLoadingTrailer ? (
                     <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      <span className="text-sm">Laden...</span>
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span>Laden...</span>
                     </>
                   ) : (
                     <>
-                      <Play className="h-5 w-5 fill-current" />
-                      <span className="text-sm">Play Trailer</span>
+                      <Play className="h-3 w-3 fill-current" />
+                      <span>Play Trailer</span>
                     </>
                   )}
-                </div>
-              </button>
+                </button>
+              </div>
             )}
           </>
         )}
