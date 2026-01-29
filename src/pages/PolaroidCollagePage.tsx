@@ -8,7 +8,7 @@ import { TimelineEvent, FamousBirthday } from '@/types/timeline';
 import { generateTimelineStreaming } from '@/lib/api/timeline';
 import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents, getCacheKey } from '@/lib/timelineCache';
-import { ArrowLeft, Clock, Loader2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Clock, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PolaroidCard } from '@/components/PolaroidCard';
 import woodTableBg from '@/assets/wood-table-bg.jpg';
@@ -330,23 +330,8 @@ const PolaroidCollagePage = () => {
             </h1>
           </div>
 
-          {/* Action buttons row */}
+          {/* Image loading indicator */}
           <div className="flex items-center justify-end gap-2 mb-2">
-            {/* Refresh button */}
-            {events.length > 0 && !isLoading && (
-              <Button
-                onClick={handleClearCache}
-                variant="secondary"
-                size="sm"
-                className="gap-1.5 bg-white/90 text-gray-800 hover:bg-white"
-                title={t('refreshButton') as string}
-              >
-                <RefreshCw className="h-4 w-4" />
-                <span className="hidden sm:inline">{t('refreshButton') as string}</span>
-              </Button>
-            )}
-            
-            {/* Image loading indicator */}
             {isLoadingImages && (
               <span className="text-xs text-white/80 flex items-center gap-1 bg-black/30 px-2 py-1 rounded">
                 <Loader2 className="h-3 w-3 animate-spin" />
