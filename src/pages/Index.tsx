@@ -341,35 +341,33 @@ const Index = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-6 py-4">
-            {/* Custom year range - compact without label */}
-            <div className="space-y-2 p-4 rounded-lg bg-secondary/30 border border-border/50">
-              <div className="flex gap-3 items-end">
-                <div className="flex-1">
-                  <Label className="text-xs text-muted-foreground">{t('customFromYear') as string}</Label>
-                  <Input 
-                    type="number" 
-                    placeholder={t('customFromPlaceholder') as string}
-                    value={customStartYear || ''} 
-                    onChange={e => setCustomStartYear(parseInt(e.target.value) || 0)} 
-                    min={1900} 
-                    max={currentYear} 
-                    className="bg-card text-center" 
-                  />
-                </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground mb-2" />
-                <div className="flex-1">
-                  <Label className="text-xs text-muted-foreground">{t('customToYear') as string}</Label>
-                  <Input 
-                    type="number" 
-                    placeholder={t('customToPlaceholder') as string}
-                    value={customEndYear || ''} 
-                    onChange={e => setCustomEndYear(parseInt(e.target.value) || 0)} 
-                    min={1900} 
-                    max={currentYear} 
-                    className="bg-card text-center" 
-                  />
-                </div>
+          <div className="space-y-4 py-4">
+            {/* Year range - same style as other fields */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Calendar className="h-4 w-4 text-accent" />
+                {t('startYearLabel') as string}
+              </Label>
+              <div className="flex gap-3 items-center">
+                <Input 
+                  type="number" 
+                  placeholder={t('customFromPlaceholder') as string}
+                  value={customStartYear || ''} 
+                  onChange={e => setCustomStartYear(parseInt(e.target.value) || 0)} 
+                  min={1900} 
+                  max={currentYear} 
+                  className="bg-card text-center h-9" 
+                />
+                <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                <Input 
+                  type="number" 
+                  placeholder={t('customToPlaceholder') as string}
+                  value={customEndYear || ''} 
+                  onChange={e => setCustomEndYear(parseInt(e.target.value) || 0)} 
+                  min={1900} 
+                  max={currentYear} 
+                  className="bg-card text-center h-9" 
+                />
               </div>
               {errors.custom && <p className="text-sm text-destructive">{errors.custom}</p>}
             </div>
