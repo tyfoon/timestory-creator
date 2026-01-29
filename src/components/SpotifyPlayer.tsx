@@ -197,7 +197,7 @@ export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerPro
       title={`${track.trackName} - ${track.artistName}`}
     >
       <Play className="h-3 w-3 fill-current" />
-      <span>{track.previewUrl ? 'Play song' : 'Open Spotify'}</span>
+      <span>Play song</span>
     </button>
   );
 };
