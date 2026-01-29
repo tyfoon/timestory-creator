@@ -330,15 +330,6 @@ const PolaroidCollagePage = () => {
             </h1>
           </div>
 
-          {/* Image loading indicator */}
-          <div className="flex items-center justify-end gap-2 mb-2">
-            {isLoadingImages && (
-              <span className="text-xs text-white/80 flex items-center gap-1 bg-black/30 px-2 py-1 rounded">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                {imagesLoaded}/{events.length} {t('photosCount') as string}
-              </span>
-            )}
-          </div>
         </div>
       </section>
 
