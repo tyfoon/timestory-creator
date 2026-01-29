@@ -8,7 +8,7 @@ import { TimelineEvent, FamousBirthday } from '@/types/timeline';
 import { generateTimelineStreaming } from '@/lib/api/timeline';
 import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents, getCacheKey } from '@/lib/timelineCache';
-import { ArrowLeft, Clock, Loader2 } from 'lucide-react';
+import { ArrowLeft, Clock, Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PolaroidCard } from '@/components/PolaroidCard';
 import woodTableBg from '@/assets/wood-table-bg.jpg';
@@ -329,7 +329,20 @@ const PolaroidCollagePage = () => {
               {getTitle()}
             </h1>
           </div>
-
+          
+          {/* Refresh button for testing */}
+          {events.length > 0 && !isLoading && (
+            <Button
+              onClick={handleClearCache}
+              variant="secondary"
+              size="sm"
+              className="gap-1.5 bg-white/90 text-gray-800 hover:bg-white"
+              title={t('refreshButton') as string}
+            >
+              <RefreshCw className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('refreshButton') as string}</span>
+            </Button>
+          )}
         </div>
       </section>
 
