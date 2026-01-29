@@ -94,8 +94,8 @@ export const translations = {
 
     // Custom dialog
     customDialogTitle: "Personaliseer je tijdreis",
-    customDialogDescription: "Vul onderstaande gegevens in voor een persoonlijke tijdreis",
-    customPeriodLabel: "Periode (jaren)",
+    customDialogDescription: "Pas de jaren aan of voeg extra informatie toe",
+    adjustButton: "Aanpassen",
     customFromYear: "Van jaar",
     customToYear: "Tot jaar",
     customFromPlaceholder: "bijv. 1985",
@@ -254,8 +254,8 @@ export const translations = {
 
     // Custom dialog
     customDialogTitle: "Personalize your time journey",
-    customDialogDescription: "Fill in the details below for a personal time journey",
-    customPeriodLabel: "Period (years)",
+    customDialogDescription: "Adjust the years or add extra information",
+    adjustButton: "Adjust",
     customFromYear: "From year",
     customToYear: "To year",
     customFromPlaceholder: "e.g. 1985",
@@ -408,8 +408,8 @@ export const translations = {
     refreshButton: "Neu laden",
 
     customDialogTitle: "Personalisiere deine Zeitreise",
-    customDialogDescription: "Fülle die folgenden Angaben für eine persönliche Zeitreise aus",
-    customPeriodLabel: "Zeitraum (Jahre)",
+    customDialogDescription: "Passe die Jahre an oder füge zusätzliche Informationen hinzu",
+    adjustButton: "Anpassen",
     customFromYear: "Von Jahr",
     customToYear: "Bis Jahr",
     customFromPlaceholder: "z.B. 1985",
@@ -557,8 +557,8 @@ export const translations = {
     refreshButton: "Actualiser",
 
     customDialogTitle: "Personnalisez votre voyage dans le temps",
-    customDialogDescription: "Remplissez les détails ci-dessous pour un voyage personnalisé",
-    customPeriodLabel: "Période (années)",
+    customDialogDescription: "Ajustez les années ou ajoutez des informations supplémentaires",
+    adjustButton: "Ajuster",
     customFromYear: "De l'année",
     customToYear: "À l'année",
     customFromPlaceholder: "ex. 1985",

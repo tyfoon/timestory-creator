@@ -17,41 +17,31 @@ import heroBg90s from '@/assets/hero-bg-90s.png';
 import heroBg00s from '@/assets/hero-bg-00s.png';
 import heroBg10s from '@/assets/hero-bg-10s.png';
 
-// Period options will be translated dynamically
-const getPeriodOptions = (t: (key: any) => any): {
+// Main period options (2x2 grid) - without custom
+const getMainPeriodOptions = (t: (key: any) => any): {
   id: PeriodType;
   label: string;
-  description: string;
   icon: React.ReactNode;
   ageRange?: [number, number];
 }[] => [{
   id: 'birthyear',
   label: t('periodBirthyear') as string,
-  description: t('periodBirthyearDesc') as string,
   icon: <Baby className="h-5 w-5" />
 }, {
   id: 'childhood',
   label: t('periodChildhood') as string,
-  description: t('periodChildhoodDesc') as string,
   icon: <GraduationCap className="h-5 w-5" />,
   ageRange: [6, 10]
 }, {
   id: 'puberty',
   label: t('periodPuberty') as string,
-  description: t('periodPubertyDesc') as string,
   icon: <Heart className="h-5 w-5" />,
   ageRange: [11, 17]
 }, {
   id: 'young-adult',
   label: t('periodYoungAdult') as string,
-  description: t('periodYoungAdultDesc') as string,
   icon: <Calendar className="h-5 w-5" />,
   ageRange: [18, 25]
-}, {
-  id: 'custom',
-  label: t('periodCustom') as string,
-  description: t('periodCustomDesc') as string,
-  icon: <Pencil className="h-5 w-5" />
 }];
 
 const Index = () => {
@@ -98,24 +88,29 @@ const Index = () => {
     setBgLoaded(false);
   }, [currentBg]);
 
+  const mainPeriodOptions = getMainPeriodOptions(t);
+
   const calculateYearRange = (): {
     startYear: number;
     endYear: number;
   } | null => {
     if (!birthDate.year) return null;
+    
+    // If custom years are set, use those
+    if (customStartYear && customEndYear) {
+      return {
+        startYear: customStartYear,
+        endYear: customEndYear
+      };
+    }
+    
     if (selectedPeriod === 'birthyear') {
       return {
         startYear: birthDate.year,
         endYear: birthDate.year
       };
     }
-    if (selectedPeriod === 'custom') {
-      return {
-        startYear: customStartYear,
-        endYear: customEndYear
-      };
-    }
-    const option = periodOptions.find(p => p.id === selectedPeriod);
+    const option = mainPeriodOptions.find(p => p.id === selectedPeriod);
     if (option?.ageRange) {
       return {
         startYear: birthDate.year + option.ageRange[0],
@@ -147,17 +142,28 @@ const Index = () => {
     return Object.keys(newErrors).length === 0;
   };
   const handlePeriodSelect = (periodId: PeriodType) => {
-    if (periodId === 'custom') {
-      setShowCustomDialog(true);
-    }
     setSelectedPeriod(periodId);
     
-    // Auto-scroll to timeline length section after a short delay
-    if (periodId !== 'custom') {
-      setTimeout(() => {
-        timelineLengthRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
+    // Pre-fill custom years based on selected period
+    if (periodId === 'birthyear') {
+      setCustomStartYear(birthDate.year);
+      setCustomEndYear(birthDate.year);
+    } else {
+      const option = mainPeriodOptions.find(p => p.id === periodId);
+      if (option?.ageRange) {
+        setCustomStartYear(birthDate.year + option.ageRange[0]);
+        setCustomEndYear(Math.min(birthDate.year + option.ageRange[1], currentYear));
+      }
     }
+    
+    // Auto-scroll to timeline length section after a short delay
+    setTimeout(() => {
+      timelineLengthRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  };
+
+  const handleAdjustClick = () => {
+    setShowCustomDialog(true);
   };
 
   const handleCustomDialogConfirm = () => {
@@ -202,7 +208,6 @@ const Index = () => {
     sessionStorage.setItem('timelineLength', timelineLength);
     navigate(targetRoute);
   };
-  const periodOptions = getPeriodOptions(t);
   const isBirthDateComplete = birthDate.day > 0 && birthDate.month > 0 && birthDate.year > 0;
   return <div className="min-h-screen flex flex-col relative">
       {/* Background image - lazy loaded, only renders the needed image */}
@@ -242,30 +247,39 @@ const Index = () => {
               <DateInput label={t('birthDateQuestion') as string} value={birthDate} onChange={setBirthDate} error={errors.birthDate} />
             </div>
 
-            {/* Step 2: Period selection - only show if birthdate is complete */}
+            {/* Step 2: Period selection - 2x2 grid */}
             {isBirthDateComplete && <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                 <Label className="text-sm font-medium text-foreground">
                   {t('periodQuestion') as string}
                 </Label>
                 {errors.period && <p className="text-sm text-destructive">{errors.period}</p>}
                 
-                <div className="grid grid-cols-1 gap-2">
-                  {periodOptions.map(option => (
+                {/* 2x2 Grid for main periods */}
+                <div className="grid grid-cols-2 gap-2">
+                  {mainPeriodOptions.map(option => (
                     <button 
                       key={option.id} 
                       onClick={() => handlePeriodSelect(option.id)} 
-                      className={`flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all ${selectedPeriod === option.id ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-secondary/30 text-muted-foreground hover:border-primary/50 hover:bg-secondary/50'}`}
+                      className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 text-center transition-all ${selectedPeriod === option.id ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-secondary/30 text-muted-foreground hover:border-primary/50 hover:bg-secondary/50'}`}
                     >
                       <div className={`p-2 rounded-full ${selectedPeriod === option.id ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
                         {option.icon}
                       </div>
-                      <div className="flex-1">
-                        <span className="font-medium block">{option.label}</span>
-                        <span className="text-xs opacity-70">{option.description}</span>
-                      </div>
+                      <span className="font-medium text-sm">{option.label}</span>
                     </button>
                   ))}
                 </div>
+                
+                {/* Adjust button - optional */}
+                {selectedPeriod && (
+                  <button 
+                    onClick={handleAdjustClick}
+                    className="w-full flex items-center justify-center gap-2 p-2.5 rounded-lg border border-dashed border-border bg-secondary/20 text-muted-foreground hover:border-primary/50 hover:bg-secondary/40 transition-all text-sm"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    <span>{t('adjustButton') as string}</span>
+                  </button>
+                )}
               </div>}
 
             {/* Timeline length selector */}
@@ -314,14 +328,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Custom Period Dialog with OptionalInfoForm */}
-      <Dialog open={showCustomDialog} onOpenChange={(open) => {
-        if (!open && (!customStartYear || !customEndYear || customEndYear <= customStartYear)) {
-          // If closing without valid years, deselect custom period
-          setSelectedPeriod(null);
-        }
-        setShowCustomDialog(open);
-      }}>
+      {/* Adjust Dialog with OptionalInfoForm */}
+      <Dialog open={showCustomDialog} onOpenChange={setShowCustomDialog}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -334,12 +342,8 @@ const Index = () => {
           </DialogHeader>
           
           <div className="space-y-6 py-4">
-            {/* Custom year range */}
-            <div className="space-y-3 p-4 rounded-lg bg-secondary/30 border border-border/50">
-              <Label className="text-sm font-medium text-foreground flex items-center gap-2">
-                <span className="text-destructive">*</span>
-                {t('customPeriodLabel') as string}
-              </Label>
+            {/* Custom year range - compact without label */}
+            <div className="space-y-2 p-4 rounded-lg bg-secondary/30 border border-border/50">
               <div className="flex gap-3 items-end">
                 <div className="flex-1">
                   <Label className="text-xs text-muted-foreground">{t('customFromYear') as string}</Label>
@@ -377,12 +381,9 @@ const Index = () => {
           <div className="flex justify-between gap-3 pt-4 border-t border-border">
             <Button 
               variant="outline" 
-              onClick={() => {
-                setSelectedPeriod(null);
-                setShowCustomDialog(false);
-              }}
+              onClick={() => setShowCustomDialog(false)}
             >
-              {t('cancelButton') as string}
+              {t('skipButton') as string}
             </Button>
             <Button onClick={handleCustomDialogConfirm} className="btn-vintage">
               <Check className="mr-2 h-4 w-4" />
