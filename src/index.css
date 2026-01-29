@@ -359,7 +359,7 @@
 
   /* Responsive image container */
   .polaroid-image-container {
-    @apply relative w-36 h-[120px] sm:w-40 sm:h-32 md:w-48 md:h-40 overflow-hidden bg-gray-900;
+    @apply relative w-44 h-[144px] sm:w-40 sm:h-32 md:w-48 md:h-40 overflow-hidden bg-gray-900;
   }
 
   /* Polaroid scratches and imperfections */
@@ -388,14 +388,26 @@
     flex: 0 0 auto;
   }
 
-  /* Mobile: tighter spacing, subtle offsets */
+  /* Mobile: 2-column grid with alternating left/right offsets */
   @media (max-width: 639px) {
-    .polaroid-collage > *:nth-child(4n+1) { margin-top: 0.5rem; margin-left: -0.25rem; }
-    .polaroid-collage > *:nth-child(4n+2) { margin-top: -0.5rem; margin-right: 0.25rem; }
-    .polaroid-collage > *:nth-child(4n+3) { margin-top: 0.75rem; margin-left: 0.5rem; }
-    .polaroid-collage > *:nth-child(4n) { margin-top: -0.25rem; margin-right: -0.25rem; }
-    .polaroid-collage > *:nth-child(6n+1) { margin-bottom: 0.5rem; }
-    .polaroid-collage > *:nth-child(6n+4) { margin-bottom: -0.5rem; }
+    .polaroid-collage {
+      @apply grid grid-cols-2 gap-3 p-3;
+      justify-items: center;
+    }
+    
+    /* Alternating horizontal offsets for scattered look */
+    .polaroid-collage > *:nth-child(4n+1) { transform: translateX(-8px) rotate(-3deg); }
+    .polaroid-collage > *:nth-child(4n+2) { transform: translateX(10px) rotate(2deg); }
+    .polaroid-collage > *:nth-child(4n+3) { transform: translateX(6px) rotate(-2deg); }
+    .polaroid-collage > *:nth-child(4n) { transform: translateX(-12px) rotate(3deg); }
+    
+    /* Additional vertical variation */
+    .polaroid-collage > *:nth-child(6n+1) { margin-top: 0.5rem; }
+    .polaroid-collage > *:nth-child(6n+2) { margin-top: -0.25rem; }
+    .polaroid-collage > *:nth-child(6n+3) { margin-top: 0.75rem; }
+    .polaroid-collage > *:nth-child(6n+4) { margin-top: -0.5rem; }
+    .polaroid-collage > *:nth-child(6n+5) { margin-top: 0.25rem; }
+    .polaroid-collage > *:nth-child(6n) { margin-top: -0.75rem; }
   }
 
   /* Desktop: more dramatic scattered effect */
