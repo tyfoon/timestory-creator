@@ -94,6 +94,7 @@ SPECIALE VELDEN:
 - isCelebrityBirthday: true voor beroemde jarigen (category="celebrity")
 - isMovie: true voor film-gerelateerde events (filmpremières, Oscar-winnaars, etc.)
 - spotifySearchQuery: Voor muziek events (category="music") of belangrijke culturele momenten: vul in met "artiest - titel" van de nummer 1 hit van dat moment. Bijvoorbeeld: "ABBA - Dancing Queen" of "Michael Jackson - Thriller"
+- movieSearchQuery: Voor film-gerelateerde events (isMovie=true): vul in met "filmtitel trailer jaar". Bijvoorbeeld: "Titanic trailer 1997" of "The Matrix trailer 1999"
 
 KWALITEIT:
 - Maak beschrijvingen levendig en persoonlijk
@@ -147,6 +148,7 @@ SPECIALE VELDEN:
 - isCelebrityBirthday: true voor beroemde jarigen (acteurs, muzikanten, etc.)
 - isMovie: true voor film-gerelateerde events (filmpremières, Oscar-winnaars, bioscoophits, etc.)
 - spotifySearchQuery: Voor muziek events (category="music") of belangrijke culturele momenten: vul in met "artiest - titel" van de nummer 1 hit van dat moment. Bijvoorbeeld: "Queen - Bohemian Rhapsody" of "The Beatles - Hey Jude"
+- movieSearchQuery: Voor film-gerelateerde events (isMovie=true): vul in met "filmtitel trailer jaar". Bijvoorbeeld: "Titanic trailer 1997" of "The Matrix trailer 1999"
 
 BEROEMDE JARIGEN:
 - Zoek naar bekende personen (acteurs, muzikanten, sporters, politici, etc.) die op DEZELFDE DAG EN MAAND jarig zijn
