@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { TimelineEvent } from '@/types/timeline';
-import { Loader2, RotateCcw } from 'lucide-react';
+import { Loader2, RotateCcw, Play, Pause, X, ExternalLink } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { searchYouTube } from '@/lib/api/youtube';
 
 // Import category placeholder images
 import placeholderBirthday from '@/assets/placeholders/birthday.jpg';
@@ -16,6 +18,16 @@ import placeholderLocal from '@/assets/placeholders/local.jpg';
 import placeholderTechnology from '@/assets/placeholders/technology.jpg';
 import placeholderCelebrity from '@/assets/placeholders/celebrity.jpg';
 import placeholderPersonal from '@/assets/placeholders/personal.jpg';
+
+// Spotify track interface
+interface SpotifyTrack {
+  trackId: string;
+  trackName: string;
+  artistName: string;
+  albumImage: string | null;
+  previewUrl: string | null;
+  spotifyUrl: string;
+}
 
 interface PolaroidCardProps {
   event: TimelineEvent;
@@ -103,6 +115,101 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
   const accentColor = getAccentColor(index);
   const backAccent = getBackAccent(index);
   
+  // Spotify state
+  const [spotifyTrack, setSpotifyTrack] = useState<SpotifyTrack | null>(null);
+  const [isLoadingSpotify, setIsLoadingSpotify] = useState(false);
+  const [hasSearchedSpotify, setHasSearchedSpotify] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // YouTube trailer state
+  const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
+  const [isLoadingTrailer, setIsLoadingTrailer] = useState(false);
+  const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(event.youtubeVideoId || null);
+  
+  // Fetch Spotify track when component mounts
+  useEffect(() => {
+    if (!event.spotifySearchQuery || hasSearchedSpotify) return;
+    
+    const fetchSpotifyTrack = async () => {
+      setIsLoadingSpotify(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('search-spotify', {
+          body: { query: event.spotifySearchQuery }
+        });
+        if (!error && data?.trackId) {
+          setSpotifyTrack(data as SpotifyTrack);
+        }
+      } catch (err) {
+        console.error('[PolaroidCard] Spotify error:', err);
+      } finally {
+        setIsLoadingSpotify(false);
+        setHasSearchedSpotify(true);
+      }
+    };
+    
+    fetchSpotifyTrack();
+  }, [event.spotifySearchQuery, hasSearchedSpotify]);
+  
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+  
+  // Handle Spotify play/pause
+  const handleSpotifyPlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!spotifyTrack?.previewUrl) return;
+    
+    if (isPlayingAudio && audioRef.current) {
+      audioRef.current.pause();
+      setIsPlayingAudio(false);
+    } else {
+      if (!audioRef.current) {
+        audioRef.current = new Audio(spotifyTrack.previewUrl);
+        audioRef.current.addEventListener('ended', () => setIsPlayingAudio(false));
+        audioRef.current.addEventListener('pause', () => setIsPlayingAudio(false));
+        audioRef.current.addEventListener('play', () => setIsPlayingAudio(true));
+      }
+      audioRef.current.play().catch(console.error);
+    }
+  };
+  
+  // Handle YouTube trailer
+  const handlePlayTrailer = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (youtubeVideoId) {
+      setIsPlayingTrailer(true);
+      return;
+    }
+    
+    if (!event.movieSearchQuery) return;
+    
+    setIsLoadingTrailer(true);
+    try {
+      const result = await searchYouTube(event.movieSearchQuery);
+      if (result.success && result.videoId) {
+        setYoutubeVideoId(result.videoId);
+        setIsPlayingTrailer(true);
+      }
+    } catch (err) {
+      console.error('[PolaroidCard] YouTube error:', err);
+    } finally {
+      setIsLoadingTrailer(false);
+    }
+  };
+  
+  const handleStopTrailer = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsPlayingTrailer(false);
+  };
+  
   // Check if this is the welcome/birth event - these ALWAYS use the birthday placeholder
   const isWelcome = isWelcomeEvent(event);
   
@@ -131,6 +238,8 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
   const dateDisplay = `${monthLabel} '${String(event.year).slice(-2)}`;
 
   const handleClick = () => {
+    // Don't flip if trailer is playing
+    if (isPlayingTrailer) return;
     setIsFlipped(!isFlipped);
   };
 
@@ -158,7 +267,26 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
             
             {/* Image container */}
             <div className="polaroid-image-container">
-              {displayImage ? (
+              {/* YouTube trailer playing */}
+              {isPlayingTrailer && youtubeVideoId ? (
+                <div className="relative w-full h-full">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0`}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    title={`${event.title} trailer`}
+                  />
+                  {/* Close button */}
+                  <button
+                    onClick={handleStopTrailer}
+                    className="absolute top-1 right-1 z-20 p-1 bg-black/70 hover:bg-black/90 text-white rounded-full transition-colors"
+                    aria-label="Stop trailer"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : displayImage ? (
                 <div className="relative w-full h-full">
                   <img 
                     src={displayImage} 
@@ -169,6 +297,60 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
                   {isPlaceholder && (
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
                   )}
+                  
+                  {/* Play buttons container - bottom left */}
+                  <div className="absolute bottom-1 left-1 z-10 flex flex-col gap-1">
+                    {/* Spotify Play button */}
+                    {event.spotifySearchQuery && !isPlayingTrailer && (
+                      isLoadingSpotify ? (
+                        <div className="inline-flex items-center gap-1 px-2 py-1 bg-[#1DB954]/20 text-[#1DB954] rounded-full text-[10px]">
+                          <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                        </div>
+                      ) : spotifyTrack?.previewUrl ? (
+                        <button
+                          onClick={handleSpotifyPlay}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-[#1DB954] hover:bg-[#1ed760] text-white rounded-full text-[10px] font-medium transition-colors shadow-md"
+                          title={`${spotifyTrack.trackName} - ${spotifyTrack.artistName}`}
+                        >
+                          {isPlayingAudio ? (
+                            <Pause className="h-2.5 w-2.5 fill-current" />
+                          ) : (
+                            <Play className="h-2.5 w-2.5 fill-current" />
+                          )}
+                          <span className="hidden sm:inline">{isPlayingAudio ? 'Pause' : 'Song'}</span>
+                        </button>
+                      ) : spotifyTrack ? (
+                        <a
+                          href={spotifyTrack.spotifyUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-[#1DB954] hover:bg-[#1ed760] text-white rounded-full text-[10px] font-medium transition-colors shadow-md"
+                          title="Open in Spotify"
+                        >
+                          <ExternalLink className="h-2.5 w-2.5" />
+                          <span className="hidden sm:inline">Spotify</span>
+                        </a>
+                      ) : null
+                    )}
+                    
+                    {/* YouTube Trailer button */}
+                    {event.movieSearchQuery && !isPlayingTrailer && (
+                      <button
+                        onClick={handlePlayTrailer}
+                        disabled={isLoadingTrailer}
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded-full text-[10px] font-medium transition-colors shadow-md disabled:opacity-50"
+                        aria-label="Play trailer"
+                      >
+                        {isLoadingTrailer ? (
+                          <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                        ) : (
+                          <Play className="h-2.5 w-2.5 fill-current" />
+                        )}
+                        <span className="hidden sm:inline">Trailer</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               ) : event.imageStatus === 'loading' ? (
                 <div className="w-full h-full flex items-center justify-center bg-polaroid-dark/50">
@@ -180,12 +362,14 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
                 </div>
               )}
               
-              {/* Date stamp on image edge - smaller font */}
-              <div className="absolute bottom-1 right-1 sm:bottom-1.5 sm:right-1.5 flex items-center gap-1 bg-black/50 px-1.5 py-0.5 rounded">
-                <span className={`font-handwriting text-[10px] sm:text-xs font-bold drop-shadow-lg ${accentColor}`}>
-                  {dateDisplay}
-                </span>
-              </div>
+              {/* Date stamp on image edge - smaller font (hide when trailer playing) */}
+              {!isPlayingTrailer && (
+                <div className="absolute bottom-1 right-1 sm:bottom-1.5 sm:right-1.5 flex items-center gap-1 bg-black/50 px-1.5 py-0.5 rounded">
+                  <span className={`font-handwriting text-[10px] sm:text-xs font-bold drop-shadow-lg ${accentColor}`}>
+                    {dateDisplay}
+                  </span>
+                </div>
+              )}
             </div>
             
             {/* Caption area - fixed position below image */}

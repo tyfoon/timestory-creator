@@ -11,7 +11,24 @@ import { getCachedTimeline, cacheTimeline, updateCachedEvents, getCacheKey } fro
 import { ArrowLeft, Clock, Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PolaroidCard } from '@/components/PolaroidCard';
-import woodTableBg from '@/assets/wood-table-bg.jpg';
+
+// Era-themed background images (same as ResultPage)
+import heroBg from '@/assets/hero-bg-new.png';
+import heroBg70s from '@/assets/hero-bg-70s.png';
+import heroBg80s from '@/assets/hero-bg-80s.png';
+import heroBg90s from '@/assets/hero-bg-90s.png';
+import heroBg00s from '@/assets/hero-bg-00s.png';
+import heroBg10s from '@/assets/hero-bg-10s.png';
+
+// Get era-themed background based on birth year
+const getBackgroundForYear = (year: number): string => {
+  if (year >= 1969 && year <= 1979) return heroBg70s;
+  if (year >= 1980 && year <= 1989) return heroBg80s;
+  if (year >= 1990 && year <= 1999) return heroBg90s;
+  if (year >= 2000 && year <= 2009) return heroBg00s;
+  if (year >= 2010 && year <= 2019) return heroBg10s;
+  return heroBg;
+};
 
 const PolaroidCollagePage = () => {
   const navigate = useNavigate();
@@ -292,14 +309,28 @@ const PolaroidCollagePage = () => {
 
   const imagesLoaded = events.filter(e => e.imageStatus === 'found' && e.imageUrl).length;
 
+  // Get the era-themed background based on birth year
+  const birthYear = formData?.birthDate?.year || formData?.yearRange?.startYear;
+  const backgroundImage = birthYear ? getBackgroundForYear(birthYear) : heroBg;
+
   if (!formData && !isLoading) {
     return (
-      <div 
-        className="min-h-screen flex items-center justify-center bg-cover bg-center bg-fixed"
-        style={{ backgroundImage: `url(${woodTableBg})` }}
-      >
-        <div className="text-center bg-black/50 p-6 rounded-xl">
-          <p className="text-white/70 mb-4">{t('noDataFound') as string}</p>
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center relative overflow-hidden">
+        {/* Era background */}
+        <div 
+          className="fixed inset-0 z-0 transition-opacity duration-700"
+          style={{
+            backgroundImage: `url(${heroBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            opacity: 0.25,
+          }}
+        />
+        <div className="fixed inset-0 z-0 bg-gradient-to-b from-background/60 via-background/40 to-background/70" />
+        
+        <div className="text-center bg-background/80 p-6 rounded-xl relative z-10">
+          <p className="text-muted-foreground mb-4">{t('noDataFound') as string}</p>
           <Button onClick={() => navigate('/')}>{t('backToStart') as string}</Button>
         </div>
       </div>
@@ -307,25 +338,35 @@ const PolaroidCollagePage = () => {
   }
 
   return (
-    <div 
-      className="min-h-screen flex flex-col bg-cover bg-center bg-fixed"
-      style={{ backgroundImage: `url(${woodTableBg})` }}
-    >
+    <div className="min-h-screen flex flex-col bg-gradient-hero relative overflow-hidden">
+      {/* Era-themed background image - same as ResultPage */}
+      <div 
+        className="fixed inset-0 z-0 transition-opacity duration-700"
+        style={{
+          backgroundImage: `url(${backgroundImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          opacity: 0.25,
+        }}
+      />
+      {/* Gradient overlay for better content readability */}
+      <div className="fixed inset-0 z-0 bg-gradient-to-b from-background/60 via-background/40 to-background/70" />
       
       {/* Header with semi-transparent background for readability */}
-      <section className="pt-3 pb-1 px-4 bg-black/40 backdrop-blur-sm">
+      <section className="pt-3 pb-1 px-4 bg-background/40 backdrop-blur-sm relative z-10">
         <div className="container mx-auto max-w-6xl">
           {/* Top row: Back button left, Date right */}
           <div className="flex items-center justify-between mb-2">
             <button
               onClick={() => navigate('/')}
-              className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               <span>{t('backToInput') as string}</span>
             </button>
             
-            <h1 className="font-handwriting text-xl sm:text-2xl font-bold text-white">
+            <h1 className="font-handwriting text-xl sm:text-2xl font-bold text-foreground">
               {getTitle()}
             </h1>
           </div>
@@ -336,7 +377,7 @@ const PolaroidCollagePage = () => {
               onClick={handleClearCache}
               variant="secondary"
               size="sm"
-              className="gap-1.5 bg-white/90 text-gray-800 hover:bg-white"
+              className="gap-1.5"
               title={t('refreshButton') as string}
             >
               <RefreshCw className="h-4 w-4" />
@@ -347,25 +388,25 @@ const PolaroidCollagePage = () => {
       </section>
 
       {/* Main content */}
-      <section className="flex-1 px-4 pb-24">
+      <section className="flex-1 px-4 pb-24 relative z-10">
         <div className="container mx-auto max-w-6xl">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-              <div className="bg-black/40 p-8 rounded-xl backdrop-blur-sm">
-                <Loader2 className="h-12 w-12 animate-spin text-white mx-auto mb-4" />
+              <div className="bg-background/60 p-8 rounded-xl backdrop-blur-sm">
+                <Loader2 className="h-12 w-12 animate-spin text-foreground mx-auto mb-4" />
                 <div className="text-center">
-                  <p className="text-xl font-handwriting text-white">{t('loadingTitle') as string}</p>
+                  <p className="text-xl font-handwriting text-foreground">{t('loadingTitle') as string}</p>
                   {streamingProgress > 0 && (
-                    <p className="text-white/70 mt-2">{streamingProgress} {t('eventsLoaded') as string}</p>
+                    <p className="text-muted-foreground mt-2">{streamingProgress} {t('eventsLoaded') as string}</p>
                   )}
                 </div>
               </div>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-              <div className="bg-black/40 p-6 rounded-xl backdrop-blur-sm text-center">
-                <p className="text-white/80 mb-4">{error}</p>
-                <Button onClick={() => navigate('/')} variant="secondary" className="bg-white/90 text-gray-800 hover:bg-white">
+              <div className="bg-background/60 p-6 rounded-xl backdrop-blur-sm text-center">
+                <p className="text-muted-foreground mb-4">{error}</p>
+                <Button onClick={() => navigate('/')} variant="secondary">
                   {t('backToStart') as string}
                 </Button>
               </div>
