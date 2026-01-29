@@ -502,15 +502,6 @@ const ResultPage = () => {
                 )}
               </Button>
             )}
-            
-            
-            {/* Image loading indicator */}
-            {isLoadingImages && imagesLoading > 0 && (
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                {imagesLoaded}/{events.length} {t('photosCount') as string}
-              </span>
-            )}
           </div>
         </div>
       </section>
