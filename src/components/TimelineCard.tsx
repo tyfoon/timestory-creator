@@ -252,6 +252,13 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
           <Icon className="h-3 w-3" />
           {label}
         </div>
+        
+        {/* Spotify Player positioned bottom-left on image */}
+        {event.spotifySearchQuery && (
+          <div className="absolute bottom-3 left-3 z-10">
+            <SpotifyPlayer searchQuery={event.spotifySearchQuery} compact />
+          </div>
+        )}
       </div>
 
       {/* Importance indicator */}
@@ -276,12 +283,6 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
           {event.description}
         </p>
 
-        {/* Spotify Player for music events */}
-        {event.spotifySearchQuery && (
-          <div className="mt-4">
-            <SpotifyPlayer searchQuery={event.spotifySearchQuery} compact />
-          </div>
-        )}
 
         {/* Source link if available */}
         {event.source && (
