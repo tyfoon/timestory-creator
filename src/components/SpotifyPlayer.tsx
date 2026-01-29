@@ -124,21 +124,42 @@ export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerPro
   if (error || !track) return null;
 
   // Show embedded player when no preview available and user clicked play
-  // For compact mode: just link to Spotify instead of showing an iframe that doesn't scale well
   if (showEmbed && !track.previewUrl) {
     if (compact) {
+      // For compact mode: scale down the iframe using CSS transform
       return (
-        <a
-          href={track.spotifyUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+        <div 
+          className="relative"
+          style={{ width: '152px', height: '80px' }}
           onClick={(e) => e.stopPropagation()}
-          className="inline-flex items-center gap-1 px-2 py-1 bg-[#1DB954] hover:bg-[#1ed760] text-white rounded-full text-[10px] font-medium transition-colors shadow-md"
-          title="Open in Spotify"
         >
-          <ExternalLink className="h-2.5 w-2.5" />
-          <span>Spotify</span>
-        </a>
+          <button
+            onClick={handleClosePlayer}
+            className="absolute -top-1 -right-1 z-20 p-0.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full shadow-lg transition-colors"
+            title="Sluiten"
+          >
+            <X className="h-2.5 w-2.5" />
+          </button>
+          <div 
+            className="origin-top-left"
+            style={{ 
+              transform: 'scale(0.5)',
+              width: '304px',
+              height: '160px',
+            }}
+          >
+            <iframe
+              src={`https://open.spotify.com/embed/track/${track.trackId}?utm_source=generator&theme=0&autoplay=1`}
+              width="304"
+              height="160"
+              frameBorder="0"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="lazy"
+              className="rounded-xl"
+              title={`${track.trackName} - ${track.artistName}`}
+            />
+          </div>
+        </div>
       );
     }
     
