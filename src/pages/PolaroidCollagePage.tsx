@@ -356,7 +356,7 @@ const PolaroidCollagePage = () => {
       {/* Header with semi-transparent background for readability */}
       <section className="pt-3 pb-1 px-4 bg-background/40 backdrop-blur-sm relative z-10">
         <div className="container mx-auto max-w-6xl">
-          {/* Top row: Back button left, Date right */}
+          {/* Top row: Back button left, Refresh + Date right */}
           <div className="flex items-center justify-between mb-2">
             <button
               onClick={() => navigate('/')}
@@ -366,24 +366,23 @@ const PolaroidCollagePage = () => {
               <span>{t('backToInput') as string}</span>
             </button>
             
-            <h1 className="font-handwriting text-xl sm:text-2xl font-bold text-foreground">
-              {getTitle()}
-            </h1>
+            <div className="flex items-center gap-2">
+              {/* Compact refresh button */}
+              {events.length > 0 && !isLoading && (
+                <button
+                  onClick={handleClearCache}
+                  className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+                  title={t('refreshButton') as string}
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                </button>
+              )}
+              
+              <h1 className="font-handwriting text-xl sm:text-2xl font-bold text-foreground">
+                {getTitle()}
+              </h1>
+            </div>
           </div>
-          
-          {/* Refresh button for testing */}
-          {events.length > 0 && !isLoading && (
-            <Button
-              onClick={handleClearCache}
-              variant="secondary"
-              size="sm"
-              className="gap-1.5"
-              title={t('refreshButton') as string}
-            >
-              <RefreshCw className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('refreshButton') as string}</span>
-            </Button>
-          )}
         </div>
       </section>
 

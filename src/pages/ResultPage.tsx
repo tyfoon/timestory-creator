@@ -441,7 +441,7 @@ const ResultPage = () => {
       {/* Compact header section - relative z-10 to appear above background */}
       <section className="pt-3 pb-1 px-4 relative z-10">
         <div className="container mx-auto max-w-6xl">
-          {/* Top row: Back button left, Date right */}
+          {/* Top row: Back button left, Refresh + Date right */}
           <div className="flex items-center justify-between mb-2 fade-in">
             <button
               onClick={() => navigate('/')}
@@ -451,71 +451,22 @@ const ResultPage = () => {
               <span>{t('backToInput') as string}</span>
             </button>
             
-            <h1 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
-              {getTitle()}
-            </h1>
-          </div>
-
-          {/* Action buttons row */}
-          <div className="flex items-center justify-end gap-2 mb-2 fade-in">
-            {/* Download PDF button */}
-            {events.length > 0 && !isLoading && (
-              <Button
-                onClick={handleDownloadPdf}
-                disabled={isGeneratingPdf || isGeneratingPolaroidPdf || isLoadingImages}
-                size="sm"
-                className="btn-vintage gap-2"
-              >
-                {isGeneratingPdf ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>{pdfProgress}%</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="h-4 w-4" />
-                    <span className="hidden sm:inline">{t('magazinePdf') as string}</span>
-                  </>
-                )}
-              </Button>
-            )}
-            
-            {/* Download Polaroid PDF button */}
-            {events.length > 0 && !isLoading && (
-              <Button
-                onClick={handleDownloadPolaroidPdf}
-                disabled={isGeneratingPdf || isGeneratingPolaroidPdf || isLoadingImages}
-                size="sm"
-                variant="outline"
-                className="gap-2 border-pink-500/50 text-pink-600 hover:bg-pink-500/10 hover:text-pink-700"
-              >
-                {isGeneratingPolaroidPdf ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>{polaroidPdfProgress}%</span>
-                  </>
-                ) : (
-                  <>
-                    <Camera className="h-4 w-4" />
-                    <span className="hidden sm:inline">{t('polaroidPdf') as string}</span>
-                  </>
-                )}
-              </Button>
-            )}
-            
-            {/* Refresh button for testing */}
-            {events.length > 0 && !isLoading && (
-              <Button
-                onClick={handleClearCache}
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                title={t('refreshButton') as string}
-              >
-                <RefreshCw className="h-4 w-4" />
-                <span className="hidden sm:inline">{t('refreshButton') as string}</span>
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {/* Compact refresh button */}
+              {events.length > 0 && !isLoading && (
+                <button
+                  onClick={handleClearCache}
+                  className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+                  title={t('refreshButton') as string}
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                </button>
+              )}
+              
+              <h1 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
+                {getTitle()}
+              </h1>
+            </div>
           </div>
         </div>
       </section>
