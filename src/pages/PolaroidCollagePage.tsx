@@ -8,7 +8,9 @@ import { TimelineEvent, FamousBirthday } from '@/types/timeline';
 import { generateTimelineStreaming } from '@/lib/api/timeline';
 import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents, getCacheKey } from '@/lib/timelineCache';
-import { ArrowLeft, Clock, Loader2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Clock, Loader2, RefreshCw, Share2 } from 'lucide-react';
+import { shareTikTokHighlights, canShareToTikTok } from '@/lib/tiktokGenerator';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { PolaroidCard } from '@/components/PolaroidCard';
 
@@ -34,6 +36,7 @@ const PolaroidCollagePage = () => {
   const navigate = useNavigate();
   const { language, t } = useLanguage();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   const [formData, setFormData] = useState<FormData | null>(null);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
@@ -42,6 +45,9 @@ const PolaroidCollagePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [streamingProgress, setStreamingProgress] = useState(0);
+  const [canShare, setCanShare] = useState(false);
+  const [isGeneratingTikTok, setIsGeneratingTikTok] = useState(false);
+  const [tikTokProgress, setTikTokProgress] = useState({ current: 0, total: 0 });
 
   const formDataRef = useRef<FormData | null>(null);
   // Holds the incremental stream list so later onEvent updates don't overwrite image updates.
@@ -309,6 +315,40 @@ const PolaroidCollagePage = () => {
 
   const imagesLoaded = events.filter(e => e.imageStatus === 'found' && e.imageUrl).length;
 
+  // Check TikTok sharing capability
+  useEffect(() => {
+    setCanShare(canShareToTikTok());
+  }, []);
+
+  const handleShareTikTok = async () => {
+    if (events.length === 0) return;
+    
+    setIsGeneratingTikTok(true);
+    setTikTokProgress({ current: 0, total: 0 });
+    
+    try {
+      await shareTikTokHighlights(
+        events,
+        famousBirthdays,
+        summary,
+        (current, total) => setTikTokProgress({ current, total })
+      );
+      toast({
+        title: t('shareSuccess') as string,
+      });
+    } catch (err) {
+      if (err instanceof Error && err.name !== 'AbortError') {
+        toast({
+          variant: "destructive",
+          title: t('shareError') as string,
+          description: err.message,
+        });
+      }
+    } finally {
+      setIsGeneratingTikTok(false);
+    }
+  };
+
   // Get the era-themed background based on birth year
   const birthYear = formData?.birthDate?.year || formData?.yearRange?.startYear;
   const backgroundImage = birthYear ? getBackgroundForYear(birthYear) : heroBg;
@@ -367,6 +407,22 @@ const PolaroidCollagePage = () => {
             </button>
             
             <div className="flex items-center gap-2">
+              {/* TikTok Share button - mobile only */}
+              {canShare && isMobile && events.length > 0 && !isLoading && (
+                <button
+                  onClick={handleShareTikTok}
+                  disabled={isGeneratingTikTok}
+                  className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50 disabled:opacity-50"
+                  title={t('shareToTikTok') as string}
+                >
+                  {isGeneratingTikTok ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Share2 className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              )}
+              
               {/* Compact refresh button */}
               {events.length > 0 && !isLoading && (
                 <button
