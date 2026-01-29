@@ -326,7 +326,17 @@ async function searchImageForEvent(
   isMovie?: boolean
 ): Promise<ImageResult> {
   // Use English query for international sources, fall back to Dutch
-  const enQuery = queryEn || queryNl;
+  let enQuery = queryEn || queryNl;
+  
+  // For movies, ensure "film" is in the query to avoid confusion with other topics
+  // (e.g., "Da Vinci Code" should search "Da Vinci Code film" not just "Da Vinci")
+  if (isMovie && enQuery) {
+    const queryLower = enQuery.toLowerCase();
+    if (!queryLower.includes('film') && !queryLower.includes('movie')) {
+      enQuery = `${enQuery} film`;
+      console.log(`[Image Search] Added 'film' to movie query: "${enQuery}"`);
+    }
+  }
   
   // Try all sources in parallel with their fallback strategies
   const sourcePromises = [

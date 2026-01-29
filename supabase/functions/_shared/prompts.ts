@@ -105,7 +105,8 @@ AFBEELDING ZOEKTERMEN (BELANGRIJK):
   - Gebruik exacte namen van personen, evenementen, plaatsen in het Engels
   - Voeg het jaar toe voor historische context
   - Voorbeeld: "Queen Beatrix inauguration 1980 Amsterdam" of "Elvis Presley concert 1977"
-  - Voor films: gebruik de originele Engelse filmtitel, bijv. "Star Wars film 1977" of "The Godfather movie 1972"`;
+  - KRITISCH VOOR FILMS: Voeg ALTIJD "film" toe aan de zoekterm! Bijv. "The Da Vinci Code film 2006" of "Star Wars film 1977" - NOOIT alleen de filmtitel!
+  - Voor TV-programma's: Voeg ALTIJD "TV show" of "television" toe! Bijv. "Great British Bake Off TV show 2010"`;
 }
 
 // =============================================================================
@@ -131,7 +132,8 @@ BELANGRIJKE INSTRUCTIES:
 7. Voor elke gebeurtenis, geef TWEE zoektermen:
    - imageSearchQuery: in de taal van de gebruiker
    - imageSearchQueryEn: ALTIJD in het Engels voor Wikimedia Commons (met exacte namen en jaar)
-     - Voor films: gebruik de originele Engelse filmtitel
+     - KRITISCH VOOR FILMS: ALTIJD "film" toevoegen! Bijv. "The Da Vinci Code film 2006"
+     - KRITISCH VOOR TV: ALTIJD "TV show" toevoegen! Bijv. "Great British Bake Off TV show"
 
 KRITIEK - EVENTSCOPE VELD:
 - Markeer elke gebeurtenis met het juiste eventScope:
