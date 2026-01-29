@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Play, Loader2, X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Play, Pause, Loader2, X, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SpotifyTrack {
@@ -22,7 +22,9 @@ export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerPro
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
-  const [showPlayer, setShowPlayer] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showEmbed, setShowEmbed] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (!searchQuery || hasSearched) return;
@@ -59,16 +61,55 @@ export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerPro
     fetchTrack();
   }, [searchQuery, hasSearched]);
 
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
   const handlePlayClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    setShowPlayer(true);
+    
+    if (!track) return;
+
+    // If we have a preview URL, use HTML5 audio for instant playback
+    if (track.previewUrl) {
+      if (isPlaying && audioRef.current) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        // Create audio element if not exists
+        if (!audioRef.current) {
+          audioRef.current = new Audio(track.previewUrl);
+          audioRef.current.addEventListener('ended', () => setIsPlaying(false));
+          audioRef.current.addEventListener('pause', () => setIsPlaying(false));
+          audioRef.current.addEventListener('play', () => setIsPlaying(true));
+        }
+        audioRef.current.play().catch(err => {
+          console.error('[SpotifyPlayer] Playback failed:', err);
+          // Fallback to embed if direct playback fails
+          setShowEmbed(true);
+        });
+      }
+    } else {
+      // No preview available, show embed
+      setShowEmbed(true);
+    }
   };
 
   const handleClosePlayer = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    setShowPlayer(false);
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    setIsPlaying(false);
+    setShowEmbed(false);
   };
 
   if (isLoading) {
@@ -82,8 +123,8 @@ export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerPro
 
   if (error || !track) return null;
 
-  // Show embedded player when activated
-  if (showPlayer) {
+  // Show embedded player when no preview available and user clicked play
+  if (showEmbed && !track.previewUrl) {
     return (
       <div className="relative" onClick={(e) => e.stopPropagation()}>
         <button
@@ -94,7 +135,7 @@ export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerPro
           <X className="h-3.5 w-3.5" />
         </button>
         <iframe
-          src={`https://open.spotify.com/embed/track/${track.trackId}?utm_source=generator&theme=0&autoplay=1`}
+          src={`https://open.spotify.com/embed/track/${track.trackId}?utm_source=generator&theme=0`}
           width="100%"
           height={compact ? "80" : "152"}
           frameBorder="0"
@@ -107,41 +148,53 @@ export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerPro
     );
   }
 
-  // Compact play button
-  if (compact) {
+  // Playing state with preview - show mini player
+  if (isPlaying && track.previewUrl) {
     return (
-      <button
-        onClick={handlePlayClick}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1DB954] hover:bg-[#1ed760] text-white rounded-full text-xs font-medium transition-colors shadow-md"
-        title={`${track.trackName} - ${track.artistName}`}
+      <div 
+        className="flex items-center gap-2 p-2 bg-[#1DB954]/10 border border-[#1DB954]/30 rounded-lg"
+        onClick={(e) => e.stopPropagation()}
       >
-        <Play className="h-3 w-3 fill-current" />
-        <span>Afspelen</span>
-      </button>
+        {track.albumImage && (
+          <img 
+            src={track.albumImage} 
+            alt={track.albumName}
+            className="w-10 h-10 rounded shadow-md"
+          />
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate">{track.trackName}</p>
+          <p className="text-xs text-muted-foreground truncate">{track.artistName}</p>
+        </div>
+        <button
+          onClick={handlePlayClick}
+          className="p-2 bg-[#1DB954] hover:bg-[#1ed760] text-white rounded-full transition-colors"
+          title="Pauzeren"
+        >
+          <Pause className="h-4 w-4 fill-current" />
+        </button>
+        <a
+          href={track.spotifyUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="p-2 text-[#1DB954] hover:text-[#1ed760] transition-colors"
+          title="Open in Spotify"
+        >
+          <ExternalLink className="h-4 w-4" />
+        </a>
+      </div>
     );
   }
 
-  // Full version with album art
+  // Default: play button
   return (
-    <div className="flex items-center gap-3 p-3 bg-zinc-900/90 backdrop-blur rounded-lg border border-zinc-800">
-      {track.albumImage && (
-        <img 
-          src={track.albumImage} 
-          alt={track.albumName}
-          className="w-12 h-12 rounded shadow-md"
-        />
-      )}
-      <div className="flex-1 min-w-0">
-        <p className="text-white text-sm font-medium truncate">{track.trackName}</p>
-        <p className="text-zinc-400 text-xs truncate">{track.artistName}</p>
-      </div>
-      <button
-        onClick={handlePlayClick}
-        className="flex items-center gap-1.5 px-3 py-2 bg-[#1DB954] hover:bg-[#1ed760] text-white rounded-full text-xs font-medium transition-colors"
-      >
-        <Play className="h-3.5 w-3.5 fill-current" />
-        <span>Afspelen</span>
-      </button>
-    </div>
+    <button
+      onClick={handlePlayClick}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1DB954] hover:bg-[#1ed760] text-white rounded-full text-xs font-medium transition-colors shadow-md"
+      title={`${track.trackName} - ${track.artistName}`}
+    >
+      <Play className="h-3 w-3 fill-current" />
+      <span>{track.previewUrl ? 'Afspelen' : 'Open Spotify'}</span>
+    </button>
   );
 };
