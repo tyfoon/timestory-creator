@@ -12,10 +12,13 @@ import {
   Palette,
   Star,
   Cake,
-  Loader2
+  Loader2,
+  Play,
+  X
 } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { SpotifyPlayer } from './SpotifyPlayer';
+import { searchYouTube } from '@/lib/api/youtube';
 
 // Import category placeholder images
 import placeholderBirthday from '@/assets/placeholders/birthday.jpg';
@@ -132,6 +135,11 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
   // Track which URL we've attempted to load to prevent unnecessary resets
   const lastAttemptedUrl = useRef<string | undefined>(undefined);
 
+  // YouTube trailer state
+  const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
+  const [isLoadingTrailer, setIsLoadingTrailer] = useState(false);
+  const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
+
   // Only reset error state when imageUrl actually changes to a NEW value
   useEffect(() => {
     if (event.imageUrl && event.imageUrl !== lastAttemptedUrl.current) {
@@ -139,6 +147,32 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
       lastAttemptedUrl.current = event.imageUrl;
     }
   }, [event.imageUrl]);
+
+  // Handler for playing trailer
+  const handlePlayTrailer = async () => {
+    if (!event.movieSearchQuery) return;
+    
+    setIsLoadingTrailer(true);
+    try {
+      const result = await searchYouTube(event.movieSearchQuery);
+      if (result.success && result.videoId) {
+        setYoutubeVideoId(result.videoId);
+        setIsPlayingTrailer(true);
+      } else {
+        console.warn('No YouTube video found for:', event.movieSearchQuery);
+      }
+    } catch (error) {
+      console.error('Error fetching YouTube video:', error);
+    } finally {
+      setIsLoadingTrailer(false);
+    }
+  };
+
+  // Handler for stopping trailer
+  const handleStopTrailer = () => {
+    setIsPlayingTrailer(false);
+    setYoutubeVideoId(null);
+  };
 
   const Icon = categoryIcons[event.category] || Globe;
   const colorClass = categoryColors[event.category] || categoryColors.world;
@@ -207,40 +241,88 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
     >
       {/* Image section - real images or category-based placeholders */}
       <div className="relative h-64 sm:h-80 lg:h-96 overflow-hidden bg-muted flex-shrink-0">
-        {displayImage ? (
+        {/* YouTube Trailer Player */}
+        {isPlayingTrailer && youtubeVideoId ? (
           <>
-            <img 
-              src={displayImage}
-              srcSet={!isPlaceholder ? srcSet : undefined}
-              sizes={!isPlaceholder && srcSet ? sizes : undefined}
-              alt={event.title}
-              className={`w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105 ${isPlaceholder ? 'opacity-70' : ''}`}
-              onError={() => setImageError(true)}
-              loading={isActive ? "eager" : "lazy"}
-              decoding="async"
-              fetchPriority={isActive ? "high" : "low"}
+            <iframe
+              src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0`}
+              title={`${event.title} trailer`}
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
             />
-            {/* Overlay for placeholders to make them more subtle */}
-            {isPlaceholder && (
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-card/60" />
+            {/* Close button */}
+            <button
+              onClick={handleStopTrailer}
+              className="absolute top-3 right-3 z-20 p-2 rounded-full bg-black/70 text-white hover:bg-black/90 transition-colors"
+              aria-label="Trailer sluiten"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </>
+        ) : (
+          <>
+            {displayImage ? (
+              <>
+                <img 
+                  src={displayImage}
+                  srcSet={!isPlaceholder ? srcSet : undefined}
+                  sizes={!isPlaceholder && srcSet ? sizes : undefined}
+                  alt={event.title}
+                  className={`w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105 ${isPlaceholder ? 'opacity-70' : ''}`}
+                  onError={() => setImageError(true)}
+                  loading={isActive ? "eager" : "lazy"}
+                  decoding="async"
+                  fetchPriority={isActive ? "high" : "low"}
+                />
+                {/* Overlay for placeholders to make them more subtle */}
+                {isPlaceholder && (
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-card/60" />
+                )}
+              </>
+            ) : isLoading ? (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-muted to-secondary/30">
+                <Loader2 className="h-8 w-8 text-muted-foreground/40 animate-spin" />
+                <span className="text-xs text-muted-foreground/50">Foto zoeken...</span>
+              </div>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-secondary/30">
+                <span className="text-xs text-muted-foreground/40">
+                  {!shouldLoadImage ? 'Scroll om foto te laden' : ''}
+                </span>
+              </div>
+            )}
+            
+            {/* Play Trailer Button Overlay */}
+            {event.movieSearchQuery && !isPlayingTrailer && (
+              <button
+                onClick={handlePlayTrailer}
+                disabled={isLoadingTrailer}
+                className="absolute inset-0 flex items-center justify-center z-10 group/play"
+                aria-label="Trailer afspelen"
+              >
+                <div className="flex items-center gap-2 px-5 py-3 rounded-full bg-black/60 backdrop-blur-sm text-white font-medium transition-all duration-300 group-hover/play:bg-black/80 group-hover/play:scale-105 shadow-lg">
+                  {isLoadingTrailer ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span className="text-sm">Laden...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-5 w-5 fill-current" />
+                      <span className="text-sm">Play Trailer</span>
+                    </>
+                  )}
+                </div>
+              </button>
             )}
           </>
-        ) : isLoading ? (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-muted to-secondary/30">
-            <Loader2 className="h-8 w-8 text-muted-foreground/40 animate-spin" />
-            <span className="text-xs text-muted-foreground/50">Foto zoeken...</span>
-          </div>
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-secondary/30">
-            <span className="text-xs text-muted-foreground/40">
-              {!shouldLoadImage ? 'Scroll om foto te laden' : ''}
-            </span>
-          </div>
         )}
+        
         <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent pointer-events-none" />
         
         {/* Scope badge on image */}
-        {scopeLabel && (
+        {scopeLabel && !isPlayingTrailer && (
           <div className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-medium ${scopeColors[event.eventScope] || scopeColors.period}`}>
             {event.isCelebrityBirthday && <Cake className="inline h-3 w-3 mr-1" />}
             {scopeLabel}
@@ -248,13 +330,15 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
         )}
         
         {/* Category badge on image */}
-        <div className={`absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
-          <Icon className="h-3 w-3" />
-          {label}
-        </div>
+        {!isPlayingTrailer && (
+          <div className={`absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
+            <Icon className="h-3 w-3" />
+            {label}
+          </div>
+        )}
         
         {/* Spotify Player positioned bottom-left on image */}
-        {event.spotifySearchQuery && (
+        {event.spotifySearchQuery && !isPlayingTrailer && (
           <div className="absolute bottom-3 left-3 z-10">
             <SpotifyPlayer searchQuery={event.spotifySearchQuery} compact />
           </div>
