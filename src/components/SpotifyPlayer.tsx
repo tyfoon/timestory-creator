@@ -135,7 +135,7 @@ export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerPro
           <X className="h-3.5 w-3.5" />
         </button>
         <iframe
-          src={`https://open.spotify.com/embed/track/${track.trackId}?utm_source=generator&theme=0`}
+          src={`https://open.spotify.com/embed/track/${track.trackId}?utm_source=generator&theme=0&autoplay=1`}
           width="100%"
           height={compact ? "80" : "152"}
           frameBorder="0"
@@ -144,6 +144,9 @@ export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerPro
           className="rounded-xl"
           title={`${track.trackName} - ${track.artistName}`}
         />
+        <p className="mt-2 text-xs text-muted-foreground">
+          Geen Spotify preview beschikbaar voor dit nummer; de Spotify speler kan daarom een extra klik vereisen.
+        </p>
       </div>
     );
   }
@@ -194,7 +197,7 @@ export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerPro
       title={`${track.trackName} - ${track.artistName}`}
     >
       <Play className="h-3 w-3 fill-current" />
-      <span>{track.previewUrl ? 'Afspelen' : 'Open Spotify'}</span>
+      <span>{track.previewUrl ? 'Play song' : 'Open Spotify'}</span>
     </button>
   );
 };

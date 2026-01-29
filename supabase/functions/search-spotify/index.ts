@@ -93,7 +93,10 @@ serve(async (req) => {
     const searchUrl = new URL("https://api.spotify.com/v1/search");
     searchUrl.searchParams.set("q", query);
     searchUrl.searchParams.set("type", "track");
-    searchUrl.searchParams.set("limit", "1");
+    // Ask for multiple results so we can pick one that has a preview_url (for autoplay on the client)
+    searchUrl.searchParams.set("limit", "10");
+    // Market can influence availability of preview_url
+    searchUrl.searchParams.set("market", "NL");
 
     const searchResponse = await fetch(searchUrl.toString(), {
       method: "GET",
@@ -122,8 +125,14 @@ serve(async (req) => {
       );
     }
 
-    const track = searchData.tracks.items[0];
-    console.log(`[Spotify Search] Found track: "${track.name}" by ${track.artists.map(a => a.name).join(", ")}`);
+    const trackWithPreview = searchData.tracks.items.find((t) => !!t.preview_url);
+    const track = trackWithPreview ?? searchData.tracks.items[0];
+
+    if (!track.preview_url) {
+      console.log(`[Spotify Search] Found track but preview_url is missing. Returning first result: "${track.name}" by ${track.artists.map(a => a.name).join(", ")}`);
+    } else {
+      console.log(`[Spotify Search] Found track with preview_url: "${track.name}" by ${track.artists.map(a => a.name).join(", ")}`);
+    }
 
     return new Response(
       JSON.stringify({
