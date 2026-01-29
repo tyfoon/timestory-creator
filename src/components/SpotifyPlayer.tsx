@@ -136,12 +136,12 @@ export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerPro
         </button>
         <iframe
           src={`https://open.spotify.com/embed/track/${track.trackId}?utm_source=generator&theme=0&autoplay=1`}
-          width={compact ? "200" : "100%"}
+          width="100%"
           height={compact ? "80" : "152"}
           frameBorder="0"
           allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
           loading="lazy"
-          className="rounded-xl"
+          className="rounded-xl min-w-[250px]"
           title={`${track.trackName} - ${track.artistName}`}
         />
       </div>
