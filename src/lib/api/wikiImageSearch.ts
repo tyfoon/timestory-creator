@@ -173,7 +173,10 @@ export async function searchSingleImage(
   }
 
   // 3. Producten, Logos, Games -> Commons (Met SVG support!)
-  if (type === 'product' || type === 'logo' || type === 'artwork') {
+  // GEEN JAARTAL gebruiken voor games/logos/producten - alleen titel!
+  const isGameOrProduct = type === 'product' || type === 'logo' || type === 'artwork';
+  
+  if (isGameOrProduct) {
     const allowSvg = true; 
     // Probeer eerst Commons (beste voor producten)
     let res = await commons(enQuery, undefined, allowSvg); 
@@ -182,6 +185,13 @@ export async function searchSingleImage(
     // Probeer Wiki EN
     res = await wiki('en', enQuery, undefined, allowSvg);
     if (res) return { eventId, ...res };
+    
+    // Fallback: Wiki NL zonder jaar
+    res = await wiki('nl', query, undefined, allowSvg);
+    if (res) return { eventId, ...res };
+    
+    // Geen resultaat gevonden voor game/product
+    return { eventId, imageUrl: null, source: null };
   }
 
   // 4. Events & Locaties & Overig
@@ -193,7 +203,7 @@ export async function searchSingleImage(
     if (res) return { eventId, ...res };
   }
 
-  // Standaard volgorde voor events
+  // Standaard volgorde voor events (met jaar)
   const wikiPromises = [
     wiki('nl', query, year),
     wiki('en', enQuery, year),
