@@ -14,7 +14,8 @@ import { generatePolaroidPdf } from '@/lib/pdfGeneratorPolaroid';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents, getCacheKey } from '@/lib/timelineCache';
 import { generateTikTokSlides, shareGeneratedFiles, canShareToTikTok } from '@/lib/tiktokGenerator';
 import { downloadPolaroidCollage } from '@/lib/collageGenerator';
-import { ArrowLeft, Clock, Loader2, AlertCircle, RefreshCw, Cake, Star, Download, Camera, Share2, Check, Image, X } from 'lucide-react';
+import { ArrowLeft, Clock, Loader2, AlertCircle, RefreshCw, Cake, Star, Download, Camera, Share2, Check, Image, X, Bug } from 'lucide-react';
+import { DebugInfoDialog } from '@/components/DebugInfoDialog';
 import { useToast } from '@/hooks/use-toast';
 
 // Era-themed background images
@@ -676,6 +677,11 @@ const ResultPage = () => {
                         </button>
                       )}
                     </>
+                  )}
+                  
+                  {/* Debug info button */}
+                  {events.length > 0 && !isLoading && (
+                    <DebugInfoDialog events={events} />
                   )}
                   
                   {/* Compact refresh button */}
