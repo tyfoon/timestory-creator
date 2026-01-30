@@ -5,8 +5,13 @@
 import html2canvas from 'html2canvas';
 import { TimelineEvent } from '@/types/timeline';
 
-// Import the cork/paper background
-import woodTableBg from '@/assets/wood-table-bg.jpg';
+// Import era-specific backgrounds
+import heroBg70s from '@/assets/hero-bg-70s.png';
+import heroBg80s from '@/assets/hero-bg-80s.png';
+import heroBg90s from '@/assets/hero-bg-90s.png';
+import heroBg00s from '@/assets/hero-bg-00s.png';
+import heroBg10s from '@/assets/hero-bg-10s.png';
+import heroBgNew from '@/assets/hero-bg-new.png';
 
 interface CollageConfig {
   width: number;
@@ -22,8 +27,18 @@ const COLLAGE_CONFIG: CollageConfig = {
   height: 1920,
   padding: 40,
   polaroidWidth: 450,
-  polaroidHeight: 520,
-  imageHeight: 380,
+  polaroidHeight: 540, // Increased for more caption space
+  imageHeight: 360,    // Slightly reduced image to give more caption room
+};
+
+// Get era-specific background based on birth year
+const getEraBackground = (year: number): string => {
+  if (year >= 1969 && year <= 1979) return heroBg70s;
+  if (year >= 1980 && year <= 1989) return heroBg80s;
+  if (year >= 1990 && year <= 1999) return heroBg90s;
+  if (year >= 2000 && year <= 2009) return heroBg00s;
+  if (year >= 2010 && year <= 2019) return heroBg10s;
+  return heroBgNew;
 };
 
 // Random rotation for playful effect (-8 to 8 degrees)
@@ -59,16 +74,18 @@ const createPolaroidHtml = (event: TimelineEvent, index: number): string => {
       "></div>
       <p style="
         font-family: 'Caveat', cursive, sans-serif;
-        font-size: 24px;
+        font-size: 22px;
         color: #333;
         text-align: center;
-        margin-top: 12px;
-        line-height: 1.2;
+        margin-top: 8px;
+        line-height: 1.3;
+        max-height: 72px;
         overflow: hidden;
         text-overflow: ellipsis;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
+        word-break: break-word;
       ">${event.title}</p>
     </div>
   `;
@@ -77,15 +94,17 @@ const createPolaroidHtml = (event: TimelineEvent, index: number): string => {
 // Create the full collage container HTML
 const createCollageHtml = (
   selectedEvents: TimelineEvent[],
-  contextText: string
+  contextText: string,
+  birthYear: number
 ): string => {
   const polaroidsHtml = selectedEvents.map((event, index) => createPolaroidHtml(event, index)).join('');
+  const backgroundImage = getEraBackground(birthYear);
   
   return `
     <div id="collage-container" style="
       width: ${COLLAGE_CONFIG.width}px;
       height: ${COLLAGE_CONFIG.height}px;
-      background-image: url('${woodTableBg}');
+      background-image: url('${backgroundImage}');
       background-size: cover;
       background-position: center;
       position: relative;
@@ -95,7 +114,7 @@ const createCollageHtml = (
       <div style="
         position: absolute;
         inset: 0;
-        background: rgba(0, 0, 0, 0.15);
+        background: rgba(0, 0, 0, 0.4);
       "></div>
       
       <!-- Header with context text -->
@@ -150,6 +169,7 @@ const createCollageHtml = (
 export async function downloadPolaroidCollage(
   selectedEvents: TimelineEvent[],
   contextText: string,
+  birthYear: number,
   onProgress?: (progress: number) => void
 ): Promise<void> {
   if (selectedEvents.length !== 6) {
@@ -164,7 +184,7 @@ export async function downloadPolaroidCollage(
   container.style.left = '-9999px';
   container.style.top = '0';
   container.style.zIndex = '-1';
-  container.innerHTML = createCollageHtml(selectedEvents, contextText);
+  container.innerHTML = createCollageHtml(selectedEvents, contextText, birthYear);
   document.body.appendChild(container);
   
   onProgress?.(20);
