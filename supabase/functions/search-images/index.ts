@@ -613,6 +613,38 @@ async function searchFirecrawlWikipediaOnly(
 }
 
 // ============== FALLBACK HELPER ==============
+
+// Helper: Strip descriptive words from query to get just the brand/product name
+function stripDescriptiveWords(query: string): string | null {
+  // Common descriptive words that can be removed for fallback
+  const descriptiveWords = [
+    'chewing gum', 'kauwgom', 'kauwgum', 'bubble gum', 'bubblegum',
+    'actiefiguren', 'action figures', 'speelgoed', 'toys', 'toy',
+    'console', 'game console', 'spelcomputer',
+    'auto', 'car', 'cars', 'vehicle',
+    'horloge', 'watch', 'watches',
+    'telefoon', 'phone', 'mobile',
+    'computer', 'laptop', 'tablet',
+    'camera', 'fotocamera',
+    'muziek', 'music', 'band', 'zanger', 'singer',
+    'film', 'movie', 'serie', 'series', 'tv show',
+    'commercial', 'reclame', 'advertentie', 'advertisement'
+  ];
+  
+  let stripped = query;
+  for (const word of descriptiveWords) {
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    stripped = stripped.replace(regex, '');
+  }
+  stripped = stripped.replace(/\s+/g, ' ').trim();
+  
+  // Only return if we actually removed something and have content left
+  if (stripped !== query && stripped.length > 2) {
+    return stripped;
+  }
+  return null;
+}
+
 async function trySourceWithFallback(
   searchFn: (query: string, year: number | undefined, options: SearchOptions) => Promise<{ imageUrl: string; source: string } | null>,
   query: string,
@@ -629,6 +661,14 @@ async function trySourceWithFallback(
   // Phase 3: Without quotes + without year (lenient matching)
   if (year) {
     result = await searchFn(query, year, { useQuotes: false, includeYear: false, strictMatch: false });
+    if (result) return result;
+  }
+  
+  // Phase 4: Try with stripped query (just brand name, no descriptive words)
+  const strippedQuery = stripDescriptiveWords(query);
+  if (strippedQuery) {
+    console.log(`Fallback: trying stripped query "${strippedQuery}" (original: "${query}")`);
+    result = await searchFn(strippedQuery, year, { useQuotes: false, includeYear: false, strictMatch: false });
     if (result) return result;
   }
   
