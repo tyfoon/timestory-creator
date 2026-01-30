@@ -397,25 +397,39 @@ async function searchTMDBMovie(
   
   try {
     // Clean the query - TMDB works best with just the title
-    // Remove "film", "movie", "TV", "TV show", years, etc.
     const cleanedQuery = cleanMovieQueryForTMDB(query);
     
-    // Try MOVIE search first
-    let searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanedQuery)}&language=en-US&page=1`;
-    if (year) {
-      searchUrl += `&year=${year}`;
-    }
+    console.log(`TMDB: searching for "${cleanedQuery}" (original: "${query}", year: ${year || 'none'})`);
     
-    console.log(`TMDB Movie: searching for "${cleanedQuery}" (original: "${query}", year: ${year || 'none'})`);
+    // STRATEGY: For older content (pre-2000), search TV FIRST since many classic shows 
+    // have modern movie remakes that would incorrectly match (e.g., "The A-Team" 1983 TV vs 2010 movie)
+    const isOlderContent = year && year < 2000;
     
-    let searchRes = await fetch(searchUrl);
-    if (searchRes.ok) {
+    // Helper to search movies with year filtering
+    const searchMovies = async (): Promise<{ imageUrl: string; source: string } | null> => {
+      let searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanedQuery)}&language=en-US&page=1`;
+      if (year) {
+        searchUrl += `&year=${year}`;
+      }
+      
+      const searchRes = await fetch(searchUrl);
+      if (!searchRes.ok) return null;
+      
       const searchData = await searchRes.json();
       const results = searchData.results || [];
       
-      console.log(`TMDB Movie: found ${results.length} movie results`);
+      console.log(`TMDB Movie: found ${results.length} results`);
       
       for (const movie of results.slice(0, 3)) {
+        // For older content with a year, verify the movie year is close to the expected year
+        if (year && movie.release_date) {
+          const movieYear = parseInt(movie.release_date.substring(0, 4));
+          if (Math.abs(movieYear - year) > 3) {
+            console.log(`TMDB Movie: skipping "${movie.title}" (${movieYear}) - too far from target year ${year}`);
+            continue;
+          }
+        }
+        
         const imagePath = movie.backdrop_path || movie.poster_path;
         if (imagePath) {
           const size = movie.backdrop_path ? 'w780' : 'w500';
@@ -426,24 +440,35 @@ async function searchTMDBMovie(
           return { imageUrl, source };
         }
       }
-    }
+      return null;
+    };
     
-    // If no movie found, try TV SHOW search
-    let tvSearchUrl = `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanedQuery)}&language=en-US&page=1`;
-    if (year) {
-      tvSearchUrl += `&first_air_date_year=${year}`;
-    }
-    
-    console.log(`TMDB TV: searching for "${cleanedQuery}"`);
-    
-    searchRes = await fetch(tvSearchUrl);
-    if (searchRes.ok) {
+    // Helper to search TV shows with year filtering
+    const searchTV = async (): Promise<{ imageUrl: string; source: string } | null> => {
+      let tvSearchUrl = `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanedQuery)}&language=en-US&page=1`;
+      if (year) {
+        tvSearchUrl += `&first_air_date_year=${year}`;
+      }
+      
+      const searchRes = await fetch(tvSearchUrl);
+      if (!searchRes.ok) return null;
+      
       const searchData = await searchRes.json();
       const results = searchData.results || [];
       
-      console.log(`TMDB TV: found ${results.length} TV results`);
+      console.log(`TMDB TV: found ${results.length} results`);
       
       for (const show of results.slice(0, 3)) {
+        // For older content with a year, verify the show's first air date is close
+        if (year && show.first_air_date) {
+          const showYear = parseInt(show.first_air_date.substring(0, 4));
+          // TV shows can run for many years, so be more lenient (within 5 years of start)
+          if (showYear > year + 5 || showYear < year - 2) {
+            console.log(`TMDB TV: skipping "${show.name}" (${showYear}) - too far from target year ${year}`);
+            continue;
+          }
+        }
+        
         const imagePath = show.backdrop_path || show.poster_path;
         if (imagePath) {
           const size = show.backdrop_path ? 'w780' : 'w500';
@@ -454,9 +479,28 @@ async function searchTMDBMovie(
           return { imageUrl, source };
         }
       }
+      return null;
+    };
+    
+    // For older content (pre-2000): TV first, then movies
+    // For modern content: Movies first, then TV
+    if (isOlderContent) {
+      console.log(`TMDB: older content (${year}) - trying TV first`);
+      const tvResult = await searchTV();
+      if (tvResult) return tvResult;
+      
+      const movieResult = await searchMovies();
+      if (movieResult) return movieResult;
+    } else {
+      console.log(`TMDB: modern content - trying movies first`);
+      const movieResult = await searchMovies();
+      if (movieResult) return movieResult;
+      
+      const tvResult = await searchTV();
+      if (tvResult) return tvResult;
     }
     
-    console.log("TMDB: no movie or TV results with images found");
+    console.log("TMDB: no movie or TV results with matching year found");
     return null;
   } catch (e) {
     console.error("TMDB API error:", e);
