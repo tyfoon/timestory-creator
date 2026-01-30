@@ -91,22 +91,24 @@ UITZONDERING: Merknamen en eigennamen blijven hetzelfde in beide talen:
 REGELS VOOR 'imageSearchQuery' (NEDERLANDS):
 - NOOIT jaartallen: "1980", "1990", "2000"
 - NOOIT decennia: "jaren 80", "jaren 90", "jaren 70", "80s", "90s"
-- type 'person': ALLEEN de naam. "David Bowie" (NIET "David Bowie zanger 1983")
-- type 'movie': ALLEEN de titel. "The A-Team" (NIET "The A-Team 1983", NIET "The A-Team jaren 80")
-- type 'product': Model + object. "Sony Walkman", "Swatch horloge" (NIET "Swatch horloge 80s", NIET "Walkman jaren 80")
-- type 'logo': ALLEEN de naam. "Pac-Man" (NIET "Pac-Man logo", NIET "Pac-Man 1980")
-- type 'artwork': Artiest + titel. "Thriller Michael Jackson" (NIET "Thriller 1982", NIET "Thriller album")
-- type 'culture': SPECIFIEK object/stijl. "Breakdance", "Disco bal" (NIET "jaren 80 mode", NIET "80s breakdance")
+- NOOIT extra context: fabrikanten, merknamen die niet in de titel staan
+- type 'person': ALLEEN de naam. "David Bowie" (NIET "David Bowie zanger")
+- type 'movie': ALLEEN de titel. "The A-Team" (NIET "The A-Team serie")
+- type 'product': ALLEEN productnaam. "Star Wars actiefiguren" (NIET "Star Wars actiefiguren Kenner", NIET "Walkman Sony")
+- type 'logo': ALLEEN de naam. "Pac-Man" (NIET "Pac-Man logo", NIET "Pac-Man Namco")
+- type 'artwork': Artiest + titel. "Thriller Michael Jackson" (NIET "Thriller album")
+- type 'culture': SPECIFIEK object/stijl. "Breakdance", "Disco bal"
 
 REGELS VOOR 'imageSearchQueryEn' (ENGELS):
 - NOOIT jaartallen: "1980", "1990", "2000"  
 - NOOIT decennia: "80s", "90s", "1980s", "eighties", "nineties"
-- type 'person': ALLEEN de naam. "David Bowie" (NIET "David Bowie singer 1983")
-- type 'movie': ALLEEN de titel. "The A-Team" (NIET "The A-Team 1983", NIET "The A-Team 80s")
-- type 'product': Model + object. "Sony Walkman", "Swatch watch" (NIET "Swatch watch 80s", NIET "Walkman 1980s")
-- type 'logo': ALLEEN de naam. "Pac-Man" (NIET "Pac-Man logo", NIET "Pac-Man 1980")
-- type 'artwork': Artiest + titel. "Thriller Michael Jackson" (NIET "Thriller 1982", NIET "Thriller album")
-- type 'culture': SPECIFIEK object/stijl. "Breakdance", "Disco ball" (NIET "80s fashion", NIET "1980s breakdance")
+- NOOIT extra context: fabrikanten, merknamen die niet in de titel staan
+- type 'person': ALLEEN de naam. "David Bowie" (NIET "David Bowie singer")
+- type 'movie': ALLEEN de titel. "The A-Team" (NIET "The A-Team series")
+- type 'product': ALLEEN productnaam. "Star Wars action figures" (NIET "Star Wars action figures Kenner", NIET "Walkman Sony")
+- type 'logo': ALLEEN de naam. "Pac-Man" (NIET "Pac-Man logo", NIET "Pac-Man Namco")
+- type 'artwork': Artiest + titel. "Thriller Michael Jackson" (NIET "Thriller album")
+- type 'culture': SPECIFIEK object/stijl. "Breakdance", "Disco ball"
 
 SPORT EVENTS (category: sports):
 - ALTIJD de SPORT vermelden!
