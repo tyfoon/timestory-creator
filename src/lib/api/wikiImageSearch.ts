@@ -2,8 +2,8 @@
  * Client-side Wikipedia/Wikimedia image search
  * Runs directly in the browser to avoid server timeouts
  * * IMPROVED VERSION:
- * - Smart Stop Words: Ignores "Introduction" but keeps "Gameboy".
- * - Checks Description/Snippet: Finds "Gameboy" even if title is "DSC001.jpg".
+ * - STRICT MATCHING FIX: Now requires ALL keywords to match for short queries (fixing Apple/iPhone issue).
+ * - Fallback Fix: The last fallback phase now enforces strict matching (fixing random Carnaval images).
  * - Priority TMDB: Uses cleaned queries for movies/celebs.
  */
 
@@ -53,18 +53,16 @@ function normalizeText(str: string): string {
 }
 
 // CRITICAL: Stop words are words we IGNORE during validation.
-// We do NOT filter out specific proper nouns like "Gameboy", "Frankrijk", "WK", "Olympische".
-// We DO filter out generic event descriptors like "Launch", "Birthday", "Picture of".
 const STOP_WORDS = new Set([
   // English
-  'the', 'and', 'for', 'with', 'from', 'image', 'file', 'jpg', 'png', 'picture', 'photo',
+  'the', 'and', 'for', 'with', 'from', 'image', 'file', 'jpg', 'png', 'picture', 'photo', 'on', 'at', 'in', 'of',
   'launch', 'introduction', 'presentation', 'release', 'debut', 'start', 'end',
   'born', 'birthday', 'birth', 'died', 'death', 'celebration', 'anniversary',
-  'winner', 'winning', 'wins', 'champion', 'victory',
+  'winner', 'winning', 'wins', 'champion', 'victory', 'award', 'prize',
   'official', 'trailer', 'video', 'scene', 'clip',
   
   // Dutch
-  'de', 'het', 'een', 'van', 'voor', 'met', 'op', 'bij', 'tijdens',
+  'de', 'het', 'een', 'van', 'voor', 'met', 'op', 'bij', 'tijdens', 'in', 'uit',
   'bestand', 'afbeelding', 'foto', 'plaatje', 'portret',
   'introductie', 'lancering', 'uitgave', 'release', 'start', 'einde', 'slot',
   'geboren', 'geboorte', 'jarig', 'verjaardag', 'overleden', 'sterft',
@@ -92,7 +90,7 @@ function cleanQueryForTMDB(query: string): string {
 
 /**
  * Check if content matches query.
- * Uses "Subject-First" strategy: The first meaningful word (Gameboy, Zidane) MUST appear.
+ * Uses "High Specificity" strategy.
  */
 function contentMatchesQuery(title: string, snippet: string | undefined, query: string, strict: boolean = true): boolean {
   const normalizedTitle = normalizeText(title);
@@ -100,16 +98,14 @@ function contentMatchesQuery(title: string, snippet: string | undefined, query: 
   const normalizedQuery = normalizeText(query);
   
   // 1. Extract KEYWORDS from query (excluding stop words)
-  // Query: "Introductie Gameboy" -> Keywords: ["gameboy"]
-  // Query: "WK Frankrijk" -> Keywords: ["wk", "frankrijk"]
   const queryWords = normalizedQuery.split(/\s+/).filter(w => 
-    w.length > 2 && !STOP_WORDS.has(w) && !/^\d{4}$/.test(w)
+    w.length > 1 && !STOP_WORDS.has(w) && !/^\d{4}$/.test(w)
   );
   
-  if (queryWords.length === 0) return true; // Fallback
+  if (queryWords.length === 0) return true; // Fallback if no keywords left
   
-  // 2. Define Main Subjects (max 3)
-  const mainSubjectWords = queryWords.slice(0, 3);
+  // 2. Define Main Subjects (max 4 words to consider)
+  const mainSubjectWords = queryWords.slice(0, 4);
   
   // Helper: check word presence (strict for short words)
   const wordAppearsIn = (word: string, text: string): boolean => {
@@ -122,19 +118,23 @@ function contentMatchesQuery(title: string, snippet: string | undefined, query: 
   const maxMatches = Math.max(matchesInTitle, matchesInSnippet);
   
   if (strict) {
-    // STRICT: The FIRST keyword (Subject) MUST match.
-    // "Introductie Gameboy" -> "Gameboy" must be there.
-    // "George Clooney Jarig" -> "George" must be there.
-    const firstWord = mainSubjectWords[0];
-    const firstWordFound = wordAppearsIn(firstWord, normalizedTitle) || wordAppearsIn(firstWord, normalizedSnippet);
+    // STRICT MODE LOGIC:
     
-    if (!firstWordFound) return false;
-    
-    // Require majority match if multiple words (e.g. "WK" AND "Frankrijk")
-    const threshold = Math.max(1, Math.ceil(mainSubjectWords.length * 0.6));
+    // Case A: Short specific queries (e.g., "Apple Macintosh", "Windows 1.0", "Band Aid")
+    // If we have 1 or 2 keywords, ALL of them must match.
+    // This prevents "Apple iPhone" matching "Apple Macintosh".
+    if (mainSubjectWords.length <= 2) {
+      return maxMatches === mainSubjectWords.length;
+    }
+
+    // Case B: Longer queries (e.g. "Oscar winnaar Jonas Vingegaard")
+    // Require 75% match or at least 3 words.
+    const threshold = Math.ceil(mainSubjectWords.length * 0.75);
     return maxMatches >= threshold;
+
   } else {
-    // LENIENT: Just need the primary subject
+    // LENIENT (Only used if explicitly requested, but we avoid this now):
+    // Just match the first/primary keyword
     if (mainSubjectWords.length > 0) {
        const firstWord = mainSubjectWords[0];
        if (!wordAppearsIn(firstWord, normalizedTitle) && !wordAppearsIn(firstWord, normalizedSnippet)) {
@@ -151,8 +151,7 @@ interface SearchOptions {
   strictMatch?: boolean;
 }
 
-// ... (Rest of the file: searchWikipedia, searchCommons, etc. remains the same as previous) ...
-// ... Just make sure to COPY the FULL implementation from the previous response but utilize the STOP_WORDS above ...
+// ... searchWikipedia, searchWikimediaCommons, searchNationaalArchief remain the same ...
 
 async function searchWikipedia(
   query: string, 
@@ -238,16 +237,26 @@ async function searchNationaalArchief(query: string, year: number | undefined, o
   } catch { return null; }
 }
 
+// FIX: This function now enforces strict matching in ALL phases
 async function trySourceWithFallback(
   searchFn: (query: string, year: number | undefined, opts: SearchOptions) => Promise<{ imageUrl: string; source: string } | null>,
   query: string, year: number | undefined
 ) {
+  // Phase 1: With quotes + year (strict)
   let res = await searchFn(query, year, { useQuotes: true, includeYear: true, strictMatch: true });
   if (res) return res;
+  
+  // Phase 2: Without quotes + year (strict)
   res = await searchFn(query, year, { useQuotes: false, includeYear: true, strictMatch: true });
   if (res) return res;
+  
+  // Phase 3: Without quotes + without year
   if (year) {
-    res = await searchFn(query, year, { useQuotes: false, includeYear: false, strictMatch: false }); 
+    // CLEAN QUERY: Strip years and stopwords from the query string sent to API to avoid noise
+    const cleanQuery = query.replace(/\b\d{4}\b/g, '').trim();
+    // !!! CRITICAL FIX: strictMatch MUST BE TRUE.
+    // If we drop the year, we must be VERY strict about the names (e.g. "Apple Macintosh" must contain both)
+    res = await searchFn(cleanQuery, undefined, { useQuotes: false, includeYear: false, strictMatch: true }); 
     if (res) return res;
   }
   return null;
@@ -276,7 +285,6 @@ async function searchImageForEvent(
     }
   }
   
-  // Parallel fallback to Wiki/Commons
   const sourcePromises = [
     trySourceWithFallback(searchNationaalArchief, queryNl, year),
     trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'nl', opts), queryNl, year),
