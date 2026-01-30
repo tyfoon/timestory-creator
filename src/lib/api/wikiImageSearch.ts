@@ -1,10 +1,9 @@
 /**
  * Client-side Wikipedia/Wikimedia image search
- * Runs directly in the browser to avoid server timeouts
- * * IMPROVED VERSION:
- * - STRICT MATCHING FIX: Now requires ALL keywords to match for short queries (fixing Apple/iPhone issue).
- * - Fallback Fix: The last fallback phase now enforces strict matching (fixing random Carnaval images).
- * - Priority TMDB: Uses cleaned queries for movies/celebs.
+ * IMPROVED VERSION:
+ * - Source Filtering based on Category (No Nationaal Archief for Tech/World)
+ * - Strict Number Matching (Commodore 64 must match "64")
+ * - Smart Stop Words
  */
 
 const THUMB_WIDTH = 960;
@@ -15,7 +14,6 @@ export interface ImageResult {
   source: string | null;
 }
 
-// Update Interface: Add flags to SearchQuery
 export interface SearchQuery {
   eventId: string;
   query: string;
@@ -23,45 +21,37 @@ export interface SearchQuery {
   year?: number;
   isCelebrity?: boolean;
   isMovie?: boolean;
+  category?: string;
 }
 
 function isAllowedImageUrl(maybeUrl: string): boolean {
   try {
     const url = new URL(maybeUrl);
     const path = url.pathname.toLowerCase();
-
     if (path.includes("/transcoded/")) return false;
-    if (path.match(/\.(mp3|ogg|wav|webm|mp4|ogv|pdf|svg)$/)) return false;
-
+    if (path.match(/\.(mp3|ogg|wav|webm|mp4|ogv|pdf|svg|tif|tiff)$/)) return false;
     return path.match(/\.(jpg|jpeg|png|webp|gif)$/) !== null;
   } catch {
     return false;
   }
 }
 
-/**
- * Normalize string: lower case, remove accents, replace punctuation with spaces
- */
 function normalizeText(str: string): string {
   return str
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // Remove accents
-    .replace(/[.,/#!$%^&*;:{}=\-_`~()'"]/g, " ") // Replace punctuation with spaces
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[.,/#!$%^&*;:{}=\-_`~()'"]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-// CRITICAL: Stop words are words we IGNORE during validation.
 const STOP_WORDS = new Set([
-  // English
   'the', 'and', 'for', 'with', 'from', 'image', 'file', 'jpg', 'png', 'picture', 'photo', 'on', 'at', 'in', 'of',
   'launch', 'introduction', 'presentation', 'release', 'debut', 'start', 'end',
   'born', 'birthday', 'birth', 'died', 'death', 'celebration', 'anniversary',
   'winner', 'winning', 'wins', 'champion', 'victory', 'award', 'prize',
   'official', 'trailer', 'video', 'scene', 'clip',
-  
-  // Dutch
   'de', 'het', 'een', 'van', 'voor', 'met', 'op', 'bij', 'tijdens', 'in', 'uit',
   'bestand', 'afbeelding', 'foto', 'plaatje', 'portret',
   'introductie', 'lancering', 'uitgave', 'release', 'start', 'einde', 'slot',
@@ -69,46 +59,45 @@ const STOP_WORDS = new Set([
   'viering', 'feest', 'jubileum', 'huldiging',
   'winnaar', 'wint', 'winst', 'kampioen', 'overwinning', 'prijs', 'medaille',
   'officieel', 'videoclip', 'fragment', 'verslag',
-  'gekte', 'rage', 'hype', 'trend', 'fenomeen'
+  'gekte', 'rage', 'hype', 'trend', 'fenomeen', 'opkomst'
 ]);
 
-/**
- * Helper to clean query for TMDB (removes years and descriptive keywords)
- */
 function cleanQueryForTMDB(query: string): string {
-  let cleaned = query
-    .replace(/\b\d{4}\b/g, '') // remove years
-    .replace(/[()]/g, '') // remove parens
-    .replace(/ - /g, ' ') 
-    .replace(/\s+/g, ' ');
-
-  // For TMDB we want the pure name, so we strip stop words
+  let cleaned = query.replace(/\b\d{4}\b/g, '').replace(/[()]/g, '').replace(/ - /g, ' ').replace(/\s+/g, ' ');
   const words = cleaned.split(' ');
   const filteredWords = words.filter(w => !STOP_WORDS.has(w.toLowerCase()));
   return filteredWords.join(' ').trim();
 }
 
 /**
- * Check if content matches query.
- * Uses "High Specificity" strategy.
+ * Checks if content matches query with strict logic for numbers.
  */
 function contentMatchesQuery(title: string, snippet: string | undefined, query: string, strict: boolean = true): boolean {
   const normalizedTitle = normalizeText(title);
   const normalizedSnippet = snippet ? normalizeText(snippet.replace(/<[^>]*>/g, "")) : ""; 
   const normalizedQuery = normalizeText(query);
   
-  // 1. Extract KEYWORDS from query (excluding stop words)
+  // 1. NUMBER CHECK (Crucial for "Commodore 64", "Windows 1.0")
+  // If the query contains numbers, the result MUST contain those numbers.
+  const queryNumbers = normalizedQuery.match(/\b\d+(\.\d+)?\b/g);
+  if (queryNumbers) {
+    const combinedText = normalizedTitle + " " + normalizedSnippet;
+    const allNumbersPresent = queryNumbers.every(num => {
+      // Allow loose match for years (1980 match 1980s), but strict for versions (1.0)
+      return combinedText.includes(num); 
+    });
+    if (!allNumbersPresent) return false;
+  }
+
+  // 2. Keyword Check
   const queryWords = normalizedQuery.split(/\s+/).filter(w => 
     w.length > 1 && !STOP_WORDS.has(w) && !/^\d{4}$/.test(w)
   );
   
-  if (queryWords.length === 0) return true; // Fallback if no keywords left
+  if (queryWords.length === 0) return true;
   
-  // 2. Define Main Subjects (max 4 words to consider)
   const mainSubjectWords = queryWords.slice(0, 4);
-  
-  // Helper: check word presence (strict for short words)
-  const wordAppearsIn = (word: string, text: string): boolean => {
+  const wordAppearsIn = (word: string, text: string) => {
     if (word.length <= 3) return new RegExp(`\\b${word}\\b`, 'i').test(text);
     return text.includes(word);
   };
@@ -118,29 +107,14 @@ function contentMatchesQuery(title: string, snippet: string | undefined, query: 
   const maxMatches = Math.max(matchesInTitle, matchesInSnippet);
   
   if (strict) {
-    // STRICT MODE LOGIC:
-    
-    // Case A: Short specific queries (e.g., "Apple Macintosh", "Windows 1.0", "Band Aid")
-    // If we have 1 or 2 keywords, ALL of them must match.
-    // This prevents "Apple iPhone" matching "Apple Macintosh".
+    // If specific short query (e.g. "Apple Macintosh"), require ALL words.
     if (mainSubjectWords.length <= 2) {
       return maxMatches === mainSubjectWords.length;
     }
-
-    // Case B: Longer queries (e.g. "Oscar winnaar Jonas Vingegaard")
-    // Require 75% match or at least 3 words.
     const threshold = Math.ceil(mainSubjectWords.length * 0.75);
     return maxMatches >= threshold;
-
   } else {
-    // LENIENT (Only used if explicitly requested, but we avoid this now):
-    // Just match the first/primary keyword
-    if (mainSubjectWords.length > 0) {
-       const firstWord = mainSubjectWords[0];
-       if (!wordAppearsIn(firstWord, normalizedTitle) && !wordAppearsIn(firstWord, normalizedSnippet)) {
-         return false; 
-       }
-    }
+    // Fallback lenient
     return maxMatches >= 1;
   }
 }
@@ -151,111 +125,77 @@ interface SearchOptions {
   strictMatch?: boolean;
 }
 
-// ... searchWikipedia, searchWikimediaCommons, searchNationaalArchief remain the same ...
-
-async function searchWikipedia(
-  query: string, 
-  year: number | undefined,
-  lang: string,
-  options: SearchOptions = {}
-): Promise<{ imageUrl: string; source: string } | null> {
-  const { useQuotes = false, includeYear = true, strictMatch = true } = options;
+// GENERIC FETCH FUNCTION
+async function fetchWikiResults(url: string, query: string, strictMatch: boolean): Promise<{ imageUrl: string; source: string } | null> {
   try {
-    let searchQuery = query;
-    if (useQuotes) searchQuery = `"${query}"`;
-    if (includeYear && year) searchQuery = `${searchQuery} ${year}`;
-    
-    const searchUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&format=json&srlimit=5&origin=*`;
-    const res = await fetch(searchUrl);
+    const res = await fetch(url);
     if (!res.ok) return null;
     const data = await res.json();
     
     for (const result of data.query?.search || []) {
       if (!contentMatchesQuery(result.title, result.snippet, query, strictMatch)) continue;
-      const imageUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(result.title)}&prop=pageimages&format=json&pithumbsize=${THUMB_WIDTH}&piprop=thumbnail|original&origin=*`;
+      
+      const imageUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(result.title)}&prop=pageimages|imageinfo&iiprop=url|thumburl&iiurlwidth=${THUMB_WIDTH}&pithumbsize=${THUMB_WIDTH}&format=json&origin=*`;
       const imgRes = await fetch(imageUrl);
       if (!imgRes.ok) continue;
+      
       const imgData = await imgRes.json();
       const pageId = Object.keys(imgData.query?.pages || {})[0];
-      if (pageId && pageId !== '-1') {
-        const thumb = imgData.query.pages[pageId].thumbnail?.source;
-        if (thumb && isAllowedImageUrl(thumb)) return { imageUrl: thumb, source: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(result.title)}` };
+      if (!pageId || pageId === '-1') continue;
+      
+      const page = imgData.query.pages[pageId];
+      // Try thumbnail first, then imageinfo url
+      let thumb = page.thumbnail?.source;
+      if (!thumb && page.imageinfo?.[0]) {
+        thumb = page.imageinfo[0].thumburl || page.imageinfo[0].url;
+      }
+
+      if (thumb && isAllowedImageUrl(thumb)) {
+        return { imageUrl: thumb, source: `https://wikipedia.org/wiki/${encodeURIComponent(result.title)}` };
       }
     }
     return null;
   } catch { return null; }
+}
+
+async function searchWikipedia(query: string, year: number | undefined, lang: string, options: SearchOptions = {}): Promise<{ imageUrl: string; source: string } | null> {
+  const { useQuotes = false, includeYear = true, strictMatch = true } = options;
+  let searchQuery = useQuotes ? `"${query}"` : query;
+  if (includeYear && year) searchQuery = `${searchQuery} ${year}`;
+  
+  const searchUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&format=json&srlimit=5&origin=*`;
+  return fetchWikiResults(searchUrl, query, strictMatch);
 }
 
 async function searchWikimediaCommons(query: string, year: number | undefined, options: SearchOptions = {}): Promise<{ imageUrl: string; source: string } | null> {
   const { useQuotes = false, includeYear = true, strictMatch = true } = options;
-  try {
-    let searchQuery = query;
-    if (useQuotes) searchQuery = `"${query}"`;
-    if (includeYear && year) searchQuery = `${searchQuery} ${year}`;
-    const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srnamespace=6&format=json&srlimit=5&origin=*`;
-    const res = await fetch(searchUrl);
-    if (!res.ok) return null;
-    const data = await res.json();
-    for (const result of data.query?.search || []) {
-      if (!contentMatchesQuery(result.title, result.snippet, query, strictMatch)) continue;
-      const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(result.title)}&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=${THUMB_WIDTH}&format=json&origin=*`;
-      const infoRes = await fetch(infoUrl);
-      if (!infoRes.ok) continue;
-      const infoData = await infoRes.json();
-      const pageId = Object.keys(infoData.query?.pages || {})[0];
-      const img = infoData.query?.pages[pageId]?.imageinfo?.[0];
-      if (img && (img.thumburl || img.url) && isAllowedImageUrl(img.thumburl || img.url)) {
-        return { imageUrl: img.thumburl || img.url, source: `https://commons.wikimedia.org/wiki/${encodeURIComponent(result.title)}` };
-      }
-    }
-    return null;
-  } catch { return null; }
+  let searchQuery = useQuotes ? `"${query}"` : query;
+  if (includeYear && year) searchQuery = `${searchQuery} ${year}`;
+  
+  const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srnamespace=6&format=json&srlimit=5&origin=*`;
+  return fetchWikiResults(searchUrl, query, strictMatch);
 }
 
 async function searchNationaalArchief(query: string, year: number | undefined, options: SearchOptions = {}): Promise<{ imageUrl: string; source: string } | null> {
   const { includeYear = true, strictMatch = true } = options;
-  try {
-    let searchQuery = `${query} Nationaal Archief`;
-    if (includeYear && year) searchQuery = `${query} ${year} Nationaal Archief`;
-    const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srnamespace=6&format=json&srlimit=3&origin=*`;
-    const res = await fetch(searchUrl);
-    if (!res.ok) return null;
-    const data = await res.json();
-    for (const result of data.query?.search || []) {
-      if (!contentMatchesQuery(result.title, result.snippet, query, strictMatch)) continue;
-      const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(result.title)}&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=${THUMB_WIDTH}&format=json&origin=*`;
-      const infoRes = await fetch(infoUrl);
-      if (!infoRes.ok) continue;
-      const infoData = await infoRes.json();
-      const pageId = Object.keys(infoData.query?.pages || {})[0];
-      const img = infoData.query?.pages[pageId]?.imageinfo?.[0];
-      if (img && (img.thumburl || img.url) && isAllowedImageUrl(img.thumburl || img.url)) {
-        return { imageUrl: img.thumburl || img.url, source: `https://commons.wikimedia.org/wiki/${encodeURIComponent(result.title)}` };
-      }
-    }
-    return null;
-  } catch { return null; }
+  let searchQuery = `${query} Nationaal Archief`;
+  if (includeYear && year) searchQuery = `${query} ${year} Nationaal Archief`;
+  
+  const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srnamespace=6&format=json&srlimit=3&origin=*`;
+  return fetchWikiResults(searchUrl, query, strictMatch);
 }
 
-// FIX: This function now enforces strict matching in ALL phases
 async function trySourceWithFallback(
   searchFn: (query: string, year: number | undefined, opts: SearchOptions) => Promise<{ imageUrl: string; source: string } | null>,
   query: string, year: number | undefined
 ) {
-  // Phase 1: With quotes + year (strict)
-  let res = await searchFn(query, year, { useQuotes: true, includeYear: true, strictMatch: true });
+  // 1. Strict with Year
+  let res = await searchFn(query, year, { useQuotes: false, includeYear: true, strictMatch: true });
   if (res) return res;
   
-  // Phase 2: Without quotes + year (strict)
-  res = await searchFn(query, year, { useQuotes: false, includeYear: true, strictMatch: true });
-  if (res) return res;
-  
-  // Phase 3: Without quotes + without year
+  // 2. Strict without Year (but strict content match)
   if (year) {
-    // CLEAN QUERY: Strip years and stopwords from the query string sent to API to avoid noise
     const cleanQuery = query.replace(/\b\d{4}\b/g, '').trim();
-    // !!! CRITICAL FIX: strictMatch MUST BE TRUE.
-    // If we drop the year, we must be VERY strict about the names (e.g. "Apple Macintosh" must contain both)
     res = await searchFn(cleanQuery, undefined, { useQuotes: false, includeYear: false, strictMatch: true }); 
     if (res) return res;
   }
@@ -264,20 +204,21 @@ async function trySourceWithFallback(
 
 // ============== MAIN SEARCH LOGIC ==============
 
-async function searchImageForEvent(
+export async function searchSingleImage(
   eventId: string,
-  queryNl: string,
-  year: number | undefined,
+  query: string,
+  year?: number,
   queryEn?: string,
   isCelebrity?: boolean,
-  isMovie?: boolean
+  isMovie?: boolean,
+  category?: string
 ): Promise<ImageResult> {
-  let enQuery = queryEn || queryNl;
-  const tmdbQuery = cleanQueryForTMDB(enQuery);
-
-  // TMDB Priority
-  if (isCelebrity || isMovie) {
+  let enQuery = queryEn || query;
+  
+  // TMDB Priority for Media
+  if (isCelebrity || isMovie || category === 'music' || category === 'entertainment') {
     try {
+      const tmdbQuery = cleanQueryForTMDB(enQuery);
       const tmdbResult = await searchTMDBViaEdge(eventId, tmdbQuery, isMovie ? year : undefined, isCelebrity, isMovie);
       if (tmdbResult.imageUrl) return tmdbResult;
     } catch (e) {
@@ -285,13 +226,27 @@ async function searchImageForEvent(
     }
   }
   
-  const sourcePromises = [
-    trySourceWithFallback(searchNationaalArchief, queryNl, year),
-    trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'nl', opts), queryNl, year),
-    trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'en', opts), enQuery, year),
-    trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'de', opts), enQuery, year),
-    trySourceWithFallback(searchWikimediaCommons, enQuery, year),
-  ];
+  // SOURCE STRATEGY BASED ON CATEGORY
+  // Technology, Science, World -> International sources preferred. Nationaal Archief causes noise.
+  const isGlobalTopic = ['technology', 'science', 'world', 'music', 'entertainment'].includes(category || '');
+  const isDutchTopic = ['politics', 'local', 'culture'].includes(category || ''); // Assuming app context is NL based on logs
+
+  const sourcePromises = [];
+
+  if (isGlobalTopic) {
+    // For global topics, prioritize EN Wiki and Commons. Skip Nationaal Archief completely or put last.
+    sourcePromises.push(trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'en', opts), enQuery, year));
+    sourcePromises.push(trySourceWithFallback(searchWikimediaCommons, enQuery, year));
+    sourcePromises.push(trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'nl', opts), query, year));
+  } else {
+    // For local/mixed topics, verify Dutch sources
+    if (isDutchTopic) {
+       sourcePromises.push(trySourceWithFallback(searchNationaalArchief, query, year));
+    }
+    sourcePromises.push(trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'nl', opts), query, year));
+    sourcePromises.push(trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'en', opts), enQuery, year));
+    sourcePromises.push(trySourceWithFallback(searchWikimediaCommons, enQuery, year));
+  }
 
   const results = await Promise.allSettled(sourcePromises);
   for (const result of results) {
@@ -321,38 +276,9 @@ async function searchTMDBViaEdge(eventId: string, query: string, year: number | 
 
 // ============== PUBLIC API ==============
 
-async function runWithConcurrency<T>(tasks: (() => Promise<T>)[], maxConcurrent: number, onResult?: (res: T) => void): Promise<T[]> {
-  const results: T[] = [];
-  let index = 0;
-  async function next(): Promise<void> {
-    while (index < tasks.length) {
-      const i = index++;
-      const res = await tasks[i]();
-      results[i] = res;
-      onResult?.(res);
-    }
-  }
-  await Promise.all(Array(Math.min(maxConcurrent, tasks.length)).fill(null).map(next));
-  return results;
-}
-
-export async function searchImagesClientSide(
-  queries: SearchQuery[],
-  options?: { maxConcurrent?: number; onResult?: (result: ImageResult) => void; }
-): Promise<ImageResult[]> {
-  const tasks = queries.map(({ eventId, query, queryEn, year, isCelebrity, isMovie }) => 
-    () => searchImageForEvent(eventId, query, year, queryEn, isCelebrity, isMovie)
-  );
-  return runWithConcurrency(tasks, options?.maxConcurrent || 3, options?.onResult);
-}
-
-export async function searchSingleImage(
-  eventId: string,
-  query: string,
-  year?: number,
-  queryEn?: string,
-  isCelebrity?: boolean,
-  isMovie?: boolean
-): Promise<ImageResult> {
-  return searchImageForEvent(eventId, query, year, queryEn, isCelebrity, isMovie);
+// Helper for concurrency (used by useClientImageSearch via searchSingleImage calls)
+export async function searchImagesClientSide(queries: SearchQuery[]): Promise<ImageResult[]> {
+  // This function is less used now as the hook handles queuing, 
+  // but kept for compatibility if needed.
+  return []; 
 }
