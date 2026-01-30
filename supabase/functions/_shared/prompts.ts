@@ -50,18 +50,41 @@ KIES HET JUISTE 'visualSubjectType':
 7. 'artwork': Voor schilderijen, boekomslagen, albums.
 8. 'culture': Voor rages, muziekstromingen, dansstijlen, mode.
 
-KRITISCH - TWEE APARTE ZOEKOPDRACHTEN:
-Je moet ALTIJD BEIDE invullen:
-- 'imageSearchQuery': NEDERLANDSE zoekopdracht (bijv. "Eerste emoticon", "Compact disc")
-- 'imageSearchQueryEn': ENGELSE zoekopdracht (bijv. "First emoticon", "Compact disc")
+⚠️ KRITISCH - TWEE APARTE ZOEKOPDRACHTEN IN VERSCHILLENDE TALEN! ⚠️
 
-Voor internationale termen die in beide talen hetzelfde zijn (bijv. "Pac-Man", "Tamagotchi", "iPhone"), mag je dezelfde term gebruiken.
-Maar voor concepten die een Nederlandse vertaling hebben, MOET je die gebruiken in imageSearchQuery.
+'imageSearchQuery' = ALTIJD NEDERLANDS (Nederlandse woorden!)
+'imageSearchQueryEn' = ALTIJD ENGELS (Engelse woorden!)
 
-VOORBEELDEN:
-- Event "Val van de Berlijnse Muur": imageSearchQuery="Val Berlijnse Muur", imageSearchQueryEn="Fall of the Berlin Wall"
-- Event "Eerste emoticon": imageSearchQuery="Eerste emoticon smiley", imageSearchQueryEn="First emoticon smiley"
-- Product "Walkman": imageSearchQuery="Sony Walkman TPS-L2", imageSearchQueryEn="Sony Walkman TPS-L2" (zelfde)
+VERPLICHTE VERTALINGEN - NL MOET ECHT NEDERLANDS ZIJN:
+- "Chernobyl" → NL: "Tsjernobyl", EN: "Chernobyl"
+- "Berlin Wall" → NL: "Berlijnse Muur", EN: "Berlin Wall"  
+- "Cold War" → NL: "Koude Oorlog", EN: "Cold War"
+- "World War" → NL: "Wereldoorlog", EN: "World War"
+- "power plant" → NL: "kerncentrale", EN: "power plant"
+- "nuclear disaster" → NL: "kernramp", EN: "nuclear disaster"
+- "space shuttle" → NL: "spaceshuttle", EN: "space shuttle"
+- "earthquake" → NL: "aardbeving", EN: "earthquake"
+- "flood" → NL: "overstroming", EN: "flood"
+- "election" → NL: "verkiezing", EN: "election"
+- "championship" → NL: "kampioenschap", EN: "championship"
+
+VOORBEELDEN (let op de ECHTE Nederlandse woorden):
+- Event "Kernramp Tsjernobyl": 
+  imageSearchQuery="Tsjernobyl kerncentrale" ✓
+  imageSearchQueryEn="Chernobyl power plant" ✓
+  FOUT: imageSearchQuery="Chernobyl power plant" ✗ (dit is Engels!)
+
+- Event "Val van de Berlijnse Muur":
+  imageSearchQuery="Val Berlijnse Muur" ✓
+  imageSearchQueryEn="Fall of the Berlin Wall" ✓
+
+- Event "Challenger-ramp":
+  imageSearchQuery="Challenger spaceshuttle explosie" ✓
+  imageSearchQueryEn="Challenger space shuttle explosion" ✓
+
+UITZONDERING: Merknamen en eigennamen blijven hetzelfde in beide talen:
+- "Sony Walkman", "Pac-Man", "iPhone", "Madonna", "Michael Jackson"
+
 
 ⚠️ REGELS VOOR BEIDE TALEN (NL én EN) - GEEN JAARTALLEN/DECENNIA! ⚠️
 
