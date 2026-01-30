@@ -197,9 +197,17 @@ export async function searchSingleImage(
       }
     }
     
-    // Fallback naar Wiki als TMDB faalt (voor lokale artiesten)
-    const wikiRes = await wiki('nl', query, undefined, false); 
-    if (wikiRes) return { eventId, ...wikiRes };
+    // Fallback 1: Commons ZONDER jaartal (voor royalty, politici, etc. die niet in TMDB staan)
+    const commonsRes = await commons(enQuery, undefined, false, false);
+    if (commonsRes) return { eventId, ...commonsRes };
+    
+    // Fallback 2: EN Wikipedia ZONDER jaartal
+    const wikiEnRes = await wiki('en', enQuery, undefined, false);
+    if (wikiEnRes) return { eventId, ...wikiEnRes };
+    
+    // Fallback 3: NL Wikipedia (voor lokale bekende personen)
+    const wikiNlRes = await wiki('nl', query, undefined, false); 
+    if (wikiNlRes) return { eventId, ...wikiNlRes };
   }
 
   // 3. Producten, Logos, Games, Lifestyle -> Commons (Met SVG support!)

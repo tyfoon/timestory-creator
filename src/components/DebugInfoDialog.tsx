@@ -84,7 +84,7 @@ export function DebugInfoDialog({ events }: DebugInfoDialogProps) {
     if (event.isMovie || type === 'movie') {
       sources.push('1. TMDB (Films)', '→ Wiki NL/EN/DE, Commons');
     } else if (event.isCelebrityBirthday || type === 'person') {
-      sources.push('1. TMDB (Personen)', '→ Wiki NL');
+      sources.push('1. TMDB', '2. Commons', '3. Wiki EN/NL');
     } else if (type === 'product' || type === 'logo' || type === 'artwork' || type === 'lifestyle') {
       sources.push('1. Commons', '2. Wiki EN/NL');
     } else {
