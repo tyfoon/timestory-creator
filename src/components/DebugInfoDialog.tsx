@@ -33,22 +33,26 @@ export function DebugInfoDialog({ events }: DebugInfoDialogProps) {
   };
 
   // Determine which sources were searched based on visualSubjectType
+  // This now reflects the ACTUAL search order from wikiImageSearch.ts and search-images edge function
   const getSearchedSources = (event: TimelineEvent): string[] => {
     const type = event.visualSubjectType;
     const sources: string[] = [];
 
     if (event.isMovie || type === 'movie') {
-      sources.push('TMDB (Films)');
+      // For movies: TMDB first, then fallback to all wiki sources
+      sources.push('1. TMDB (Films)', '→ Fallback: Wikipedia NL/EN/DE, Commons');
     } else if (event.isCelebrityBirthday || type === 'person') {
-      sources.push('TMDB (Personen)', 'Wikipedia NL');
+      // For persons: TMDB first, then Wikipedia NL fallback
+      sources.push('1. TMDB (Personen)', '→ Fallback: Wikipedia NL');
     } else if (type === 'product' || type === 'logo' || type === 'artwork') {
-      sources.push('Wikimedia Commons', 'Wikipedia EN');
+      // For products/logos: Commons first (with SVG), then Wikipedia EN
+      sources.push('1. Wikimedia Commons', '2. Wikipedia EN');
     } else {
       // Default event routing
       if (event.category === 'local' || event.category === 'politics') {
-        sources.push('Nationaal Archief');
+        sources.push('1. Nationaal Archief');
       }
-      sources.push('Wikipedia NL', 'Wikipedia EN', 'Wikimedia Commons');
+      sources.push('→ Wikipedia NL/EN/DE, Commons');
     }
 
     return sources;
@@ -125,13 +129,19 @@ export function DebugInfoDialog({ events }: DebugInfoDialogProps) {
                       <span className="text-muted-foreground">Image zoekopdracht:</span>
                       {event.imageSearchQuery ? (
                         <div className="space-y-1 mt-0.5">
-                          <p className="font-mono bg-background px-1.5 py-0.5 rounded">
-                            NL: {event.imageSearchQuery}
-                          </p>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px] text-muted-foreground font-medium uppercase">NL:</span>
+                            <span className="font-mono bg-background px-1.5 py-0.5 rounded">
+                              {event.imageSearchQuery}
+                            </span>
+                          </div>
                           {event.imageSearchQueryEn && event.imageSearchQueryEn !== event.imageSearchQuery && (
-                            <p className="font-mono bg-background px-1.5 py-0.5 rounded">
-                              EN: {event.imageSearchQueryEn}
-                            </p>
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-muted-foreground font-medium uppercase">EN:</span>
+                              <span className="font-mono bg-background px-1.5 py-0.5 rounded">
+                                {event.imageSearchQueryEn}
+                              </span>
+                            </div>
                           )}
                         </div>
                       ) : (
