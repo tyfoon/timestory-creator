@@ -1,13 +1,6 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { BirthDateData } from '@/types/form';
 
 interface DateInputProps {
@@ -19,57 +12,79 @@ interface DateInputProps {
 
 export const DateInput = ({ label, value, onChange, error }: DateInputProps) => {
   const { t } = useLanguage();
-  const months = t('months') as readonly string[];
   const currentYear = new Date().getFullYear();
 
-  const days = Array.from({ length: 31 }, (_, i) => i + 1);
-  const years = Array.from({ length: currentYear - 1899 }, (_, i) => currentYear - i);
+  const handleDayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseInt(e.target.value) || 0;
+    // Clamp between 0-31
+    const day = Math.min(31, Math.max(0, val));
+    onChange({ ...value, day });
+  };
+
+  const handleMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseInt(e.target.value) || 0;
+    // Clamp between 0-12
+    const month = Math.min(12, Math.max(0, val));
+    onChange({ ...value, month });
+  };
+
+  const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseInt(e.target.value) || 0;
+    onChange({ ...value, year: val });
+  };
+
+  // Get month name for display below input
+  const months = t('months') as readonly string[];
+  const monthName = value.month >= 1 && value.month <= 12 ? months[value.month - 1] : '';
 
   return (
     <div className="space-y-2">
       <Label className="text-sm font-medium text-foreground">{label}</Label>
       <div className="grid grid-cols-3 gap-2">
-        <Select
-          value={value.day?.toString() || ''}
-          onValueChange={(v) => onChange({ ...value, day: parseInt(v) })}
-        >
-          <SelectTrigger className="bg-card">
-            <SelectValue placeholder={t('dayLabel') as string} />
-          </SelectTrigger>
-          <SelectContent>
-            {days.map((day) => (
-              <SelectItem key={day} value={day.toString()}>
-                {day}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Day input */}
+        <div className="space-y-1">
+          <Input
+            type="number"
+            inputMode="numeric"
+            placeholder={t('dayLabel') as string}
+            value={value.day || ''}
+            onChange={handleDayChange}
+            min={1}
+            max={31}
+            className="bg-card text-center text-lg font-medium"
+          />
+        </div>
 
-        <Select
-          value={value.month?.toString() || ''}
-          onValueChange={(v) => onChange({ ...value, month: parseInt(v) })}
-        >
-          <SelectTrigger className="bg-card">
-            <SelectValue placeholder={t('monthLabel') as string} />
-          </SelectTrigger>
-          <SelectContent>
-            {months.map((month, index) => (
-              <SelectItem key={index} value={(index + 1).toString()}>
-                {month}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Month input */}
+        <div className="space-y-1">
+          <Input
+            type="number"
+            inputMode="numeric"
+            placeholder={t('monthLabel') as string}
+            value={value.month || ''}
+            onChange={handleMonthChange}
+            min={1}
+            max={12}
+            className="bg-card text-center text-lg font-medium"
+          />
+          {monthName && (
+            <p className="text-xs text-muted-foreground text-center">{monthName}</p>
+          )}
+        </div>
 
-        <Input
-          type="number"
-          placeholder={t('yearLabel') as string}
-          value={value.year || ''}
-          onChange={(e) => onChange({ ...value, year: parseInt(e.target.value) || 0 })}
-          min={1900}
-          max={currentYear}
-          className="bg-card"
-        />
+        {/* Year input */}
+        <div className="space-y-1">
+          <Input
+            type="number"
+            inputMode="numeric"
+            placeholder={t('yearLabel') as string}
+            value={value.year || ''}
+            onChange={handleYearChange}
+            min={1900}
+            max={currentYear}
+            className="bg-card text-center text-lg font-medium"
+          />
+        </div>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
