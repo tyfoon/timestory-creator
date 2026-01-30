@@ -50,10 +50,25 @@ function isAllowedImageUrl(maybeUrl: string, allowSvg: boolean = false): boolean
     return false;
   }
 }
+// 3. VOEG DEZE NIEUWE FUNCTIE TOE (Voor het strippen van "jaren 80")
+function stripDecades(query: string): string {
+  return query
+    .replace(/\b(19|20)\d{2}s?\b/gi, '') // Matches 1980, 1980s
+    .replace(/\b\d{2}s\b/gi, '')         // Matches 80s, 90s
+    .replace(/\bjaren\s+\d{2,4}\b/gi, '') // Matches "jaren 80"
+    .replace(/\bdecade\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 // Opschonen voor TMDB (haalt jaartallen en haakjes weg)
+// function cleanQueryForTMDB(query: string): string {
+//  return query.replace(/\b\d{4}\b/g, '').replace(/[()]/g, '').trim();
+// }
+
+// 4. PAS cleanQueryForTMDB AAN (Gebruik nu stripDecades)
 function cleanQueryForTMDB(query: string): string {
-  return query.replace(/\b\d{4}\b/g, '').replace(/[()]/g, '').trim();
+  return stripDecades(query).replace(/[()]/g, '').trim();
 }
 
 // Simpele check of woorden matchen
