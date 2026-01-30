@@ -1,9 +1,10 @@
 /**
  * Client-side Wikipedia/Wikimedia image search
  * * DEFINITIVE VERSION:
- * - "Filename Authority": Short queries MUST match the Title/Filename. Snippets are ignored for short queries.
- * - Prioritizes Wikimedia Commons (Images) over Wikipedia (Articles).
- * - Strict Number Logic (Windows 1.0 != Windows 10).
+ * - Allows SVGs (Critical for Tech/Logos).
+ * - "Filename Authority" for short queries.
+ * - Prioritizes TMDB for Music/Celebs/Movies.
+ * - Smart Stopwords for Bands/Artists.
  */
 
 const THUMB_WIDTH = 960;
@@ -29,8 +30,9 @@ function isAllowedImageUrl(maybeUrl: string): boolean {
     const url = new URL(maybeUrl);
     const path = url.pathname.toLowerCase();
     if (path.includes("/transcoded/")) return false;
-    if (path.match(/\.(mp3|ogg|wav|webm|mp4|ogv|pdf|svg|tif|tiff)$/)) return false;
-    return path.match(/\.(jpg|jpeg|png|webp|gif)$/) !== null;
+    // UPDATED: Allowed svg by removing it from this list
+    if (path.match(/\.(mp3|ogg|wav|webm|mp4|ogv|pdf|tif|tiff)$/)) return false;
+    return path.match(/\.(jpg|jpeg|png|webp|gif|svg)$/) !== null;
   } catch {
     return false;
   }
@@ -46,12 +48,19 @@ function normalizeText(str: string): string {
     .trim();
 }
 
+// CRITICAL: Stop words are stripped for TMDB search but KEPT for Wiki/Commons search context
 const STOP_WORDS = new Set([
+  // English
   'the', 'and', 'for', 'with', 'from', 'image', 'file', 'jpg', 'png', 'picture', 'photo', 'on', 'at', 'in', 'of',
   'launch', 'introduction', 'presentation', 'release', 'debut', 'start', 'end',
   'born', 'birthday', 'birth', 'died', 'death', 'celebration', 'anniversary',
   'winner', 'winning', 'wins', 'champion', 'victory', 'award', 'prize',
   'official', 'trailer', 'video', 'scene', 'clip',
+  'watch', 'clock', 'timepiece', 
+  'band', 'group', 'singer', 'artist', 'musician', // NEW: Music context words
+  'toy', 'toys', 'game', 'craze',
+  
+  // Dutch
   'de', 'het', 'een', 'van', 'voor', 'met', 'op', 'bij', 'tijdens', 'in', 'uit',
   'bestand', 'afbeelding', 'foto', 'plaatje', 'portret',
   'introductie', 'lancering', 'uitgave', 'release', 'start', 'einde', 'slot',
@@ -59,12 +68,15 @@ const STOP_WORDS = new Set([
   'viering', 'feest', 'jubileum', 'huldiging',
   'winnaar', 'wint', 'winst', 'kampioen', 'overwinning', 'prijs', 'medaille',
   'officieel', 'videoclip', 'fragment', 'verslag',
-  'gekte', 'rage', 'hype', 'trend', 'fenomeen', 'opkomst', 'succes'
+  'gekte', 'rage', 'hype', 'trend', 'fenomeen', 'opkomst', 'succes',
+  'horloge', 'klok', 'uurwerk',
+  'speelgoed', 'spel', 'pop', 'gadget', 'groep', 'zanger', 'zangeres'
 ]);
 
 function cleanQueryForTMDB(query: string): string {
   let cleaned = query.replace(/\b\d{4}\b/g, '').replace(/[()]/g, '').replace(/ - /g, ' ').replace(/\s+/g, ' ');
   const words = cleaned.split(' ');
+  // This removes "band" from "Queen band" so TMDB searches for "Queen"
   const filteredWords = words.filter(w => !STOP_WORDS.has(w.toLowerCase()));
   return filteredWords.join(' ').trim();
 }
@@ -81,7 +93,6 @@ function contentMatchesQuery(title: string, snippet: string | undefined, query: 
   // 1. NUMBER CHECK (Crucial for "Commodore 64", "Windows 1.0")
   const queryNumbers = normalizedQuery.match(/\b\d+(\.\d+)?\b/g);
   if (queryNumbers) {
-    // Numbers must appear in Title OR Snippet (years can be in description)
     const combinedText = normalizedTitle + " " + normalizedSnippet;
     const allNumbersPresent = queryNumbers.every(num => combinedText.includes(num));
     if (!allNumbersPresent) return false;
@@ -100,28 +111,21 @@ function contentMatchesQuery(title: string, snippet: string | undefined, query: 
     return text.includes(word);
   };
   
-  // Logic: Count matches in Title vs Snippet
   const matchesInTitle = mainSubjectWords.filter(w => wordAppearsIn(w, normalizedTitle)).length;
   const matchesInSnippet = mainSubjectWords.filter(w => wordAppearsIn(w, normalizedSnippet)).length;
   const maxMatches = Math.max(matchesInTitle, matchesInSnippet);
   
   if (strict) {
-    // --- STRICT MODE ---
-    
-    // Case A: Short Query (e.g. "Apple Macintosh", "John Lennon")
-    // RULE: MUST MATCH THE TITLE. Snippet is unreliable.
+    // STRICT MODE:
     if (mainSubjectWords.length <= 2) {
-      // Require ALL words to be in the TITLE
+      // Short query? Must match TITLE.
       return matchesInTitle === mainSubjectWords.length;
     }
-
-    // Case B: Medium Query (e.g. "Oscar winnaar Jonas Vingegaard")
-    // Require 75% match, prefer title but allow snippet.
+    // Medium Query: Require 75% match
     const threshold = Math.ceil(mainSubjectWords.length * 0.75);
     return maxMatches >= threshold;
-
   } else {
-    // Lenient (Fallback) - still require at least 1 title match if possible
+    // Lenient
     return matchesInTitle >= 1 || matchesInSnippet >= 1;
   }
 }
@@ -192,11 +196,9 @@ async function trySourceWithFallback(
   searchFn: (query: string, year: number | undefined, opts: SearchOptions) => Promise<{ imageUrl: string; source: string } | null>,
   query: string, year: number | undefined
 ) {
-  // 1. Strict with Year
   let res = await searchFn(query, year, { useQuotes: false, includeYear: true, strictMatch: true });
   if (res) return res;
   
-  // 2. Strict without Year (CRITICAL: Strict Match MUST be true)
   if (year) {
     const cleanQuery = query.replace(/\b\d{4}\b/g, '').trim();
     res = await searchFn(cleanQuery, undefined, { useQuotes: false, includeYear: false, strictMatch: true }); 
@@ -218,11 +220,15 @@ export async function searchSingleImage(
 ): Promise<ImageResult> {
   let enQuery = queryEn || query;
   
+  // Logic: Map categories to TMDB search types automatically
+  const searchAsPerson = isCelebrity || category === 'music' || category === 'celebrity';
+  const searchAsMovie = isMovie; 
+
   // TMDB Priority
-  if (isCelebrity || isMovie || category === 'music' || category === 'entertainment') {
+  if (searchAsPerson || searchAsMovie) {
     try {
       const tmdbQuery = cleanQueryForTMDB(enQuery);
-      const tmdbResult = await searchTMDBViaEdge(eventId, tmdbQuery, isMovie ? year : undefined, isCelebrity, isMovie);
+      const tmdbResult = await searchTMDBViaEdge(eventId, tmdbQuery, searchAsMovie ? year : undefined, searchAsPerson, searchAsMovie);
       if (tmdbResult.imageUrl) return tmdbResult;
     } catch (e) {
       console.error('TMDB error:', e);
@@ -230,20 +236,22 @@ export async function searchSingleImage(
   }
   
   // SOURCE STRATEGY
-  const isGlobalTopic = ['technology', 'science', 'world', 'music', 'entertainment'].includes(category || '');
+  const isGlobalTopic = ['technology', 'science', 'world', 'music', 'entertainment', 'culture'].includes(category || '');
+  const isDutchTopic = ['politics', 'local'].includes(category || '');
+
   const sourcePromises = [];
 
-  // PRIORITIZE COMMONS AND EN-WIKI FOR VISUALS
-  // Move Commons to TOP for global topics to get the "File:Apple Macintosh.jpg" instead of "Article:History of iPhone"
   if (isGlobalTopic) {
     sourcePromises.push(trySourceWithFallback(searchWikimediaCommons, enQuery, year));
     sourcePromises.push(trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'en', opts), enQuery, year));
     sourcePromises.push(trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'nl', opts), query, year));
   } else {
-    // Local/NL topics
-    sourcePromises.push(trySourceWithFallback(searchNationaalArchief, query, year));
-    sourcePromises.push(trySourceWithFallback(searchWikimediaCommons, enQuery, year));
+    if (isDutchTopic) {
+       sourcePromises.push(trySourceWithFallback(searchNationaalArchief, query, year));
+    }
     sourcePromises.push(trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'nl', opts), query, year));
+    sourcePromises.push(trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'en', opts), enQuery, year));
+    sourcePromises.push(trySourceWithFallback(searchWikimediaCommons, enQuery, year));
   }
 
   const results = await Promise.allSettled(sourcePromises);
