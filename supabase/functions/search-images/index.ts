@@ -405,12 +405,10 @@ async function searchTMDBMovie(
     // have modern movie remakes that would incorrectly match (e.g., "The A-Team" 1983 TV vs 2010 movie)
     const isOlderContent = year && year < 2000;
     
-    // Helper to search movies with year filtering
+    // Helper to search movies - NO YEAR in query, only post-filter
     const searchMovies = async (): Promise<{ imageUrl: string; source: string } | null> => {
-      let searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanedQuery)}&language=en-US&page=1`;
-      if (year) {
-        searchUrl += `&year=${year}`;
-      }
+      // TMDB works best WITHOUT year in URL - we filter results after
+      const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanedQuery)}&language=en-US&page=1`;
       
       const searchRes = await fetch(searchUrl);
       if (!searchRes.ok) return null;
@@ -418,37 +416,52 @@ async function searchTMDBMovie(
       const searchData = await searchRes.json();
       const results = searchData.results || [];
       
-      console.log(`TMDB Movie: found ${results.length} results`);
+      console.log(`TMDB Movie: found ${results.length} results for "${cleanedQuery}"`);
       
-      for (const movie of results.slice(0, 3)) {
-        // For older content with a year, verify the movie year is close to the expected year
-        if (year && movie.release_date) {
-          const movieYear = parseInt(movie.release_date.substring(0, 4));
-          if (Math.abs(movieYear - year) > 3) {
-            console.log(`TMDB Movie: skipping "${movie.title}" (${movieYear}) - too far from target year ${year}`);
+      // If we have a year, filter results to find the best match
+      if (year) {
+        // Sort by how close the release year is to target year
+        const scored = results.map((movie: any) => {
+          const movieYear = movie.release_date ? parseInt(movie.release_date.substring(0, 4)) : 9999;
+          return { movie, yearDiff: Math.abs(movieYear - year) };
+        }).sort((a: any, b: any) => a.yearDiff - b.yearDiff);
+        
+        for (const { movie, yearDiff } of scored.slice(0, 5)) {
+          // Skip if year difference is too large (more than 3 years)
+          if (yearDiff > 3) {
+            console.log(`TMDB Movie: skipping "${movie.title}" (${movie.release_date?.substring(0,4)}) - ${yearDiff} years from target ${year}`);
             continue;
           }
-        }
-        
-        const imagePath = movie.backdrop_path || movie.poster_path;
-        if (imagePath) {
-          const size = movie.backdrop_path ? 'w780' : 'w500';
-          const imageUrl = `https://image.tmdb.org/t/p/${size}${imagePath}`;
-          const source = `https://www.themoviedb.org/movie/${movie.id}`;
           
-          console.log(`TMDB: found movie image for "${movie.title}" (query: "${cleanedQuery}")`);
-          return { imageUrl, source };
+          const imagePath = movie.backdrop_path || movie.poster_path;
+          if (imagePath) {
+            const size = movie.backdrop_path ? 'w780' : 'w500';
+            const imageUrl = `https://image.tmdb.org/t/p/${size}${imagePath}`;
+            const source = `https://www.themoviedb.org/movie/${movie.id}`;
+            console.log(`TMDB: found movie "${movie.title}" (${movie.release_date?.substring(0,4)}) for query "${cleanedQuery}" target year ${year}`);
+            return { imageUrl, source };
+          }
+        }
+      } else {
+        // No year filter - just take first result with image
+        for (const movie of results.slice(0, 3)) {
+          const imagePath = movie.backdrop_path || movie.poster_path;
+          if (imagePath) {
+            const size = movie.backdrop_path ? 'w780' : 'w500';
+            const imageUrl = `https://image.tmdb.org/t/p/${size}${imagePath}`;
+            const source = `https://www.themoviedb.org/movie/${movie.id}`;
+            console.log(`TMDB: found movie "${movie.title}" for query "${cleanedQuery}"`);
+            return { imageUrl, source };
+          }
         }
       }
       return null;
     };
     
-    // Helper to search TV shows with year filtering
+    // Helper to search TV shows - NO YEAR in query, only post-filter
     const searchTV = async (): Promise<{ imageUrl: string; source: string } | null> => {
-      let tvSearchUrl = `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanedQuery)}&language=en-US&page=1`;
-      if (year) {
-        tvSearchUrl += `&first_air_date_year=${year}`;
-      }
+      // TMDB works best WITHOUT year in URL - we filter results after
+      const tvSearchUrl = `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanedQuery)}&language=en-US&page=1`;
       
       const searchRes = await fetch(tvSearchUrl);
       if (!searchRes.ok) return null;
@@ -456,27 +469,47 @@ async function searchTMDBMovie(
       const searchData = await searchRes.json();
       const results = searchData.results || [];
       
-      console.log(`TMDB TV: found ${results.length} results`);
+      console.log(`TMDB TV: found ${results.length} results for "${cleanedQuery}"`);
       
-      for (const show of results.slice(0, 3)) {
-        // For older content with a year, verify the show's first air date is close
-        if (year && show.first_air_date) {
-          const showYear = parseInt(show.first_air_date.substring(0, 4));
-          // TV shows can run for many years, so be more lenient (within 5 years of start)
-          if (showYear > year + 5 || showYear < year - 2) {
-            console.log(`TMDB TV: skipping "${show.name}" (${showYear}) - too far from target year ${year}`);
+      // If we have a year, filter results to find the best match
+      if (year) {
+        // Sort by how close the first air date is to target year
+        // TV shows can run many years, so we're lenient: show must have STARTED before or near target year
+        const scored = results.map((show: any) => {
+          const showYear = show.first_air_date ? parseInt(show.first_air_date.substring(0, 4)) : 9999;
+          // For TV: the show should have started ON or BEFORE the target year (allow 1 year before)
+          // A show from 1983 is still valid for an event in 1985
+          const yearDiff = showYear <= year ? 0 : showYear - year;
+          return { show, showYear, yearDiff };
+        }).sort((a: any, b: any) => a.yearDiff - b.yearDiff);
+        
+        for (const { show, showYear, yearDiff } of scored.slice(0, 5)) {
+          // Skip if show started MORE than 2 years AFTER the target year
+          if (yearDiff > 2) {
+            console.log(`TMDB TV: skipping "${show.name}" (${showYear}) - started ${yearDiff} years after target ${year}`);
             continue;
           }
-        }
-        
-        const imagePath = show.backdrop_path || show.poster_path;
-        if (imagePath) {
-          const size = show.backdrop_path ? 'w780' : 'w500';
-          const imageUrl = `https://image.tmdb.org/t/p/${size}${imagePath}`;
-          const source = `https://www.themoviedb.org/tv/${show.id}`;
           
-          console.log(`TMDB: found TV image for "${show.name}" (query: "${cleanedQuery}")`);
-          return { imageUrl, source };
+          const imagePath = show.backdrop_path || show.poster_path;
+          if (imagePath) {
+            const size = show.backdrop_path ? 'w780' : 'w500';
+            const imageUrl = `https://image.tmdb.org/t/p/${size}${imagePath}`;
+            const source = `https://www.themoviedb.org/tv/${show.id}`;
+            console.log(`TMDB: found TV "${show.name}" (${showYear}) for query "${cleanedQuery}" target year ${year}`);
+            return { imageUrl, source };
+          }
+        }
+      } else {
+        // No year filter - just take first result with image
+        for (const show of results.slice(0, 3)) {
+          const imagePath = show.backdrop_path || show.poster_path;
+          if (imagePath) {
+            const size = show.backdrop_path ? 'w780' : 'w500';
+            const imageUrl = `https://image.tmdb.org/t/p/${size}${imagePath}`;
+            const source = `https://www.themoviedb.org/tv/${show.id}`;
+            console.log(`TMDB: found TV "${show.name}" for query "${cleanedQuery}"`);
+            return { imageUrl, source };
+          }
         }
       }
       return null;
