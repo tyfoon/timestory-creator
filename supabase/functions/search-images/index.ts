@@ -25,16 +25,19 @@ function isAllowedImageUrl(maybeUrl: string): boolean {
 
     if (path.includes("/transcoded/")) return false;
 
-    if (
-      path.endsWith(".mp3") ||
-      path.endsWith(".ogg") ||
-      path.endsWith(".wav") ||
-      path.endsWith(".webm") ||
-      path.endsWith(".mp4") ||
-      path.endsWith(".ogv") ||
-      path.endsWith(".pdf") ||
-      path.endsWith(".svg")
-    ) {
+    // Block all audio/video/document formats
+    const blockedExtensions = [
+      // Audio
+      ".mp3", ".ogg", ".oga", ".wav", ".flac", ".aac", ".m4a", ".wma", ".opus",
+      // Video  
+      ".webm", ".mp4", ".ogv", ".avi", ".mkv", ".mov",
+      // Documents
+      ".pdf",
+      // Vector (usually not photos)
+      ".svg"
+    ];
+    
+    if (blockedExtensions.some(ext => path.endsWith(ext))) {
       return false;
     }
 
