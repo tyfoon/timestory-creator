@@ -23,43 +23,39 @@ export const EVENT_CATEGORIES = [
 ] as const;
 
 // =============================================================================
-// HELPER: VISUAL DIRECTOR INSTRUCTIES (NIEUW!)
+// HELPER: VISUAL DIRECTOR INSTRUCTIES
 // =============================================================================
 const VISUAL_DIRECTOR_INSTRUCTIONS = `
 ROL: BEELDREDACTEUR (CRUCIAAL)
-Jij bepaalt welke zoekterm wordt gebruikt om een foto te vinden.
-Jouw doel is om FOUTE matches te voorkomen door ULTRA-SPECIFIEK te zijn.
+Jij bepaalt welke zoekterm ('imageSearchQueryEn') wordt gebruikt om een foto te vinden.
 
-REGELS VOOR 'imageSearchQueryEn' (Het belangrijkste veld):
-1.  GEEN ZINNEN, GEEN WERKWOORDEN. Alleen het ONDERWERP (Zelfstandig naamwoord).
-2.  Bepaal het TYPE onderwerp en volg de strategie:
+GOUDEN REGEL: Wikimedia Commons is Engelstalig.
+Vertaal ALTIJD het onderwerp naar het ENGELS voor 'imageSearchQueryEn'.
 
-    -> TYPE: PRODUCT / GADGET / AUTO (Category: technology, culture)
-       * FOUT: "Introduction of the Walkman" (Te vaag, geeft vogels of mensen)
-       * GOED: "Sony Walkman TPS-L2" (Specifiek model!)
-       * FOUT: "Swatch watches trend"
-       * GOED: "Swatch watch 1983"
-       * FOUT: "Commodore 64 release"
-       * GOED: "Commodore 64 computer" (Voeg woord 'computer', 'car', 'console' toe)
+REGELS PER TYPE:
 
-    -> TYPE: PERSOON / ARTIEST (Category: music, celebrity, sports, politics)
-       * FOUT: "Moord op John Lennon" (Geeft gebouwen/plaats delict)
-       * GOED: "John Lennon portrait"
-       * FOUT: "Winnaar Tour de France Joop Zoetemelk"
-       * GOED: "Joop Zoetemelk 1980"
+1. SPEELGOED, GAMES & RAGES (Category: culture, technology)
+   * Vertaal de productnaam naar het Engels!
+   * FOUT: "De Smurfen", "Transformers speelgoed", "Rubiks kubus", "Introductie Pac-Man"
+   * GOED: "The Smurfs", "Transformers toy", "Rubik's Cube", "Pac-Man arcade"
+   * FOUT: "BMX fiets rage" -> GOED: "BMX bike"
 
-    -> TYPE: GEBEURTENIS (Category: world, politics)
-       * FOUT: "Val van de muur"
-       * GOED: "Berlin Wall 1989"
-       * FOUT: "Watersnoodramp in Zeeland"
-       * GOED: "North Sea flood 1953"
+2. PRODUCTEN & TECH
+   * Gebruik het specifieke model of de Engelse naam.
+   * FOUT: "Eerste mobiele telefoon" -> GOED: "Motorola DynaTAC"
+   * FOUT: "Introductie CD-speler" -> GOED: "Compact Disc player"
 
-3.  FILMS & TV:
-    * ALTIJD jaartal toevoegen: "Titanic film 1997", "Friends TV show".
+3. FILMS & TV
+   * FOUT: "Goede Tijden Slechte Tijden" (Tenzij strikt lokaal)
+   * GOED: "The A-Team TV show", "Knight Rider car", "Titanic film 1997"
 
-4.  SAMENVATTING:
-    * Vraag jezelf: "Als ik dit in Google Afbeeldingen typ, krijg ik dan direct het JUISTE object?"
-    * Maak de zoekterm 'schoon'. Verwijder woorden als "Launch", "Premiere", "Birthday", "Dood", "Winnaar".
+4. PERSONEN
+   * Alleen de naam. Geen context.
+   * FOUT: "Moord op Kennedy" -> GOED: "John F. Kennedy"
+
+5. ALGEMEEN
+   * Verwijder woorden als "Introductie", "Lancering", "Rage", "Succes".
+   * Houd het PUUR: Alleen het object of de persoon.
 `;
 
 // =============================================================================
@@ -80,13 +76,8 @@ KRITISCH - OUTPUT FORMAAT (NDJSON):
 Je MOET je output formatteren als NDJSON (Newline Delimited JSON).
 Stuur ELKE gebeurtenis als een apart JSON-object op een NIEUWE regel.
 
-FORMAT PER REGEL:
-{"type":"event","data":{"id":"evt_1","date":"1973-03-28","year":1973,"month":3,"day":28,"title":"Titel","description":"Tekst","category":"technology","imageSearchQuery":"Nederlandse term","imageSearchQueryEn":"Sony Walkman TPS-L2","importance":"high","eventScope":"period","spotifySearchQuery":"Artist - Title","movieSearchQuery":"Film titel trailer jaar"}}
-
-EXTRA VELDEN (VERPLICHT waar van toepassing):
-- spotifySearchQuery: Vul in voor ALLE events met category="music" OF als er een grote hit bij hoort. Formaat: "Artist - Song Title" (bijv. "Michael Jackson - Thriller").
-- movieSearchQuery: Vul in voor ALLE film/bioscoop events. Formaat: "Filmtitel trailer jaar" (bijv. "Top Gun trailer 1986").
-- isMovie: Zet op true voor film events.
+FORMAT PER REGEL (BELANGRIJK: Vul ook spotifySearchQuery en movieSearchQuery in indien van toepassing!):
+{"type":"event","data":{"id":"evt_1","date":"1980-05-22","year":1980,"month":5,"title":"Titel","description":"...","category":"culture","imageSearchQuery":"Pac-Man spel","imageSearchQueryEn":"Pac-Man arcade","importance":"high","eventScope":"period","spotifySearchQuery":"Artist - Title","movieSearchQuery":"Movie Title trailer"}}
 
 NA ALLE EVENTS:
 {"type":"summary","data":"Samenvatting..."}
@@ -95,9 +86,9 @@ NA ALLE EVENTS:
 REGELS:
 1. GEEN markdown, ALLEEN JSON regels.
 2. Genereer ${eventCount} events.
-3. imageSearchQueryEn MOET de 'Visual Director' regels volgen (PUUR ONDERWERP).
-4. MUZIEK events MOETEN spotifySearchQuery hebben.
-5. FILM events MOETEN movieSearchQuery EN isMovie=true hebben.`;
+3. 'imageSearchQueryEn' is je zoekopdracht voor de foto database. Zorg dat deze ENGELS en SPECIFIEK is.
+4. 'spotifySearchQuery': Vul in voor muziek events ("Artiest - Titel") of nummer 1 hits.
+5. 'movieSearchQuery': Vul in voor films ("Titel trailer jaar").`;
 }
 
 // =============================================================================
@@ -116,39 +107,34 @@ Genereer een JSON object met 'events', 'summary' en 'famousBirthdays'.`;
 }
 
 // =============================================================================
-// PERIOD PROMPTS (Ongewijzigd, maar contextueel relevant)
+// PERIOD PROMPTS
 // =============================================================================
-// ... (Houd hier de inhoud van je vorige prompts.ts voor PERIOD_PROMPTS, 
-//      USER PROMPT TEMPLATES, etc. intact. Alleen de System Prompts hierboven zijn cruciaal aangepast.)
-
 export const PERIOD_PROMPTS = {
   birthyear: `CONTENT FOCUS - GEBOORTEJAAR:
 Focus op de sfeer van dat specifieke jaar:
-- DE GROTE HITS: Welke nummers domineerden de radio?
-- SAMENLEVING: Wat hield het nieuws in de greep?
-- RAGES: Wat was er dat jaar ineens overal te zien? (Gebruik specifieke productnamen voor foto's!)
+- DE GROTE HITS (Muziek).
+- RAGES & SPEELGOED: Wat lag er in de winkel? (Gebruik Engelse namen voor zoeken!)
 - FILM/TV: De blockbusters en series.
-- TECHNOLOGIE: Welke nieuwe gadgets kwamen er uit?`,
+- NIEUWS: Grote wereldgebeurtenissen.`,
 
   childhood: `CONTENT FOCUS - JEUGD (6-10 jaar):
 Focus op:
-- SCHOOLPLEIN RAGES: Knikkers, flippo's, specifieke spelletjes.
-- TV & CARTOONS: Intro-tunes, Zappelin/Fox Kids programma's.
-- SPEELGOED: Wat stond er op het verlanglijstje?
-- SNOEP & ETEN: Specifieke ijsjes/snoep.`,
+- SCHOOLPLEIN RAGES: Knikkers, flippo's, tamagotchi.
+- TV & CARTOONS: Intro-tunes, kinderseries.
+- SPEELGOED: Lego, Barbie, Action Man, Nintendo.
+- SNOEP: Wat kocht je voor een gulden?`,
 
   puberty: `CONTENT FOCUS - PUBERTIJD (11-17 jaar):
 Focus op:
-- MUZIEK & IDENTITEIT: Stromingen, bands, concerten.
-- TECH & SOCIAAL: Eerste mobieltje (Nokia 3310, iPhone), MSN, Hyves.
-- TV & SERIES: TMF, MTV, Netflix hits.
-- SCHOOLLEVEN: Schoolfeesten, trends.`,
+- MUZIEK & IDENTITEIT: Stromingen, idolen.
+- TECH: Eerste mobieltje, MSN, mp3-speler.
+- TV & SERIES: Videoclips, populaire soaps.`,
 
   youngAdult: `CONTENT FOCUS - JONG VOLWASSEN (18-25 jaar):
 Focus op:
-- FESTIVALS & NACHTLEVEN.
-- MAATSCHAPPELIJKE EVENTS (9/11, Crisis).
-- TECH REVOLUTIES (Facebook, Spotify).`,
+- UITGAAN & FESTIVALS.
+- MAATSCHAPPIJ & POLITIEK.
+- TECH REVOLUTIES.`,
 
   custom: `CONTENT FOCUS - BREDE MIX:
 Variatie van hits, nieuws, films, tech en sport.`
@@ -164,8 +150,7 @@ export function getContentFocusForPeriod(periodType?: string): string {
   }
 }
 
-// ... (Kopieer hier de rest van je bestaande prompts.ts: BIRTHDATE_PROMPT_SHORT, etc. 
-//      Zorg dat je 'getTimelineTool' hieronder wel vervangt met de nieuwe beschrijvingen!)
+// ... (Rest van de helper functies zoals getTimelineTool, MONTH_NAMES, etc.)
 
 export function getTimelineTool() {
   return {
@@ -189,10 +174,10 @@ export function getTimelineTool() {
                 title: { type: "string" },
                 description: { type: "string" },
                 category: { type: "string", enum: EVENT_CATEGORIES },
-                imageSearchQuery: { type: "string", description: "Original search term in user language" },
+                imageSearchQuery: { type: "string", description: "Original search term" },
                 imageSearchQueryEn: { 
                   type: "string", 
-                  description: "VISUAL SUBJECT ONLY. No verbs, no 'introduction of'. Just the Object Name, Person Name, or Specific Event Name. Example: 'Sony Walkman', 'John Lennon', 'Berlin Wall'." 
+                  description: "ENGLISH SEARCH TERM for Wikimedia Commons. Translate product names! Example: 'The Smurfs', 'Transformers toy', 'Rubik's Cube'." 
                 },
                 importance: { type: "string", enum: ["high", "medium", "low"] },
                 eventScope: { type: "string", enum: ["birthdate", "birthmonth", "birthyear", "period"] },
@@ -225,7 +210,6 @@ export function getTimelineTool() {
   };
 }
 
-// ... (Rest van de helper functies zoals buildPrompt, MONTH_NAMES etc. ongewijzigd laten)
 export const MONTH_NAMES = [
   "januari", "februari", "maart", "april", "mei", "juni",
   "juli", "augustus", "september", "oktober", "november", "december"
