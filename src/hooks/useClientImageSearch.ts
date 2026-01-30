@@ -63,7 +63,7 @@ export function useClientImageSearch(options: UseClientImageSearchOptions = {}) 
         // Start search without awaiting (runs in parallel)
         // Use English query for better international results
         // Pass isCelebrityBirthday and isMovie flags for TMDB fallback
-        searchSingleImage(event.id, event.imageSearchQuery, event.year, event.imageSearchQueryEn, event.isCelebrityBirthday, event.isMovie)
+        searchSingleImage(event.id, event.imageSearchQuery, event.year, event.imageSearchQueryEn, (event.isCelebrityBirthday || event.category === 'music' || event.category === 'celebrity'), event.isMovie)
           .then((result: ImageResult) => {
             setSearchedCount(c => c + 1);
             
