@@ -41,6 +41,19 @@ KIES HET JUISTE 'visualSubjectType':
 6. 'location': Voor steden, gebouwen.
 7. 'artwork': Voor schilderijen, boekomslagen, albums.
 
+KRITISCH - TWEE APARTE ZOEKOPDRACHTEN:
+Je moet ALTIJD BEIDE invullen:
+- 'imageSearchQuery': NEDERLANDSE zoekopdracht (bijv. "Eerste emoticon", "Compact disc")
+- 'imageSearchQueryEn': ENGELSE zoekopdracht (bijv. "First emoticon", "Compact disc")
+
+Voor internationale termen die in beide talen hetzelfde zijn (bijv. "Pac-Man", "Tamagotchi", "iPhone"), mag je dezelfde term gebruiken.
+Maar voor concepten die een Nederlandse vertaling hebben, MOET je die gebruiken in imageSearchQuery.
+
+VOORBEELDEN:
+- Event "Val van de Berlijnse Muur": imageSearchQuery="Val Berlijnse Muur", imageSearchQueryEn="Fall of the Berlin Wall"
+- Event "Eerste emoticon": imageSearchQuery="Eerste emoticon smiley", imageSearchQueryEn="First emoticon smiley"
+- Product "Walkman": imageSearchQuery="Sony Walkman TPS-L2", imageSearchQueryEn="Sony Walkman TPS-L2" (zelfde)
+
 REGELS VOOR 'imageSearchQueryEn' PER TYPE:
 - type 'person': ALLEEN de naam. "David Bowie" (GEEN "David Bowie singer")
 - type 'movie': ALLEEN de titel, GEEN jaartal. "Titanic", "Jurassic Park" (GEEN "Titanic 1997", GEEN "Titanic film")
