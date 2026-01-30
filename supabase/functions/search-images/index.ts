@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 interface ImageSearchRequest {
-  queries: { eventId: string; query: string; year?: number; isCelebrity?: boolean; isMovie?: boolean }[];
+  queries: { eventId: string; query: string; year?: number; isCelebrity?: boolean; isMovie?: boolean; isMusic?: boolean; spotifySearchQuery?: string }[];
   mode?: "fast" | "full";
 }
 
@@ -531,6 +531,20 @@ async function trySourceWithFallback(
   return null;
 }
 
+// ============== HELPER: Clean music query (remove "album", "cover", etc.) ==============
+function cleanMusicQuery(query: string): string {
+  // Remove common words that pollute music searches
+  const wordsToRemove = ['album', 'cover', 'single', 'record', 'vinyl', 'cd', 'ep', 'lp'];
+  let cleaned = query;
+  for (const word of wordsToRemove) {
+    // Remove word with word boundaries (case insensitive)
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    cleaned = cleaned.replace(regex, '');
+  }
+  // Clean up extra spaces
+  return cleaned.replace(/\s+/g, ' ').trim();
+}
+
 // ============== MAIN SEARCH FUNCTION ==============
 async function searchAllSources(
   eventId: string,
@@ -538,24 +552,32 @@ async function searchAllSources(
   year: number | undefined,
   firecrawlKey: string | undefined,
   isCelebrity: boolean = false,
-  isMovie: boolean = false
+  isMovie: boolean = false,
+  isMusic: boolean = false,
+  spotifySearchQuery?: string
 ): Promise<ImageResult> {
-  console.log(`Searching for: "${query}" (${year || 'no year'})${isCelebrity ? ' [celebrity]' : ''}${isMovie ? ' [movie]' : ''}`);
+  console.log(`Searching for: "${query}" (${year || 'no year'})${isCelebrity ? ' [celebrity]' : ''}${isMovie ? ' [movie]' : ''}${isMusic ? ' [music]' : ''}`);
+  
+  // For music, clean the query (remove "album", "cover", etc.)
+  const searchQuery = isMusic ? cleanMusicQuery(query) : query;
+  if (isMusic && searchQuery !== query) {
+    console.log(`Music query cleaned: "${query}" -> "${searchQuery}"`);
+  }
   
   // For celebrities, try TMDB first as it's optimized for person portraits
   if (isCelebrity) {
-    const tmdbResult = await searchTMDBPerson(query);
+    const tmdbResult = await searchTMDBPerson(searchQuery);
     if (tmdbResult) {
-      console.log(`Found celebrity image via TMDB for "${query}"`);
+      console.log(`Found celebrity image via TMDB for "${searchQuery}"`);
       return { eventId, imageUrl: tmdbResult.imageUrl, source: tmdbResult.source };
     }
   }
   
   // For movies, try TMDB first as it has the best movie posters/backdrops
   if (isMovie) {
-    const tmdbResult = await searchTMDBMovie(query, year);
+    const tmdbResult = await searchTMDBMovie(searchQuery, year);
     if (tmdbResult) {
-      console.log(`Found movie image via TMDB for "${query}"`);
+      console.log(`Found movie image via TMDB for "${searchQuery}"`);
       return { eventId, imageUrl: tmdbResult.imageUrl, source: tmdbResult.source };
     }
   }
@@ -563,29 +585,29 @@ async function searchAllSources(
   // Search all sources in parallel with fallback strategy
   const allSources = [
     // Dutch sources first (likely most relevant for Dutch app)
-    trySourceWithFallback(searchNationaalArchief, query, year),
+    trySourceWithFallback(searchNationaalArchief, searchQuery, year),
     trySourceWithFallback(
       (q, y, opts) => searchWikipediaWithImages(q, y, 'nl', opts),
-      query,
+      searchQuery,
       year
     ),
     // International sources
     trySourceWithFallback(
       (q, y, opts) => searchWikipediaWithImages(q, y, 'en', opts),
-      query,
+      searchQuery,
       year
     ),
     trySourceWithFallback(
       (q, y, opts) => searchWikipediaWithImages(q, y, 'de', opts),
-      query,
+      searchQuery,
       year
     ),
-    trySourceWithFallback(searchWikimediaCommons, query, year),
+    trySourceWithFallback(searchWikimediaCommons, searchQuery, year),
   ];
   
   // Add Firecrawl Wikipedia-only search if available (already has its own fallback)
   if (firecrawlKey) {
-    allSources.push(searchFirecrawlWikipediaOnly(query, year, firecrawlKey));
+    allSources.push(searchFirecrawlWikipediaOnly(searchQuery, year, firecrawlKey));
   }
 
   // Use Promise.allSettled to get all results, then pick the first successful one
@@ -593,12 +615,27 @@ async function searchAllSources(
   
   for (const result of results) {
     if (result.status === 'fulfilled' && result.value) {
-      console.log(`Found image for "${query}": ${result.value.imageUrl?.substring(0, 80)}...`);
+      console.log(`Found image for "${searchQuery}": ${result.value.imageUrl?.substring(0, 80)}...`);
       return { eventId, imageUrl: result.value.imageUrl, source: result.value.source };
     }
   }
   
-  console.log(`No image found for "${query}" in any source`);
+  // MUSIC FALLBACK: If no image found for music, try TMDB with Spotify query (artist name)
+  if (isMusic && spotifySearchQuery) {
+    // Extract artist name from Spotify query (format: "Artist - Title" or just "Artist")
+    const artistName = spotifySearchQuery.includes(' - ') 
+      ? spotifySearchQuery.split(' - ')[0].trim()
+      : spotifySearchQuery.trim();
+    
+    console.log(`Music fallback: trying TMDB for artist "${artistName}"`);
+    const tmdbResult = await searchTMDBPerson(artistName);
+    if (tmdbResult) {
+      console.log(`Found music artist image via TMDB for "${artistName}"`);
+      return { eventId, imageUrl: tmdbResult.imageUrl, source: tmdbResult.source };
+    }
+  }
+  
+  console.log(`No image found for "${searchQuery}" in any source`);
   return { eventId, imageUrl: null, source: null };
 }
 
@@ -618,8 +655,8 @@ serve(async (req) => {
 
     // Process all queries in parallel
     const results = await Promise.all(
-      limitedQueries.map(({ eventId, query, year, isCelebrity, isMovie }) =>
-        searchAllSources(eventId, query, year, FIRECRAWL_API_KEY, isCelebrity, isMovie)
+      limitedQueries.map(({ eventId, query, year, isCelebrity, isMovie, isMusic, spotifySearchQuery }) =>
+        searchAllSources(eventId, query, year, FIRECRAWL_API_KEY, isCelebrity, isMovie, isMusic, spotifySearchQuery)
       )
     );
 
