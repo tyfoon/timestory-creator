@@ -137,6 +137,45 @@ const commons = (q: string, y?: number, svg = false, strict = true) =>
 const nationaal = (q: string, y?: number) => 
   fetchWikiResults(`https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(`${q} ${y || ''} Nationaal Archief`)}&srnamespace=6&format=json&origin=*`, q, false, true);
 
+// Spotify Album Art Wrapper - Returns album artwork from Spotify
+async function searchSpotifyAlbumArt(eventId: string, spotifyQuery: string): Promise<ImageResult> {
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    if (!supabaseUrl || !supabaseKey) return { eventId, imageUrl: null, source: null };
+    
+    console.log(`[Spotify Art] Searching album art for: "${spotifyQuery}"`);
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/search-spotify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}`, 'apikey': supabaseKey },
+      body: JSON.stringify({ query: spotifyQuery }),
+    });
+    
+    if (!response.ok) {
+      console.log(`[Spotify Art] Search failed: ${response.status}`);
+      return { eventId, imageUrl: null, source: null };
+    }
+    
+    const data = await response.json();
+    
+    if (data.albumImage && data.trackId) {
+      console.log(`[Spotify Art] Found album art for "${data.trackName}" by ${data.artistName}`);
+      return { 
+        eventId, 
+        imageUrl: data.albumImage, 
+        source: data.spotifyUrl || `https://open.spotify.com/track/${data.trackId}`
+      };
+    }
+    
+    console.log(`[Spotify Art] No album art found for: "${spotifyQuery}"`);
+    return { eventId, imageUrl: null, source: null };
+  } catch (err) {
+    console.error('[Spotify Art] Error:', err);
+    return { eventId, imageUrl: null, source: null };
+  }
+}
+
 // TMDB Wrapper
 async function searchTMDB(eventId: string, query: string, type: 'person' | 'movie', year?: number, isMusic?: boolean, spotifySearchQuery?: string): Promise<ImageResult> {
   try {
@@ -190,6 +229,19 @@ export async function searchSingleImage(
     else if (isMovie) type = 'movie'; // Alleen als expliciet isMovie=true
     else if (category === 'technology' || category === 'science' || category === 'entertainment') type = 'product';
     else type = 'event';
+  }
+
+  // ========== MUSIC EVENTS: SPOTIFY ALBUM ART FIRST ==========
+  // Voor muziek-events proberen we eerst Spotify album artwork te halen
+  // Dit is betrouwbaarder dan TMDB/Wikipedia voor muziek-gerelateerde afbeeldingen
+  if (musicEvent && spotifySearchQuery) {
+    console.log(`[Image Router] Music event detected, trying Spotify first for: "${spotifySearchQuery}"`);
+    const spotifyResult = await searchSpotifyAlbumArt(eventId, spotifySearchQuery);
+    if (spotifyResult.imageUrl) {
+      console.log(`[Image Router] ✓ Spotify album art found!`);
+      return spotifyResult;
+    }
+    console.log(`[Image Router] Spotify failed, falling back to other sources...`);
   }
 
   // ROUTING LOGICA
