@@ -64,6 +64,8 @@ export function DebugInfoDialog({ events }: DebugInfoDialogProps) {
     const isSvg = imageUrl?.toLowerCase().includes('.svg');
     const svgSuffix = isSvg ? ' (SVG)' : '';
     
+    // Spotify album art
+    if (source.includes('spotify.com') || source.includes('open.spotify')) return '🎵 Spotify';
     if (source.includes('themoviedb.org') || source.includes('tmdb')) return 'TMDB';
     if (source.includes('commons.wikimedia')) return `Wikimedia Commons${svgSuffix}`;
     if (source.includes('wikipedia.org')) {
@@ -80,6 +82,14 @@ export function DebugInfoDialog({ events }: DebugInfoDialogProps) {
   const getSearchedSources = (event: TimelineEvent): string[] => {
     const type = event.visualSubjectType;
     const sources: string[] = [];
+    const isMusic = event.category === 'music' || !!event.spotifySearchQuery;
+
+    // Muziek-events: Spotify eerst!
+    if (isMusic && event.spotifySearchQuery) {
+      sources.push('1. 🎵 Spotify Album Art');
+      sources.push('→ Fallback: Wiki/Commons');
+      return sources;
+    }
 
     if (event.isMovie || type === 'movie') {
       sources.push('1. TMDB (Films)', '→ Wiki NL/EN/DE, Commons');
