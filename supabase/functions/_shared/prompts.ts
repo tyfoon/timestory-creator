@@ -22,40 +22,31 @@ export const EVENT_CATEGORIES = [
   "local", "personal", "music", "technology", "celebrity"
 ] as const;
 
+// ... (Houd imports en LANGUAGE_INSTRUCTIONS hetzelfde)
+
 // =============================================================================
 // HELPER: VISUAL DIRECTOR INSTRUCTIES
 // =============================================================================
 const VISUAL_DIRECTOR_INSTRUCTIONS = `
 ROL: BEELDREDACTEUR (CRUCIAAL)
-Jij bepaalt welke zoekterm ('imageSearchQueryEn') wordt gebruikt om een foto te vinden.
+Jij bepaalt NIET ALLEEN de zoekterm, maar ook het TYPE afbeelding ('visualSubjectType').
+Dit helpt de zoekmachine om de juiste database te kiezen (Film database, Product database, etc).
 
-GOUDEN REGEL: Wikimedia Commons is Engelstalig.
-Vertaal ALTIJD het onderwerp naar het ENGELS voor 'imageSearchQueryEn'.
+KIES HET JUISTE 'visualSubjectType':
+1. 'person': Voor artiesten, politici, sporters, beroemdheden. (Zoekt in portret-database)
+2. 'movie': Voor films en TV-series. (Zoekt filmposters)
+3. 'product': Voor gadgets, speelgoed, auto's, consoles. (Zoekt productfoto's)
+4. 'logo': Voor software, websites, bedrijven, games. (Zoekt logo's/icons)
+5. 'event': Voor oorlogen, rampen, kroningen, protesten. (Zoekt nieuwsfoto's)
+6. 'location': Voor steden, gebouwen.
+7. 'artwork': Voor schilderijen, boekomslagen.
 
-REGELS PER TYPE:
-
-1. MUZIEK & BEROEMDHEDEN (Category: music, celebrity)
-   * Is de naam uniek? Alleen de naam. (Bijv. "David Bowie")
-   * Is de naam een gewoon woord of dubbelzinnig? VOEG CONTEXT TOE.
-   * FOUT: "Queen", "Prince", "Kiss" (Geeft koninginnen en zoenen)
-   * GOED: "Queen band", "Prince singer", "Kiss band"
-
-2. SPEELGOED, GAMES & RAGES
-   * Vertaal productnaam naar Engels. Wees specifiek.
-   * FOUT: "De Smurfen", "Pac-Man"
-   * GOED: "The Smurfs", "Pac-Man arcade", "Rubik's Cube"
-
-3. PRODUCTEN & TECH
-   * Gebruik modelnaam of type.
-   * FOUT: "Windows 1.0" (Te vaag) -> GOED: "Windows 1.0 screenshot" of "Windows 1.0 software"
-   * FOUT: "Eerste mobieltje" -> GOED: "Motorola DynaTAC"
-
-4. FILMS & TV
-   * ALTIJD jaartal of "film"/"TV show" toevoegen.
-   * GOED: "Titanic film 1997", "Friends TV show"
-
-5. ALGEMEEN
-   * Verwijder woorden als "Introductie", "Lancering", "Succes". Houd het PUUR op het onderwerp.
+REGELS VOOR 'imageSearchQueryEn' PER TYPE:
+- type 'person': ALLEEN de naam. "David Bowie" (GEEN "David Bowie singer")
+- type 'movie': "Titel year". "Titanic 1997"
+- type 'product': Specifiek model + objectnaam. "Sony Walkman TPS-L2", "Commodore 64 computer"
+- type 'logo': "Naam logo". "Pac-Man logo", "Windows 1.0 logo"
+- type 'event': Engelse naam van event. "Fall of the Berlin Wall"
 `;
 
 // =============================================================================
@@ -73,84 +64,24 @@ ${langInstruction}
 ${VISUAL_DIRECTOR_INSTRUCTIONS}
 
 KRITISCH - OUTPUT FORMAAT (NDJSON):
-Je MOET je output formatteren als NDJSON (Newline Delimited JSON).
 Stuur ELKE gebeurtenis als een apart JSON-object op een NIEUWE regel.
 
-FORMAT PER REGEL (BELANGRIJK: Vul ook spotifySearchQuery en movieSearchQuery in indien van toepassing!):
-{"type":"event","data":{"id":"evt_1","date":"1980-05-22","year":1980,"month":5,"title":"Titel","description":"...","category":"culture","imageSearchQuery":"Pac-Man spel","imageSearchQueryEn":"Pac-Man arcade","importance":"high","eventScope":"period","spotifySearchQuery":"Artist - Title","movieSearchQuery":"Movie Title trailer"}}
+FORMAT PER REGEL (Let op 'visualSubjectType'!):
+{"type":"event","data":{"id":"evt_1","date":"1980-05-22","year":1980,"title":"Pac-Man","description":"...","category":"entertainment","visualSubjectType":"logo","imageSearchQuery":"Pac-Man spel","imageSearchQueryEn":"Pac-Man arcade logo","importance":"high","eventScope":"period"}}
+{"type":"event","data":{"id":"evt_2","date":"1985","year":1985,"title":"Back to the Future","description":"...","category":"entertainment","visualSubjectType":"movie","imageSearchQuery":"Back to the Future","imageSearchQueryEn":"Back to the Future 1985","importance":"high","eventScope":"period","movieSearchQuery":"Back to the Future trailer 1985"}}
 
 NA ALLE EVENTS:
 {"type":"summary","data":"Samenvatting..."}
-{"type":"famousBirthdays","data":[{"name":"Naam","profession":"Beroep","birthYear":1950,"imageSearchQuery":"Naam portrait"}]}
+{"type":"famousBirthdays","data":[{"name":"Naam","profession":"Beroep","birthYear":1950,"imageSearchQuery":"Naam"}]}
 
 REGELS:
-1. GEEN markdown, ALLEEN JSON regels.
+1. GEEN markdown.
 2. Genereer ${eventCount} events.
-3. 'imageSearchQueryEn' is je zoekopdracht voor de foto database. Zorg dat deze ENGELS en SPECIFIEK is.
-4. 'spotifySearchQuery': Vul in voor muziek events ("Artiest - Titel") of nummer 1 hits.
-5. 'movieSearchQuery': Vul in voor films ("Titel trailer jaar").`;
+3. Vul 'visualSubjectType' ALTIJD in.
+4. Vul 'spotifySearchQuery' / 'movieSearchQuery' in waar relevant.`;
 }
 
-// =============================================================================
-// SYSTEM PROMPT - STANDAARD
-// =============================================================================
-export function getSystemPrompt(language: string, maxEvents?: number): string {
-  const langInstruction = LANGUAGE_INSTRUCTIONS[language] || LANGUAGE_INSTRUCTIONS.nl;
-  
-  return `Je bent een historicus en expert beeldredacteur.
-
-${langInstruction}
-
-${VISUAL_DIRECTOR_INSTRUCTIONS}
-
-Genereer een JSON object met 'events', 'summary' en 'famousBirthdays'.`;
-}
-
-// =============================================================================
-// PERIOD PROMPTS
-// =============================================================================
-export const PERIOD_PROMPTS = {
-  birthyear: `CONTENT FOCUS - GEBOORTEJAAR:
-Focus op de sfeer van dat specifieke jaar:
-- DE GROTE HITS (Muziek).
-- RAGES & SPEELGOED: Wat lag er in de winkel? (Gebruik Engelse namen voor zoeken!)
-- FILM/TV: De blockbusters en series.
-- NIEUWS: Grote wereldgebeurtenissen.`,
-
-  childhood: `CONTENT FOCUS - JEUGD (6-10 jaar):
-Focus op:
-- SCHOOLPLEIN RAGES: Knikkers, flippo's, tamagotchi.
-- TV & CARTOONS: Intro-tunes, kinderseries.
-- SPEELGOED: Lego, Barbie, Action Man, Nintendo.
-- SNOEP: Wat kocht je voor een gulden?`,
-
-  puberty: `CONTENT FOCUS - PUBERTIJD (11-17 jaar):
-Focus op:
-- MUZIEK & IDENTITEIT: Stromingen, idolen.
-- TECH: Eerste mobieltje, MSN, mp3-speler.
-- TV & SERIES: Videoclips, populaire soaps.`,
-
-  youngAdult: `CONTENT FOCUS - JONG VOLWASSEN (18-25 jaar):
-Focus op:
-- UITGAAN & FESTIVALS.
-- MAATSCHAPPIJ & POLITIEK.
-- TECH REVOLUTIES.`,
-
-  custom: `CONTENT FOCUS - BREDE MIX:
-Variatie van hits, nieuws, films, tech en sport.`
-};
-
-export function getContentFocusForPeriod(periodType?: string): string {
-  switch (periodType) {
-    case 'birthyear': return PERIOD_PROMPTS.birthyear;
-    case 'childhood': return PERIOD_PROMPTS.childhood;
-    case 'puberty': return PERIOD_PROMPTS.puberty;
-    case 'young-adult': return PERIOD_PROMPTS.youngAdult;
-    default: return PERIOD_PROMPTS.custom;
-  }
-}
-
-// ... (Rest van de helper functies zoals getTimelineTool, MONTH_NAMES, etc.)
+// ... (Houd getSystemPrompt en PERIOD_PROMPTS hetzelfde, maar update getTimelineTool hieronder:)
 
 export function getTimelineTool() {
   return {
@@ -174,11 +105,13 @@ export function getTimelineTool() {
                 title: { type: "string" },
                 description: { type: "string" },
                 category: { type: "string", enum: EVENT_CATEGORIES },
-                imageSearchQuery: { type: "string", description: "Original search term" },
-                imageSearchQueryEn: { 
+                visualSubjectType: { 
                   type: "string", 
-                  description: "ENGLISH SEARCH TERM for Wikimedia Commons. Translate product names! Example: 'The Smurfs', 'Transformers toy', 'Rubik's Cube'." 
+                  enum: ["person", "movie", "product", "logo", "event", "location", "artwork"],
+                  description: "CRITICAL: The visual category of the subject. Used to select the correct image database."
                 },
+                imageSearchQuery: { type: "string" },
+                imageSearchQueryEn: { type: "string", description: "Specific English search term matching the visualSubjectType rules." },
                 importance: { type: "string", enum: ["high", "medium", "low"] },
                 eventScope: { type: "string", enum: ["birthdate", "birthmonth", "birthyear", "period"] },
                 isCelebrityBirthday: { type: "boolean" },
@@ -186,7 +119,7 @@ export function getTimelineTool() {
                 spotifySearchQuery: { type: "string" },
                 movieSearchQuery: { type: "string" }
               },
-              required: ["id", "date", "year", "title", "description", "category", "importance", "eventScope", "imageSearchQueryEn"]
+              required: ["id", "date", "year", "title", "description", "category", "visualSubjectType", "imageSearchQueryEn"]
             }
           },
           summary: { type: "string" },
@@ -210,6 +143,7 @@ export function getTimelineTool() {
   };
 }
 
+// ... (Rest van bestand: MONTH_NAMES, PROMPTS templates etc. behouden)
 export const MONTH_NAMES = [
   "januari", "februari", "maart", "april", "mei", "juni",
   "juli", "augustus", "september", "oktober", "november", "december"
@@ -217,7 +151,7 @@ export const MONTH_NAMES = [
 
 export const BIRTHDATE_PROMPT_SHORT = (day: number, monthName: string, year: number, maxEvents: number, contentFocus: string) => 
 `Maak een KORTE tijdlijn voor iemand geboren op ${day} ${monthName} ${year}.
-Genereer PRECIES ${maxEvents} events.
+Genereer PRECIES ${maxEvents} events in NDJSON formaat.
 HARDE EISEN:
 - MUZIEK: Minimaal 2, Maximaal 4 (Nr 1 hits).
 - BEROEMDHEDEN: Maximaal 2.
@@ -225,7 +159,7 @@ ${contentFocus}`;
 
 export const BIRTHDATE_PROMPT_FULL = (day: number, monthName: string, year: number, contentFocus: string) => 
 `Maak een uitgebreide tijdlijn voor iemand geboren op ${day} ${monthName} ${year}.
-Genereer 50 events.
+Genereer 50 events in NDJSON formaat.
 HARDE EISEN:
 - MUZIEK: 5-10 events.
 - BEROEMDHEDEN: Max 5.
@@ -237,7 +171,7 @@ Genereer ${targetEvents} events.
 ${contentFocus}`;
 
 export const FAMOUS_BIRTHDAYS_ADDITION = (day: number, monthName: string, startYear: number, endYear: number) =>
-`\nZoek personen die op ${day} ${monthName} jarig zijn (geboren voor of tijdens deze periode).`;
+`\nZoek personen die op ${day} ${monthName} jarig zijn.`;
 
 export const BIRTHYEAR_IN_RANGE_ADDITION = (year: number) =>
 `\nHet geboortejaar ${year} is speciaal.`;
