@@ -166,68 +166,52 @@ export const PERIOD_PROMPTS = {
   
   // GEBOORTEJAAR - Algemeen overzicht van alles wat er dat jaar gebeurde
   birthyear: `CONTENT FOCUS - GEBOORTEJAAR:
-Focus op een brede mix van alles wat er dat jaar gebeurde:
-- Nummer 1 hits en populaire muziek
-- Belangrijke nieuws en politieke gebeurtenissen  
-- Iconische films en tv-shows
-- Sportmomenten en kampioenschappen
-- Technologische ontwikkelingen
-- Culturele gebeurtenissen
+Focus op de sfeer van dat specifieke jaar:
+- DE GROTE HITS: Welke nummers domineerden de radio?
+- SAMENLEVING: Wat hield het nieuws in de greep (positief/neutraal)?
+- RAGES: Wat was er dat jaar ineens overal te zien?
+- FILM/TV: De blockbusters en series waar iedereen voor thuisbleef.
+- TECHNOLOGIE: Welke nieuwe gadgets kwamen er dat jaar uit?`,
 
 BEROEMDE JARIGEN: Voeg bekende mensen toe die op dezelfde dag en maand jarig zijn (acteurs, muzikanten, sporters, politici, etc.)`,
 
-  // JEUGD (6-10 jaar) - Focus op kinderherinneringen
+// JEUGD (6-10 jaar) - Focus: Schoolplein & Huiselijke gezelligheid
   childhood: `CONTENT FOCUS - JEUGD (6-10 jaar):
-Focus op zaken die een kind tussen 6-10 jaar zou herinneren en leuk vinden:
-- SPEELGOED: Populair speelgoed, actiefiguren, poppen, bordspellen, buitenspeelgoed
-- TV-PROGRAMMA'S: Kinderseries, tekenfilms, jeugdprogramma's, zaterdagochtend cartoons
-- FILMS: Kinderfilms, Disney, animatiefilms
-- BOEKEN: Populaire kinderboeken, stripboeken
-- SNOEP & ETEN: Populaire snacks, snoepjes, ontbijtgranen voor kinderen
-- GROTE WERELDGEBEURTENISSEN: Alleen de allergrootste gebeurtenissen die ook een kind zou opvallen (rampen, koningshuis, grote sportevenementen)
+Kruip in de huid van een basisschoolkind. Focus op:
+- SCHOOLPLEIN RAGES: Knikkers, flippo's, stickers, specifieke spelletjes.
+- TV & CARTOONS: De intro-tunes die elk kind kon meezingen, Zappelin/Fox Kids/Cartoon Network programma's.
+- SPEELGOED VAN HET JAAR: Wat stond er op elk verlanglijstje voor Sinterklaas?
+- SNOEP & ETEN: Specifieke ijsjes, snoep of chips die typisch waren voor die tijd.
+- GAMES: De eerste kennismaking met Nintendo, PlayStation of pc-games (indien van toepassing).
+- DISNEY/PIXAR: De grote kinderfilms van die jaren.`,
 
-BEROEMDE JARIGEN: Voeg bekende mensen toe die op dezelfde dag en maand jarig zijn.`,
 
-  // PUBERTIJD (11-17 jaar) - Focus op tienerinteresses
+// PUBERTIJD (11-17 jaar) - Focus: Identiteit, School & Vrienden
   puberty: `CONTENT FOCUS - PUBERTIJD (11-17 jaar):
-Focus op zaken die relevant zijn voor tieners:
-- MUZIEK: Populaire artiesten, bands, muziekstromingen, eerste concerten, hitlijsten
-- UITGAAN: Disco's, clubs, feesten, festivals die populair waren
-- FILMS: Tienerfilms, bioscoophits, cultfilms
-- GAMES & GADGETS: Gameboys, spelcomputers, walkmans, discmans, eerste computers, nieuwe technologie
-- TV & ENTERTAINMENT: Populaire series, MTV, muziekprogramma's
-- MODE: Kledingtrends, kapseltrends
-- WERELDGEBEURTENISSEN: Belangrijke politieke en sociale gebeurtenissen
+Focus op de leefwereld van een middelbare scholier:
+- MUZIEK IDENTITEIT: Niet alleen hits, maar ook stromingen (gabber, grunge, emo, hiphop, EDM). De 'soundtrack' van de fietsrit naar school.
+- TECHNOLOGIE & SOCIAAL: De opkomst van het eerste mobieltje (Nokia/iPhone), MSN, Hyves, Instagram of TikTok (afhankelijk van era).
+- TV & SERIES: Shows waarover gepraat werd in de pauze (TMF, MTV, Netflix hits).
+- SCHOOLLEVEN: Schoolfeesten, examens, trends in schooltassen of agenda's.
+- FILM: High school movies, grote franchises (Harry Potter, Hunger Games, Marvel).`,
 
-BEROEMDE JARIGEN: Voeg bekende mensen toe die op dezelfde dag en maand jarig zijn.`,
-
-  // JONG VOLWASSEN (18-25 jaar) - Focus op volwassen onderwerpen
+// JONG VOLWASSEN (18-25 jaar) - Focus: Vrijheid & De Wereld
   youngAdult: `CONTENT FOCUS - JONG VOLWASSEN (18-25 jaar):
-Focus op zaken die relevant zijn voor jong volwassenen:
-- MUZIEK: Populaire artiesten, bands, festivals, concerten, muziektrends
-- UITGAAN: Clubs, festivals, nachtleven, populaire uitgaansgelegenheden
-- FILMS: Grote bioscoopfilms, cultfilms, filmgenres die populair waren
-- GADGETS & TECHNOLOGIE: Computers, mobiele telefoons, internet, mp3-spelers, iPods, nieuwe technologie
-- GAMES: Spelcomputers, populaire games, online gaming
-- POLITIEK: Verkiezingen, regeringen, politieke gebeurtenissen, sociale bewegingen
-- WERELDGEBEURTENISSEN: Oorlogen, crises, grote nieuwsgebeurtenissen
-- ECONOMIE: Economische trends, werkgelegenheid, huizenmarkt
+Focus op onafhankelijkheid en de eerste stappen in de wereld:
+- FESTIVALS & NACHTLEVEN: De grote anthems van de zomerfestivals en clubs.
+- MAATSCHAPPELIJKE EVENTS: Grote gebeurtenissen die het wereldbeeld vormden (9/11, financiële crisis, pandemie, klimaat).
+- TECH REVOLUTIES: De apps of platforms die het sociale leven veranderden (Facebook, Tinder, Spotify).
+- POPCULTUUR: Series die iedereen 'bingewatchte' of Game of Thrones-achtige hypes.
+- SPORT: Grote WK's of Olympische spelen die men samen in de kroeg keek.`,
 
-BEROEMDE JARIGEN: Voeg bekende mensen toe die op dezelfde dag en maand jarig zijn.`,
-
-  // CUSTOM/MIX - Brede mix van alle categorieën
+// CUSTOM/MIX
   custom: `CONTENT FOCUS - BREDE MIX:
-Zorg voor een gevarieerde mix van alle categorieën:
-- Politiek en wereldnieuws
-- Muziek en entertainment  
-- Films en tv-shows
-- Sport
-- Technologie en gadgets
-- Wetenschap en ontdekkingen
-- Cultuur en maatschappij
-- Mode en trends
-
-BEROEMDE JARIGEN: Voeg bekende mensen toe die op dezelfde dag en maand jarig zijn.`
+Zorg voor een gevarieerde 'tijdgeest' mix:
+- De grootste nummer 1 hits
+- Iconische films en TV-momenten
+- Belangrijke technologische doorbraken
+- Grote sportmomenten
+- Opvallende rages en trends`
 };
 
 // Helper functie om de juiste period prompt te krijgen
@@ -250,28 +234,38 @@ export function getContentFocusForPeriod(periodType?: string): string {
 // =============================================================================
 // USER PROMPT TEMPLATES - GEBOORTEDATUM
 // =============================================================================
-// Templates voor het genereren van de gebruikersprompt
 
 export const BIRTHDATE_PROMPT_SHORT = (day: number, monthName: string, year: number, maxEvents: number, contentFocus: string) => 
 `Maak een KORTE tijdlijn voor iemand geboren op ${day} ${monthName} ${year}.
 
 Genereer PRECIES ${maxEvents} events in NDJSON formaat.
-Verdeling:
-- 10 gebeurtenissen over het jaar ${year} (eventScope="birthyear")
-- 3 gebeurtenissen over ${monthName} ${year} (eventScope="birthmonth")
-- 5 gebeurtenissen over ${day} ${monthName} ${year} (eventScope="birthdate")
-- 2 beroemde jarigen die ook op ${day} ${monthName} jarig zijn (category="celebrity", isCelebrityBirthday=true)
+
+HARDE EISEN VOOR AANTALLEN:
+- MUZIEK: Minimaal 2 en maximaal 4 events met category="music". Kies de grootste nummer 1 hits van dat moment.
+- BEROEMDHEDEN: MAXIMAAL 2 events met category="celebrity" (beroemde jarigen).
+- Overige events verdelen over nieuws, film, sport, etc.
+
+Verdeling scopes:
+- ca. 10 gebeurtenissen over het jaar ${year} (eventScope="birthyear")
+- ca. 3 gebeurtenissen over ${monthName} ${year} (eventScope="birthmonth")
+- ca. 5 gebeurtenissen over ${day} ${monthName} ${year} (eventScope="birthdate")
 
 ${contentFocus}`;
 
 export const BIRTHDATE_PROMPT_FULL = (day: number, monthName: string, year: number, contentFocus: string) => 
 `Maak een uitgebreide tijdlijn voor iemand geboren op ${day} ${monthName} ${year}.
 
-Genereer minimaal 50 events in NDJSON formaat:
+Genereer minimaal 50 events in NDJSON formaat.
+
+HARDE EISEN VOOR AANTALLEN:
+- MUZIEK: Minimaal 5 en maximaal 10 events met category="music". Focus op nummer 1 hits en iconische albums.
+- BEROEMDHEDEN: MAXIMAAL 5 events met category="celebrity" (beroemde jarigen).
+- Zorg voor een rijke mix van overige categorieën.
+
+Verdeling scopes:
 - 25+ over ${year} (eventScope="birthyear")
 - 8+ over ${monthName} ${year} (eventScope="birthmonth")
 - 15+ over ${day} ${monthName} ${year} (eventScope="birthdate")
-- 5-10 beroemde jarigen op ${day} ${monthName} (category="celebrity", isCelebrityBirthday=true)
 
 ${contentFocus}`;
 
@@ -285,16 +279,21 @@ export const RANGE_PROMPT = (startYear: number, endYear: number, isShort: boolea
 Genereer ${isShort ? 'PRECIES' : 'minimaal'} ${targetEvents} events in NDJSON formaat.
 Alle events krijgen eventScope="period".
 
-${isShort ? 'Selecteer alleen de meest iconische momenten.' : 'Zorg voor goede spreiding over alle jaren.'}
+HARDE EISEN VOOR AANTALLEN:
+${isShort 
+  ? `- MUZIEK: Minimaal 2 en maximaal 4 events (Nummer 1 hits).\n- BEROEMDHEDEN: MAXIMAAL 2 events (alleen wereldberoemde namen).` 
+  : `- MUZIEK: Minimaal 5 en maximaal 10 events (Nummer 1 hits).\n- BEROEMDHEDEN: MAXIMAAL 5 events.`
+}
+
+${isShort ? 'Selecteer alleen de meest iconische momenten die de tijdsgeest definiëren.' : 'Zorg voor een goede spreiding over alle jaren.'}
 
 ${contentFocus}`;
 
 export const FAMOUS_BIRTHDAYS_ADDITION = (day: number, monthName: string, startYear: number, endYear: number) =>
 `
-
-BELANGRIJK - BEROEMDE JARIGEN:
-Voeg 3-5 beroemde personen toe die op ${day} ${monthName} jarig zijn (category="celebrity", isCelebrityBirthday=true).
-Deze personen hoeven NIET in de tijdsperiode ${startYear}-${endYear} geboren te zijn, maar moeten wel op dezelfde dag en maand jarig zijn.`;
+INSTRUCTIE VOOR BEROEMDE JARIGEN:
+Zoek personen die op ${day} ${monthName} jarig zijn.
+Zij hoeven NIET in de tijdsperiode ${startYear}-${endYear} geboren te zijn, het gaat om de gedeelde verjaardag.`;
 
 export const BIRTHYEAR_IN_RANGE_ADDITION = (year: number) =>
 `\n\nHet geboortejaar ${year} valt in deze periode. Besteed extra aandacht hieraan (eventScope="birthyear" voor dat jaar).`;
