@@ -81,7 +81,12 @@ Je MOET je output formatteren als NDJSON (Newline Delimited JSON).
 Stuur ELKE gebeurtenis als een apart JSON-object op een NIEUWE regel.
 
 FORMAT PER REGEL:
-{"type":"event","data":{"id":"evt_1","date":"1973-03-28","year":1973,"month":3,"day":28,"title":"Titel","description":"Tekst","category":"technology","imageSearchQuery":"Nederlandse term","imageSearchQueryEn":"Sony Walkman TPS-L2","importance":"high","eventScope":"period"}}
+{"type":"event","data":{"id":"evt_1","date":"1973-03-28","year":1973,"month":3,"day":28,"title":"Titel","description":"Tekst","category":"technology","imageSearchQuery":"Nederlandse term","imageSearchQueryEn":"Sony Walkman TPS-L2","importance":"high","eventScope":"period","spotifySearchQuery":"Artist - Title","movieSearchQuery":"Film titel trailer jaar"}}
+
+EXTRA VELDEN (VERPLICHT waar van toepassing):
+- spotifySearchQuery: Vul in voor ALLE events met category="music" OF als er een grote hit bij hoort. Formaat: "Artist - Song Title" (bijv. "Michael Jackson - Thriller").
+- movieSearchQuery: Vul in voor ALLE film/bioscoop events. Formaat: "Filmtitel trailer jaar" (bijv. "Top Gun trailer 1986").
+- isMovie: Zet op true voor film events.
 
 NA ALLE EVENTS:
 {"type":"summary","data":"Samenvatting..."}
@@ -90,7 +95,9 @@ NA ALLE EVENTS:
 REGELS:
 1. GEEN markdown, ALLEEN JSON regels.
 2. Genereer ${eventCount} events.
-3. imageSearchQueryEn MOET de 'Visual Director' regels volgen (PUUR ONDERWERP).`;
+3. imageSearchQueryEn MOET de 'Visual Director' regels volgen (PUUR ONDERWERP).
+4. MUZIEK events MOETEN spotifySearchQuery hebben.
+5. FILM events MOETEN movieSearchQuery EN isMovie=true hebben.`;
 }
 
 // =============================================================================
