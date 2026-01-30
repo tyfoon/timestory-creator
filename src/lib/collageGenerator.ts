@@ -27,8 +27,8 @@ const COLLAGE_CONFIG: CollageConfig = {
   height: 1920,
   padding: 40,
   polaroidWidth: 450,
-  polaroidHeight: 540, // Increased for more caption space
-  imageHeight: 360,    // Slightly reduced image to give more caption room
+  polaroidHeight: 520,
+  imageHeight: 380,
 };
 
 // Get era-specific background based on birth year
@@ -58,11 +58,13 @@ const createPolaroidHtml = (event: TimelineEvent, index: number): string => {
       height: ${COLLAGE_CONFIG.polaroidHeight}px;
       background: linear-gradient(180deg, #ffffff 0%, #f8f8f8 100%);
       border-radius: 4px;
-      padding: 16px 16px 40px 16px;
+      padding: 16px 16px 50px 16px;
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2);
       transform: rotate(${rotation}deg);
       display: flex;
       flex-direction: column;
+      box-sizing: border-box;
+      overflow: visible;
     ">
       <div style="
         width: 100%;
@@ -71,21 +73,20 @@ const createPolaroidHtml = (event: TimelineEvent, index: number): string => {
         background-size: cover;
         background-position: center top;
         border: 1px solid #e0e0e0;
+        flex-shrink: 0;
       "></div>
       <p style="
         font-family: 'Caveat', cursive, sans-serif;
-        font-size: 22px;
+        font-size: 24px;
         color: #333;
         text-align: center;
-        margin-top: 8px;
-        line-height: 1.3;
-        max-height: 72px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        word-break: break-word;
+        margin: 12px 0 0 0;
+        padding: 0;
+        line-height: 1.2;
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       ">${event.title}</p>
     </div>
   `;
