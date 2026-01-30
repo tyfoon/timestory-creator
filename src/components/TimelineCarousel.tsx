@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { TimelineEvent } from '@/types/timeline';
 import { TimelineCard } from './TimelineCard';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface TimelineCarouselProps {
@@ -11,6 +11,12 @@ interface TimelineCarouselProps {
   birthDate?: { day: number; month: number; year: number };
   /** When true, don't let carousel scroll-detection overwrite the selected index. */
   isScrubbing?: boolean;
+  /** Selection mode for collage feature */
+  isSelectingMode?: boolean;
+  /** Selected event IDs for collage */
+  selectedForCollage?: string[];
+  /** Handler to toggle selection */
+  onToggleSelection?: (eventId: string) => void;
 }
 
 export const TimelineCarousel = ({ 
@@ -19,6 +25,9 @@ export const TimelineCarousel = ({
   onEventSelect,
   birthDate,
   isScrubbing = false,
+  isSelectingMode = false,
+  selectedForCollage = [],
+  onToggleSelection,
 }: TimelineCarouselProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -223,19 +232,52 @@ export const TimelineCarousel = ({
           // Scale down slightly as they rotate
           const scale = 1 - (absRotation / 35) * 0.1;
           
+          const isSelected = selectedForCollage.includes(event.id);
+          const hasImage = event.imageStatus === 'found' && !!event.imageUrl;
+          
           return (
             <div
               key={event.id}
               ref={(el) => (cardRefs.current[index] = el)}
-              className="flex-shrink-0 w-[320px] sm:w-[380px] lg:w-[420px] snap-center cursor-pointer h-full"
+              className={`flex-shrink-0 w-[320px] sm:w-[380px] lg:w-[420px] snap-center cursor-pointer h-full relative ${
+                isSelectingMode && !hasImage ? 'opacity-50 pointer-events-none' : ''
+              }`}
               style={{
                 transform: `rotateY(${rotation}deg) scale(${scale})`,
-                opacity,
+                opacity: isSelectingMode && !hasImage ? 0.4 : opacity,
                 transition: 'transform 0.15s ease-out, opacity 0.15s ease-out',
                 transformStyle: 'preserve-3d',
               }}
-              onClick={() => onEventSelect(index)}
+              onClick={() => {
+                if (isSelectingMode && hasImage && onToggleSelection) {
+                  onToggleSelection(event.id);
+                } else if (!isSelectingMode) {
+                  onEventSelect(index);
+                }
+              }}
             >
+              {/* Selection overlay */}
+              {isSelectingMode && hasImage && (
+                <div className={`absolute inset-0 z-20 rounded-xl transition-all duration-200 ${
+                  isSelected 
+                    ? 'ring-4 ring-accent bg-accent/10' 
+                    : 'ring-2 ring-white/30 hover:ring-accent/50'
+                }`}>
+                  {/* Checkbox indicator */}
+                  <div className={`absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                    isSelected 
+                      ? 'bg-accent text-accent-foreground shadow-lg' 
+                      : 'bg-black/50 text-white/70'
+                  }`}>
+                    {isSelected ? (
+                      <Check className="h-5 w-5" />
+                    ) : (
+                      <span className="text-sm font-medium">+</span>
+                    )}
+                  </div>
+                </div>
+              )}
+              
               <TimelineCard 
                 event={event} 
                 isActive={index === currentEventIndex}
