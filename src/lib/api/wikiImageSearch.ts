@@ -1,12 +1,10 @@
 /**
  * Client-side Wikipedia/Wikimedia image search
  * Runs directly in the browser to avoid server timeouts
- * 
- * Fallback strategy:
- * 1. Try with quotes (exact match) + year
- * 2. Try without quotes + year
- * 3. Try without year
- * 4. Relax title matching in later phases
+ * * IMPROVED VERSION:
+ * - Prioritizes TMDB for movies and celebrities with CLEANED queries
+ * - Checks description/snippet for matches (not just filenames)
+ * - Ignores accents (André == Andre)
  */
 
 const THUMB_WIDTH = 960;
@@ -17,6 +15,16 @@ export interface ImageResult {
   source: string | null;
 }
 
+// Update Interface: Add flags to SearchQuery
+export interface SearchQuery {
+  eventId: string;
+  query: string;
+  queryEn?: string;
+  year?: number;
+  isCelebrity?: boolean;
+  isMovie?: boolean;
+}
+
 function isAllowedImageUrl(maybeUrl: string): boolean {
   try {
     const url = new URL(maybeUrl);
@@ -24,72 +32,72 @@ function isAllowedImageUrl(maybeUrl: string): boolean {
 
     if (path.includes("/transcoded/")) return false;
 
-    if (
-      path.endsWith(".mp3") ||
-      path.endsWith(".ogg") ||
-      path.endsWith(".wav") ||
-      path.endsWith(".webm") ||
-      path.endsWith(".mp4") ||
-      path.endsWith(".ogv") ||
-      path.endsWith(".pdf") ||
-      path.endsWith(".svg")
-    ) {
-      return false;
-    }
+    if (path.match(/\.(mp3|ogg|wav|webm|mp4|ogv|pdf|svg)$/)) return false;
 
-    return (
-      path.endsWith(".jpg") ||
-      path.endsWith(".jpeg") ||
-      path.endsWith(".png") ||
-      path.endsWith(".webp") ||
-      path.endsWith(".gif")
-    );
+    return path.match(/\.(jpg|jpeg|png|webp|gif)$/) !== null;
   } catch {
     return false;
   }
 }
 
 /**
- * Check if a Wikipedia/Commons page title matches the search query.
- * @param strict - If true, require more keywords to match. If false (fallback), be lenient.
+ * Normalize string: lower case, remove accents, remove punctuation
  */
-function titleMatchesQuery(title: string, query: string, strict: boolean = true): boolean {
-  const titleLower = title.toLowerCase();
-  const queryLower = query.toLowerCase();
+function normalizeText(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove accents
+    .replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "") // Remove punctuation
+    .trim();
+}
+
+/**
+ * Helper to clean query for TMDB (removes years and keywords)
+ * "Titanic film 1997" -> "Titanic"
+ */
+function cleanQueryForTMDB(query: string): string {
+  return query
+    .replace(/\b\d{4}\b/g, '') // remove years
+    .replace(/[()]/g, '') // remove parens
+    .replace(/\b(film|movie|concert|tour|live|band|group|singer|actor|actress|trailer|official|video|tv show|series)\b/gi, '') // remove keywords
+    .replace(/ - /g, ' ') // separators
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Check if a Wikipedia/Commons page title OR snippet matches the search query.
+ */
+function contentMatchesQuery(title: string, snippet: string | undefined, query: string, strict: boolean = true): boolean {
+  const cleanTitle = normalizeText(title);
+  const cleanSnippet = snippet ? normalizeText(snippet.replace(/<[^>]*>/g, "")) : ""; 
+  const cleanQuery = normalizeText(query);
   
-  // Common words to exclude from matching (stopwords in multiple languages)
   const stopWords = new Set([
     'the', 'and', 'for', 'van', 'het', 'een', 'der', 'den', 'des', 'von', 'und',
-    'with', 'from', 'that', 'this', 'was', 'were', 'been', 'have', 'has', 'had',
-    'are', 'is', 'am', 'be', 'being', 'their', 'them', 'they', 'what', 'when',
-    'where', 'which', 'who', 'will', 'would', 'could', 'should', 'into', 'over',
-    'great', 'big', 'new', 'old', 'first', 'last', 'best', 'most' // Generic adjectives
+    'with', 'from', 'image', 'file', 'bestand', 'jpg', 'png'
   ]);
   
-  // Extract meaningful words from query (exclude stopwords and years)
-  const queryWords = queryLower.split(/\s+/).filter(w => 
-    w.length > 2 && 
-    !stopWords.has(w) &&
-    !/^\d{4}$/.test(w) // Exclude year numbers
+  const queryWords = cleanQuery.split(/\s+/).filter(w => 
+    w.length > 2 && !stopWords.has(w) && !/^\d{4}$/.test(w)
   );
   
-  if (queryWords.length === 0) return true; // No meaningful words, allow anything
+  if (queryWords.length === 0) return true;
   
-  // Use up to 5 main subject words for matching
   const mainSubjectWords = queryWords.slice(0, 5);
-  const matchCount = mainSubjectWords.filter(word => titleLower.includes(word)).length;
-  
-  // Log for debugging
-  console.log(`[Image Match] Query: "${query}" | Title: "${title}" | Words: [${mainSubjectWords.join(', ')}] | Matched: ${matchCount}/${mainSubjectWords.length} | Strict: ${strict}`);
+  const countMatches = (text: string) => mainSubjectWords.filter(word => text.includes(word)).length;
+
+  const matchesInTitle = countMatches(cleanTitle);
+  const matchesInSnippet = countMatches(cleanSnippet);
+  const maxMatches = Math.max(matchesInTitle, matchesInSnippet);
   
   if (strict) {
-    // Strict mode: require at least 60% of the main words to match
-    const threshold = Math.max(2, Math.ceil(mainSubjectWords.length * 0.6));
-    return matchCount >= threshold;
+    if (mainSubjectWords.length === 1) return maxMatches >= 1;
+    const threshold = Math.ceil(mainSubjectWords.length * 0.6);
+    return maxMatches >= threshold;
   } else {
-    // Lenient mode (fallback): require at least 2 words to match, or 50% if fewer words
-    const threshold = Math.max(2, Math.ceil(mainSubjectWords.length * 0.5));
-    return matchCount >= threshold;
+    return maxMatches >= 1;
   }
 }
 
@@ -109,13 +117,10 @@ async function searchWikipedia(
   
   try {
     let searchQuery = query;
-    if (useQuotes) {
-      searchQuery = `"${query}"`;
-    }
-    if (includeYear && year) {
-      searchQuery = `${searchQuery} ${year}`;
-    }
+    if (useQuotes) searchQuery = `"${query}"`;
+    if (includeYear && year) searchQuery = `${searchQuery} ${year}`;
     
+    // Fetch snippet/description as well
     const searchUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&format=json&srlimit=5&origin=*`;
     
     const searchRes = await fetch(searchUrl);
@@ -124,199 +129,103 @@ async function searchWikipedia(
     const searchData = await searchRes.json();
     const results = searchData.query?.search || [];
     
-    if (results.length === 0) return null;
-    
     for (const result of results.slice(0, 3)) {
-      const title = result.title;
+      if (!contentMatchesQuery(result.title, result.snippet, query, strictMatch)) continue;
       
-      if (!titleMatchesQuery(title, query, strictMatch)) {
-        continue;
-      }
-      
-      const imageUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&format=json&pithumbsize=${THUMB_WIDTH}&piprop=thumbnail|original&origin=*`;
-      
+      const imageUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(result.title)}&prop=pageimages&format=json&pithumbsize=${THUMB_WIDTH}&piprop=thumbnail|original&origin=*`;
       const imageRes = await fetch(imageUrl);
       if (!imageRes.ok) continue;
       
       const imageData = await imageRes.json();
       const pages = imageData.query?.pages;
-      if (!pages) continue;
+      const pageId = Object.keys(pages || {})[0];
       
-      const pageId = Object.keys(pages)[0];
-      if (!pageId || pageId === '-1') continue;
-      
-      const page = pages[pageId];
-      const thumbnail = page?.thumbnail?.source;
-      
-      if (thumbnail && isAllowedImageUrl(thumbnail)) {
+      if (pageId && pageId !== '-1' && pages[pageId]?.thumbnail?.source) {
         return {
-          imageUrl: thumbnail,
-          source: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title)}`
+          imageUrl: pages[pageId].thumbnail.source,
+          source: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(result.title)}`
         };
       }
     }
-    
     return null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
-async function searchWikimediaCommons(
-  query: string, 
-  year: number | undefined,
-  options: SearchOptions = {}
-): Promise<{ imageUrl: string; source: string } | null> {
+async function searchWikimediaCommons(query: string, year: number | undefined, options: SearchOptions = {}): Promise<{ imageUrl: string; source: string } | null> {
   const { useQuotes = false, includeYear = true, strictMatch = true } = options;
-  
   try {
     let searchQuery = query;
-    if (useQuotes) {
-      searchQuery = `"${query}"`;
-    }
-    if (includeYear && year) {
-      searchQuery = `${searchQuery} ${year}`;
-    }
+    if (useQuotes) searchQuery = `"${query}"`;
+    if (includeYear && year) searchQuery = `${searchQuery} ${year}`;
     
     const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srnamespace=6&format=json&srlimit=5&origin=*`;
     const searchRes = await fetch(searchUrl);
     if (!searchRes.ok) return null;
-    
     const searchData = await searchRes.json();
-    const results = searchData.query?.search || [];
     
-    for (const result of results.slice(0, 3)) {
-      try {
-        const title = result.title;
-        
-        if (!titleMatchesQuery(title, query, strictMatch)) {
-          continue;
-        }
-        
-        const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=${THUMB_WIDTH}&format=json&origin=*`;
-        const infoRes = await fetch(infoUrl);
-        if (!infoRes.ok) continue;
-        
-        const infoData = await infoRes.json();
-        const pages = infoData.query?.pages;
-        if (!pages) continue;
-        
-        const pageId = Object.keys(pages)[0];
-        if (!pageId || pageId === '-1') continue;
-        
-        const imageInfo = pages[pageId]?.imageinfo?.[0];
-        const thumbUrl = imageInfo?.thumburl || imageInfo?.url;
-        
-        if (thumbUrl && isAllowedImageUrl(thumbUrl)) {
-          return {
-            imageUrl: thumbUrl,
-            source: `https://commons.wikimedia.org/wiki/${encodeURIComponent(title)}`
-          };
-        }
-      } catch {
-        continue;
+    for (const result of (searchData.query?.search || []).slice(0, 3)) {
+      if (!contentMatchesQuery(result.title, result.snippet, query, strictMatch)) continue;
+      
+      const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(result.title)}&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=${THUMB_WIDTH}&format=json&origin=*`;
+      const infoRes = await fetch(infoUrl);
+      if (!infoRes.ok) continue;
+      const infoData = await infoRes.json();
+      const pageId = Object.keys(infoData.query?.pages || {})[0];
+      const img = infoData.query?.pages[pageId]?.imageinfo?.[0];
+      
+      if (img && (img.thumburl || img.url) && isAllowedImageUrl(img.thumburl || img.url)) {
+        return { imageUrl: img.thumburl || img.url, source: `https://commons.wikimedia.org/wiki/${encodeURIComponent(result.title)}` };
       }
     }
-    
     return null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
-async function searchNationaalArchief(
-  query: string,
-  year: number | undefined,
-  options: SearchOptions = {}
-): Promise<{ imageUrl: string; source: string } | null> {
+async function searchNationaalArchief(query: string, year: number | undefined, options: SearchOptions = {}): Promise<{ imageUrl: string; source: string } | null> {
   const { includeYear = true, strictMatch = true } = options;
-  
   try {
     let searchQuery = `${query} Nationaal Archief`;
-    if (includeYear && year) {
-      searchQuery = `${query} ${year} Nationaal Archief`;
-    }
+    if (includeYear && year) searchQuery = `${query} ${year} Nationaal Archief`;
     
     const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srnamespace=6&format=json&srlimit=3&origin=*`;
-    const searchRes = await fetch(searchUrl);
-    if (!searchRes.ok) return null;
+    const res = await fetch(searchUrl);
+    if (!res.ok) return null;
+    const data = await res.json();
     
-    const searchData = await searchRes.json();
-    const results = searchData.query?.search || [];
-    
-    for (const result of results.slice(0, 2)) {
-      try {
-        const title = result.title;
-        
-        // For Nationaal Archief, use the strictMatch setting
-        if (!titleMatchesQuery(title, query, strictMatch)) {
-          continue;
-        }
-        
-        const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=${THUMB_WIDTH}&format=json&origin=*`;
-        const infoRes = await fetch(infoUrl);
-        if (!infoRes.ok) continue;
-        
-        const infoData = await infoRes.json();
-        const pages = infoData.query?.pages;
-        if (!pages) continue;
-        
-        const pageId = Object.keys(pages)[0];
-        if (!pageId || pageId === '-1') continue;
-        
-        const imageInfo = pages[pageId]?.imageinfo?.[0];
-        const thumbUrl = imageInfo?.thumburl || imageInfo?.url;
-        
-        if (thumbUrl && isAllowedImageUrl(thumbUrl)) {
-          return {
-            imageUrl: thumbUrl,
-            source: `https://commons.wikimedia.org/wiki/${encodeURIComponent(title)}`
-          };
-        }
-      } catch {
-        continue;
+    for (const result of (data.query?.search || []).slice(0, 2)) {
+      if (!contentMatchesQuery(result.title, result.snippet, query, strictMatch)) continue;
+      // Fetch image details logic (same as Commons)
+      const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(result.title)}&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=${THUMB_WIDTH}&format=json&origin=*`;
+      const infoRes = await fetch(infoUrl);
+      if (!infoRes.ok) continue;
+      const infoData = await infoRes.json();
+      const pageId = Object.keys(infoData.query?.pages || {})[0];
+      const img = infoData.query?.pages[pageId]?.imageinfo?.[0];
+      if (img && (img.thumburl || img.url)) {
+        return { imageUrl: img.thumburl || img.url, source: `https://commons.wikimedia.org/wiki/${encodeURIComponent(result.title)}` };
       }
     }
-    
     return null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
-/**
- * Try a single source with fallback strategy:
- * 1. With quotes + year (strict)
- * 2. Without quotes + year (strict)
- * 3. Without quotes + without year (lenient)
- */
 async function trySourceWithFallback(
-  searchFn: (query: string, year: number | undefined, options: SearchOptions) => Promise<{ imageUrl: string; source: string } | null>,
-  query: string,
-  year: number | undefined
-): Promise<{ imageUrl: string; source: string } | null> {
-  // Phase 1: With quotes + year (strict matching)
-  let result = await searchFn(query, year, { useQuotes: true, includeYear: true, strictMatch: true });
-  if (result) return result;
-  
-  // Phase 2: Without quotes + year (strict matching)
-  result = await searchFn(query, year, { useQuotes: false, includeYear: true, strictMatch: true });
-  if (result) return result;
-  
-  // Phase 3: Without quotes + without year (lenient matching)
+  searchFn: (query: string, year: number | undefined, opts: SearchOptions) => Promise<{ imageUrl: string; source: string } | null>,
+  query: string, year: number | undefined
+) {
+  let res = await searchFn(query, year, { useQuotes: true, includeYear: true, strictMatch: true });
+  if (res) return res;
+  res = await searchFn(query, year, { useQuotes: false, includeYear: true, strictMatch: true });
+  if (res) return res;
   if (year) {
-    result = await searchFn(query, year, { useQuotes: false, includeYear: false, strictMatch: false });
-    if (result) return result;
+    res = await searchFn(query, year, { useQuotes: false, includeYear: false, strictMatch: false }); // Lenient without year
+    if (res) return res;
   }
-  
   return null;
 }
 
-/**
- * Search for an image across all sources using parallel fallback strategy.
- * Uses English query for international sources, Dutch query for Nationaal Archief.
- * For celebrities and movies, will also try TMDB via edge function.
- */
+// ============== MAIN SEARCH LOGIC ==============
+
 async function searchImageForEvent(
   eventId: string,
   queryNl: string,
@@ -325,193 +234,86 @@ async function searchImageForEvent(
   isCelebrity?: boolean,
   isMovie?: boolean
 ): Promise<ImageResult> {
-  // Use English query for international sources, fall back to Dutch
   let enQuery = queryEn || queryNl;
   
-  // For celebrities and movies, try TMDB FIRST as it has the most reliable images
-  // This prevents Wikipedia from returning wrong matches (e.g., Casablanca for Gladiator)
+  // Clean query for TMDB (remove 'film', '1997', etc to match exact titles)
+  const tmdbQuery = cleanQueryForTMDB(enQuery);
+
+  // TMDB PRIORITY: Try TMDB first for celebrities or movies
   if (isCelebrity || isMovie) {
     try {
-      console.log(`[Image Search] Trying TMDB first for ${isMovie ? 'movie' : 'celebrity'}: "${enQuery}"`);
-      const tmdbResult = await searchTMDBViaEdge(eventId, enQuery, year, isCelebrity, isMovie);
-      if (tmdbResult.imageUrl) {
-        console.log(`[Image Search] Found image via TMDB for "${enQuery}"`);
-        return tmdbResult;
-      }
+      // Pass the CLEANED query to TMDB
+      // Pass year explicitly only for movies (TMDB supports it separately)
+      const tmdbResult = await searchTMDBViaEdge(eventId, tmdbQuery, isMovie ? year : undefined, isCelebrity, isMovie);
+      if (tmdbResult.imageUrl) return tmdbResult;
     } catch (e) {
-      console.error('TMDB primary search error:', e);
+      console.error('TMDB error:', e);
     }
   }
   
-  // For movies, ensure "film" is in the query to avoid confusion with other topics
-  // (e.g., "Da Vinci Code" should search "Da Vinci Code film" not just "Da Vinci")
-  if (isMovie && enQuery) {
-    const queryLower = enQuery.toLowerCase();
-    if (!queryLower.includes('film') && !queryLower.includes('movie')) {
-      enQuery = `${enQuery} film`;
-      console.log(`[Image Search] Added 'film' to movie query: "${enQuery}"`);
-    }
-  }
-  
-  // Try all sources in parallel with their fallback strategies
+  // Parallel fallback to Wiki/Commons
   const sourcePromises = [
-    // Dutch sources use Dutch query
     trySourceWithFallback(searchNationaalArchief, queryNl, year),
-    trySourceWithFallback(
-      (q, y, opts) => searchWikipedia(q, y, 'nl', opts),
-      queryNl,
-      year
-    ),
-    // International sources use English query for better results
-    trySourceWithFallback(
-      (q, y, opts) => searchWikipedia(q, y, 'en', opts),
-      enQuery,
-      year
-    ),
-    trySourceWithFallback(
-      (q, y, opts) => searchWikipedia(q, y, 'de', opts),
-      enQuery,
-      year
-    ),
+    trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'nl', opts), queryNl, year),
+    trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'en', opts), enQuery, year),
+    trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'de', opts), enQuery, year),
     trySourceWithFallback(searchWikimediaCommons, enQuery, year),
   ];
 
-  // Use Promise.allSettled to get all results, then pick the first successful one
   const results = await Promise.allSettled(sourcePromises);
-  
   for (const result of results) {
-    if (result.status === 'fulfilled' && result.value) {
-      return { eventId, imageUrl: result.value.imageUrl, source: result.value.source };
-    }
+    if (result.status === 'fulfilled' && result.value) return { eventId, ...result.value };
   }
   
   return { eventId, imageUrl: null, source: null };
 }
 
-/**
- * Call the edge function to search TMDB for celebrity portraits or movie images
- */
-async function searchTMDBViaEdge(
-  eventId: string,
-  query: string,
-  year: number | undefined,
-  isCelebrity?: boolean,
-  isMovie?: boolean
-): Promise<ImageResult> {
+async function searchTMDBViaEdge(eventId: string, query: string, year: number | undefined, isCelebrity?: boolean, isMovie?: boolean): Promise<ImageResult> {
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-    
-    if (!supabaseUrl || !supabaseKey) {
-      return { eventId, imageUrl: null, source: null };
-    }
+    if (!supabaseUrl || !supabaseKey) return { eventId, imageUrl: null, source: null };
     
     const response = await fetch(`${supabaseUrl}/functions/v1/search-images`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseKey}`,
-        'apikey': supabaseKey,
-      },
-      body: JSON.stringify({
-        queries: [{ eventId, query, year, isCelebrity: !!isCelebrity, isMovie: !!isMovie }],
-      }),
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}`, 'apikey': supabaseKey },
+      body: JSON.stringify({ queries: [{ eventId, query, year, isCelebrity: !!isCelebrity, isMovie: !!isMovie }] }),
     });
     
-    if (!response.ok) {
-      return { eventId, imageUrl: null, source: null };
-    }
-    
+    if (!response.ok) return { eventId, imageUrl: null, source: null };
     const data = await response.json();
-    const images = data.images || [];
-    const found = images.find((img: ImageResult) => img.eventId === eventId);
-    
-    if (found?.imageUrl) {
-      return found;
-    }
-    
-    return { eventId, imageUrl: null, source: null };
-  } catch {
-    return { eventId, imageUrl: null, source: null };
-  }
-}
-
-// ============== CONCURRENCY CONTROL ==============
-
-type Task<T> = () => Promise<T>;
-
-/**
- * Execute tasks with limited concurrency
- */
-async function runWithConcurrency<T>(
-  tasks: Task<T>[],
-  maxConcurrent: number,
-  onTaskComplete?: (result: T, index: number) => void
-): Promise<T[]> {
-  const results: T[] = [];
-  let currentIndex = 0;
-  
-  async function runNext(): Promise<void> {
-    const index = currentIndex++;
-    if (index >= tasks.length) return;
-    
-    const result = await tasks[index]();
-    results[index] = result;
-    
-    if (onTaskComplete) {
-      onTaskComplete(result, index);
-    }
-    
-    await runNext();
-  }
-  
-  const workers = Array(Math.min(maxConcurrent, tasks.length))
-    .fill(null)
-    .map(() => runNext());
-  
-  await Promise.all(workers);
-  return results;
+    return data.images?.[0]?.imageUrl ? data.images[0] : { eventId, imageUrl: null, source: null };
+  } catch { return { eventId, imageUrl: null, source: null }; }
 }
 
 // ============== PUBLIC API ==============
 
-export interface SearchQuery {
-  eventId: string;
-  query: string;
-  /** English query for better Wikimedia Commons results */
-  queryEn?: string;
-  year?: number;
-}
-
-/**
- * Search images for multiple events with concurrency control.
- * Calls onResult for each completed search immediately.
- */
-export async function searchImagesClientSide(
-  queries: SearchQuery[],
-  options?: {
-    maxConcurrent?: number;
-    onResult?: (result: ImageResult) => void;
-  }
-): Promise<ImageResult[]> {
-  const { maxConcurrent = 3, onResult } = options || {};
-  
-  const tasks = queries.map(({ eventId, query, queryEn, year }) => 
-    () => searchImageForEvent(eventId, query, year, queryEn)
-  );
-  
-  const results = await runWithConcurrency(tasks, maxConcurrent, (result) => {
-    if (onResult) {
-      onResult(result);
+// Concurrency helper
+async function runWithConcurrency<T>(tasks: (() => Promise<T>)[], maxConcurrent: number, onResult?: (res: T) => void): Promise<T[]> {
+  const results: T[] = [];
+  let index = 0;
+  async function next(): Promise<void> {
+    while (index < tasks.length) {
+      const i = index++;
+      const res = await tasks[i]();
+      results[i] = res;
+      onResult?.(res);
     }
-  });
-  
+  }
+  await Promise.all(Array(Math.min(maxConcurrent, tasks.length)).fill(null).map(next));
   return results;
 }
 
-/**
- * Search image for a single event (useful for lazy loading)
- */
+export async function searchImagesClientSide(
+  queries: SearchQuery[],
+  options?: { maxConcurrent?: number; onResult?: (result: ImageResult) => void; }
+): Promise<ImageResult[]> {
+  const tasks = queries.map(({ eventId, query, queryEn, year, isCelebrity, isMovie }) => 
+    () => searchImageForEvent(eventId, query, year, queryEn, isCelebrity, isMovie)
+  );
+  return runWithConcurrency(tasks, options?.maxConcurrent || 3, options?.onResult);
+}
+
 export async function searchSingleImage(
   eventId: string,
   query: string,
