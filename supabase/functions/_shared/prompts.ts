@@ -94,7 +94,8 @@ REGELS VOOR 'imageSearchQuery' (NEDERLANDS):
 - NOOIT extra context: fabrikanten, merknamen die niet in de titel staan
 - type 'person': ALLEEN de naam. "David Bowie" (NIET "David Bowie zanger")
 - type 'movie': ALLEEN de titel. "The A-Team" (NIET "The A-Team serie")
-- type 'product': ALLEEN productnaam. "Star Wars actiefiguren" (NIET "Star Wars actiefiguren Kenner", NIET "Walkman Sony")
+- type 'product': ALLEEN productnaam. "Star Wars actiefiguren" (NIET "Star Wars actiefiguren Kenner")
+- UITZONDERING: Voor de originele Sony Walkman uit 1979: "Sony Walkman TPS-L2" (het specifieke model)
 - type 'logo': ALLEEN de naam. "Pac-Man" (NIET "Pac-Man logo", NIET "Pac-Man Namco")
 - type 'artwork': Artiest + titel. "Thriller Michael Jackson" (NIET "Thriller album")
 - type 'culture': SPECIFIEK object/stijl. "Breakdance", "Disco bal"
@@ -105,7 +106,8 @@ REGELS VOOR 'imageSearchQueryEn' (ENGELS):
 - NOOIT extra context: fabrikanten, merknamen die niet in de titel staan
 - type 'person': ALLEEN de naam. "David Bowie" (NIET "David Bowie singer")
 - type 'movie': ALLEEN de titel. "The A-Team" (NIET "The A-Team series")
-- type 'product': ALLEEN productnaam. "Star Wars action figures" (NIET "Star Wars action figures Kenner", NIET "Walkman Sony")
+- type 'product': ALLEEN productnaam. "Star Wars action figures" (NIET "Star Wars action figures Kenner")
+- UITZONDERING: Voor de originele Sony Walkman uit 1979: "Sony Walkman TPS-L2" (het specifieke model)
 - type 'logo': ALLEEN de naam. "Pac-Man" (NIET "Pac-Man logo", NIET "Pac-Man Namco")
 - type 'artwork': Artiest + titel. "Thriller Michael Jackson" (NIET "Thriller album")
 - type 'culture': SPECIFIEK object/stijl. "Breakdance", "Disco ball"
