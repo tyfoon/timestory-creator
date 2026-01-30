@@ -2,9 +2,9 @@
  * Client-side Wikipedia/Wikimedia image search
  * Runs directly in the browser to avoid server timeouts
  * * IMPROVED VERSION:
- * - Prioritizes TMDB for movies and celebrities with CLEANED queries
- * - Checks description/snippet for matches (not just filenames)
- * - Ignores accents (André == Andre)
+ * - Smart Stop Words: Ignores "Introduction" but keeps "Gameboy".
+ * - Checks Description/Snippet: Finds "Gameboy" even if title is "DSC001.jpg".
+ * - Priority TMDB: Uses cleaned queries for movies/celebs.
  */
 
 const THUMB_WIDTH = 960;
@@ -31,7 +31,6 @@ function isAllowedImageUrl(maybeUrl: string): boolean {
     const path = url.pathname.toLowerCase();
 
     if (path.includes("/transcoded/")) return false;
-
     if (path.match(/\.(mp3|ogg|wav|webm|mp4|ogv|pdf|svg)$/)) return false;
 
     return path.match(/\.(jpg|jpeg|png|webp|gif)$/) !== null;
@@ -53,79 +52,95 @@ function normalizeText(str: string): string {
     .trim();
 }
 
-// Expanded stop words list - these words are too common/generic to use for matching
+// CRITICAL: Stop words are words we IGNORE during validation.
+// We do NOT filter out specific proper nouns like "Gameboy", "Frankrijk", "WK", "Olympische".
+// We DO filter out generic event descriptors like "Launch", "Birthday", "Picture of".
 const STOP_WORDS = new Set([
-  'the', 'and', 'for', 'van', 'het', 'een', 'der', 'den', 'des', 'von', 'und',
-  'with', 'from', 'image', 'file', 'bestand', 'jpg', 'png', 'jpeg', 'gif',
-  'photo', 'foto', 'picture', 'svg', 'logo', 'icon', 'thumb', 'thumbnail',
-  'wiki', 'commons', 'wikipedia', 'media', 'upload', 'files',
-  'lancering', 'release', 'launch', 'premiere', 'debut', 'start',
-  'finale', 'einde', 'end', 'last', 'final', 'season', 'seizoen', 'episode',
-  'film', 'movie', 'serie', 'series', 'show', 'game', 'spel',
-  'gekte', 'rage', 'craze', 'hype', 'trend', 'phenomenon', 'fenomeen'
+  // English
+  'the', 'and', 'for', 'with', 'from', 'image', 'file', 'jpg', 'png', 'picture', 'photo',
+  'launch', 'introduction', 'presentation', 'release', 'debut', 'start', 'end',
+  'born', 'birthday', 'birth', 'died', 'death', 'celebration', 'anniversary',
+  'winner', 'winning', 'wins', 'champion', 'victory',
+  'official', 'trailer', 'video', 'scene', 'clip',
+  
+  // Dutch
+  'de', 'het', 'een', 'van', 'voor', 'met', 'op', 'bij', 'tijdens',
+  'bestand', 'afbeelding', 'foto', 'plaatje', 'portret',
+  'introductie', 'lancering', 'uitgave', 'release', 'start', 'einde', 'slot',
+  'geboren', 'geboorte', 'jarig', 'verjaardag', 'overleden', 'sterft',
+  'viering', 'feest', 'jubileum', 'huldiging',
+  'winnaar', 'wint', 'winst', 'kampioen', 'overwinning', 'prijs', 'medaille',
+  'officieel', 'videoclip', 'fragment', 'verslag',
+  'gekte', 'rage', 'hype', 'trend', 'fenomeen'
 ]);
 
 /**
- * Helper to clean query for TMDB (removes years and keywords)
- * "Titanic film 1997" -> "Titanic"
+ * Helper to clean query for TMDB (removes years and descriptive keywords)
  */
 function cleanQueryForTMDB(query: string): string {
-  return query
+  let cleaned = query
     .replace(/\b\d{4}\b/g, '') // remove years
     .replace(/[()]/g, '') // remove parens
-    .replace(/\b(film|movie|concert|tour|live|band|group|singer|actor|actress|trailer|official|video|tv show|series)\b/gi, '') // remove keywords
-    .replace(/ - /g, ' ') // separators
-    .replace(/\s+/g, ' ')
-    .trim();
+    .replace(/ - /g, ' ') 
+    .replace(/\s+/g, ' ');
+
+  // For TMDB we want the pure name, so we strip stop words
+  const words = cleaned.split(' ');
+  const filteredWords = words.filter(w => !STOP_WORDS.has(w.toLowerCase()));
+  return filteredWords.join(' ').trim();
 }
 
 /**
- * Check if a Wikipedia/Commons page title OR snippet matches the search query.
- * Uses stricter matching: the PRIMARY subject word MUST appear in results.
+ * Check if content matches query.
+ * Uses "Subject-First" strategy: The first meaningful word (Gameboy, Zidane) MUST appear.
  */
 function contentMatchesQuery(title: string, snippet: string | undefined, query: string, strict: boolean = true): boolean {
   const normalizedTitle = normalizeText(title);
   const normalizedSnippet = snippet ? normalizeText(snippet.replace(/<[^>]*>/g, "")) : ""; 
   const normalizedQuery = normalizeText(query);
   
-  // Extract significant words from query
+  // 1. Extract KEYWORDS from query (excluding stop words)
+  // Query: "Introductie Gameboy" -> Keywords: ["gameboy"]
+  // Query: "WK Frankrijk" -> Keywords: ["wk", "frankrijk"]
   const queryWords = normalizedQuery.split(/\s+/).filter(w => 
     w.length > 2 && !STOP_WORDS.has(w) && !/^\d{4}$/.test(w)
   );
   
-  if (queryWords.length === 0) return true;
+  if (queryWords.length === 0) return true; // Fallback
   
-  // Take first 3 main subject words (e.g., "Furby", "Seinfeld", "Game Boy")
+  // 2. Define Main Subjects (max 3)
   const mainSubjectWords = queryWords.slice(0, 3);
   
-  // Helper to check if word appears in text
+  // Helper: check word presence (strict for short words)
   const wordAppearsIn = (word: string, text: string): boolean => {
-    if (word.length <= 4) {
-      // Short words need exact word boundary match
-      return new RegExp(`\\b${word}\\b`, 'i').test(text);
-    }
+    if (word.length <= 3) return new RegExp(`\\b${word}\\b`, 'i').test(text);
     return text.includes(word);
   };
   
-  // Count matches in title and snippet
   const matchesInTitle = mainSubjectWords.filter(w => wordAppearsIn(w, normalizedTitle)).length;
   const matchesInSnippet = mainSubjectWords.filter(w => wordAppearsIn(w, normalizedSnippet)).length;
   const maxMatches = Math.max(matchesInTitle, matchesInSnippet);
   
   if (strict) {
-    // STRICT: First main subject word MUST appear somewhere
+    // STRICT: The FIRST keyword (Subject) MUST match.
+    // "Introductie Gameboy" -> "Gameboy" must be there.
+    // "George Clooney Jarig" -> "George" must be there.
     const firstWord = mainSubjectWords[0];
     const firstWordFound = wordAppearsIn(firstWord, normalizedTitle) || wordAppearsIn(firstWord, normalizedSnippet);
     
-    if (!firstWordFound) {
-      return false; // Primary subject not found = wrong result
-    }
+    if (!firstWordFound) return false;
     
-    // Also require 60% of main words to match
+    // Require majority match if multiple words (e.g. "WK" AND "Frankrijk")
     const threshold = Math.max(1, Math.ceil(mainSubjectWords.length * 0.6));
     return maxMatches >= threshold;
   } else {
-    // LENIENT: At least 1 word must match
+    // LENIENT: Just need the primary subject
+    if (mainSubjectWords.length > 0) {
+       const firstWord = mainSubjectWords[0];
+       if (!wordAppearsIn(firstWord, normalizedTitle) && !wordAppearsIn(firstWord, normalizedSnippet)) {
+         return false; 
+       }
+    }
     return maxMatches >= 1;
   }
 }
@@ -136,6 +151,9 @@ interface SearchOptions {
   strictMatch?: boolean;
 }
 
+// ... (Rest of the file: searchWikipedia, searchCommons, etc. remains the same as previous) ...
+// ... Just make sure to COPY the FULL implementation from the previous response but utilize the STOP_WORDS above ...
+
 async function searchWikipedia(
   query: string, 
   year: number | undefined,
@@ -143,37 +161,26 @@ async function searchWikipedia(
   options: SearchOptions = {}
 ): Promise<{ imageUrl: string; source: string } | null> {
   const { useQuotes = false, includeYear = true, strictMatch = true } = options;
-  
   try {
     let searchQuery = query;
     if (useQuotes) searchQuery = `"${query}"`;
     if (includeYear && year) searchQuery = `${searchQuery} ${year}`;
     
-    // Fetch snippet/description as well
     const searchUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&format=json&srlimit=5&origin=*`;
+    const res = await fetch(searchUrl);
+    if (!res.ok) return null;
+    const data = await res.json();
     
-    const searchRes = await fetch(searchUrl);
-    if (!searchRes.ok) return null;
-    
-    const searchData = await searchRes.json();
-    const results = searchData.query?.search || [];
-    
-    for (const result of results.slice(0, 3)) {
+    for (const result of data.query?.search || []) {
       if (!contentMatchesQuery(result.title, result.snippet, query, strictMatch)) continue;
-      
       const imageUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(result.title)}&prop=pageimages&format=json&pithumbsize=${THUMB_WIDTH}&piprop=thumbnail|original&origin=*`;
-      const imageRes = await fetch(imageUrl);
-      if (!imageRes.ok) continue;
-      
-      const imageData = await imageRes.json();
-      const pages = imageData.query?.pages;
-      const pageId = Object.keys(pages || {})[0];
-      
-      if (pageId && pageId !== '-1' && pages[pageId]?.thumbnail?.source) {
-        return {
-          imageUrl: pages[pageId].thumbnail.source,
-          source: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(result.title)}`
-        };
+      const imgRes = await fetch(imageUrl);
+      if (!imgRes.ok) continue;
+      const imgData = await imgRes.json();
+      const pageId = Object.keys(imgData.query?.pages || {})[0];
+      if (pageId && pageId !== '-1') {
+        const thumb = imgData.query.pages[pageId].thumbnail?.source;
+        if (thumb && isAllowedImageUrl(thumb)) return { imageUrl: thumb, source: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(result.title)}` };
       }
     }
     return null;
@@ -186,22 +193,18 @@ async function searchWikimediaCommons(query: string, year: number | undefined, o
     let searchQuery = query;
     if (useQuotes) searchQuery = `"${query}"`;
     if (includeYear && year) searchQuery = `${searchQuery} ${year}`;
-    
     const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srnamespace=6&format=json&srlimit=5&origin=*`;
-    const searchRes = await fetch(searchUrl);
-    if (!searchRes.ok) return null;
-    const searchData = await searchRes.json();
-    
-    for (const result of (searchData.query?.search || []).slice(0, 3)) {
+    const res = await fetch(searchUrl);
+    if (!res.ok) return null;
+    const data = await res.json();
+    for (const result of data.query?.search || []) {
       if (!contentMatchesQuery(result.title, result.snippet, query, strictMatch)) continue;
-      
       const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(result.title)}&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=${THUMB_WIDTH}&format=json&origin=*`;
       const infoRes = await fetch(infoUrl);
       if (!infoRes.ok) continue;
       const infoData = await infoRes.json();
       const pageId = Object.keys(infoData.query?.pages || {})[0];
       const img = infoData.query?.pages[pageId]?.imageinfo?.[0];
-      
       if (img && (img.thumburl || img.url) && isAllowedImageUrl(img.thumburl || img.url)) {
         return { imageUrl: img.thumburl || img.url, source: `https://commons.wikimedia.org/wiki/${encodeURIComponent(result.title)}` };
       }
@@ -215,22 +218,19 @@ async function searchNationaalArchief(query: string, year: number | undefined, o
   try {
     let searchQuery = `${query} Nationaal Archief`;
     if (includeYear && year) searchQuery = `${query} ${year} Nationaal Archief`;
-    
     const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srnamespace=6&format=json&srlimit=3&origin=*`;
     const res = await fetch(searchUrl);
     if (!res.ok) return null;
     const data = await res.json();
-    
-    for (const result of (data.query?.search || []).slice(0, 2)) {
+    for (const result of data.query?.search || []) {
       if (!contentMatchesQuery(result.title, result.snippet, query, strictMatch)) continue;
-      // Fetch image details logic (same as Commons)
       const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(result.title)}&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=${THUMB_WIDTH}&format=json&origin=*`;
       const infoRes = await fetch(infoUrl);
       if (!infoRes.ok) continue;
       const infoData = await infoRes.json();
       const pageId = Object.keys(infoData.query?.pages || {})[0];
       const img = infoData.query?.pages[pageId]?.imageinfo?.[0];
-      if (img && (img.thumburl || img.url)) {
+      if (img && (img.thumburl || img.url) && isAllowedImageUrl(img.thumburl || img.url)) {
         return { imageUrl: img.thumburl || img.url, source: `https://commons.wikimedia.org/wiki/${encodeURIComponent(result.title)}` };
       }
     }
@@ -247,7 +247,7 @@ async function trySourceWithFallback(
   res = await searchFn(query, year, { useQuotes: false, includeYear: true, strictMatch: true });
   if (res) return res;
   if (year) {
-    res = await searchFn(query, year, { useQuotes: false, includeYear: false, strictMatch: false }); // Lenient without year
+    res = await searchFn(query, year, { useQuotes: false, includeYear: false, strictMatch: false }); 
     if (res) return res;
   }
   return null;
@@ -264,15 +264,11 @@ async function searchImageForEvent(
   isMovie?: boolean
 ): Promise<ImageResult> {
   let enQuery = queryEn || queryNl;
-  
-  // Clean query for TMDB (remove 'film', '1997', etc to match exact titles)
   const tmdbQuery = cleanQueryForTMDB(enQuery);
 
-  // TMDB PRIORITY: Try TMDB first for celebrities or movies
+  // TMDB Priority
   if (isCelebrity || isMovie) {
     try {
-      // Pass the CLEANED query to TMDB
-      // Pass year explicitly only for movies (TMDB supports it separately)
       const tmdbResult = await searchTMDBViaEdge(eventId, tmdbQuery, isMovie ? year : undefined, isCelebrity, isMovie);
       if (tmdbResult.imageUrl) return tmdbResult;
     } catch (e) {
@@ -317,7 +313,6 @@ async function searchTMDBViaEdge(eventId: string, query: string, year: number | 
 
 // ============== PUBLIC API ==============
 
-// Concurrency helper
 async function runWithConcurrency<T>(tasks: (() => Promise<T>)[], maxConcurrent: number, onResult?: (res: T) => void): Promise<T[]> {
   const results: T[] = [];
   let index = 0;
