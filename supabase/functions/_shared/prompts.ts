@@ -40,6 +40,7 @@ KIES HET JUISTE 'visualSubjectType':
 5. 'event': Voor oorlogen, rampen, kroningen, protesten. (Zoekt nieuwsfoto's)
 6. 'location': Voor steden, gebouwen.
 7. 'artwork': Voor schilderijen, boekomslagen, albums.
+8. 'culture': Voor rages, muziekstromingen, dansstijlen, mode.
 
 KRITISCH - TWEE APARTE ZOEKOPDRACHTEN:
 Je moet ALTIJD BEIDE invullen:
@@ -61,6 +62,13 @@ REGELS VOOR 'imageSearchQueryEn' PER TYPE:
 - type 'logo': ALLEEN de naam, GEEN "logo", GEEN jaartal. "Pac-Man", "SimCity", "Doom" (GEEN "Pac-Man logo", GEEN "SimCity 1989")
 - type 'artwork': ALLEEN artiest + titel voor albums. "Thriller Michael Jackson" (GEEN "album", GEEN "cover", GEEN jaartal)
 - type 'event': Engelse naam van event. "Fall of the Berlin Wall"
+
+Culture (category: culture):
+!!! BELANGRIJK VOOR TYPE 'culture' (Trends & Stijlen) !!!
+- VERWIJDER TIJDSAANDUIDINGEN! Zoekmachines snappen "80s" niet.
+- FOUT: "80s Breakdance", "1970s Disco", "90s Grunge fashion"
+- GOED: "Breakdance", "Disco ball", "Grunge fashion", "New Wave music band"
+- Wees concreet: Zoek niet het concept ("Gabber cultuur") maar een object/persoon ("Gabber raver" of "Thunderdome logo").
 
 SPORT EVENTS (category: sports):
 - ALTIJD de SPORT vermelden in de zoekopdracht!
@@ -135,7 +143,7 @@ export function getTimelineTool() {
                 category: { type: "string", enum: EVENT_CATEGORIES },
                 visualSubjectType: { 
                   type: "string", 
-                  enum: ["person", "movie", "product", "logo", "event", "location", "artwork"],
+                  enum: ["person", "movie", "product", "logo", "event", "location", "artwork", "culture"],
                   description: "CRITICAL: The visual category of the subject. Used to select the correct image database."
                 },
                 imageSearchQuery: { type: "string" },
