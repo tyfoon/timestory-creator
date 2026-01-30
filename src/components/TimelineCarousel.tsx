@@ -35,9 +35,12 @@ export const TimelineCarousel = ({
   const onEventSelectRef = useRef(onEventSelect);
   const programmaticScrollRef = useRef(false);
   const programmaticScrollTimeoutRef = useRef<number | null>(null);
+  // Track if the index change was user-initiated (scrubber/click) vs data-driven
+  const userInitiatedScrollRef = useRef(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [cardRotations, setCardRotations] = useState<number[]>([]);
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
     currentIndexRef.current = currentEventIndex;
@@ -46,6 +49,13 @@ export const TimelineCarousel = ({
   useEffect(() => {
     onEventSelectRef.current = onEventSelect;
   }, [onEventSelect]);
+
+  // When scrubbing starts, mark as user-initiated
+  useEffect(() => {
+    if (isScrubbing) {
+      userInitiatedScrollRef.current = true;
+    }
+  }, [isScrubbing]);
 
   // Calculate rotation for each card based on its position
   const updateCardRotations = useCallback(() => {
@@ -74,8 +84,18 @@ export const TimelineCarousel = ({
     setCardRotations(rotations);
   }, []);
 
-  // Scroll to current event when it changes
+  // Scroll to current event when it changes - ONLY if user-initiated or initial mount
   useEffect(() => {
+    // On first mount with events, scroll to initial position
+    const isInitialMount = !hasInitializedRef.current && events.length > 0;
+    if (isInitialMount) {
+      hasInitializedRef.current = true;
+      // Allow initial scroll to happen
+    } else if (!userInitiatedScrollRef.current) {
+      // Don't scroll if this is a data-driven update (e.g., image loading)
+      return;
+    }
+    
     const cardElement = cardRefs.current[currentEventIndex];
     if (cardElement && scrollContainerRef.current) {
       const container = scrollContainerRef.current;
@@ -98,9 +118,10 @@ export const TimelineCarousel = ({
       // Release the lock shortly after the scroll starts.
       programmaticScrollTimeoutRef.current = window.setTimeout(() => {
         programmaticScrollRef.current = false;
+        userInitiatedScrollRef.current = false;
       }, isScrubbing ? 100 : 500);
     }
-  }, [currentEventIndex, isScrubbing]);
+  }, [currentEventIndex, isScrubbing, events.length]);
 
   // Check scroll buttons state and update rotations
   const updateScrollState = useCallback(() => {
@@ -113,6 +134,7 @@ export const TimelineCarousel = ({
   }, [updateCardRotations]);
 
   // Detect which card is most centered and sync with scrubber (stable via refs)
+  // This is called when the user manually scrolls the carousel
   const detectCenteredCard = useCallback(() => {
     if (!scrollContainerRef.current) return;
 
@@ -136,6 +158,8 @@ export const TimelineCarousel = ({
     });
 
     if (closestIndex !== currentIndexRef.current) {
+      // This is a user-initiated scroll, but we don't need to scroll again
+      // because the user is already scrolling. Just update the index.
       onEventSelectRef.current(closestIndex);
     }
   }, []);
@@ -252,6 +276,8 @@ export const TimelineCarousel = ({
                 if (isSelectingMode && hasImage && onToggleSelection) {
                   onToggleSelection(event.id);
                 } else if (!isSelectingMode) {
+                  // Mark as user-initiated so the carousel scrolls to this card
+                  userInitiatedScrollRef.current = true;
                   onEventSelect(index);
                 }
               }}
