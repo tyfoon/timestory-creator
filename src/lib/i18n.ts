@@ -143,6 +143,17 @@ export const translations = {
     prepareSlides: "Slides voorbereiden",
     shareNow: "Deel nu",
 
+    // Polaroid collage
+    createCollage: "Maak Collage (6 foto's)",
+    selectPhotos: "Selecteer 6 foto's",
+    selectedCount: "Geselecteerd",
+    maxPhotosReached: "Maximaal 6 foto's",
+    generateCollage: "Download Collage",
+    collageDownloaded: "Collage gedownload!",
+    collageReady: "Je polaroid collage is klaar",
+    collageError: "Fout bij collage genereren",
+    cancelSelection: "Annuleren",
+
     // Toast messages
     loadError: "Fout bij laden",
 
@@ -303,6 +314,17 @@ export const translations = {
     prepareSlides: "Prepare slides",
     shareNow: "Share now",
 
+    // Polaroid collage
+    createCollage: "Create Collage (6 photos)",
+    selectPhotos: "Select 6 photos",
+    selectedCount: "Selected",
+    maxPhotosReached: "Maximum 6 photos",
+    generateCollage: "Download Collage",
+    collageDownloaded: "Collage downloaded!",
+    collageReady: "Your polaroid collage is ready",
+    collageError: "Error generating collage",
+    cancelSelection: "Cancel",
+
     // Toast messages
     loadError: "Loading error",
 
@@ -453,6 +475,17 @@ export const translations = {
     prepareSlides: "Slides vorbereiten",
     shareNow: "Jetzt teilen",
 
+    // Polaroid collage
+    createCollage: "Collage erstellen (6 Fotos)",
+    selectPhotos: "Wähle 6 Fotos",
+    selectedCount: "Ausgewählt",
+    maxPhotosReached: "Maximal 6 Fotos",
+    generateCollage: "Collage herunterladen",
+    collageDownloaded: "Collage heruntergeladen!",
+    collageReady: "Deine Polaroid-Collage ist fertig",
+    collageError: "Fehler beim Erstellen der Collage",
+    cancelSelection: "Abbrechen",
+
     loadError: "Ladefehler",
 
     required: "Dieses Feld ist erforderlich",
@@ -601,6 +634,17 @@ export const translations = {
     tapToShare: "Appuyez sur le bouton vert pour partager",
     prepareSlides: "Préparer les slides",
     shareNow: "Partager maintenant",
+
+    // Polaroid collage
+    createCollage: "Créer Collage (6 photos)",
+    selectPhotos: "Sélectionnez 6 photos",
+    selectedCount: "Sélectionné",
+    maxPhotosReached: "Maximum 6 photos",
+    generateCollage: "Télécharger Collage",
+    collageDownloaded: "Collage téléchargé!",
+    collageReady: "Votre collage polaroid est prêt",
+    collageError: "Erreur lors de la création du collage",
+    cancelSelection: "Annuler",
 
     loadError: "Erreur de chargement",
 

@@ -171,9 +171,8 @@ Focus op de sfeer van dat specifieke jaar:
 - SAMENLEVING: Wat hield het nieuws in de greep (positief/neutraal)?
 - RAGES: Wat was er dat jaar ineens overal te zien?
 - FILM/TV: De blockbusters en series waar iedereen voor thuisbleef.
-- TECHNOLOGIE: Welke nieuwe gadgets kwamen er dat jaar uit?`,
-
-BEROEMDE JARIGEN: Voeg bekende mensen toe die op dezelfde dag en maand jarig zijn (acteurs, muzikanten, sporters, politici, etc.)`,
+- TECHNOLOGIE: Welke nieuwe gadgets kwamen er dat jaar uit?
+- BEROEMDE JARIGEN: Voeg bekende mensen toe die op dezelfde dag en maand jarig zijn (acteurs, muzikanten, sporters, politici, etc.)`,
 
 // JEUGD (6-10 jaar) - Focus: Schoolplein & Huiselijke gezelligheid
   childhood: `CONTENT FOCUS - JEUGD (6-10 jaar):
