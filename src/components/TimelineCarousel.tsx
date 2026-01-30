@@ -197,12 +197,14 @@ export const TimelineCarousel = ({
   }, [events, updateScrollState, detectCenteredCard, isScrubbing]);
 
   const scrollByAmount = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = scrollContainerRef.current.offsetWidth * 0.8;
-      scrollContainerRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      });
+    // Always navigate exactly 1 card at a time
+    const newIndex = direction === 'left' 
+      ? Math.max(0, currentEventIndex - 1)
+      : Math.min(events.length - 1, currentEventIndex + 1);
+    
+    if (newIndex !== currentEventIndex) {
+      userInitiatedScrollRef.current = true;
+      onEventSelect(newIndex);
     }
   };
 
