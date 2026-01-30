@@ -20,8 +20,10 @@ export interface SearchQuery {
   year?: number;
   isCelebrity?: boolean;
   isMovie?: boolean;
+  isMusic?: boolean;
+  spotifySearchQuery?: string;
   category?: string;
-  visualSubjectType?: string; // NIEUW
+  visualSubjectType?: string;
 }
 
 function isAllowedImageUrl(maybeUrl: string, allowSvg: boolean = false): boolean {
@@ -102,7 +104,7 @@ const nationaal = (q: string, y?: number) =>
   fetchWikiResults(`https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(`${q} ${y || ''} Nationaal Archief`)}&srnamespace=6&format=json&origin=*`, q, false);
 
 // TMDB Wrapper
-async function searchTMDB(eventId: string, query: string, type: 'person' | 'movie', year?: number): Promise<ImageResult> {
+async function searchTMDB(eventId: string, query: string, type: 'person' | 'movie', year?: number, isMusic?: boolean, spotifySearchQuery?: string): Promise<ImageResult> {
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -116,7 +118,9 @@ async function searchTMDB(eventId: string, query: string, type: 'person' | 'movi
         query: cleanQueryForTMDB(query), 
         year, 
         isCelebrity: type === 'person', 
-        isMovie: type === 'movie' 
+        isMovie: type === 'movie',
+        isMusic,
+        spotifySearchQuery
       }] }),
     });
     if (!response.ok) return { eventId, imageUrl: null, source: null };
@@ -135,14 +139,19 @@ export async function searchSingleImage(
   isCelebrity?: boolean,
   isMovie?: boolean,
   category?: string,
-  visualSubjectType?: string // <--- DE NIEUWE VERKEERSREGELAAR
+  visualSubjectType?: string,
+  isMusic?: boolean,
+  spotifySearchQuery?: string
 ): Promise<ImageResult> {
   let enQuery = queryEn || query;
   let type = visualSubjectType;
 
+  // Determine if this is a music event
+  const musicEvent = isMusic || category === 'music';
+
   // FALLBACK: Als visualSubjectType ontbreekt (oude cache?), gokken we op basis van categorie
   if (!type) {
-    if (isCelebrity || category === 'music' || category === 'celebrity') type = 'person';
+    if (isCelebrity || musicEvent || category === 'celebrity') type = 'person';
     else if (isMovie || category === 'entertainment') type = 'movie';
     else if (category === 'technology' || category === 'science') type = 'product';
     else type = 'event';
@@ -156,7 +165,7 @@ export async function searchSingleImage(
 
   // 2. Personen & Muziek -> TMDB Person (veel betere kwaliteit dan Wiki)
   if (type === 'person') {
-    const res = await searchTMDB(eventId, enQuery, 'person');
+    const res = await searchTMDB(eventId, enQuery, 'person', undefined, musicEvent, spotifySearchQuery);
     if (res.imageUrl) return res;
     // Fallback naar Wiki als TMDB faalt (voor lokale artiesten)
     const wikiRes = await wiki('nl', query, undefined, false); 
