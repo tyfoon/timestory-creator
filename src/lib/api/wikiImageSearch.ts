@@ -150,10 +150,11 @@ export async function searchSingleImage(
   const musicEvent = isMusic || category === 'music';
 
   // FALLBACK: Als visualSubjectType ontbreekt (oude cache?), gokken we op basis van categorie
+  // BELANGRIJK: entertainment ≠ movie! Games zijn ook entertainment maar moeten naar Commons
   if (!type) {
     if (isCelebrity || musicEvent || category === 'celebrity') type = 'person';
-    else if (isMovie || category === 'entertainment') type = 'movie';
-    else if (category === 'technology' || category === 'science') type = 'product';
+    else if (isMovie) type = 'movie'; // Alleen als expliciet isMovie=true
+    else if (category === 'technology' || category === 'science' || category === 'entertainment') type = 'product';
     else type = 'event';
   }
 
@@ -177,17 +178,21 @@ export async function searchSingleImage(
   const isGameOrProduct = type === 'product' || type === 'logo' || type === 'artwork';
   
   if (isGameOrProduct) {
-    const allowSvg = true; 
-    // Probeer eerst Commons (beste voor producten)
-    let res = await commons(enQuery, undefined, allowSvg); 
+    // Probeer EERST zonder SVG (echte afbeeldingen hebben voorkeur)
+    let res = await commons(enQuery, undefined, false); 
     if (res) return { eventId, ...res };
     
-    // Probeer Wiki EN
-    res = await wiki('en', enQuery, undefined, allowSvg);
+    res = await wiki('en', enQuery, undefined, false);
     if (res) return { eventId, ...res };
     
-    // Fallback: Wiki NL zonder jaar
-    res = await wiki('nl', query, undefined, allowSvg);
+    res = await wiki('nl', query, undefined, false);
+    if (res) return { eventId, ...res };
+    
+    // FALLBACK: Als geen echte afbeelding, probeer met SVG
+    res = await commons(enQuery, undefined, true); 
+    if (res) return { eventId, ...res };
+    
+    res = await wiki('en', enQuery, undefined, true);
     if (res) return { eventId, ...res };
     
     // Geen resultaat gevonden voor game/product
