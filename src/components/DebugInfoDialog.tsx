@@ -58,17 +58,22 @@ export function DebugInfoDialog({ events }: DebugInfoDialogProps) {
   }, [events]);
 
   // Determine the source type based on the source URL
-  function getSourceType(source?: string): string {
+  function getSourceType(source?: string, imageUrl?: string): string {
     if (!source) return 'Geen';
+    
+    // Check if it's an SVG from the image URL
+    const isSvg = imageUrl?.toLowerCase().includes('.svg');
+    const svgSuffix = isSvg ? ' (SVG)' : '';
+    
     if (source.includes('themoviedb.org') || source.includes('tmdb')) return 'TMDB';
-    if (source.includes('commons.wikimedia')) return 'Commons';
+    if (source.includes('commons.wikimedia')) return `Wikimedia Commons${svgSuffix}`;
     if (source.includes('wikipedia.org')) {
-      if (source.includes('nl.wikipedia')) return 'Wiki NL';
-      if (source.includes('en.wikipedia')) return 'Wiki EN';
-      if (source.includes('de.wikipedia')) return 'Wiki DE';
-      return 'Wikipedia';
+      if (source.includes('nl.wikipedia')) return `Wikipedia NL${svgSuffix}`;
+      if (source.includes('en.wikipedia')) return `Wikipedia EN${svgSuffix}`;
+      if (source.includes('de.wikipedia')) return `Wikipedia DE${svgSuffix}`;
+      return `Wikipedia${svgSuffix}`;
     }
-    if (source.includes('nationaalarchief')) return 'Nat. Archief';
+    if (source.includes('nationaalarchief')) return 'Nationaal Archief';
     return 'Onbekend';
   }
 
@@ -124,78 +129,52 @@ export function DebugInfoDialog({ events }: DebugInfoDialogProps) {
           <Bug className="h-3.5 w-3.5" />
         </button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[85vh]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Bug className="h-5 w-5" />
-            Debug Info: Zoekresultaten
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="shrink-0 pb-2">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <Bug className="h-4 w-4" />
+            Debug Info
+            <span className="text-muted-foreground font-normal">
+              — {stats.total} events, {stats.withImages} met beeld ({stats.total > 0 ? Math.round((stats.withImages / stats.total) * 100) : 0}%)
+            </span>
           </DialogTitle>
         </DialogHeader>
 
-        {/* Statistics panel */}
-        <div className="bg-muted/50 rounded-lg p-3 space-y-3">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <BarChart3 className="h-4 w-4" />
-            Statistieken
-          </div>
-          
-          {/* Main stats */}
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="bg-background rounded-md p-2">
-              <div className="text-2xl font-bold text-foreground">{stats.total}</div>
-              <div className="text-xs text-muted-foreground">Events</div>
-            </div>
-            <div className="bg-background rounded-md p-2">
-              <div className="text-2xl font-bold text-emerald-600">{stats.withImages}</div>
-              <div className="text-xs text-muted-foreground">Met afbeelding</div>
-            </div>
-            <div className="bg-background rounded-md p-2">
-              <div className="text-2xl font-bold text-foreground">
-                {stats.total > 0 ? Math.round((stats.withImages / stats.total) * 100) : 0}%
-              </div>
-              <div className="text-xs text-muted-foreground">Hit rate</div>
-            </div>
-          </div>
-
-          {/* Source breakdown */}
-          <div className="flex flex-wrap gap-1.5">
-            {Object.entries(stats.bySource)
-              .filter(([source]) => source !== 'Geen')
-              .sort((a, b) => b[1] - a[1])
-              .map(([source, count]) => (
-                <span key={source} className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-                  {source}: {count}
-                </span>
-              ))
-            }
-            {stats.bySource['Geen'] > 0 && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-700 dark:text-orange-300">
-                Geen: {stats.bySource['Geen']}
+        {/* Compact stats row */}
+        <div className="shrink-0 flex flex-wrap gap-1 text-[10px] pb-2 border-b">
+          {Object.entries(stats.bySource)
+            .filter(([source]) => source !== 'Geen')
+            .sort((a, b) => b[1] - a[1])
+            .map(([source, count]) => (
+              <span key={source} className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                {source}: {count}
               </span>
-            )}
-          </div>
-
-          {/* Type breakdown */}
-          <div className="flex flex-wrap gap-1.5">
-            {Object.entries(stats.byType)
-              .sort((a, b) => b[1] - a[1])
-              .map(([type, count]) => (
-                <span key={type} className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300">
-                  {type}: {count}
-                </span>
-              ))
-            }
-          </div>
+            ))
+          }
+          {stats.bySource['Geen'] > 0 && (
+            <span className="px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-700 dark:text-orange-300">
+              Geen: {stats.bySource['Geen']}
+            </span>
+          )}
+          <span className="w-px bg-border mx-1" />
+          {Object.entries(stats.byType)
+            .sort((a, b) => b[1] - a[1])
+            .map(([type, count]) => (
+              <span key={type} className="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-700 dark:text-purple-300">
+                {type}: {count}
+              </span>
+            ))
+          }
         </div>
 
         {/* Filter input */}
-        <div className="relative">
+        <div className="shrink-0 relative py-2">
           <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Filter op titel, categorie, type..."
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="pl-9"
+            className="pl-9 h-9"
           />
           {filter && (
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
@@ -204,7 +183,7 @@ export function DebugInfoDialog({ events }: DebugInfoDialogProps) {
           )}
         </div>
         
-        <ScrollArea className="h-[50vh] pr-4">
+        <ScrollArea className="flex-1 min-h-0 pr-4">
           <div className="space-y-3">
             {filteredEvents.map((event, index) => (
               <div 
@@ -354,12 +333,12 @@ export function DebugInfoDialog({ events }: DebugInfoDialogProps) {
                       {event.imageUrl ? (
                         <div className="mt-0.5">
                           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-                            ✓ {getSourceType(event.source)}
+                            ✓ {getSourceType(event.source, event.imageUrl)}
                           </span>
                           {event.source && (
                             <a 
                               href={event.source} 
-                              target="_blank" 
+                              target="_blank"
                               rel="noopener noreferrer"
                               className="flex items-center gap-1 font-mono text-[10px] text-muted-foreground hover:text-foreground truncate mt-1"
                             >
