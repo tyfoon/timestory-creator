@@ -400,7 +400,7 @@ async function searchTMDBMovie(
     // Remove "film", "movie", "TV", "TV show", years, etc.
     const cleanedQuery = cleanMovieQueryForTMDB(query);
     
-    // Search for a movie on TMDB, optionally filter by year
+    // Try MOVIE search first
     let searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanedQuery)}&language=en-US&page=1`;
     if (year) {
       searchUrl += `&year=${year}`;
@@ -408,38 +408,58 @@ async function searchTMDBMovie(
     
     console.log(`TMDB Movie: searching for "${cleanedQuery}" (original: "${query}", year: ${year || 'none'})`);
     
-    const searchRes = await fetch(searchUrl);
-    if (!searchRes.ok) {
-      console.log(`TMDB Movie: API returned ${searchRes.status}`);
-      return null;
-    }
-    
-    const searchData = await searchRes.json();
-    const results = searchData.results || [];
-    
-    console.log(`TMDB Movie: found ${results.length} results`);
-    
-    if (results.length === 0) return null;
-    
-    // Get the first matching movie with a backdrop or poster
-    for (const movie of results.slice(0, 3)) {
-      // Prefer backdrop (wider, more cinematic) over poster
-      const imagePath = movie.backdrop_path || movie.poster_path;
-      if (imagePath) {
-        // Use w780 for backdrops (good quality, not too large)
-        const size = movie.backdrop_path ? 'w780' : 'w500';
-        const imageUrl = `https://image.tmdb.org/t/p/${size}${imagePath}`;
-        const source = `https://www.themoviedb.org/movie/${movie.id}`;
-        
-        console.log(`TMDB: found movie image for "${movie.title}" (query: "${cleanedQuery}")`);
-        return { imageUrl, source };
+    let searchRes = await fetch(searchUrl);
+    if (searchRes.ok) {
+      const searchData = await searchRes.json();
+      const results = searchData.results || [];
+      
+      console.log(`TMDB Movie: found ${results.length} movie results`);
+      
+      for (const movie of results.slice(0, 3)) {
+        const imagePath = movie.backdrop_path || movie.poster_path;
+        if (imagePath) {
+          const size = movie.backdrop_path ? 'w780' : 'w500';
+          const imageUrl = `https://image.tmdb.org/t/p/${size}${imagePath}`;
+          const source = `https://www.themoviedb.org/movie/${movie.id}`;
+          
+          console.log(`TMDB: found movie image for "${movie.title}" (query: "${cleanedQuery}")`);
+          return { imageUrl, source };
+        }
       }
     }
     
-    console.log("TMDB Movie: no results with images found");
+    // If no movie found, try TV SHOW search
+    let tvSearchUrl = `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanedQuery)}&language=en-US&page=1`;
+    if (year) {
+      tvSearchUrl += `&first_air_date_year=${year}`;
+    }
+    
+    console.log(`TMDB TV: searching for "${cleanedQuery}"`);
+    
+    searchRes = await fetch(tvSearchUrl);
+    if (searchRes.ok) {
+      const searchData = await searchRes.json();
+      const results = searchData.results || [];
+      
+      console.log(`TMDB TV: found ${results.length} TV results`);
+      
+      for (const show of results.slice(0, 3)) {
+        const imagePath = show.backdrop_path || show.poster_path;
+        if (imagePath) {
+          const size = show.backdrop_path ? 'w780' : 'w500';
+          const imageUrl = `https://image.tmdb.org/t/p/${size}${imagePath}`;
+          const source = `https://www.themoviedb.org/tv/${show.id}`;
+          
+          console.log(`TMDB: found TV image for "${show.name}" (query: "${cleanedQuery}")`);
+          return { imageUrl, source };
+        }
+      }
+    }
+    
+    console.log("TMDB: no movie or TV results with images found");
     return null;
   } catch (e) {
-    console.error("TMDB Movie API error:", e);
+    console.error("TMDB API error:", e);
     return null;
   }
 }
