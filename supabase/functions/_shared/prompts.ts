@@ -32,6 +32,14 @@ ROL: BEELDREDACTEUR (CRUCIAAL)
 Jij bepaalt NIET ALLEEN de zoekterm, maar ook het TYPE afbeelding ('visualSubjectType').
 Dit helpt de zoekmachine om de juiste database te kiezen (Film database, Product database, etc).
 
+⚠️ ABSOLUUT VERBODEN IN ZOEKOPDRACHTEN ⚠️
+NOOIT decade-referenties gebruiken! Zoekmachines begrijpen deze niet:
+- FOUT: "1980s", "1990s", "2000s", "1970s"
+- FOUT: "80s", "90s", "70s", "00s" 
+- FOUT: "jaren 80", "jaren 90", "jaren 70"
+- FOUT: "eighties", "nineties", "seventies"
+- GOED: Zoek op SPECIFIEKE namen, titels, of producten
+
 KIES HET JUISTE 'visualSubjectType':
 1. 'person': Voor artiesten, politici, sporters, beroemdheden. (Zoekt in portret-database)
 2. 'movie': Voor films en TV-series. (Zoekt filmposters)
@@ -56,17 +64,17 @@ VOORBEELDEN:
 - Product "Walkman": imageSearchQuery="Sony Walkman TPS-L2", imageSearchQueryEn="Sony Walkman TPS-L2" (zelfde)
 
 REGELS VOOR 'imageSearchQueryEn' PER TYPE:
-- type 'person': ALLEEN de naam. "David Bowie" (GEEN "David Bowie singer")
-- type 'movie': ALLEEN de titel, GEEN jaartal. "Titanic", "Jurassic Park" (GEEN "Titanic 1997", GEEN "Titanic film")
-- type 'product': Specifiek model + objectnaam, GEEN jaartal. "Sony Walkman TPS-L2", "Tamagotchi" (GEEN "Tamagotchi 1996")
-- type 'logo': ALLEEN de naam, GEEN "logo", GEEN jaartal. "Pac-Man", "SimCity", "Doom" (GEEN "Pac-Man logo", GEEN "SimCity 1989")
-- type 'artwork': ALLEEN artiest + titel voor albums. "Thriller Michael Jackson" (GEEN "album", GEEN "cover", GEEN jaartal)
-- type 'event': Engelse naam van event. "Fall of the Berlin Wall"
+- type 'person': ALLEEN de naam. "David Bowie" (GEEN "David Bowie singer", GEEN jaartal)
+- type 'movie': ALLEEN de titel. "Titanic", "The A-Team" (GEEN jaartal, GEEN "film/movie/TV")
+- type 'product': Specifiek model + objectnaam. "Sony Walkman TPS-L2", "Tamagotchi" (GEEN jaartal, GEEN decade)
+- type 'logo': ALLEEN de naam. "Pac-Man", "SimCity", "Doom" (GEEN "logo", GEEN jaartal)
+- type 'artwork': Artiest + titel. "Thriller Michael Jackson" (GEEN "album", GEEN "cover", GEEN jaartal)
+- type 'event': Engelse naam. "Fall of the Berlin Wall" (GEEN decade-referenties)
 
 Culture (category: culture):
 !!! BELANGRIJK VOOR TYPE 'culture' (Trends & Stijlen) !!!
-- VERWIJDER TIJDSAANDUIDINGEN! Zoekmachines snappen "80s" niet.
-- FOUT: "80s Breakdance", "1970s Disco", "90s Grunge fashion"
+- VERWIJDER ALTIJD TIJDSAANDUIDINGEN! 
+- FOUT: "80s Breakdance", "1970s Disco", "90s Grunge fashion", "jaren 80 mode"
 - GOED: "Breakdance", "Disco ball", "Grunge fashion", "New Wave music band"
 - Wees concreet: Zoek niet het concept ("Gabber cultuur") maar een object/persoon ("Gabber raver" of "Thunderdome logo").
 
@@ -74,9 +82,8 @@ SPORT EVENTS (category: sports):
 - ALTIJD de SPORT vermelden in de zoekopdracht!
 - imageSearchQueryEn: "Land/Team + Sport + Toernooi" of "Sporter + Sport"
 - Voorbeelden:
-  - "Italië wint WK": imageSearchQueryEn="Italy FIFA World Cup 1982 football" (NIET "Italy World Cup")
-  - "Wimbledon finale": imageSearchQueryEn="Wimbledon tennis final" (NIET "Wimbledon final")
-  - "Olympische Spelen Los Angeles": imageSearchQueryEn="1984 Summer Olympics Los Angeles"
+  - "Italië wint WK": imageSearchQueryEn="Italy FIFA World Cup football" (NIET "Italy World Cup 1982")
+  - "Wimbledon finale": imageSearchQueryEn="Wimbledon tennis final"
   - "Johan Cruijff scoort": imageSearchQueryEn="Johan Cruyff football"
 
 MUZIEK EVENTS (category: music):
