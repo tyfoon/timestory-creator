@@ -132,7 +132,7 @@ const Index = () => {
     if (selectedPeriod === 'custom') {
       if (!customStartYear || !customEndYear) {
         newErrors.custom = t('fillBothYears') as string;
-      } else if (customEndYear <= customStartYear) {
+      } else if (customEndYear < customStartYear) {
         newErrors.custom = t('endYearAfterStart') as string;
       } else if (customStartYear < 1900 || customEndYear > currentYear) {
         newErrors.custom = (t('validYears') as string) + ' (1900-' + currentYear + ')';
@@ -172,7 +172,7 @@ const Index = () => {
       setErrors({ ...errors, custom: t('fillBothYears') as string });
       return;
     }
-    if (customEndYear <= customStartYear) {
+    if (customEndYear < customStartYear) {
       setErrors({ ...errors, custom: t('endYearAfterStart') as string });
       return;
     }
