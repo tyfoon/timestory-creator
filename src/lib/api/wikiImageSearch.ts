@@ -1,9 +1,9 @@
 /**
  * Client-side Wikipedia/Wikimedia image search
- * IMPROVED VERSION:
- * - Source Filtering based on Category (No Nationaal Archief for Tech/World)
- * - Strict Number Matching (Commodore 64 must match "64")
- * - Smart Stop Words
+ * * DEFINITIVE VERSION:
+ * - "Filename Authority": Short queries MUST match the Title/Filename. Snippets are ignored for short queries.
+ * - Prioritizes Wikimedia Commons (Images) over Wikipedia (Articles).
+ * - Strict Number Logic (Windows 1.0 != Windows 10).
  */
 
 const THUMB_WIDTH = 960;
@@ -59,7 +59,7 @@ const STOP_WORDS = new Set([
   'viering', 'feest', 'jubileum', 'huldiging',
   'winnaar', 'wint', 'winst', 'kampioen', 'overwinning', 'prijs', 'medaille',
   'officieel', 'videoclip', 'fragment', 'verslag',
-  'gekte', 'rage', 'hype', 'trend', 'fenomeen', 'opkomst'
+  'gekte', 'rage', 'hype', 'trend', 'fenomeen', 'opkomst', 'succes'
 ]);
 
 function cleanQueryForTMDB(query: string): string {
@@ -70,7 +70,8 @@ function cleanQueryForTMDB(query: string): string {
 }
 
 /**
- * Checks if content matches query with strict logic for numbers.
+ * Check if content matches query.
+ * RULE: If query is short (1-2 words), we ONLY check the TITLE.
  */
 function contentMatchesQuery(title: string, snippet: string | undefined, query: string, strict: boolean = true): boolean {
   const normalizedTitle = normalizeText(title);
@@ -78,14 +79,11 @@ function contentMatchesQuery(title: string, snippet: string | undefined, query: 
   const normalizedQuery = normalizeText(query);
   
   // 1. NUMBER CHECK (Crucial for "Commodore 64", "Windows 1.0")
-  // If the query contains numbers, the result MUST contain those numbers.
   const queryNumbers = normalizedQuery.match(/\b\d+(\.\d+)?\b/g);
   if (queryNumbers) {
+    // Numbers must appear in Title OR Snippet (years can be in description)
     const combinedText = normalizedTitle + " " + normalizedSnippet;
-    const allNumbersPresent = queryNumbers.every(num => {
-      // Allow loose match for years (1980 match 1980s), but strict for versions (1.0)
-      return combinedText.includes(num); 
-    });
+    const allNumbersPresent = queryNumbers.every(num => combinedText.includes(num));
     if (!allNumbersPresent) return false;
   }
 
@@ -102,20 +100,29 @@ function contentMatchesQuery(title: string, snippet: string | undefined, query: 
     return text.includes(word);
   };
   
+  // Logic: Count matches in Title vs Snippet
   const matchesInTitle = mainSubjectWords.filter(w => wordAppearsIn(w, normalizedTitle)).length;
   const matchesInSnippet = mainSubjectWords.filter(w => wordAppearsIn(w, normalizedSnippet)).length;
   const maxMatches = Math.max(matchesInTitle, matchesInSnippet);
   
   if (strict) {
-    // If specific short query (e.g. "Apple Macintosh"), require ALL words.
+    // --- STRICT MODE ---
+    
+    // Case A: Short Query (e.g. "Apple Macintosh", "John Lennon")
+    // RULE: MUST MATCH THE TITLE. Snippet is unreliable.
     if (mainSubjectWords.length <= 2) {
-      return maxMatches === mainSubjectWords.length;
+      // Require ALL words to be in the TITLE
+      return matchesInTitle === mainSubjectWords.length;
     }
+
+    // Case B: Medium Query (e.g. "Oscar winnaar Jonas Vingegaard")
+    // Require 75% match, prefer title but allow snippet.
     const threshold = Math.ceil(mainSubjectWords.length * 0.75);
     return maxMatches >= threshold;
+
   } else {
-    // Fallback lenient
-    return maxMatches >= 1;
+    // Lenient (Fallback) - still require at least 1 title match if possible
+    return matchesInTitle >= 1 || matchesInSnippet >= 1;
   }
 }
 
@@ -144,7 +151,6 @@ async function fetchWikiResults(url: string, query: string, strictMatch: boolean
       if (!pageId || pageId === '-1') continue;
       
       const page = imgData.query.pages[pageId];
-      // Try thumbnail first, then imageinfo url
       let thumb = page.thumbnail?.source;
       if (!thumb && page.imageinfo?.[0]) {
         thumb = page.imageinfo[0].thumburl || page.imageinfo[0].url;
@@ -162,7 +168,6 @@ async function searchWikipedia(query: string, year: number | undefined, lang: st
   const { useQuotes = false, includeYear = true, strictMatch = true } = options;
   let searchQuery = useQuotes ? `"${query}"` : query;
   if (includeYear && year) searchQuery = `${searchQuery} ${year}`;
-  
   const searchUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&format=json&srlimit=5&origin=*`;
   return fetchWikiResults(searchUrl, query, strictMatch);
 }
@@ -171,7 +176,6 @@ async function searchWikimediaCommons(query: string, year: number | undefined, o
   const { useQuotes = false, includeYear = true, strictMatch = true } = options;
   let searchQuery = useQuotes ? `"${query}"` : query;
   if (includeYear && year) searchQuery = `${searchQuery} ${year}`;
-  
   const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srnamespace=6&format=json&srlimit=5&origin=*`;
   return fetchWikiResults(searchUrl, query, strictMatch);
 }
@@ -180,7 +184,6 @@ async function searchNationaalArchief(query: string, year: number | undefined, o
   const { includeYear = true, strictMatch = true } = options;
   let searchQuery = `${query} Nationaal Archief`;
   if (includeYear && year) searchQuery = `${query} ${year} Nationaal Archief`;
-  
   const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&srnamespace=6&format=json&srlimit=3&origin=*`;
   return fetchWikiResults(searchUrl, query, strictMatch);
 }
@@ -193,7 +196,7 @@ async function trySourceWithFallback(
   let res = await searchFn(query, year, { useQuotes: false, includeYear: true, strictMatch: true });
   if (res) return res;
   
-  // 2. Strict without Year (but strict content match)
+  // 2. Strict without Year (CRITICAL: Strict Match MUST be true)
   if (year) {
     const cleanQuery = query.replace(/\b\d{4}\b/g, '').trim();
     res = await searchFn(cleanQuery, undefined, { useQuotes: false, includeYear: false, strictMatch: true }); 
@@ -215,7 +218,7 @@ export async function searchSingleImage(
 ): Promise<ImageResult> {
   let enQuery = queryEn || query;
   
-  // TMDB Priority for Media
+  // TMDB Priority
   if (isCelebrity || isMovie || category === 'music' || category === 'entertainment') {
     try {
       const tmdbQuery = cleanQueryForTMDB(enQuery);
@@ -226,26 +229,21 @@ export async function searchSingleImage(
     }
   }
   
-  // SOURCE STRATEGY BASED ON CATEGORY
-  // Technology, Science, World -> International sources preferred. Nationaal Archief causes noise.
+  // SOURCE STRATEGY
   const isGlobalTopic = ['technology', 'science', 'world', 'music', 'entertainment'].includes(category || '');
-  const isDutchTopic = ['politics', 'local', 'culture'].includes(category || ''); // Assuming app context is NL based on logs
-
   const sourcePromises = [];
 
+  // PRIORITIZE COMMONS AND EN-WIKI FOR VISUALS
+  // Move Commons to TOP for global topics to get the "File:Apple Macintosh.jpg" instead of "Article:History of iPhone"
   if (isGlobalTopic) {
-    // For global topics, prioritize EN Wiki and Commons. Skip Nationaal Archief completely or put last.
-    sourcePromises.push(trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'en', opts), enQuery, year));
     sourcePromises.push(trySourceWithFallback(searchWikimediaCommons, enQuery, year));
+    sourcePromises.push(trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'en', opts), enQuery, year));
     sourcePromises.push(trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'nl', opts), query, year));
   } else {
-    // For local/mixed topics, verify Dutch sources
-    if (isDutchTopic) {
-       sourcePromises.push(trySourceWithFallback(searchNationaalArchief, query, year));
-    }
-    sourcePromises.push(trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'nl', opts), query, year));
-    sourcePromises.push(trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'en', opts), enQuery, year));
+    // Local/NL topics
+    sourcePromises.push(trySourceWithFallback(searchNationaalArchief, query, year));
     sourcePromises.push(trySourceWithFallback(searchWikimediaCommons, enQuery, year));
+    sourcePromises.push(trySourceWithFallback((q, y, opts) => searchWikipedia(q, y, 'nl', opts), query, year));
   }
 
   const results = await Promise.allSettled(sourcePromises);
@@ -261,24 +259,17 @@ async function searchTMDBViaEdge(eventId: string, query: string, year: number | 
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
     if (!supabaseUrl || !supabaseKey) return { eventId, imageUrl: null, source: null };
-    
     const response = await fetch(`${supabaseUrl}/functions/v1/search-images`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}`, 'apikey': supabaseKey },
       body: JSON.stringify({ queries: [{ eventId, query, year, isCelebrity: !!isCelebrity, isMovie: !!isMovie }] }),
     });
-    
     if (!response.ok) return { eventId, imageUrl: null, source: null };
     const data = await response.json();
     return data.images?.[0]?.imageUrl ? data.images[0] : { eventId, imageUrl: null, source: null };
   } catch { return { eventId, imageUrl: null, source: null }; }
 }
 
-// ============== PUBLIC API ==============
-
-// Helper for concurrency (used by useClientImageSearch via searchSingleImage calls)
 export async function searchImagesClientSide(queries: SearchQuery[]): Promise<ImageResult[]> {
-  // This function is less used now as the hook handles queuing, 
-  // but kept for compatibility if needed.
   return []; 
 }
