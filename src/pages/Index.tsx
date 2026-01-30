@@ -61,7 +61,7 @@ const Index = () => {
   const [showCustomDialog, setShowCustomDialog] = useState(false);
   const [optionalData, setOptionalData] = useState<OptionalData>({
     children: [],
-    focus: 'world'
+    focus: 'netherlands'
   });
   const [errors, setErrors] = useState<{
     birthDate?: string;
