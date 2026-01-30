@@ -365,7 +365,8 @@ const PolaroidCollagePage = () => {
     
     try {
       const contextText = getTitle();
-      await downloadPolaroidCollage(selectedEvents, contextText, setCollageProgress);
+      const yearForBackground = formData?.birthDate?.year || formData?.yearRange?.startYear || 2000;
+      await downloadPolaroidCollage(selectedEvents, contextText, yearForBackground, setCollageProgress);
       
       toast({
         title: t('collageDownloaded') as string,
