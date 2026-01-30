@@ -143,7 +143,48 @@ export function getTimelineTool() {
   };
 }
 
-// ... (Rest van bestand: MONTH_NAMES, PROMPTS templates etc. behouden)
+// =============================================================================
+// SYSTEM PROMPT - NON-STREAMING (Tool-based)
+// =============================================================================
+export function getSystemPrompt(language: string, maxEvents?: number): string {
+  const langInstruction = LANGUAGE_INSTRUCTIONS[language] || LANGUAGE_INSTRUCTIONS.nl;
+  const eventCount = maxEvents || 50;
+
+  return `Je bent een historicus en expert beeldredacteur.
+
+${langInstruction}
+
+${VISUAL_DIRECTOR_INSTRUCTIONS}
+
+Genereer ${eventCount} historische events met de create_timeline tool.
+
+REGELS:
+1. Vul 'visualSubjectType' ALTIJD in.
+2. Vul 'spotifySearchQuery' in voor muziek events (Artiest - Titel).
+3. Vul 'movieSearchQuery' in voor film events (Titel trailer jaar).`;
+}
+
+// =============================================================================
+// CONTENT FOCUS PER PERIODE TYPE
+// =============================================================================
+export function getContentFocusForPeriod(periodType?: string): string {
+  switch (periodType) {
+    case 'birthyear':
+      return `FOCUS: Events uit het exacte geboortejaar. Wereldgebeurtenissen, politiek, cultuur van dat jaar.`;
+    case 'childhood':
+      return `FOCUS: Kindertijd (0-12 jaar). Speelgoed, tekenfilms, kinderprogramma's, games, snoep, kindercultuur.`;
+    case 'puberty':
+      return `FOCUS: Puberteit (12-18 jaar). Muziek, films, mode, games, eerste telefoons, sociale media, jeugdcultuur.`;
+    case 'young-adult':
+      return `FOCUS: Jongvolwassenheid (18-25 jaar). Studententijd, eerste baan, festivals, politiek ontwaken, technologie.`;
+    default:
+      return `FOCUS: Algemene mix van belangrijke wereldgebeurtenissen, cultuur, sport, wetenschap en entertainment.`;
+  }
+}
+
+// =============================================================================
+// CONSTANTEN EN TEMPLATES
+// =============================================================================
 export const MONTH_NAMES = [
   "januari", "februari", "maart", "april", "mei", "juni",
   "juli", "augustus", "september", "oktober", "november", "december"
@@ -179,7 +220,7 @@ export const BIRTHYEAR_IN_RANGE_ADDITION = (year: number) =>
 export const PERSONAL_NAME_ADDITION = (fullName: string) =>
 `\nTijdlijn voor: ${fullName}.`;
 
-export const GEOGRAPHIC_FOCUS = {
+export const GEOGRAPHIC_FOCUS: Record<string, string> = {
   netherlands: "\nFocus: Nederland.",
   europe: "\nFocus: Europa.",
   world: "\nFocus: Wereld."
