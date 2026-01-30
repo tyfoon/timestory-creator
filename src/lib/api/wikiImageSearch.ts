@@ -328,6 +328,21 @@ async function searchImageForEvent(
   // Use English query for international sources, fall back to Dutch
   let enQuery = queryEn || queryNl;
   
+  // For celebrities and movies, try TMDB FIRST as it has the most reliable images
+  // This prevents Wikipedia from returning wrong matches (e.g., Casablanca for Gladiator)
+  if (isCelebrity || isMovie) {
+    try {
+      console.log(`[Image Search] Trying TMDB first for ${isMovie ? 'movie' : 'celebrity'}: "${enQuery}"`);
+      const tmdbResult = await searchTMDBViaEdge(eventId, enQuery, year, isCelebrity, isMovie);
+      if (tmdbResult.imageUrl) {
+        console.log(`[Image Search] Found image via TMDB for "${enQuery}"`);
+        return tmdbResult;
+      }
+    } catch (e) {
+      console.error('TMDB primary search error:', e);
+    }
+  }
+  
   // For movies, ensure "film" is in the query to avoid confusion with other topics
   // (e.g., "Da Vinci Code" should search "Da Vinci Code film" not just "Da Vinci")
   if (isMovie && enQuery) {
@@ -367,18 +382,6 @@ async function searchImageForEvent(
   for (const result of results) {
     if (result.status === 'fulfilled' && result.value) {
       return { eventId, imageUrl: result.value.imageUrl, source: result.value.source };
-    }
-  }
-  
-  // If no image found and this is a celebrity or movie, try TMDB via edge function
-  if (isCelebrity || isMovie) {
-    try {
-      const tmdbResult = await searchTMDBViaEdge(eventId, enQuery, year, isCelebrity, isMovie);
-      if (tmdbResult.imageUrl) {
-        return tmdbResult;
-      }
-    } catch (e) {
-      console.error('TMDB fallback error:', e);
     }
   }
   
