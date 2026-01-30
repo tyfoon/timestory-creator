@@ -1,199 +1,261 @@
 /**
- * Centralized AI prompts and instructions for the timeline generator.
- * This file contains all system prompts, period-specific content focus, and language-specific instructions.
+ * =============================================================================
+ * AI PROMPTS CONFIGURATIE
+ * =============================================================================
  */
 
-export const MONTH_NAMES = [
-  'januari', 'februari', 'maart', 'april', 'mei', 'juni',
-  'juli', 'augustus', 'september', 'oktober', 'november', 'december'
-];
+// =============================================================================
+// TAAL INSTRUCTIES
+// =============================================================================
+export const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
+  nl: "Schrijf alle tekst in het Nederlands.",
+  en: "Write all text in English.",
+  de: "Schreibe alle Texte auf Deutsch.",
+  fr: "Écrivez tout le texte en français."
+};
 
-/**
- * Get content focus based on the period type (e.g., childhood focuses on toys/cartoons)
- */
+// =============================================================================
+// CATEGORIEËN
+// =============================================================================
+export const EVENT_CATEGORIES = [
+  "politics", "sports", "entertainment", "science", "culture", "world", 
+  "local", "personal", "music", "technology", "celebrity"
+] as const;
+
+// =============================================================================
+// HELPER: VISUAL DIRECTOR INSTRUCTIES
+// =============================================================================
+const VISUAL_DIRECTOR_INSTRUCTIONS = `
+ROL: BEELDREDACTEUR (CRUCIAAL)
+Jij bepaalt welke zoekterm ('imageSearchQueryEn') wordt gebruikt om een foto te vinden.
+
+GOUDEN REGEL: Wikimedia Commons is Engelstalig.
+Vertaal ALTIJD het onderwerp naar het ENGELS voor 'imageSearchQueryEn'.
+
+REGELS PER TYPE:
+
+1. SPEELGOED, GAMES & RAGES (Category: culture, technology)
+   * Vertaal de productnaam naar het Engels!
+   * FOUT: "De Smurfen", "Transformers speelgoed", "Rubiks kubus", "Introductie Pac-Man"
+   * GOED: "The Smurfs", "Transformers toy", "Rubik's Cube", "Pac-Man arcade"
+   * FOUT: "BMX fiets rage" -> GOED: "BMX bike"
+
+2. PRODUCTEN & TECH
+   * Gebruik het specifieke model of de Engelse naam.
+   * FOUT: "Eerste mobiele telefoon" -> GOED: "Motorola DynaTAC"
+   * FOUT: "Introductie CD-speler" -> GOED: "Compact Disc player"
+
+3. FILMS & TV
+   * FOUT: "Goede Tijden Slechte Tijden" (Tenzij strikt lokaal)
+   * GOED: "The A-Team TV show", "Knight Rider car", "Titanic film 1997"
+
+4. PERSONEN
+   * Alleen de naam. Geen context.
+   * FOUT: "Moord op Kennedy" -> GOED: "John F. Kennedy"
+
+5. ALGEMEEN
+   * Verwijder woorden als "Introductie", "Lancering", "Rage", "Succes".
+   * Houd het PUUR: Alleen het object of de persoon.
+`;
+
+// =============================================================================
+// SYSTEM PROMPT - NDJSON STREAMING
+// =============================================================================
+export function getNDJSONSystemPrompt(language: string, maxEvents?: number): string {
+  const langInstruction = LANGUAGE_INSTRUCTIONS[language] || LANGUAGE_INSTRUCTIONS.nl;
+  const isShort = maxEvents && maxEvents <= 20;
+  const eventCount = isShort ? maxEvents : 50;
+
+  return `Je bent een historicus en expert beeldredacteur.
+
+${langInstruction}
+
+${VISUAL_DIRECTOR_INSTRUCTIONS}
+
+KRITISCH - OUTPUT FORMAAT (NDJSON):
+Je MOET je output formatteren als NDJSON (Newline Delimited JSON).
+Stuur ELKE gebeurtenis als een apart JSON-object op een NIEUWE regel.
+
+FORMAT PER REGEL (BELANGRIJK: Vul ook spotifySearchQuery en movieSearchQuery in indien van toepassing!):
+{"type":"event","data":{"id":"evt_1","date":"1980-05-22","year":1980,"month":5,"title":"Titel","description":"...","category":"culture","imageSearchQuery":"Pac-Man spel","imageSearchQueryEn":"Pac-Man arcade","importance":"high","eventScope":"period","spotifySearchQuery":"Artist - Title","movieSearchQuery":"Movie Title trailer"}}
+
+NA ALLE EVENTS:
+{"type":"summary","data":"Samenvatting..."}
+{"type":"famousBirthdays","data":[{"name":"Naam","profession":"Beroep","birthYear":1950,"imageSearchQuery":"Naam portrait"}]}
+
+REGELS:
+1. GEEN markdown, ALLEEN JSON regels.
+2. Genereer ${eventCount} events.
+3. 'imageSearchQueryEn' is je zoekopdracht voor de foto database. Zorg dat deze ENGELS en SPECIFIEK is.
+4. 'spotifySearchQuery': Vul in voor muziek events ("Artiest - Titel") of nummer 1 hits.
+5. 'movieSearchQuery': Vul in voor films ("Titel trailer jaar").`;
+}
+
+// =============================================================================
+// SYSTEM PROMPT - STANDAARD
+// =============================================================================
+export function getSystemPrompt(language: string, maxEvents?: number): string {
+  const langInstruction = LANGUAGE_INSTRUCTIONS[language] || LANGUAGE_INSTRUCTIONS.nl;
+  
+  return `Je bent een historicus en expert beeldredacteur.
+
+${langInstruction}
+
+${VISUAL_DIRECTOR_INSTRUCTIONS}
+
+Genereer een JSON object met 'events', 'summary' en 'famousBirthdays'.`;
+}
+
+// =============================================================================
+// PERIOD PROMPTS
+// =============================================================================
+export const PERIOD_PROMPTS = {
+  birthyear: `CONTENT FOCUS - GEBOORTEJAAR:
+Focus op de sfeer van dat specifieke jaar:
+- DE GROTE HITS (Muziek).
+- RAGES & SPEELGOED: Wat lag er in de winkel? (Gebruik Engelse namen voor zoeken!)
+- FILM/TV: De blockbusters en series.
+- NIEUWS: Grote wereldgebeurtenissen.`,
+
+  childhood: `CONTENT FOCUS - JEUGD (6-10 jaar):
+Focus op:
+- SCHOOLPLEIN RAGES: Knikkers, flippo's, tamagotchi.
+- TV & CARTOONS: Intro-tunes, kinderseries.
+- SPEELGOED: Lego, Barbie, Action Man, Nintendo.
+- SNOEP: Wat kocht je voor een gulden?`,
+
+  puberty: `CONTENT FOCUS - PUBERTIJD (11-17 jaar):
+Focus op:
+- MUZIEK & IDENTITEIT: Stromingen, idolen.
+- TECH: Eerste mobieltje, MSN, mp3-speler.
+- TV & SERIES: Videoclips, populaire soaps.`,
+
+  youngAdult: `CONTENT FOCUS - JONG VOLWASSEN (18-25 jaar):
+Focus op:
+- UITGAAN & FESTIVALS.
+- MAATSCHAPPIJ & POLITIEK.
+- TECH REVOLUTIES.`,
+
+  custom: `CONTENT FOCUS - BREDE MIX:
+Variatie van hits, nieuws, films, tech en sport.`
+};
+
 export function getContentFocusForPeriod(periodType?: string): string {
   switch (periodType) {
-    case 'birthyear':
-      return `Focus op de exacte geboortedatum en geboorteperiode. Wat gebeurde er op de dag zelf? Welke beroemdheden zijn op dezelfde dag geboren? Wat was het nummer 1 hit? Welke grote gebeurtenissen vonden plaats in dat jaar?`;
-    case 'childhood':
-      return `Focus op de kindertijd (0-10 jaar). Denk aan: populair speelgoed, kinderprogramma's op TV, tekenfilms, kinderboeken, kinderliedjes, snoep en snacks, schoolherinneringen, spelletjes op straat, verjaardagsfeestjes, vakantie-herinneringen.`;
-    case 'puberty':
-      return `Focus op de puberteit/tienerperiode (11-17 jaar). Denk aan: popmuziek en idolen, mode en trends, eerste liefdes, schoolfeesten, MTV en muziekvideo's, eerste computers en games, tienerfilms, jeugdcultuur, rebellion en identiteit.`;
-    case 'young-adult':
-      return `Focus op jong volwassenheid (18-25 jaar). Denk aan: studie, uitgaan, eerste baan, eerste auto, relaties, festivals, reizen, onafhankelijkheid, belangrijke levenskeuzes.`;
-    default:
-      return `Geef een gevarieerde mix van politiek, cultuur, sport, entertainment, muziek, technologie en lokale gebeurtenissen.`;
+    case 'birthyear': return PERIOD_PROMPTS.birthyear;
+    case 'childhood': return PERIOD_PROMPTS.childhood;
+    case 'puberty': return PERIOD_PROMPTS.puberty;
+    case 'young-adult': return PERIOD_PROMPTS.youngAdult;
+    default: return PERIOD_PROMPTS.custom;
   }
 }
 
-/**
- * NDJSON streaming system prompt - instructs AI to output events line by line
- */
-export function getNDJSONSystemPrompt(language: string, maxEvents?: number): string {
-  const eventCount = maxEvents || 50;
-  
-  return `Je bent een enthousiaste historicus die een persoonlijke tijdlijn maakt.
+// ... (Rest van de helper functies zoals getTimelineTool, MONTH_NAMES, etc.)
 
-OUTPUT FORMAAT:
-Je MOET events sturen als NDJSON (één JSON object per regel). Elke regel is een compleet JSON object.
-
-FORMAAT PER REGEL:
-{"type":"event","data":{"id":"evt_1","date":"1985-03-15","year":1985,"month":3,"day":15,"title":"Titel hier","description":"Beschrijving hier","category":"music","importance":"high","eventScope":"period","imageSearchQuery":"zoekterm voor afbeelding","imageSearchQueryEn":"English search query for image","spotifySearchQuery":"Artist - Title","movieSearchQuery":"Film titel trailer jaar","isMovie":false}}
-
-NA ALLE EVENTS, stuur:
-{"type":"summary","data":"Een korte samenvatting van de periode."}
-{"type":"famousBirthdays","data":[{"name":"Naam","profession":"Beroep","birthYear":1970,"imageSearchQuery":"naam portret"}]}
-
-REGELS:
-1. Stuur PRECIES ${eventCount} events.
-2. Eén JSON object per regel, geen arrays, geen extra tekst.
-3. Elke regel MOET valid JSON zijn.
-4. Categories: politics, sports, entertainment, science, culture, world, local, personal, music, technology, celebrity
-5. MUZIEK events (category=music) MOETEN spotifySearchQuery hebben in formaat "Artiest - Titel".
-6. FILM events MOETEN movieSearchQuery EN isMovie=true hebben.
-7. Alle tekst in het ${language === 'nl' ? 'Nederlands' : language}.
-8. imageSearchQuery in de taal van de gebruiker, imageSearchQueryEn altijd in het Engels.
-9. Chronologische volgorde.
-10. Variatie in categorieën.`;
+export function getTimelineTool() {
+  return {
+    type: "function",
+    function: {
+      name: "create_timeline",
+      description: "Creates a timeline with historical events",
+      parameters: {
+        type: "object",
+        properties: {
+          events: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                id: { type: "string" },
+                date: { type: "string" },
+                year: { type: "number" },
+                month: { type: "number" },
+                day: { type: "number" },
+                title: { type: "string" },
+                description: { type: "string" },
+                category: { type: "string", enum: EVENT_CATEGORIES },
+                imageSearchQuery: { type: "string", description: "Original search term" },
+                imageSearchQueryEn: { 
+                  type: "string", 
+                  description: "ENGLISH SEARCH TERM for Wikimedia Commons. Translate product names! Example: 'The Smurfs', 'Transformers toy', 'Rubik's Cube'." 
+                },
+                importance: { type: "string", enum: ["high", "medium", "low"] },
+                eventScope: { type: "string", enum: ["birthdate", "birthmonth", "birthyear", "period"] },
+                isCelebrityBirthday: { type: "boolean" },
+                isMovie: { type: "boolean" },
+                spotifySearchQuery: { type: "string" },
+                movieSearchQuery: { type: "string" }
+              },
+              required: ["id", "date", "year", "title", "description", "category", "importance", "eventScope", "imageSearchQueryEn"]
+            }
+          },
+          summary: { type: "string" },
+          famousBirthdays: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string" },
+                profession: { type: "string" },
+                birthYear: { type: "number" },
+                imageSearchQuery: { type: "string" }
+              },
+              required: ["name", "profession", "birthYear"]
+            }
+          }
+        },
+        required: ["events", "summary"]
+      }
+    }
+  };
 }
 
-/**
- * Standard system prompt for non-streaming responses
- */
-export function getSystemPrompt(language: string, maxEvents?: number): string {
-  const eventCount = maxEvents || 50;
-  
-  return `Je bent een enthousiaste historicus die een persoonlijke tijdlijn maakt. 
-Je genereert ${eventCount} historische gebeurtenissen met de volgende structuur.
+export const MONTH_NAMES = [
+  "januari", "februari", "maart", "april", "mei", "juni",
+  "juli", "augustus", "september", "oktober", "november", "december"
+];
 
-BELANGRIJKE REGELS:
-1. Alle tekst in het ${language === 'nl' ? 'Nederlands' : language}.
-2. Varieer tussen categorieën: politics, sports, entertainment, science, culture, world, local, personal, music, technology, celebrity.
-3. imageSearchQuery: zoekterm in de taal van de gebruiker voor het vinden van afbeeldingen.
-4. imageSearchQueryEn: Engelse vertaling voor Wikimedia Commons zoeken.
-5. Voor MUZIEK events (category=music): voeg spotifySearchQuery toe in formaat "Artiest - Titel".
-6. Voor FILM events: voeg movieSearchQuery toe (bijv. "Titanic trailer 1997") EN zet isMovie=true.
-7. Chronologische volgorde.
-8. Mix van belangrijke wereldgebeurtenissen en lokale/persoonlijke relevante events.`;
-}
+export const BIRTHDATE_PROMPT_SHORT = (day: number, monthName: string, year: number, maxEvents: number, contentFocus: string) => 
+`Maak een KORTE tijdlijn voor iemand geboren op ${day} ${monthName} ${year}.
+Genereer PRECIES ${maxEvents} events.
+HARDE EISEN:
+- MUZIEK: Minimaal 2, Maximaal 4 (Nr 1 hits).
+- BEROEMDHEDEN: Maximaal 2.
+${contentFocus}`;
 
-// ============== PROMPT TEMPLATES ==============
+export const BIRTHDATE_PROMPT_FULL = (day: number, monthName: string, year: number, contentFocus: string) => 
+`Maak een uitgebreide tijdlijn voor iemand geboren op ${day} ${monthName} ${year}.
+Genereer 50 events.
+HARDE EISEN:
+- MUZIEK: 5-10 events.
+- BEROEMDHEDEN: Max 5.
+${contentFocus}`;
 
-export const BIRTHDATE_PROMPT_SHORT = (day: number, month: string, year: number, maxEvents: number, contentFocus: string): string => `
-Maak een tijdlijn van ${maxEvents} belangrijke gebeurtenissen rond de geboortedatum ${day} ${month} ${year}.
+export const RANGE_PROMPT = (startYear: number, endYear: number, isShort: boolean, targetEvents: number, contentFocus: string) =>
+`Maak een tijdlijn van ${startYear} tot ${endYear}.
+Genereer ${targetEvents} events.
+${contentFocus}`;
 
-INHOUDELIJKE FOCUS:
-${contentFocus}
+export const FAMOUS_BIRTHDAYS_ADDITION = (day: number, monthName: string, startYear: number, endYear: number) =>
+`\nZoek personen die op ${day} ${monthName} jarig zijn (geboren voor of tijdens deze periode).`;
 
-VERDELING:
-- 3-4 events van de exacte geboortedag (eventScope: "birthdate")
-- 3-4 events van de geboortemaand (eventScope: "birthmonth") 
-- 3-4 events van het geboortejaar (eventScope: "birthyear")
-- Rest: periode erna (eventScope: "period")
+export const BIRTHYEAR_IN_RANGE_ADDITION = (year: number) =>
+`\nHet geboortejaar ${year} is speciaal.`;
 
-Voeg toe:
-- Nummer 1 hits (met spotifySearchQuery!)
-- Beroemdheden geboren op dezelfde dag (isCelebrityBirthday: true)
-- Grote nieuwsgebeurtenissen
-- Cultuur, sport, technologie
-`;
+export const PERSONAL_NAME_ADDITION = (fullName: string) =>
+`\nTijdlijn voor: ${fullName}.`;
 
-export const BIRTHDATE_PROMPT_FULL = (day: number, month: string, year: number, contentFocus: string): string => `
-Maak een uitgebreide tijdlijn rond de geboortedatum ${day} ${month} ${year}.
-
-INHOUDELIJKE FOCUS:
-${contentFocus}
-
-VERDELING:
-- 5-8 events van de exacte geboortedag (eventScope: "birthdate")
-- 8-12 events van de geboortemaand (eventScope: "birthmonth")
-- 15-20 events van het geboortejaar (eventScope: "birthyear")  
-- Rest: jaren erna (eventScope: "period")
-
-Inclusief:
-- Alle nummer 1 hits van het jaar (met spotifySearchQuery in formaat "Artiest - Titel"!)
-- Beroemdheden geboren op dezelfde dag (isCelebrityBirthday: true)
-- Belangrijke films (met movieSearchQuery EN isMovie: true!)
-- Grote nieuwsgebeurtenissen
-- Technologische doorbraken
-- Sport hoogtepunten
-- Mode en cultuur trends
-`;
-
-export const RANGE_PROMPT = (startYear: number, endYear: number, isShort: boolean, targetEvents: number, contentFocus: string): string => `
-Maak een tijdlijn van ${targetEvents} belangrijke gebeurtenissen van ${startYear} tot ${endYear}.
-
-INHOUDELIJKE FOCUS:
-${contentFocus}
-
-${isShort ? 'Focus op de allerbelangrijkste momenten.' : 'Wees uitgebreid en gedetailleerd.'}
-
-Alle events krijgen eventScope: "period".
-
-Inclusief:
-- Grote hits per jaar (met spotifySearchQuery in formaat "Artiest - Titel"!)
-- Belangrijke films (met movieSearchQuery EN isMovie: true!)
-- Politieke gebeurtenissen
-- Sportmomenten
-- Technologie en wetenschap
-- Cultuur en entertainment
-- Nederlandse en internationale events
-`;
-
-export const FAMOUS_BIRTHDAYS_ADDITION = (day: number, month: string, startYear: number, endYear: number): string => `
-
-BELANGRIJK: Voeg ook beroemdheden toe die op ${day} ${month} geboren zijn (tussen ${startYear} en ${endYear}).
-Zet voor deze events: isCelebrityBirthday: true, category: "celebrity", eventScope: "birthdate".
-`;
-
-export const BIRTHYEAR_IN_RANGE_ADDITION = (year: number): string => `
-
-Het geboortejaar ${year} valt in de range. Voeg extra events toe van dat specifieke jaar met eventScope: "birthyear".
-`;
-
-export const PERSONAL_NAME_ADDITION = (fullName: string): string => `
-
-De persoon heet ${fullName}. Personaliseer waar mogelijk (bijv. "In het jaar dat ${fullName} geboren werd...").
-`;
-
-export const GEOGRAPHIC_FOCUS: Record<string, string> = {
-  netherlands: `
-
-GEOGRAFISCHE FOCUS: Nederland
-- Prioriteer Nederlandse gebeurtenissen, maar inclusief belangrijke internationale events.
-- Nederlandse politiek, Oranjehuis, Eredivisie, Nederlandse artiesten en films.
-- Nederlandse TV-programma's en cultuur.
-`,
-  europe: `
-
-GEOGRAFISCHE FOCUS: Europa  
-- Mix van Nederlandse en Europese gebeurtenissen.
-- Eurovisie Songfestival, Europese politiek, Europese sport.
-- Inclusief belangrijke wereldgebeurtenissen.
-`,
-  world: `
-
-GEOGRAFISCHE FOCUS: Wereld
-- Internationale focus met wereldwijde gebeurtenissen.
-- Amerikaanse, Europese en mondiale events.
-- Nederlandse context waar relevant.
-`
+export const GEOGRAPHIC_FOCUS = {
+  netherlands: "\nFocus: Nederland.",
+  europe: "\nFocus: Europa.",
+  world: "\nFocus: Wereld."
 };
 
-export const INTERESTS_ADDITION = (interests: string): string => `
+export const INTERESTS_ADDITION = (interests: string) =>
+`\nInteresses: ${interests}.`;
 
-INTERESSES: ${interests}
-Voeg extra events toe gerelateerd aan deze interesses.
-`;
+export const CITY_ADDITION = (city: string) =>
+`\nWoonplaats: ${city}.`;
 
-export const CITY_ADDITION = (city: string): string => `
-
-WOONPLAATS: ${city}
-Voeg indien mogelijk lokale gebeurtenissen toe uit ${city} of de regio.
-`;
-
-export const CHILDREN_ADDITION = (childrenInfo: string[]): string => `
-
-KINDEREN: ${childrenInfo.join(', ')}
-Voeg de geboortes van de kinderen toe als persoonlijke events (category: "personal", eventScope: "period").
-`;
+export const CHILDREN_ADDITION = (childrenInfo: string[]) =>
+`\nKinderen: ${childrenInfo.join(", ")}`;
