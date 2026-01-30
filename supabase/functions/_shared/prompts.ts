@@ -43,7 +43,7 @@ KIES HET JUISTE 'visualSubjectType':
 
 REGELS VOOR 'imageSearchQueryEn' PER TYPE:
 - type 'person': ALLEEN de naam. "David Bowie" (GEEN "David Bowie singer")
-- type 'movie': "Titel year". "Titanic 1997"
+- type 'movie': ALLEEN de titel, GEEN jaartal. "Titanic", "Jurassic Park", "The Matrix" (GEEN "Titanic 1997")
 - type 'product': Specifiek model + objectnaam. "Sony Walkman TPS-L2", "Commodore 64 computer"
 - type 'logo': "Naam logo". "Pac-Man logo", "Windows 1.0 logo"
 - type 'event': Engelse naam van event. "Fall of the Berlin Wall"
@@ -68,7 +68,7 @@ Stuur ELKE gebeurtenis als een apart JSON-object op een NIEUWE regel.
 
 FORMAT PER REGEL (Let op 'visualSubjectType'!):
 {"type":"event","data":{"id":"evt_1","date":"1980-05-22","year":1980,"title":"Pac-Man","description":"...","category":"entertainment","visualSubjectType":"logo","imageSearchQuery":"Pac-Man spel","imageSearchQueryEn":"Pac-Man arcade logo","importance":"high","eventScope":"period"}}
-{"type":"event","data":{"id":"evt_2","date":"1985","year":1985,"title":"Back to the Future","description":"...","category":"entertainment","visualSubjectType":"movie","imageSearchQuery":"Back to the Future","imageSearchQueryEn":"Back to the Future 1985","importance":"high","eventScope":"period","movieSearchQuery":"Back to the Future trailer 1985"}}
+{"type":"event","data":{"id":"evt_2","date":"1985","year":1985,"title":"Back to the Future","description":"...","category":"entertainment","visualSubjectType":"movie","imageSearchQuery":"Back to the Future","imageSearchQueryEn":"Back to the Future","importance":"high","eventScope":"period","isMovie":true,"movieSearchQuery":"Back to the Future trailer 1985"}}
 
 NA ALLE EVENTS:
 {"type":"summary","data":"Samenvatting..."}
