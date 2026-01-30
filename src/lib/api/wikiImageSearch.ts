@@ -208,11 +208,11 @@ export async function searchSingleImage(
     if (res) return { eventId, ...res };
   }
 
-  // Standaard volgorde voor events (met jaar)
+  // Standaard volgorde voor events: Commons eerst (beste kwaliteit), dan Wiki
   const wikiPromises = [
-    wiki('nl', query, year),
+    commons(enQuery, year),
     wiki('en', enQuery, year),
-    commons(enQuery, year)
+    wiki('nl', query, year)
   ];
   
   const results = await Promise.allSettled(wikiPromises);
