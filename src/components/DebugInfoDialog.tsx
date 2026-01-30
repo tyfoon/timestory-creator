@@ -183,8 +183,9 @@ export function DebugInfoDialog({ events }: DebugInfoDialogProps) {
           )}
         </div>
         
-        <ScrollArea className="flex-1 min-h-0 pr-4">
-          <div className="space-y-3">
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ScrollArea className="h-full pr-4">
+            <div className="space-y-3 pb-4">
             {filteredEvents.map((event, index) => (
               <div 
                 key={event.id} 
@@ -355,8 +356,9 @@ export function DebugInfoDialog({ events }: DebugInfoDialogProps) {
                 </div>
               </div>
             ))}
-          </div>
-        </ScrollArea>
+            </div>
+          </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
