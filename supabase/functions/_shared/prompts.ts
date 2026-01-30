@@ -93,11 +93,17 @@ SPORT EVENTS (category: sports):
   - imageSearchQuery="Wimbledon tennis finale", imageSearchQueryEn="Wimbledon tennis final"
 
 MUZIEK EVENTS (category: music):
-- Gebruik 'artwork' type voor albums
-- ALLEEN "Artiest Titel" (GEEN "album", GEEN "cover", GEEN jaartal)
-- Voorbeeld NL: "Thriller Michael Jackson", EN: "Thriller Michael Jackson"
-- FOUT: "Thriller 1982", "Purple Rain album 1984"
+- Gebruik 'artwork' type voor albums, 'person' voor artiesten
+- ALLEEN "Artiest Titel" voor albums - NIETS ANDERS TOEVOEGEN!
+- GEEN extra woorden: "fashion", "style", "look", "singer", "band"
+- GEEN decennia: "80s", "jaren 80"
+- GEEN jaartallen: "1984", "1982"
+- GOED NL: "Like a Virgin Madonna", "Thriller Michael Jackson", "Purple Rain Prince"
+- GOED EN: "Like a Virgin Madonna", "Thriller Michael Jackson", "Purple Rain Prince"
+- FOUT: "Madonna Like a Virgin fashion", "Madonna 80s fashion", "Thriller 1982 album"
+- FOUT: "Prince Purple Rain style", "Michael Jackson singer 1984"
 `;
+
 
 // =============================================================================
 // SYSTEM PROMPT - NDJSON STREAMING
