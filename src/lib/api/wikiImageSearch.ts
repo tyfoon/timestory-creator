@@ -243,6 +243,7 @@ export async function searchSingleImage(
   }
 
   // Standaard volgorde voor events: Commons eerst (beste kwaliteit), dan Wiki
+  // Probeer EERST met jaartal
   const wikiPromises = [
     commons(enQuery, year),
     wiki('en', enQuery, year),
@@ -254,9 +255,17 @@ export async function searchSingleImage(
     if (result.status === 'fulfilled' && result.value) return { eventId, ...result.value };
   }
 
-  // Laatste redmiddel: Zonder jaartal zoeken
-  const looseRes = await wiki('en', enQuery);
-  if (looseRes) return { eventId, ...looseRes };
+  // FALLBACK: Probeer Commons en Wiki ZONDER jaartal (veel events hebben geen jaar in de titel)
+  const loosePromises = [
+    commons(enQuery, undefined),
+    wiki('en', enQuery, undefined),
+    wiki('nl', query, undefined)
+  ];
+  
+  const looseResults = await Promise.allSettled(loosePromises);
+  for (const result of looseResults) {
+    if (result.status === 'fulfilled' && result.value) return { eventId, ...result.value };
+  }
 
   return { eventId, imageUrl: null, source: null };
 }
