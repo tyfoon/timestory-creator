@@ -35,18 +35,24 @@ Dit helpt de zoekmachine om de juiste database te kiezen (Film database, Product
 KIES HET JUISTE 'visualSubjectType':
 1. 'person': Voor artiesten, politici, sporters, beroemdheden. (Zoekt in portret-database)
 2. 'movie': Voor films en TV-series. (Zoekt filmposters)
-3. 'product': Voor gadgets, speelgoed, auto's, consoles. (Zoekt productfoto's)
+3. 'product': Voor gadgets, speelgoed, auto's, consoles, lifestyle items. (Zoekt productfoto's)
 4. 'logo': Voor software, websites, bedrijven, games. (Zoekt logo's/icons)
 5. 'event': Voor oorlogen, rampen, kroningen, protesten. (Zoekt nieuwsfoto's)
 6. 'location': Voor steden, gebouwen.
-7. 'artwork': Voor schilderijen, boekomslagen.
+7. 'artwork': Voor schilderijen, boekomslagen, albums.
 
 REGELS VOOR 'imageSearchQueryEn' PER TYPE:
 - type 'person': ALLEEN de naam. "David Bowie" (GEEN "David Bowie singer")
-- type 'movie': ALLEEN de titel, GEEN jaartal. "Titanic", "Jurassic Park", "The Matrix" (GEEN "Titanic 1997")
-- type 'product': Specifiek model + objectnaam, GEEN jaartal. "Sony Walkman TPS-L2", "Commodore 64 computer"
-- type 'logo': ALLEEN de naam + logo, GEEN jaartal. "Pac-Man logo", "Doom logo", "Windows 1.0 logo" (GEEN "Pac-Man 1980 logo")
+- type 'movie': ALLEEN de titel, GEEN jaartal. "Titanic", "Jurassic Park" (GEEN "Titanic 1997", GEEN "Titanic film")
+- type 'product': Specifiek model + objectnaam, GEEN jaartal. "Sony Walkman TPS-L2", "Tamagotchi" (GEEN "Tamagotchi 1996")
+- type 'logo': ALLEEN de naam, GEEN "logo", GEEN jaartal. "Pac-Man", "SimCity", "Doom" (GEEN "Pac-Man logo", GEEN "SimCity 1989")
+- type 'artwork': ALLEEN artiest + titel voor albums. "Thriller Michael Jackson" (GEEN "album", GEEN "cover", GEEN jaartal)
 - type 'event': Engelse naam van event. "Fall of the Berlin Wall"
+
+MUZIEK EVENTS (category: music):
+- Gebruik 'artwork' type voor albums
+- imageSearchQueryEn: ALLEEN "Artiest Titel" (GEEN "album", GEEN "cover", GEEN jaartal)
+- Voorbeeld: "Purple Rain Prince", "Thriller Michael Jackson", "Nevermind Nirvana"
 `;
 
 // =============================================================================
@@ -67,8 +73,8 @@ KRITISCH - OUTPUT FORMAAT (NDJSON):
 Stuur ELKE gebeurtenis als een apart JSON-object op een NIEUWE regel.
 
 FORMAT PER REGEL (Let op 'visualSubjectType'!):
-{"type":"event","data":{"id":"evt_1","date":"1980-05-22","year":1980,"title":"Pac-Man","description":"...","category":"entertainment","visualSubjectType":"logo","imageSearchQuery":"Pac-Man spel","imageSearchQueryEn":"Pac-Man arcade logo","importance":"high","eventScope":"period"}}
-{"type":"event","data":{"id":"evt_2","date":"1985","year":1985,"title":"Back to the Future","description":"...","category":"entertainment","visualSubjectType":"movie","imageSearchQuery":"Back to the Future","imageSearchQueryEn":"Back to the Future","importance":"high","eventScope":"period","isMovie":true,"movieSearchQuery":"Back to the Future trailer 1985"}}
+{"type":"event","data":{"id":"evt_1","date":"1980-05-22","year":1980,"title":"Pac-Man","description":"...","category":"entertainment","visualSubjectType":"logo","imageSearchQuery":"Pac-Man","imageSearchQueryEn":"Pac-Man","importance":"high","eventScope":"period"}}
+{"type":"event","data":{"id":"evt_2","date":"1982","year":1982,"title":"Thriller","description":"...","category":"music","visualSubjectType":"artwork","imageSearchQuery":"Thriller Michael Jackson","imageSearchQueryEn":"Thriller Michael Jackson","importance":"high","eventScope":"period","spotifySearchQuery":"Michael Jackson - Thriller"}}
 
 NA ALLE EVENTS:
 {"type":"summary","data":"Samenvatting..."}
