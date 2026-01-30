@@ -44,8 +44,8 @@ KIES HET JUISTE 'visualSubjectType':
 REGELS VOOR 'imageSearchQueryEn' PER TYPE:
 - type 'person': ALLEEN de naam. "David Bowie" (GEEN "David Bowie singer")
 - type 'movie': ALLEEN de titel, GEEN jaartal. "Titanic", "Jurassic Park", "The Matrix" (GEEN "Titanic 1997")
-- type 'product': Specifiek model + objectnaam. "Sony Walkman TPS-L2", "Commodore 64 computer"
-- type 'logo': "Naam logo". "Pac-Man logo", "Windows 1.0 logo"
+- type 'product': Specifiek model + objectnaam, GEEN jaartal. "Sony Walkman TPS-L2", "Commodore 64 computer"
+- type 'logo': ALLEEN de naam + logo, GEEN jaartal. "Pac-Man logo", "Doom logo", "Windows 1.0 logo" (GEEN "Pac-Man 1980 logo")
 - type 'event': Engelse naam van event. "Fall of the Berlin Wall"
 `;
 
