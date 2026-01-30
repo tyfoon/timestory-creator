@@ -22,10 +22,12 @@ function isAllowedImageUrl(maybeUrl: string): boolean {
   try {
     const url = new URL(maybeUrl);
     const path = url.pathname.toLowerCase();
+    const fullUrl = maybeUrl.toLowerCase();
 
     if (path.includes("/transcoded/")) return false;
 
-    // Block all audio/video/document formats
+    // Block all audio/video/document formats - check if they appear ANYWHERE in the URL
+    // This catches cases like "/File:Something.ogg/..." or query params
     const blockedExtensions = [
       // Audio
       ".mp3", ".ogg", ".oga", ".wav", ".flac", ".aac", ".m4a", ".wma", ".opus",
@@ -37,10 +39,12 @@ function isAllowedImageUrl(maybeUrl: string): boolean {
       ".svg"
     ];
     
-    if (blockedExtensions.some(ext => path.endsWith(ext))) {
+    // Check if ANY blocked extension appears anywhere in the URL (not just at the end)
+    if (blockedExtensions.some(ext => fullUrl.includes(ext))) {
       return false;
     }
 
+    // Must end with a valid image extension
     return (
       path.endsWith(".jpg") ||
       path.endsWith(".jpeg") ||
