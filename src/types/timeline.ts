@@ -9,7 +9,7 @@ export interface TimelineEvent {
   category: 'politics' | 'sports' | 'entertainment' | 'science' | 'culture' | 'world' | 'local' | 'personal' | 'music' | 'technology' | 'celebrity';
   
   // NIEUW: De AI vertelt ons nu expliciet WAT voor plaatje we zoeken
-  visualSubjectType: 'person' | 'movie' | 'product' | 'logo' | 'event' | 'location' | 'artwork';
+  visualSubjectType: 'person' | 'movie' | 'product' | 'logo' | 'event' | 'location' | 'artwork' | 'lifestyle';
   
   imageSearchQuery?: string;
   imageSearchQueryEn?: string;

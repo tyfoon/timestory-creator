@@ -82,16 +82,17 @@ export function DebugInfoDialog({ events }: DebugInfoDialogProps) {
     const sources: string[] = [];
 
     if (event.isMovie || type === 'movie') {
-      sources.push('1. TMDB (Films)', '→ Fallback: Wiki NL/EN/DE, Commons');
+      sources.push('1. TMDB (Films)', '→ Wiki NL/EN/DE, Commons');
     } else if (event.isCelebrityBirthday || type === 'person') {
-      sources.push('1. TMDB (Personen)', '→ Fallback: Wiki NL');
-    } else if (type === 'product' || type === 'logo' || type === 'artwork') {
-      sources.push('1. Commons (SVG)', '2. Wiki EN');
+      sources.push('1. TMDB (Personen)', '→ Wiki NL');
+    } else if (type === 'product' || type === 'logo' || type === 'artwork' || type === 'lifestyle') {
+      sources.push('1. Commons', '2. Wiki EN/NL');
     } else {
+      // Events, locations, etc.
       if (event.category === 'local' || event.category === 'politics') {
         sources.push('1. Nat. Archief');
       }
-      sources.push('→ Wiki NL/EN/DE, Commons');
+      sources.push('1. Commons (+jaar)', '2. Wiki EN/NL (+jaar)', '3. Commons/Wiki (zonder jaar)');
     }
 
     return sources;
