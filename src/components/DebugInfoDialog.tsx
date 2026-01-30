@@ -7,7 +7,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { TimelineEvent } from '@/types/timeline';
 
@@ -183,9 +182,8 @@ export function DebugInfoDialog({ events }: DebugInfoDialogProps) {
           )}
         </div>
         
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <ScrollArea className="h-full pr-4">
-            <div className="space-y-3 pb-4">
+        <div className="flex-1 min-h-0 overflow-y-auto pr-4">
+          <div className="space-y-3 pb-4">
             {filteredEvents.map((event, index) => (
               <div 
                 key={event.id} 
@@ -356,8 +354,7 @@ export function DebugInfoDialog({ events }: DebugInfoDialogProps) {
                 </div>
               </div>
             ))}
-            </div>
-          </ScrollArea>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
