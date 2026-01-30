@@ -175,6 +175,16 @@ export async function searchSingleImage(
   if (type === 'person') {
     const res = await searchTMDB(eventId, enQuery, 'person', undefined, musicEvent, spotifySearchQuery);
     if (res.imageUrl) return res;
+    
+    // Voor muziek: probeer ook alleen de artiest (eerste deel voor " - " of spotifySearchQuery)
+    if (musicEvent && spotifySearchQuery) {
+      const artistOnly = spotifySearchQuery.split(' - ')[0]?.trim();
+      if (artistOnly && artistOnly !== enQuery) {
+        const artistRes = await searchTMDB(eventId, artistOnly, 'person', undefined, true, artistOnly);
+        if (artistRes.imageUrl) return artistRes;
+      }
+    }
+    
     // Fallback naar Wiki als TMDB faalt (voor lokale artiesten)
     const wikiRes = await wiki('nl', query, undefined, false); 
     if (wikiRes) return { eventId, ...wikiRes };
