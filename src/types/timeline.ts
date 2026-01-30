@@ -7,28 +7,25 @@ export interface TimelineEvent {
   title: string;
   description: string;
   category: 'politics' | 'sports' | 'entertainment' | 'science' | 'culture' | 'world' | 'local' | 'personal' | 'music' | 'technology' | 'celebrity';
+  
+  // NIEUW: De AI vertelt ons nu expliciet WAT voor plaatje we zoeken
+  visualSubjectType: 'person' | 'movie' | 'product' | 'logo' | 'event' | 'location' | 'artwork';
+  
   imageSearchQuery?: string;
-  /** English search query for Wikimedia Commons */
   imageSearchQueryEn?: string;
   imageUrl?: string;
-  /** Frontend-only helper to avoid showing an infinite "loading" state when no image is found. */
   imageStatus?: 'idle' | 'loading' | 'found' | 'none' | 'error';
   source?: string;
   importance: 'high' | 'medium' | 'low';
-  // Whether this event happened on the exact birth date vs just the year
   eventScope: 'birthdate' | 'birthmonth' | 'birthyear' | 'period';
-  // For celebrity birthdays
   isCelebrityBirthday?: boolean;
-  // For movie/film events (use TMDB for images)
   isMovie?: boolean;
-  // Search query for Spotify to find a relevant song/hit from that time
   spotifySearchQuery?: string;
-  // Search query for YouTube to find a movie trailer
   movieSearchQuery?: string;
-  // YouTube video ID for movie trailer
   youtubeVideoId?: string;
 }
 
+// ... (rest van het bestand blijft hetzelfde)
 export interface FamousBirthday {
   name: string;
   profession: string;
