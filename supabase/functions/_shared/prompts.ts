@@ -34,28 +34,28 @@ Vertaal ALTIJD het onderwerp naar het ENGELS voor 'imageSearchQueryEn'.
 
 REGELS PER TYPE:
 
-1. SPEELGOED, GAMES & RAGES (Category: culture, technology)
-   * Vertaal de productnaam naar het Engels!
-   * FOUT: "De Smurfen", "Transformers speelgoed", "Rubiks kubus", "Introductie Pac-Man"
-   * GOED: "The Smurfs", "Transformers toy", "Rubik's Cube", "Pac-Man arcade"
-   * FOUT: "BMX fiets rage" -> GOED: "BMX bike"
+1. MUZIEK & BEROEMDHEDEN (Category: music, celebrity)
+   * Is de naam uniek? Alleen de naam. (Bijv. "David Bowie")
+   * Is de naam een gewoon woord of dubbelzinnig? VOEG CONTEXT TOE.
+   * FOUT: "Queen", "Prince", "Kiss" (Geeft koninginnen en zoenen)
+   * GOED: "Queen band", "Prince singer", "Kiss band"
 
-2. PRODUCTEN & TECH
-   * Gebruik het specifieke model of de Engelse naam.
-   * FOUT: "Eerste mobiele telefoon" -> GOED: "Motorola DynaTAC"
-   * FOUT: "Introductie CD-speler" -> GOED: "Compact Disc player"
+2. SPEELGOED, GAMES & RAGES
+   * Vertaal productnaam naar Engels. Wees specifiek.
+   * FOUT: "De Smurfen", "Pac-Man"
+   * GOED: "The Smurfs", "Pac-Man arcade", "Rubik's Cube"
 
-3. FILMS & TV
-   * FOUT: "Goede Tijden Slechte Tijden" (Tenzij strikt lokaal)
-   * GOED: "The A-Team TV show", "Knight Rider car", "Titanic film 1997"
+3. PRODUCTEN & TECH
+   * Gebruik modelnaam of type.
+   * FOUT: "Windows 1.0" (Te vaag) -> GOED: "Windows 1.0 screenshot" of "Windows 1.0 software"
+   * FOUT: "Eerste mobieltje" -> GOED: "Motorola DynaTAC"
 
-4. PERSONEN
-   * Alleen de naam. Geen context.
-   * FOUT: "Moord op Kennedy" -> GOED: "John F. Kennedy"
+4. FILMS & TV
+   * ALTIJD jaartal of "film"/"TV show" toevoegen.
+   * GOED: "Titanic film 1997", "Friends TV show"
 
 5. ALGEMEEN
-   * Verwijder woorden als "Introductie", "Lancering", "Rage", "Succes".
-   * Houd het PUUR: Alleen het object of de persoon.
+   * Verwijder woorden als "Introductie", "Lancering", "Succes". Houd het PUUR op het onderwerp.
 `;
 
 // =============================================================================
