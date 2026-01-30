@@ -30,10 +30,17 @@ function isAllowedImageUrl(maybeUrl: string, allowSvg: boolean = false): boolean
   try {
     const url = new URL(maybeUrl);
     const path = url.pathname.toLowerCase();
+    const fullUrl = maybeUrl.toLowerCase();
+    
+    // Blokkeer transcoded content
     if (path.includes("/transcoded/")) return false;
     
-    // Standaard blokkeren we audio/video
-    if (path.match(/\.(mp3|ogg|wav|webm|mp4|ogv|pdf|tif|tiff)$/)) return false;
+    // Blokkeer audio/video/pdf bestanden - ook als ze ergens in het pad zitten
+    const blockedExtensions = /\.(mp3|ogg|wav|webm|mp4|ogv|pdf|tif|tiff|flac|aac|m4a|oga)$/;
+    if (path.match(blockedExtensions)) return false;
+    
+    // Extra check: blokkeer URLs die naar PDF/audio lijken te verwijzen
+    if (fullUrl.includes('/pdf/') || fullUrl.includes('file:') && fullUrl.includes('.pdf')) return false;
 
     // SVG alleen toestaan als expliciet gevraagd (voor logos/producten)
     if (path.endsWith(".svg") && !allowSvg) return false;
@@ -173,9 +180,9 @@ export async function searchSingleImage(
     if (wikiRes) return { eventId, ...wikiRes };
   }
 
-  // 3. Producten, Logos, Games -> Commons (Met SVG support!)
-  // GEEN JAARTAL gebruiken voor games/logos/producten - alleen titel!
-  const isGameOrProduct = type === 'product' || type === 'logo' || type === 'artwork';
+  // 3. Producten, Logos, Games, Lifestyle -> Commons (Met SVG support!)
+  // GEEN JAARTAL gebruiken voor games/logos/producten/lifestyle - alleen titel!
+  const isGameOrProduct = type === 'product' || type === 'logo' || type === 'artwork' || type === 'lifestyle';
   
   if (isGameOrProduct) {
     // Probeer EERST zonder SVG (echte afbeeldingen hebben voorkeur)
