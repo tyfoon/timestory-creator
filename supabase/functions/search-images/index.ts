@@ -396,13 +396,17 @@ async function searchTMDBMovie(
   }
   
   try {
+    // Clean the query - TMDB works best with just the title
+    // Remove "film", "movie", "TV", "TV show", years, etc.
+    const cleanedQuery = cleanMovieQueryForTMDB(query);
+    
     // Search for a movie on TMDB, optionally filter by year
-    let searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=en-US&page=1`;
+    let searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanedQuery)}&language=en-US&page=1`;
     if (year) {
       searchUrl += `&year=${year}`;
     }
     
-    console.log(`TMDB Movie: searching for "${query}" (${year || 'no year'})`);
+    console.log(`TMDB Movie: searching for "${cleanedQuery}" (original: "${query}", year: ${year || 'none'})`);
     
     const searchRes = await fetch(searchUrl);
     if (!searchRes.ok) {
@@ -427,7 +431,7 @@ async function searchTMDBMovie(
         const imageUrl = `https://image.tmdb.org/t/p/${size}${imagePath}`;
         const source = `https://www.themoviedb.org/movie/${movie.id}`;
         
-        console.log(`TMDB: found movie image for "${movie.title}" (query: "${query}")`);
+        console.log(`TMDB: found movie image for "${movie.title}" (query: "${cleanedQuery}")`);
         return { imageUrl, source };
       }
     }
@@ -545,6 +549,30 @@ function cleanMusicQuery(query: string): string {
   return cleaned.replace(/\s+/g, ' ').trim();
 }
 
+// ============== HELPER: Clean movie query for TMDB (remove "film", "movie", "TV", etc.) ==============
+function cleanMovieQueryForTMDB(query: string): string {
+  // TMDB works best with just the title - remove disambiguation words
+  const wordsToRemove = ['film', 'movie', 'tv', 'tv show', 'television', 'serie', 'series', 'show'];
+  let cleaned = query;
+  for (const word of wordsToRemove) {
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    cleaned = cleaned.replace(regex, '');
+  }
+  // Also remove years that might be appended
+  cleaned = cleaned.replace(/\b\d{4}\b/g, '');
+  return cleaned.replace(/\s+/g, ' ').trim();
+}
+
+// ============== HELPER: Add disambiguation for movie fallback searches ==============
+function addMovieDisambiguation(query: string): string {
+  // For Wikipedia/Commons fallback, add "film" to help disambiguate
+  const lowerQuery = query.toLowerCase();
+  if (!lowerQuery.includes('film') && !lowerQuery.includes('movie') && !lowerQuery.includes('tv')) {
+    return `${query} film`;
+  }
+  return query;
+}
+
 // ============== MAIN SEARCH FUNCTION ==============
 async function searchAllSources(
   eventId: string,
@@ -582,27 +610,30 @@ async function searchAllSources(
     }
   }
   
+  // For movie fallbacks, add disambiguation (e.g., "Titanic film") to help Wikipedia/Commons
+  const fallbackQuery = isMovie ? addMovieDisambiguation(searchQuery) : searchQuery;
+  
   // Search all sources in parallel with fallback strategy
   const allSources = [
     // Dutch sources first (likely most relevant for Dutch app)
-    trySourceWithFallback(searchNationaalArchief, searchQuery, year),
+    trySourceWithFallback(searchNationaalArchief, fallbackQuery, year),
     trySourceWithFallback(
       (q, y, opts) => searchWikipediaWithImages(q, y, 'nl', opts),
-      searchQuery,
+      fallbackQuery,
       year
     ),
     // International sources
     trySourceWithFallback(
       (q, y, opts) => searchWikipediaWithImages(q, y, 'en', opts),
-      searchQuery,
+      fallbackQuery,
       year
     ),
     trySourceWithFallback(
       (q, y, opts) => searchWikipediaWithImages(q, y, 'de', opts),
-      searchQuery,
+      fallbackQuery,
       year
     ),
-    trySourceWithFallback(searchWikimediaCommons, searchQuery, year),
+    trySourceWithFallback(searchWikimediaCommons, fallbackQuery, year),
   ];
   
   // Add Firecrawl Wikipedia-only search if available (already has its own fallback)
