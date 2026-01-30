@@ -50,29 +50,75 @@ function isAllowedImageUrl(maybeUrl: string): boolean {
   }
 }
 
+// ============== HELPER: Normalize text (remove accents, lowercase) ==============
+function normalizeText(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove accents
+    .replace(/[.,/#!$%^&*;:{}=\-_`~()'"]/g, " ") // Replace punctuation with spaces
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Expanded stop words list
+const STOP_WORDS = new Set([
+  'the', 'and', 'for', 'van', 'het', 'een', 'der', 'den', 'des', 'von', 'und',
+  'with', 'from', 'image', 'file', 'bestand', 'jpg', 'png', 'jpeg', 'gif',
+  'photo', 'foto', 'picture', 'svg', 'logo', 'icon', 'thumb', 'thumbnail',
+  'wiki', 'commons', 'wikipedia', 'media', 'upload', 'files',
+  'lancering', 'release', 'launch', 'premiere', 'debut', 'start',
+  'finale', 'einde', 'end', 'last', 'final', 'season', 'seizoen', 'episode',
+  'film', 'movie', 'serie', 'series', 'show', 'game', 'spel',
+  'gekte', 'rage', 'craze', 'hype', 'trend', 'phenomenon', 'fenomeen'
+]);
+
 // ============== HELPER: Check if search result title matches query subject ==============
 function titleMatchesQuery(title: string, query: string, strict: boolean = true): boolean {
-  const titleLower = title.toLowerCase();
-  const queryLower = query.toLowerCase();
+  const normalizedTitle = normalizeText(title);
+  const normalizedQuery = normalizeText(query);
   
-  // Extract the main subject from the query (first few significant words)
-  const queryWords = queryLower.split(/\s+/).filter(w => 
+  // Extract significant words from query (excluding stop words and years)
+  const queryWords = normalizedQuery.split(/\s+/).filter(w => 
     w.length > 2 && 
-    !['the', 'and', 'for', 'van', 'het', 'een', 'der', 'den', 'des', 'von', 'und'].includes(w) &&
-    !/^\d{4}$/.test(w) // Exclude years
+    !STOP_WORDS.has(w) &&
+    !/^\d{4}$/.test(w)
   );
   
   if (queryWords.length === 0) return true;
   
-  const mainSubjectWords = queryWords.slice(0, 4);
-  const matchCount = mainSubjectWords.filter(word => titleLower.includes(word)).length;
+  // Take the MAIN SUBJECT words (typically first 2-3 important words like "Furby", "Seinfeld", "Google")
+  // These are the KEY identifiers that MUST appear in the result
+  const mainSubjectWords = queryWords.slice(0, 3);
+  
+  // Count how many main subject words appear in the title
+  const matchCount = mainSubjectWords.filter(word => {
+    // For short words (<=4 chars), require exact word boundary match
+    if (word.length <= 4) {
+      const regex = new RegExp(`\\b${word}\\b`, 'i');
+      return regex.test(normalizedTitle);
+    }
+    // For longer words, substring match is OK
+    return normalizedTitle.includes(word);
+  }).length;
   
   if (strict) {
-    // Strict mode: require at least half of the main words to match
-    const threshold = Math.max(1, Math.ceil(mainSubjectWords.length / 2));
+    // STRICT MODE: The FIRST main subject word (the actual subject like "Furby", "Seinfeld") 
+    // MUST appear in the title, plus at least half of remaining words
+    const firstWordMatches = mainSubjectWords.length > 0 && 
+      (mainSubjectWords[0].length <= 4 
+        ? new RegExp(`\\b${mainSubjectWords[0]}\\b`, 'i').test(normalizedTitle)
+        : normalizedTitle.includes(mainSubjectWords[0]));
+    
+    if (!firstWordMatches) {
+      return false; // Primary subject not found = definitely wrong result
+    }
+    
+    // Also require at least 60% of main words to match
+    const threshold = Math.max(1, Math.ceil(mainSubjectWords.length * 0.6));
     return matchCount >= threshold;
   } else {
-    // Lenient mode (fallback): require just 1 word to match
+    // LENIENT MODE: At least 1 main subject word must match
     return matchCount >= 1;
   }
 }

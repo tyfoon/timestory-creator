@@ -41,16 +41,29 @@ function isAllowedImageUrl(maybeUrl: string): boolean {
 }
 
 /**
- * Normalize string: lower case, remove accents, remove punctuation
+ * Normalize string: lower case, remove accents, replace punctuation with spaces
  */
 function normalizeText(str: string): string {
   return str
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "") // Remove accents
-    .replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "") // Remove punctuation
+    .replace(/[.,/#!$%^&*;:{}=\-_`~()'"]/g, " ") // Replace punctuation with spaces
+    .replace(/\s+/g, " ")
     .trim();
 }
+
+// Expanded stop words list - these words are too common/generic to use for matching
+const STOP_WORDS = new Set([
+  'the', 'and', 'for', 'van', 'het', 'een', 'der', 'den', 'des', 'von', 'und',
+  'with', 'from', 'image', 'file', 'bestand', 'jpg', 'png', 'jpeg', 'gif',
+  'photo', 'foto', 'picture', 'svg', 'logo', 'icon', 'thumb', 'thumbnail',
+  'wiki', 'commons', 'wikipedia', 'media', 'upload', 'files',
+  'lancering', 'release', 'launch', 'premiere', 'debut', 'start',
+  'finale', 'einde', 'end', 'last', 'final', 'season', 'seizoen', 'episode',
+  'film', 'movie', 'serie', 'series', 'show', 'game', 'spel',
+  'gekte', 'rage', 'craze', 'hype', 'trend', 'phenomenon', 'fenomeen'
+]);
 
 /**
  * Helper to clean query for TMDB (removes years and keywords)
@@ -68,35 +81,51 @@ function cleanQueryForTMDB(query: string): string {
 
 /**
  * Check if a Wikipedia/Commons page title OR snippet matches the search query.
+ * Uses stricter matching: the PRIMARY subject word MUST appear in results.
  */
 function contentMatchesQuery(title: string, snippet: string | undefined, query: string, strict: boolean = true): boolean {
-  const cleanTitle = normalizeText(title);
-  const cleanSnippet = snippet ? normalizeText(snippet.replace(/<[^>]*>/g, "")) : ""; 
-  const cleanQuery = normalizeText(query);
+  const normalizedTitle = normalizeText(title);
+  const normalizedSnippet = snippet ? normalizeText(snippet.replace(/<[^>]*>/g, "")) : ""; 
+  const normalizedQuery = normalizeText(query);
   
-  const stopWords = new Set([
-    'the', 'and', 'for', 'van', 'het', 'een', 'der', 'den', 'des', 'von', 'und',
-    'with', 'from', 'image', 'file', 'bestand', 'jpg', 'png'
-  ]);
-  
-  const queryWords = cleanQuery.split(/\s+/).filter(w => 
-    w.length > 2 && !stopWords.has(w) && !/^\d{4}$/.test(w)
+  // Extract significant words from query
+  const queryWords = normalizedQuery.split(/\s+/).filter(w => 
+    w.length > 2 && !STOP_WORDS.has(w) && !/^\d{4}$/.test(w)
   );
   
   if (queryWords.length === 0) return true;
   
-  const mainSubjectWords = queryWords.slice(0, 5);
-  const countMatches = (text: string) => mainSubjectWords.filter(word => text.includes(word)).length;
-
-  const matchesInTitle = countMatches(cleanTitle);
-  const matchesInSnippet = countMatches(cleanSnippet);
+  // Take first 3 main subject words (e.g., "Furby", "Seinfeld", "Game Boy")
+  const mainSubjectWords = queryWords.slice(0, 3);
+  
+  // Helper to check if word appears in text
+  const wordAppearsIn = (word: string, text: string): boolean => {
+    if (word.length <= 4) {
+      // Short words need exact word boundary match
+      return new RegExp(`\\b${word}\\b`, 'i').test(text);
+    }
+    return text.includes(word);
+  };
+  
+  // Count matches in title and snippet
+  const matchesInTitle = mainSubjectWords.filter(w => wordAppearsIn(w, normalizedTitle)).length;
+  const matchesInSnippet = mainSubjectWords.filter(w => wordAppearsIn(w, normalizedSnippet)).length;
   const maxMatches = Math.max(matchesInTitle, matchesInSnippet);
   
   if (strict) {
-    if (mainSubjectWords.length === 1) return maxMatches >= 1;
-    const threshold = Math.ceil(mainSubjectWords.length * 0.6);
+    // STRICT: First main subject word MUST appear somewhere
+    const firstWord = mainSubjectWords[0];
+    const firstWordFound = wordAppearsIn(firstWord, normalizedTitle) || wordAppearsIn(firstWord, normalizedSnippet);
+    
+    if (!firstWordFound) {
+      return false; // Primary subject not found = wrong result
+    }
+    
+    // Also require 60% of main words to match
+    const threshold = Math.max(1, Math.ceil(mainSubjectWords.length * 0.6));
     return maxMatches >= threshold;
   } else {
+    // LENIENT: At least 1 word must match
     return maxMatches >= 1;
   }
 }
