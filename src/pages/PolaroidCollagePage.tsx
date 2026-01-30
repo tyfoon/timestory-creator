@@ -8,8 +8,9 @@ import { TimelineEvent, FamousBirthday } from '@/types/timeline';
 import { generateTimelineStreaming } from '@/lib/api/timeline';
 import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents, getCacheKey } from '@/lib/timelineCache';
-import { ArrowLeft, Clock, Loader2, RefreshCw, Share2, Check } from 'lucide-react';
+import { ArrowLeft, Clock, Loader2, RefreshCw, Share2, Check, Image, X, Download } from 'lucide-react';
 import { generateTikTokSlides, shareGeneratedFiles, canShareToTikTok } from '@/lib/tiktokGenerator';
+import { downloadPolaroidCollage } from '@/lib/collageGenerator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { PolaroidCard } from '@/components/PolaroidCard';
@@ -49,6 +50,12 @@ const PolaroidCollagePage = () => {
   const [isGeneratingTikTok, setIsGeneratingTikTok] = useState(false);
   const [tikTokProgress, setTikTokProgress] = useState({ current: 0, total: 0 });
   const [generatedTikTokFiles, setGeneratedTikTokFiles] = useState<File[] | null>(null);
+
+  // Collage selection state
+  const [isSelectingMode, setIsSelectingMode] = useState(false);
+  const [selectedForCollage, setSelectedForCollage] = useState<string[]>([]);
+  const [isGeneratingCollage, setIsGeneratingCollage] = useState(false);
+  const [collageProgress, setCollageProgress] = useState(0);
 
   const formDataRef = useRef<FormData | null>(null);
   // Holds the incremental stream list so later onEvent updates don't overwrite image updates.
@@ -315,6 +322,71 @@ const PolaroidCollagePage = () => {
   };
 
   const imagesLoaded = events.filter(e => e.imageStatus === 'found' && e.imageUrl).length;
+  const eventsWithImages = imagesLoaded;
+
+  // Collage selection handlers
+  const handleToggleCollageSelection = useCallback((eventId: string) => {
+    setSelectedForCollage(prev => {
+      if (prev.includes(eventId)) {
+        return prev.filter(id => id !== eventId);
+      }
+      if (prev.length >= 6) {
+        toast({
+          title: t('maxPhotosReached') as string,
+          variant: "destructive",
+        });
+        return prev;
+      }
+      return [...prev, eventId];
+    });
+  }, [t, toast]);
+
+  const handleStartCollageSelection = () => {
+    setIsSelectingMode(true);
+    setSelectedForCollage([]);
+  };
+
+  const handleCancelCollageSelection = () => {
+    setIsSelectingMode(false);
+    setSelectedForCollage([]);
+  };
+
+  const handleGenerateCollage = async () => {
+    if (selectedForCollage.length !== 6) return;
+    
+    const selectedEvents = selectedForCollage
+      .map(id => events.find(e => e.id === id))
+      .filter((e): e is TimelineEvent => !!e);
+    
+    if (selectedEvents.length !== 6) return;
+    
+    setIsGeneratingCollage(true);
+    setCollageProgress(0);
+    
+    try {
+      const contextText = getTitle();
+      await downloadPolaroidCollage(selectedEvents, contextText, setCollageProgress);
+      
+      toast({
+        title: t('collageDownloaded') as string,
+        description: t('collageReady') as string,
+      });
+      
+      // Reset selection mode after successful download
+      setIsSelectingMode(false);
+      setSelectedForCollage([]);
+    } catch (err) {
+      console.error('Error generating collage:', err);
+      toast({
+        variant: "destructive",
+        title: t('collageError') as string,
+        description: err instanceof Error ? err.message : 'Unknown error',
+      });
+    } finally {
+      setIsGeneratingCollage(false);
+      setCollageProgress(0);
+    }
+  };
 
   // Check TikTok sharing capability
   useEffect(() => {
@@ -434,51 +506,104 @@ const PolaroidCollagePage = () => {
             </button>
             
             <div className="flex items-center gap-2">
-              {/* TikTok share buttons - two-step flow for user gesture compliance */}
-              {canShare && isMobile && events.length > 0 && !isLoading && (
+              {/* Collage selection mode UI */}
+              {isSelectingMode ? (
                 <>
-                  {/* Step 2: Share button (only shown when files are ready) */}
-                  {generatedTikTokFiles && generatedTikTokFiles.length > 0 && (
+                  {/* Cancel button */}
+                  <button
+                    onClick={handleCancelCollageSelection}
+                    className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+                    title={t('cancelSelection') as string}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                  
+                  {/* Selection counter */}
+                  <span className="text-sm font-medium text-foreground bg-secondary/80 px-2 py-0.5 rounded-full">
+                    {t('selectedCount') as string}: {selectedForCollage.length}/6
+                  </span>
+                  
+                  {/* Generate collage button - only when 6 selected */}
+                  {selectedForCollage.length === 6 && (
                     <button
-                      onClick={handleShareTikTok}
-                      className="p-1.5 text-primary-foreground bg-green-500 hover:bg-green-600 transition-colors rounded-md animate-pulse"
-                      title={t('shareNow') as string}
+                      onClick={handleGenerateCollage}
+                      disabled={isGeneratingCollage}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent text-accent-foreground rounded-md text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-50"
                     >
-                      <Check className="h-3.5 w-3.5" />
+                      {isGeneratingCollage ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <span>{collageProgress}%</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-3.5 w-3.5" />
+                          <span>{t('generateCollage') as string}</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Collage button - only show when we have enough images */}
+                  {eventsWithImages >= 6 && events.length > 0 && !isLoading && (
+                    <button
+                      onClick={handleStartCollageSelection}
+                      className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+                      title={t('createCollage') as string}
+                    >
+                      <Image className="h-3.5 w-3.5" />
                     </button>
                   )}
                   
-                  {/* Step 1: Prepare button (generates slides) */}
-                  {!generatedTikTokFiles && (
-                    <button
-                      onClick={handlePrepareTikTok}
-                      disabled={isGeneratingTikTok}
-                      className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50 disabled:opacity-50"
-                      title={t('prepareSlides') as string}
-                    >
-                      {isGeneratingTikTok ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Share2 className="h-3.5 w-3.5" />
+                  {/* TikTok share buttons - two-step flow for user gesture compliance */}
+                  {canShare && isMobile && events.length > 0 && !isLoading && (
+                    <>
+                      {/* Step 2: Share button (only shown when files are ready) */}
+                      {generatedTikTokFiles && generatedTikTokFiles.length > 0 && (
+                        <button
+                          onClick={handleShareTikTok}
+                          className="p-1.5 text-accent-foreground bg-accent hover:bg-accent/90 transition-colors rounded-md animate-pulse"
+                          title={t('shareNow') as string}
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                        </button>
                       )}
+                      
+                      {/* Step 1: Prepare button (generates slides) */}
+                      {!generatedTikTokFiles && (
+                        <button
+                          onClick={handlePrepareTikTok}
+                          disabled={isGeneratingTikTok}
+                          className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50 disabled:opacity-50"
+                          title={t('prepareSlides') as string}
+                        >
+                          {isGeneratingTikTok ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Share2 className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      )}
+                    </>
+                  )}
+                  
+                  {/* Compact refresh button */}
+                  {events.length > 0 && !isLoading && (
+                    <button
+                      onClick={handleClearCache}
+                      className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+                      title={t('refreshButton') as string}
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
                     </button>
                   )}
                 </>
               )}
               
-              {/* Compact refresh button */}
-              {events.length > 0 && !isLoading && (
-                <button
-                  onClick={handleClearCache}
-                  className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
-                  title={t('refreshButton') as string}
-                >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                </button>
-              )}
-              
               <h1 className="font-handwriting text-xl sm:text-2xl font-bold text-foreground">
-                {getTitle()}
+                {isSelectingMode ? t('selectPhotos') as string : getTitle()}
               </h1>
             </div>
           </div>
@@ -516,6 +641,9 @@ const PolaroidCollagePage = () => {
                   key={event.id} 
                   event={event} 
                   index={index}
+                  isSelectingMode={isSelectingMode}
+                  isSelected={selectedForCollage.includes(event.id)}
+                  onToggleSelection={() => handleToggleCollageSelection(event.id)}
                 />
               ))}
             </div>
