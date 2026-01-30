@@ -73,14 +73,21 @@ function contentMatchesQuery(title: string, snippet: string | undefined, query: 
 }
 
 // Generic Fetcher
-async function fetchWikiResults(url: string, query: string, allowSvg: boolean): Promise<{ imageUrl: string; source: string } | null> {
+async function fetchWikiResults(url: string, query: string, allowSvg: boolean, strictMatch: boolean = true): Promise<{ imageUrl: string; source: string } | null> {
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
     const data = await res.json();
     
     for (const result of data.query?.search || []) {
-      if (!contentMatchesQuery(result.title, result.snippet, query)) continue;
+      // Voor products/logos: minder strenge matching (eerste woord moet matchen)
+      if (strictMatch && !contentMatchesQuery(result.title, result.snippet, query)) continue;
+      if (!strictMatch) {
+        // Losse check: minstens het eerste significante woord moet ergens voorkomen
+        const firstWord = query.split(/\s+/).find(w => w.length > 2)?.toLowerCase();
+        const titleLower = result.title.toLowerCase();
+        if (firstWord && !titleLower.includes(firstWord)) continue;
+      }
       
       const imageUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(result.title)}&prop=pageimages|imageinfo&iiprop=url|thumburl&iiurlwidth=${THUMB_WIDTH}&pithumbsize=${THUMB_WIDTH}&format=json&origin=*`;
       const imgRes = await fetch(imageUrl);
@@ -93,22 +100,27 @@ async function fetchWikiResults(url: string, query: string, allowSvg: boolean): 
       let thumb = page.thumbnail?.source || page.imageinfo?.[0]?.thumburl || page.imageinfo?.[0]?.url;
 
       if (thumb && isAllowedImageUrl(thumb, allowSvg)) {
-        return { imageUrl: thumb, source: `https://wikipedia.org/wiki/${encodeURIComponent(result.title)}` };
+        // Correcte source URL voor Commons vs Wikipedia
+        const isCommons = url.includes('commons.wikimedia.org');
+        const sourceUrl = isCommons 
+          ? `https://commons.wikimedia.org/wiki/${encodeURIComponent(result.title)}`
+          : `https://wikipedia.org/wiki/${encodeURIComponent(result.title)}`;
+        return { imageUrl: thumb, source: sourceUrl };
       }
     }
     return null;
   } catch { return null; }
 }
 
-// API wrappers
-const wiki = (lang: string, q: string, y?: number, svg = false) => 
-  fetchWikiResults(`https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(y ? `${q} ${y}` : q)}&format=json&origin=*`, q, svg);
+// API wrappers (strictMatch = false voor products/logos)
+const wiki = (lang: string, q: string, y?: number, svg = false, strict = true) => 
+  fetchWikiResults(`https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(y ? `${q} ${y}` : q)}&format=json&origin=*`, q, svg, strict);
 
-const commons = (q: string, y?: number, svg = false) => 
-  fetchWikiResults(`https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(y ? `${q} ${y}` : q)}&srnamespace=6&format=json&origin=*`, q, svg);
+const commons = (q: string, y?: number, svg = false, strict = true) => 
+  fetchWikiResults(`https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(y ? `${q} ${y}` : q)}&srnamespace=6&format=json&origin=*`, q, svg, strict);
 
 const nationaal = (q: string, y?: number) => 
-  fetchWikiResults(`https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(`${q} ${y || ''} Nationaal Archief`)}&srnamespace=6&format=json&origin=*`, q, false);
+  fetchWikiResults(`https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(`${q} ${y || ''} Nationaal Archief`)}&srnamespace=6&format=json&origin=*`, q, false, true);
 
 // TMDB Wrapper
 async function searchTMDB(eventId: string, query: string, type: 'person' | 'movie', year?: number, isMusic?: boolean, spotifySearchQuery?: string): Promise<ImageResult> {
@@ -195,21 +207,26 @@ export async function searchSingleImage(
   const isGameOrProduct = type === 'product' || type === 'logo' || type === 'artwork' || type === 'lifestyle';
   
   if (isGameOrProduct) {
+    // Voor products: gebruik LOSSE matching (strict = false) - eerste woord moet matchen
     // Probeer EERST zonder SVG (echte afbeeldingen hebben voorkeur)
-    let res = await commons(enQuery, undefined, false); 
+    let res = await commons(enQuery, undefined, false, false); 
     if (res) return { eventId, ...res };
     
-    res = await wiki('en', enQuery, undefined, false);
+    // Probeer ook Nederlandse query op Commons
+    res = await commons(query, undefined, false, false);
     if (res) return { eventId, ...res };
     
-    res = await wiki('nl', query, undefined, false);
+    res = await wiki('en', enQuery, undefined, false, false);
+    if (res) return { eventId, ...res };
+    
+    res = await wiki('nl', query, undefined, false, false);
     if (res) return { eventId, ...res };
     
     // FALLBACK: Als geen echte afbeelding, probeer met SVG
-    res = await commons(enQuery, undefined, true); 
+    res = await commons(enQuery, undefined, true, false); 
     if (res) return { eventId, ...res };
     
-    res = await wiki('en', enQuery, undefined, true);
+    res = await wiki('en', enQuery, undefined, true, false);
     if (res) return { eventId, ...res };
     
     // Geen resultaat gevonden voor game/product
