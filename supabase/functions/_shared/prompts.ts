@@ -62,6 +62,15 @@ REGELS VOOR 'imageSearchQueryEn' PER TYPE:
 - type 'artwork': ALLEEN artiest + titel voor albums. "Thriller Michael Jackson" (GEEN "album", GEEN "cover", GEEN jaartal)
 - type 'event': Engelse naam van event. "Fall of the Berlin Wall"
 
+SPORT EVENTS (category: sports):
+- ALTIJD de SPORT vermelden in de zoekopdracht!
+- imageSearchQueryEn: "Land/Team + Sport + Toernooi" of "Sporter + Sport"
+- Voorbeelden:
+  - "Italië wint WK": imageSearchQueryEn="Italy FIFA World Cup 1982 football" (NIET "Italy World Cup")
+  - "Wimbledon finale": imageSearchQueryEn="Wimbledon tennis final" (NIET "Wimbledon final")
+  - "Olympische Spelen Los Angeles": imageSearchQueryEn="1984 Summer Olympics Los Angeles"
+  - "Johan Cruijff scoort": imageSearchQueryEn="Johan Cruyff football"
+
 MUZIEK EVENTS (category: music):
 - Gebruik 'artwork' type voor albums
 - imageSearchQueryEn: ALLEEN "Artiest Titel" (GEEN "album", GEEN "cover", GEEN jaartal)
