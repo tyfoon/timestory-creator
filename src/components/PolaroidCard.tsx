@@ -19,9 +19,17 @@ import placeholderTechnology from '@/assets/placeholders/technology.jpg';
 import placeholderCelebrity from '@/assets/placeholders/celebrity.jpg';
 import placeholderPersonal from '@/assets/placeholders/personal.jpg';
 
+import { Check } from 'lucide-react';
+
 interface PolaroidCardProps {
   event: TimelineEvent;
   index: number;
+  /** Selection mode for collage feature */
+  isSelectingMode?: boolean;
+  /** Whether this card is selected */
+  isSelected?: boolean;
+  /** Handler for selection toggle */
+  onToggleSelection?: () => void;
 }
 
 const monthNames = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
@@ -99,7 +107,13 @@ const getBackAccent = (index: number): string => {
   return colors[index % colors.length];
 };
 
-export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
+export const PolaroidCard = ({ 
+  event, 
+  index, 
+  isSelectingMode = false,
+  isSelected = false,
+  onToggleSelection,
+}: PolaroidCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const rotation = getRotation(event.id);
   const accentColor = getAccentColor(index);
@@ -167,7 +181,16 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
   const monthLabel = monthNames[month - 1];
   const dateDisplay = `${monthLabel} '${String(event.year).slice(-2)}`;
 
+  const hasImage = event.imageStatus === 'found' && !!event.imageUrl;
+
   const handleClick = () => {
+    // In selection mode, toggle selection instead of flipping
+    if (isSelectingMode) {
+      if (hasImage && onToggleSelection) {
+        onToggleSelection();
+      }
+      return;
+    }
     // Don't flip if trailer is playing
     if (isPlayingTrailer) return;
     setIsFlipped(!isFlipped);
@@ -175,13 +198,36 @@ export const PolaroidCard = ({ event, index }: PolaroidCardProps) => {
 
   return (
     <div 
-      className="polaroid-card group cursor-pointer"
+      className={`polaroid-card group cursor-pointer relative ${
+        isSelectingMode && !hasImage ? 'opacity-40 pointer-events-none' : ''
+      }`}
       style={{
         transform: `rotate(${rotation}deg)`,
         perspective: '1000px',
       }}
       onClick={handleClick}
     >
+      {/* Selection overlay */}
+      {isSelectingMode && hasImage && (
+        <div className={`absolute inset-0 z-30 rounded-lg transition-all duration-200 pointer-events-none ${
+          isSelected 
+            ? 'ring-4 ring-accent shadow-lg' 
+            : 'ring-2 ring-white/30'
+        }`}>
+          {/* Checkbox indicator */}
+          <div className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center transition-all shadow-md ${
+            isSelected 
+              ? 'bg-accent text-accent-foreground' 
+              : 'bg-black/50 text-white/70'
+          }`}>
+            {isSelected ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <span className="text-xs font-medium">+</span>
+            )}
+          </div>
+        </div>
+      )}
       {/* 3D flip container */}
       <div 
         className="polaroid-flip-container"
