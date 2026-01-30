@@ -63,33 +63,40 @@ VOORBEELDEN:
 - Event "Eerste emoticon": imageSearchQuery="Eerste emoticon smiley", imageSearchQueryEn="First emoticon smiley"
 - Product "Walkman": imageSearchQuery="Sony Walkman TPS-L2", imageSearchQueryEn="Sony Walkman TPS-L2" (zelfde)
 
-REGELS VOOR 'imageSearchQueryEn' PER TYPE:
-- type 'person': ALLEEN de naam. "David Bowie" (GEEN "David Bowie singer", GEEN jaartal)
-- type 'movie': ALLEEN de titel. "Titanic", "The A-Team" (GEEN jaartal, GEEN "film/movie/TV")
-- type 'product': Specifiek model + objectnaam. "Sony Walkman TPS-L2", "Tamagotchi" (GEEN jaartal, GEEN decade)
-- type 'logo': ALLEEN de naam. "Pac-Man", "SimCity", "Doom" (GEEN "logo", GEEN jaartal)
-- type 'artwork': Artiest + titel. "Thriller Michael Jackson" (GEEN "album", GEEN "cover", GEEN jaartal)
-- type 'event': Engelse naam. "Fall of the Berlin Wall" (GEEN decade-referenties)
+⚠️ REGELS VOOR BEIDE TALEN (NL én EN) - GEEN JAARTALLEN/DECENNIA! ⚠️
 
-Culture (category: culture):
-!!! BELANGRIJK VOOR TYPE 'culture' (Trends & Stijlen) !!!
-- VERWIJDER ALTIJD TIJDSAANDUIDINGEN! 
-- FOUT: "80s Breakdance", "1970s Disco", "90s Grunge fashion", "jaren 80 mode"
-- GOED: "Breakdance", "Disco ball", "Grunge fashion", "New Wave music band"
-- Wees concreet: Zoek niet het concept ("Gabber cultuur") maar een object/persoon ("Gabber raver" of "Thunderdome logo").
+REGELS VOOR 'imageSearchQuery' (NEDERLANDS):
+- NOOIT jaartallen: "1980", "1990", "2000"
+- NOOIT decennia: "jaren 80", "jaren 90", "jaren 70", "80s", "90s"
+- type 'person': ALLEEN de naam. "David Bowie" (NIET "David Bowie zanger 1983")
+- type 'movie': ALLEEN de titel. "The A-Team" (NIET "The A-Team 1983", NIET "The A-Team jaren 80")
+- type 'product': Model + object. "Sony Walkman", "Swatch horloge" (NIET "Swatch horloge 80s", NIET "Walkman jaren 80")
+- type 'logo': ALLEEN de naam. "Pac-Man" (NIET "Pac-Man logo", NIET "Pac-Man 1980")
+- type 'artwork': Artiest + titel. "Thriller Michael Jackson" (NIET "Thriller 1982", NIET "Thriller album")
+- type 'culture': SPECIFIEK object/stijl. "Breakdance", "Disco bal" (NIET "jaren 80 mode", NIET "80s breakdance")
+
+REGELS VOOR 'imageSearchQueryEn' (ENGELS):
+- NOOIT jaartallen: "1980", "1990", "2000"  
+- NOOIT decennia: "80s", "90s", "1980s", "eighties", "nineties"
+- type 'person': ALLEEN de naam. "David Bowie" (NIET "David Bowie singer 1983")
+- type 'movie': ALLEEN de titel. "The A-Team" (NIET "The A-Team 1983", NIET "The A-Team 80s")
+- type 'product': Model + object. "Sony Walkman", "Swatch watch" (NIET "Swatch watch 80s", NIET "Walkman 1980s")
+- type 'logo': ALLEEN de naam. "Pac-Man" (NIET "Pac-Man logo", NIET "Pac-Man 1980")
+- type 'artwork': Artiest + titel. "Thriller Michael Jackson" (NIET "Thriller 1982", NIET "Thriller album")
+- type 'culture': SPECIFIEK object/stijl. "Breakdance", "Disco ball" (NIET "80s fashion", NIET "1980s breakdance")
 
 SPORT EVENTS (category: sports):
-- ALTIJD de SPORT vermelden in de zoekopdracht!
-- imageSearchQueryEn: "Land/Team + Sport + Toernooi" of "Sporter + Sport"
+- ALTIJD de SPORT vermelden!
+- NOOIT jaartallen in de zoekopdracht!
 - Voorbeelden:
-  - "Italië wint WK": imageSearchQueryEn="Italy FIFA World Cup football" (NIET "Italy World Cup 1982")
-  - "Wimbledon finale": imageSearchQueryEn="Wimbledon tennis final"
-  - "Johan Cruijff scoort": imageSearchQueryEn="Johan Cruyff football"
+  - imageSearchQuery="Italië WK voetbal", imageSearchQueryEn="Italy FIFA World Cup football"
+  - imageSearchQuery="Wimbledon tennis finale", imageSearchQueryEn="Wimbledon tennis final"
 
 MUZIEK EVENTS (category: music):
 - Gebruik 'artwork' type voor albums
-- imageSearchQueryEn: ALLEEN "Artiest Titel" (GEEN "album", GEEN "cover", GEEN jaartal)
-- Voorbeeld: "Purple Rain Prince", "Thriller Michael Jackson", "Nevermind Nirvana"
+- ALLEEN "Artiest Titel" (GEEN "album", GEEN "cover", GEEN jaartal)
+- Voorbeeld NL: "Thriller Michael Jackson", EN: "Thriller Michael Jackson"
+- FOUT: "Thriller 1982", "Purple Rain album 1984"
 `;
 
 // =============================================================================
