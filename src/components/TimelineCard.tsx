@@ -198,10 +198,23 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
 
   const formatDate = () => {
     const monthNames = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
-    if (event.month) {
-      return `${monthNames[event.month - 1]} '${String(event.year).slice(-2)}`;
-    }
-    return `'${String(event.year).slice(-2)}`;
+
+    // Some events only have a `date` string (YYYY / YYYY-MM / YYYY-MM-DD) and no structured `month`.
+    // In that case, derive the month from the date string.
+    const deriveMonthFromDate = (date?: string): number | undefined => {
+      if (!date) return undefined;
+      const match = date.match(/^\d{4}-(\d{1,2})(?:-\d{1,2})?$/);
+      if (!match) return undefined;
+      const m = Number(match[1]);
+      if (!Number.isFinite(m) || m < 1 || m > 12) return undefined;
+      return m;
+    };
+
+    const month = event.month ?? deriveMonthFromDate(event.date);
+    const yy = String(event.year).slice(-2);
+
+    if (month) return `${monthNames[month - 1]} '${yy}`;
+    return `'${yy}`;
   };
 
   // Determine image to display
@@ -306,7 +319,7 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
                     handlePlayTrailer();
                   }}
                   disabled={isLoadingTrailer}
-                  className="inline-flex items-center gap-1.5 h-7 px-3 bg-red-600 hover:bg-red-700 text-white rounded-full text-xs font-medium transition-colors shadow-md"
+                  className="inline-flex items-center gap-1.5 h-7 px-3 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-full text-xs font-medium transition-colors shadow-md"
                   aria-label="Trailer afspelen"
                 >
                   {isLoadingTrailer ? (
@@ -322,7 +335,7 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
             </div>
             
             {/* Date badge - positioned bottom-right */}
-            <div className="absolute bottom-3 right-3 z-10 h-7 px-3 flex items-center rounded-full bg-black/70 backdrop-blur-sm text-white text-xs font-medium">
+            <div className="absolute bottom-3 right-3 z-10 h-7 px-3 flex items-center rounded-full bg-foreground/70 backdrop-blur-sm text-background text-xs font-medium">
               {formatDate()}
             </div>
           </>
