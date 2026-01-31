@@ -244,7 +244,7 @@ const Index = () => {
       </div>
 
       {/* Gradient overlay - separate layer with stronger opacity for better contrast */}
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-background/70 via-background/85 to-background" />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-background/30 via-background/50 to-background" />
 
       <Header />
 
