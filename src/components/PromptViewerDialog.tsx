@@ -20,6 +20,7 @@ interface PromptViewerDialogProps {
 const PROMPT_COLORS = {
   base: 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30',
   contentFocus: 'bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30',
+  nostalgia: 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30',
   famousBirthdays: 'bg-pink-500/20 text-pink-700 dark:text-pink-300 border-pink-500/30',
   birthyearInRange: 'bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/30',
   personalName: 'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30',
@@ -100,10 +101,22 @@ HARDE EISEN:
 
     sections.push({
       label: 'Basis Prompt (Periode)',
-      content: `Maak een tijdlijn van ${startYear} tot ${endYear}.
+      content: `Maak een nostalgische tijdlijn van ${startYear} tot ${endYear}.
 Genereer ${targetEvents} events.`,
       colorClass: PROMPT_COLORS.base,
       source: 'RANGE_PROMPT',
+    });
+
+    // Nostalgia instructions for range prompts
+    sections.push({
+      label: 'Nostalgie Richtlijnen',
+      content: `RICHTLIJNEN VOOR SFEER & NOSTALGIE:
+1. **Zintuiglijke Details:** Beschrijf niet alleen wat er gebeurde, maar hoe het voelde, rook of klonk. (Bv. het geluid van inbellen, de geur van brommerbenzine).
+2. **De 'Lens' van de Leeftijd:** Bekijk wereldnieuws door de ogen van de gebruiker op die leeftijd.
+3. **Analoge Vertraging:** Benadruk dingen die nu weg zijn: wachten op de bus zonder mobiel, foto's laten ontwikkelen.
+4. **Schrijfstijl:** Gebruik een persoonlijke, licht mijmerende toon.`,
+      colorClass: PROMPT_COLORS.nostalgia,
+      source: 'NOSTALGIA_INSTRUCTIONS',
     });
 
     // Famous birthdays addition for range
@@ -175,11 +188,15 @@ Genereer ${targetEvents} events.`,
     });
   }
 
-  // City
+  // City (extended with local context)
   if (optionalData.city) {
     sections.push({
-      label: 'Woonplaats',
-      content: `Woonplaats: ${optionalData.city}.`,
+      label: 'Woonplaats Context',
+      content: `LOCATIE CONTEXT: **${optionalData.city}**.
+De gebruiker groeide hier op. Maak de tijdlijn specifiek voor ${optionalData.city}:
+1. **Lokale Hotspots:** Zoek naar specifieke discotheken, bioscopen, parken of hangplekken in ${optionalData.city} uit die tijd.
+2. **Lokale Sfeer:** Hoe voelde het om in ${optionalData.city} te wonen? (Provinciaal vs Stedelijk).
+3. **Events:** Was er een groot lokaal evenement of feest in die jaren?`,
       colorClass: PROMPT_COLORS.city,
       source: 'CITY_ADDITION',
     });
@@ -261,6 +278,7 @@ export function PromptViewerDialog({ formData, language, maxEvents }: PromptView
         <div className="shrink-0 flex flex-wrap gap-1.5 text-[10px] pb-2 border-b">
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.base}`}>Basis</span>
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.contentFocus}`}>Focus</span>
+          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.nostalgia}`}>Nostalgie</span>
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.famousBirthdays}`}>Birthdays</span>
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.personalName}`}>Naam</span>
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.geographic}`}>Geo</span>
