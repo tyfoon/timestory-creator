@@ -103,17 +103,15 @@ async function fetchWikiResults(
     const res = await fetch(url);
     if (!res.ok) return null;
     const data = await res.json();
-
     for (const result of data.query?.search || []) {
-      // === NIEUW: HARDE TITEL FILTER ===
-      // Dit blokkeert PDF, Audio en Video direct op basis van de bestandsnaam.
-      // Dit voorkomt dat we per ongeluk de JPG-thumbnail van een PDF inladen.
+      // === VOEG DIT BLOK TOE ===
+      // Dit zorgt dat PDF's en video's direct worden genegeerd op basis van hun titel
       if (result.title.match(/\.(pdf|djvu|stl|ogg|ogv|oga|mp3|wav|flac|webm|mp4|avi|mov|mkv|svg|tif|tiff)$/i)) {
         continue;
       }
-      // =================================
+      // ========================
 
-      // Voor products/logos: minder strenge matching
+      // Voor products/logos: minder strenge matching ...
       if (strictMatch && !contentMatchesQuery(result.title, result.snippet, query)) continue;
       if (!strictMatch) {
         // Losse check: minstens het eerste significante woord moet ergens voorkomen
