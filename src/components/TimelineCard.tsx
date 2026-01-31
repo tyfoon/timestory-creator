@@ -291,64 +291,63 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
               </div>
             )}
             
-            {/* Play Trailer Button - positioned bottom-left, matching Spotify style */}
-            {event.movieSearchQuery && !isPlayingTrailer && (
-              <div className="absolute bottom-3 left-3 z-10">
+            {/* Media buttons - positioned bottom-left */}
+            <div className="absolute bottom-3 left-3 z-10 flex items-center gap-2">
+              {/* Spotify Player */}
+              {event.spotifySearchQuery && (
+                <SpotifyPlayer searchQuery={event.spotifySearchQuery} compact />
+              )}
+              
+              {/* Play Trailer Button */}
+              {event.movieSearchQuery && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handlePlayTrailer();
                   }}
                   disabled={isLoadingTrailer}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-full text-xs font-medium transition-colors shadow-md"
+                  className="inline-flex items-center gap-1.5 h-7 px-3 bg-red-600 hover:bg-red-700 text-white rounded-full text-xs font-medium transition-colors shadow-md"
                   aria-label="Trailer afspelen"
                 >
                   {isLoadingTrailer ? (
-                    <>
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      <span>Laden...</span>
-                    </>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : (
                     <>
-                      <Play className="h-3 w-3 fill-current" />
-                      <span>Play Trailer</span>
+                      <Play className="h-3.5 w-3.5 fill-current" />
+                      <span>Trailer</span>
                     </>
                   )}
                 </button>
-              </div>
-            )}
+              )}
+            </div>
+            
+            {/* Date badge - positioned bottom-right */}
+            <div className="absolute bottom-3 right-3 z-10 h-7 px-3 flex items-center rounded-full bg-black/70 backdrop-blur-sm text-white text-xs font-medium">
+              {formatDate()}
+            </div>
           </>
         )}
         
         <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent pointer-events-none" />
         
-        {/* Scope badge on image */}
-        {scopeLabel && !isPlayingTrailer && (
-          <div className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-medium ${scopeColors[event.eventScope] || scopeColors.period}`}>
-            {event.isCelebrityBirthday && <Cake className="inline h-3 w-3 mr-1" />}
-            {scopeLabel}
-          </div>
-        )}
-        
-        {/* Category badge on image */}
+        {/* Top badges container */}
         {!isPlayingTrailer && (
-          <div className={`absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
-            <Icon className="h-3 w-3" />
-            {label}
-          </div>
-        )}
-        
-        {/* Date badge positioned bottom-left on image */}
-        {!isPlayingTrailer && (
-          <div className="absolute bottom-3 left-3 z-10 px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-sm text-white text-sm font-medium font-mono">
-            {formatDate()}
-          </div>
-        )}
-        
-        {/* Spotify Player positioned bottom-right on image */}
-        {event.spotifySearchQuery && !isPlayingTrailer && (
-          <div className="absolute bottom-3 right-3 z-10">
-            <SpotifyPlayer searchQuery={event.spotifySearchQuery} compact />
+          <div className="absolute top-3 left-3 right-3 flex items-start justify-between z-10">
+            {/* Scope badge */}
+            {scopeLabel ? (
+              <div className={`h-7 px-3 flex items-center rounded-full text-xs font-medium ${scopeColors[event.eventScope] || scopeColors.period}`}>
+                {event.isCelebrityBirthday && <Cake className="h-3.5 w-3.5 mr-1.5" />}
+                {scopeLabel}
+              </div>
+            ) : (
+              <div />
+            )}
+            
+            {/* Category badge */}
+            <div className={`h-7 px-3 flex items-center gap-1.5 rounded-full text-xs font-medium ${colorClass}`}>
+              <Icon className="h-3.5 w-3.5" />
+              {label}
+            </div>
           </div>
         )}
       </div>
