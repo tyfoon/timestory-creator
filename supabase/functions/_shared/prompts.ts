@@ -11,15 +11,24 @@ export const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
   nl: "Schrijf alle tekst in het Nederlands.",
   en: "Write all text in English.",
   de: "Schreibe alle Texte auf Deutsch.",
-  fr: "Écrivez tout le texte en français."
+  fr: "Écrivez tout le texte en français.",
 };
 
 // =============================================================================
 // CATEGORIEËN
 // =============================================================================
 export const EVENT_CATEGORIES = [
-  "politics", "sports", "entertainment", "science", "culture", "world", 
-  "local", "personal", "music", "technology", "celebrity"
+  "politics",
+  "sports",
+  "entertainment",
+  "science",
+  "culture",
+  "world",
+  "local",
+  "personal",
+  "music",
+  "technology",
+  "celebrity",
 ] as const;
 
 // ... (Houd imports en LANGUAGE_INSTRUCTIONS hetzelfde)
@@ -131,7 +140,6 @@ MUZIEK EVENTS (category: music):
 - FOUT: "Prince Purple Rain style", "Michael Jackson singer 1984"
 `;
 
-
 // =============================================================================
 // SYSTEM PROMPT - NDJSON STREAMING
 // =============================================================================
@@ -188,22 +196,35 @@ export function getTimelineTool() {
                 title: { type: "string" },
                 description: { type: "string" },
                 category: { type: "string", enum: EVENT_CATEGORIES },
-                visualSubjectType: { 
-                  type: "string", 
+                visualSubjectType: {
+                  type: "string",
                   enum: ["person", "movie", "product", "logo", "event", "location", "artwork", "culture"],
-                  description: "CRITICAL: The visual category of the subject. Used to select the correct image database."
+                  description:
+                    "CRITICAL: The visual category of the subject. Used to select the correct image database.",
                 },
                 imageSearchQuery: { type: "string" },
-                imageSearchQueryEn: { type: "string", description: "Specific English search term matching the visualSubjectType rules." },
+                imageSearchQueryEn: {
+                  type: "string",
+                  description: "Specific English search term matching the visualSubjectType rules.",
+                },
                 importance: { type: "string", enum: ["high", "medium", "low"] },
                 eventScope: { type: "string", enum: ["birthdate", "birthmonth", "birthyear", "period"] },
                 isCelebrityBirthday: { type: "boolean" },
                 isMovie: { type: "boolean" },
                 spotifySearchQuery: { type: "string" },
-                movieSearchQuery: { type: "string" }
+                movieSearchQuery: { type: "string" },
               },
-              required: ["id", "date", "year", "title", "description", "category", "visualSubjectType", "imageSearchQueryEn"]
-            }
+              required: [
+                "id",
+                "date",
+                "year",
+                "title",
+                "description",
+                "category",
+                "visualSubjectType",
+                "imageSearchQueryEn",
+              ],
+            },
           },
           summary: { type: "string" },
           famousBirthdays: {
@@ -214,15 +235,15 @@ export function getTimelineTool() {
                 name: { type: "string" },
                 profession: { type: "string" },
                 birthYear: { type: "number" },
-                imageSearchQuery: { type: "string" }
+                imageSearchQuery: { type: "string" },
               },
-              required: ["name", "profession", "birthYear"]
-            }
-          }
+              required: ["name", "profession", "birthYear"],
+            },
+          },
         },
-        required: ["events", "summary"]
-      }
-    }
+        required: ["events", "summary"],
+      },
+    },
   };
 }
 
@@ -252,13 +273,13 @@ REGELS:
 // =============================================================================
 export function getContentFocusForPeriod(periodType?: string): string {
   switch (periodType) {
-    case 'birthyear':
-      return `FOCUS: Events uit het exacte geboortejaar. Wereldgebeurtenissen, politiek, cultuur van dat jaar.`;
-    case 'childhood':
-      return `FOCUS: Kindertijd (0-12 jaar). Speelgoed, tekenfilms, kinderprogramma's, games, snoep, kindercultuur.`;
-    case 'puberty':
-      return `FOCUS: Puberteit (12-18 jaar). Muziek, films, mode, games, eerste telefoons, sociale media, jeugdcultuur.`;
-    case 'young-adult':
+    case "birthyear":
+      return `FOCUS: Events uit het exacte geboortejaar. Wereldgebeurtenissen, politiek, muziek, films, cultuur van dat jaar.`;
+    case "childhood":
+      return `FOCUS: Kindertijd (0-12 jaar). Speelgoed, tekenfilms, kinderprogramma's, games, snoep, lagere school, kindercultuur.`;
+    case "puberty":
+      return `FOCUS: Puberteit (12-18 jaar). Muziek, films, TV, mode, games, eerste telefoons, sociale media, middelbare school, jeugdcultuur.`;
+    case "young-adult":
       return `FOCUS: Jongvolwassenheid (18-25 jaar). Studententijd, eerste baan, festivals, politiek ontwaken, technologie.`;
     default:
       return `FOCUS: Algemene mix van belangrijke wereldgebeurtenissen, cultuur, sport, wetenschap en entertainment.`;
@@ -269,51 +290,68 @@ export function getContentFocusForPeriod(periodType?: string): string {
 // CONSTANTEN EN TEMPLATES
 // =============================================================================
 export const MONTH_NAMES = [
-  "januari", "februari", "maart", "april", "mei", "juni",
-  "juli", "augustus", "september", "oktober", "november", "december"
+  "januari",
+  "februari",
+  "maart",
+  "april",
+  "mei",
+  "juni",
+  "juli",
+  "augustus",
+  "september",
+  "oktober",
+  "november",
+  "december",
 ];
 
-export const BIRTHDATE_PROMPT_SHORT = (day: number, monthName: string, year: number, maxEvents: number, contentFocus: string) => 
-`Maak een KORTE tijdlijn voor iemand geboren op ${day} ${monthName} ${year}.
+export const BIRTHDATE_PROMPT_SHORT = (
+  day: number,
+  monthName: string,
+  year: number,
+  maxEvents: number,
+  contentFocus: string,
+) =>
+  `Maak een KORTE tijdlijn voor iemand geboren op ${day} ${monthName} ${year}.
 Genereer PRECIES ${maxEvents} events in NDJSON formaat.
 HARDE EISEN:
 - MUZIEK: Minimaal 2, Maximaal 4 (Nr 1 hits).
 - BEROEMDHEDEN: Maximaal 2.
 ${contentFocus}`;
 
-export const BIRTHDATE_PROMPT_FULL = (day: number, monthName: string, year: number, contentFocus: string) => 
-`Maak een uitgebreide tijdlijn voor iemand geboren op ${day} ${monthName} ${year}.
+export const BIRTHDATE_PROMPT_FULL = (day: number, monthName: string, year: number, contentFocus: string) =>
+  `Maak een uitgebreide tijdlijn voor iemand geboren op ${day} ${monthName} ${year}.
 Genereer 50 events in NDJSON formaat.
 HARDE EISEN:
 - MUZIEK: 5-10 events.
 - BEROEMDHEDEN: Max 5.
 ${contentFocus}`;
 
-export const RANGE_PROMPT = (startYear: number, endYear: number, isShort: boolean, targetEvents: number, contentFocus: string) =>
-`Maak een tijdlijn van ${startYear} tot ${endYear}.
+export const RANGE_PROMPT = (
+  startYear: number,
+  endYear: number,
+  isShort: boolean,
+  targetEvents: number,
+  contentFocus: string,
+) =>
+  `Maak een tijdlijn van ${startYear} tot ${endYear}.
 Genereer ${targetEvents} events.
 ${contentFocus}`;
 
 export const FAMOUS_BIRTHDAYS_ADDITION = (day: number, monthName: string, startYear: number, endYear: number) =>
-`\nZoek personen die op ${day} ${monthName} jarig zijn.`;
+  `\nZoek personen die op ${day} ${monthName} jarig zijn.`;
 
-export const BIRTHYEAR_IN_RANGE_ADDITION = (year: number) =>
-`\nHet geboortejaar ${year} is speciaal.`;
+export const BIRTHYEAR_IN_RANGE_ADDITION = (year: number) => `\nHet geboortejaar ${year} is speciaal.`;
 
-export const PERSONAL_NAME_ADDITION = (fullName: string) =>
-`\nTijdlijn voor: ${fullName}.`;
+export const PERSONAL_NAME_ADDITION = (fullName: string) => `\nTijdlijn voor: ${fullName}.`;
 
 export const GEOGRAPHIC_FOCUS: Record<string, string> = {
   netherlands: "\nFocus: Nederland.",
   europe: "\nFocus: Europa.",
-  world: "\nFocus: Wereld."
+  world: "\nFocus: Wereld.",
 };
 
-export const INTERESTS_ADDITION = (interests: string) =>
-`\nInteresses: ${interests}.`;
+export const INTERESTS_ADDITION = (interests: string) => `\nInteresses: ${interests}.`;
 
-export const CITY_ADDITION = (city: string) =>
-`\nWoonplaats: ${city}.`;
+export const CITY_ADDITION = (city: string) => `\nWoonplaats: ${city}.`;
 
-export const CHILDREN_ADDITION = (childrenInfo: string[]) =>
-`\nKinderen: ${childrenInfo.join(", ")}`;
+export const CHILDREN_ADDITION = (childrenInfo: string[]) => `\nKinderen: ${childrenInfo.join(", ")}`;
