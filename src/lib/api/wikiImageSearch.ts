@@ -420,12 +420,13 @@ export async function searchSingleImage(
 
   // 4. Events & Locaties & Overig
   // NL-prioriteit voor:
-  // - Lokale/politieke/culturele events (category check)
+  // - Lokale/politieke/culturele/sport events (category check)
   // - visualSubjectType === "culture" of "location" (bijv. Sinterklaas, Nederlandse tradities)
   const isLocal = 
     category === "local" || 
     category === "politics" || 
     category === "culture" ||
+    category === "sports" ||
     type === "culture" ||
     type === "location";
 
