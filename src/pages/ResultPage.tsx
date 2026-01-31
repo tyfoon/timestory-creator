@@ -152,6 +152,35 @@ const ResultPage = () => {
     addImagesToQueue(eventsNeedingImages);
   }, [addImagesToQueue]);
 
+  // Force refresh all images (for debug purposes - to get search traces)
+  const handleRefreshAllImages = useCallback(() => {
+    // Reset all events to 'loading' state and clear their images
+    const resetEvents = events.map(e => {
+      if (!e.imageSearchQuery) return e;
+      return {
+        ...e,
+        imageUrl: undefined,
+        source: undefined,
+        imageStatus: 'loading' as const,
+        searchTrace: undefined,
+      };
+    });
+    
+    // Update state
+    setEvents(resetEvents);
+    receivedEventsRef.current = resetEvents;
+    
+    // Reset the search hook
+    resetImageSearch();
+    hasFinalized.current = false;
+    
+    // Queue all events with search queries
+    const eventsToSearch = resetEvents.filter(e => e.imageSearchQuery);
+    if (eventsToSearch.length > 0) {
+      addImagesToQueue(eventsToSearch);
+    }
+  }, [events, resetImageSearch, addImagesToQueue]);
+
   // Check Web Share API support on mount
   useEffect(() => {
     setCanShare(canShareToTikTok());
@@ -691,7 +720,11 @@ const ResultPage = () => {
                   {events.length > 0 && !isLoading && (
                     <>
                       <PromptViewerDialog formData={formData} language={language} maxEvents={currentMaxEvents} />
-                      <DebugInfoDialog events={events} />
+                      <DebugInfoDialog 
+                        events={events} 
+                        onRefreshImages={handleRefreshAllImages}
+                        isRefreshing={isLoadingImages}
+                      />
                     </>
                   )}
                   
