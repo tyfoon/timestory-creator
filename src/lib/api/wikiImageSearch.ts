@@ -419,19 +419,26 @@ export async function searchSingleImage(
   }
 
   // 4. Events & Locaties & Overig
-  // Probeer Nationaal Archief alleen als het "Lokaal/Politiek" is
-  // NL-prioriteit voor lokale, politieke EN culturele events (bijv. Oliebol, Sinterklaas)
-  const isLocal = type === "event" && (category === "local" || category === "politics" || category === "culture");
+  // NL-prioriteit voor:
+  // - Lokale/politieke/culturele events (category check)
+  // - visualSubjectType === "culture" of "location" (bijv. Sinterklaas, Nederlandse tradities)
+  const isLocal = 
+    category === "local" || 
+    category === "politics" || 
+    category === "culture" ||
+    type === "culture" ||
+    type === "location";
 
   if (isLocal) {
-    const res = await nationaal(query, year);
-    addTrace('🏛️ Nationaal Archief', query, !!year, res ? 'found' : 'not_found');
-    if (res) return withTrace({ eventId, ...res });
-  }
+    // Probeer Nationaal Archief alleen als het "Lokaal/Politiek" is
+    if (category === "local" || category === "politics") {
+      const res = await nationaal(query, year);
+      addTrace('🏛️ Nationaal Archief', query, !!year, res ? 'found' : 'not_found');
+      if (res) return withTrace({ eventId, ...res });
+    }
 
-  // Voor LOKALE events: zoek EERST met Nederlandse query op Commons/Wiki
-  // Dit voorkomt dat "Bijlmer disaster memorial, Jerusalem" wordt gevonden ipv "Bijlmerramp"
-  if (isLocal) {
+    // Voor LOKALE/CULTURELE events: zoek EERST met Nederlandse query op Commons/Wiki
+    // Dit voorkomt dat "Bijlmer disaster memorial, Jerusalem" wordt gevonden ipv "Bijlmerramp"
     // Fase 1: NL query met jaar
     let res = await commons(query, year);
     addTrace('🖼️ Commons (NL)', query, true, res ? 'found' : 'not_found');
