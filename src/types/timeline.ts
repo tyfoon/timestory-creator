@@ -1,3 +1,12 @@
+// Search trace entry for debugging image search
+export interface SearchTraceEntry {
+  source: string;           // e.g., "Spotify", "TMDB Movie", "Commons NL", "Wiki EN"
+  query: string;            // The actual query used
+  withYear: boolean;        // Whether year was included
+  result: 'found' | 'not_found' | 'error';
+  timestamp: number;        // ms since start
+}
+
 export interface TimelineEvent {
   id: string;
   date: string;
@@ -24,6 +33,9 @@ export interface TimelineEvent {
   spotifySearchQuery?: string;
   movieSearchQuery?: string;
   youtubeVideoId?: string;
+  
+  // NEW: Detailed search trace for debugging
+  searchTrace?: SearchTraceEntry[];
 }
 
 // ... (rest van het bestand blijft hetzelfde)

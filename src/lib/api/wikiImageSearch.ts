@@ -7,10 +7,20 @@
 
 const THUMB_WIDTH = 960;
 
+// Search trace entry for debugging
+export interface SearchTraceEntry {
+  source: string;           // e.g., "Spotify", "TMDB Movie", "Commons NL", "Wiki EN"
+  query: string;            // The actual query used
+  withYear: boolean;        // Whether year was included
+  result: 'found' | 'not_found' | 'error';
+  timestamp: number;        // ms since start
+}
+
 export interface ImageResult {
   eventId: string;
   imageUrl: string | null;
   source: string | null;
+  searchTrace?: SearchTraceEntry[];  // NEW: Detailed search log
 }
 
 export interface SearchQuery {
@@ -269,6 +279,20 @@ export async function searchSingleImage(
 ): Promise<ImageResult> {
   let enQuery = queryEn || query;
   let type = visualSubjectType;
+  
+  // Search trace for debugging
+  const searchTrace: SearchTraceEntry[] = [];
+  const startTime = Date.now();
+  
+  const addTrace = (source: string, searchQuery: string, withYear: boolean, result: 'found' | 'not_found' | 'error') => {
+    searchTrace.push({
+      source,
+      query: searchQuery,
+      withYear,
+      result,
+      timestamp: Date.now() - startTime
+    });
+  };
 
   // Determine if this is a music event
   const musicEvent = isMusic || category === "music";
@@ -285,15 +309,22 @@ export async function searchSingleImage(
     else type = "event";
   }
 
+  // Helper to return result with trace
+  const withTrace = (result: ImageResult): ImageResult => ({
+    ...result,
+    searchTrace
+  });
+
   // ========== MUSIC EVENTS: SPOTIFY ALBUM ART FIRST ==========
   // Voor muziek-events proberen we eerst Spotify album artwork te halen
   // Dit is betrouwbaarder dan TMDB/Wikipedia voor muziek-gerelateerde afbeeldingen
   if (musicEvent && spotifySearchQuery) {
     console.log(`[Image Router] Music event detected, trying Spotify first for: "${spotifySearchQuery}"`);
     const spotifyResult = await searchSpotifyAlbumArt(eventId, spotifySearchQuery);
+    addTrace('🎵 Spotify Album Art', spotifySearchQuery, false, spotifyResult.imageUrl ? 'found' : 'not_found');
     if (spotifyResult.imageUrl) {
       console.log(`[Image Router] ✓ Spotify album art found!`);
-      return spotifyResult;
+      return withTrace(spotifyResult);
     }
     console.log(`[Image Router] Spotify failed, falling back to other sources...`);
   }
@@ -303,41 +334,51 @@ export async function searchSingleImage(
   if (type === "tv" || isTV) {
     console.log(`[Image Router] TV show detected, using TMDB TV API for: "${enQuery}"`);
     const tvResult = await searchTMDB(eventId, enQuery, "tv", year);
-    if (tvResult.imageUrl) return tvResult;
+    addTrace('📺 TMDB TV', cleanQueryForTMDB(enQuery), !!year, tvResult.imageUrl ? 'found' : 'not_found');
+    if (tvResult.imageUrl) return withTrace(tvResult);
     // Fallback to Wikipedia/Commons for TV shows not in TMDB
   }
 
   // 2. Films -> TMDB Movie API ONLY (no fallback to TV)
   if (type === "movie" && !isTV) {
     console.log(`[Image Router] Movie detected, using TMDB Movie API for: "${enQuery}"`);
-    return await searchTMDB(eventId, enQuery, "movie", year);
+    const movieResult = await searchTMDB(eventId, enQuery, "movie", year);
+    addTrace('🎬 TMDB Movie', cleanQueryForTMDB(enQuery), !!year, movieResult.imageUrl ? 'found' : 'not_found');
+    return withTrace(movieResult);
   }
 
   // 2. Personen & Muziek -> TMDB Person (veel betere kwaliteit dan Wiki)
   if (type === "person") {
     const res = await searchTMDB(eventId, enQuery, "person", undefined, musicEvent, spotifySearchQuery);
-    if (res.imageUrl) return res;
+    addTrace('👤 TMDB Person', cleanQueryForTMDB(enQuery), false, res.imageUrl ? 'found' : 'not_found');
+    if (res.imageUrl) return withTrace(res);
 
     // Voor muziek: probeer ook alleen de artiest (eerste deel voor " - " of spotifySearchQuery)
     if (musicEvent && spotifySearchQuery) {
       const artistOnly = spotifySearchQuery.split(" - ")[0]?.trim();
       if (artistOnly && artistOnly !== enQuery) {
         const artistRes = await searchTMDB(eventId, artistOnly, "person", undefined, true, artistOnly);
-        if (artistRes.imageUrl) return artistRes;
+        addTrace('👤 TMDB Artist Only', artistOnly, false, artistRes.imageUrl ? 'found' : 'not_found');
+        if (artistRes.imageUrl) return withTrace(artistRes);
       }
     }
 
     // Fallback 1: Commons ZONDER jaartal (voor royalty, politici, etc. die niet in TMDB staan)
     const commonsRes = await commons(enQuery, undefined, false, false);
-    if (commonsRes) return { eventId, ...commonsRes };
+    addTrace('🖼️ Commons (EN)', enQuery, false, commonsRes ? 'found' : 'not_found');
+    if (commonsRes) return withTrace({ eventId, ...commonsRes });
 
     // Fallback 2: EN Wikipedia ZONDER jaartal
     const wikiEnRes = await wiki("en", enQuery, undefined, false);
-    if (wikiEnRes) return { eventId, ...wikiEnRes };
+    addTrace('📖 Wikipedia EN', enQuery, false, wikiEnRes ? 'found' : 'not_found');
+    if (wikiEnRes) return withTrace({ eventId, ...wikiEnRes });
 
     // Fallback 3: NL Wikipedia (voor lokale bekende personen)
     const wikiNlRes = await wiki("nl", query, undefined, false);
-    if (wikiNlRes) return { eventId, ...wikiNlRes };
+    addTrace('📖 Wikipedia NL', query, false, wikiNlRes ? 'found' : 'not_found');
+    if (wikiNlRes) return withTrace({ eventId, ...wikiNlRes });
+    
+    return withTrace({ eventId, imageUrl: null, source: null });
   }
 
   // 3. Producten, Logos, Games, Lifestyle -> Commons (Met SVG support!)
@@ -348,27 +389,33 @@ export async function searchSingleImage(
     // Voor products: gebruik LOSSE matching (strict = false) - eerste woord moet matchen
     // Probeer EERST zonder SVG (echte afbeeldingen hebben voorkeur)
     let res = await commons(enQuery, undefined, false, false);
-    if (res) return { eventId, ...res };
+    addTrace('🖼️ Commons (EN)', enQuery, false, res ? 'found' : 'not_found');
+    if (res) return withTrace({ eventId, ...res });
 
     // Probeer ook Nederlandse query op Commons
     res = await commons(query, undefined, false, false);
-    if (res) return { eventId, ...res };
+    addTrace('🖼️ Commons (NL)', query, false, res ? 'found' : 'not_found');
+    if (res) return withTrace({ eventId, ...res });
 
     res = await wiki("en", enQuery, undefined, false, false);
-    if (res) return { eventId, ...res };
+    addTrace('📖 Wikipedia EN', enQuery, false, res ? 'found' : 'not_found');
+    if (res) return withTrace({ eventId, ...res });
 
     res = await wiki("nl", query, undefined, false, false);
-    if (res) return { eventId, ...res };
+    addTrace('📖 Wikipedia NL', query, false, res ? 'found' : 'not_found');
+    if (res) return withTrace({ eventId, ...res });
 
     // FALLBACK: Als geen echte afbeelding, probeer met SVG
     res = await commons(enQuery, undefined, true, false);
-    if (res) return { eventId, ...res };
+    addTrace('🖼️ Commons (EN) +SVG', enQuery, false, res ? 'found' : 'not_found');
+    if (res) return withTrace({ eventId, ...res });
 
     res = await wiki("en", enQuery, undefined, true, false);
-    if (res) return { eventId, ...res };
+    addTrace('📖 Wikipedia EN +SVG', enQuery, false, res ? 'found' : 'not_found');
+    if (res) return withTrace({ eventId, ...res });
 
     // Geen resultaat gevonden voor game/product
-    return { eventId, imageUrl: null, source: null };
+    return withTrace({ eventId, imageUrl: null, source: null });
   }
 
   // 4. Events & Locaties & Overig
@@ -378,59 +425,78 @@ export async function searchSingleImage(
 
   if (isLocal) {
     const res = await nationaal(query, year);
-    if (res) return { eventId, ...res };
+    addTrace('🏛️ Nationaal Archief', query, !!year, res ? 'found' : 'not_found');
+    if (res) return withTrace({ eventId, ...res });
   }
 
   // Voor LOKALE events: zoek EERST met Nederlandse query op Commons/Wiki
   // Dit voorkomt dat "Bijlmer disaster memorial, Jerusalem" wordt gevonden ipv "Bijlmerramp"
   if (isLocal) {
     // Fase 1: NL query met jaar
-    const nlPromises = [
-      commons(query, year), // NL query op Commons EERST
-      wiki("nl", query, year), // NL Wikipedia
-      commons(enQuery, year), // EN query als backup
-      wiki("en", enQuery, year),
-    ];
-
-    const nlResults = await Promise.allSettled(nlPromises);
-    for (const result of nlResults) {
-      if (result.status === "fulfilled" && result.value) return { eventId, ...result.value };
-    }
+    let res = await commons(query, year);
+    addTrace('🖼️ Commons (NL)', query, true, res ? 'found' : 'not_found');
+    if (res) return withTrace({ eventId, ...res });
+    
+    res = await wiki("nl", query, year);
+    addTrace('📖 Wikipedia NL', query, true, res ? 'found' : 'not_found');
+    if (res) return withTrace({ eventId, ...res });
+    
+    res = await commons(enQuery, year);
+    addTrace('🖼️ Commons (EN)', enQuery, true, res ? 'found' : 'not_found');
+    if (res) return withTrace({ eventId, ...res });
+    
+    res = await wiki("en", enQuery, year);
+    addTrace('📖 Wikipedia EN', enQuery, true, res ? 'found' : 'not_found');
+    if (res) return withTrace({ eventId, ...res });
 
     // Fase 2: NL query zonder jaar
-    const nlLoosePromises = [
-      commons(query, undefined),
-      wiki("nl", query, undefined),
-      commons(enQuery, undefined),
-      wiki("en", enQuery, undefined),
-    ];
+    res = await commons(query, undefined);
+    addTrace('🖼️ Commons (NL)', query, false, res ? 'found' : 'not_found');
+    if (res) return withTrace({ eventId, ...res });
+    
+    res = await wiki("nl", query, undefined);
+    addTrace('📖 Wikipedia NL', query, false, res ? 'found' : 'not_found');
+    if (res) return withTrace({ eventId, ...res });
+    
+    res = await commons(enQuery, undefined);
+    addTrace('🖼️ Commons (EN)', enQuery, false, res ? 'found' : 'not_found');
+    if (res) return withTrace({ eventId, ...res });
+    
+    res = await wiki("en", enQuery, undefined);
+    addTrace('📖 Wikipedia EN', enQuery, false, res ? 'found' : 'not_found');
+    if (res) return withTrace({ eventId, ...res });
 
-    const nlLooseResults = await Promise.allSettled(nlLoosePromises);
-    for (const result of nlLooseResults) {
-      if (result.status === "fulfilled" && result.value) return { eventId, ...result.value };
-    }
-
-    return { eventId, imageUrl: null, source: null };
+    return withTrace({ eventId, imageUrl: null, source: null });
   }
 
   // Standaard volgorde voor INTERNATIONALE events: EN query eerst (beste resultaten)
   // Probeer EERST met jaartal
-  const wikiPromises = [commons(enQuery, year), wiki("en", enQuery, year), wiki("nl", query, year)];
-
-  const results = await Promise.allSettled(wikiPromises);
-  for (const result of results) {
-    if (result.status === "fulfilled" && result.value) return { eventId, ...result.value };
-  }
+  let res = await commons(enQuery, year);
+  addTrace('🖼️ Commons (EN)', enQuery, true, res ? 'found' : 'not_found');
+  if (res) return withTrace({ eventId, ...res });
+  
+  res = await wiki("en", enQuery, year);
+  addTrace('📖 Wikipedia EN', enQuery, true, res ? 'found' : 'not_found');
+  if (res) return withTrace({ eventId, ...res });
+  
+  res = await wiki("nl", query, year);
+  addTrace('📖 Wikipedia NL', query, true, res ? 'found' : 'not_found');
+  if (res) return withTrace({ eventId, ...res });
 
   // FALLBACK: Probeer Commons en Wiki ZONDER jaartal (veel events hebben geen jaar in de titel)
-  const loosePromises = [commons(enQuery, undefined), wiki("en", enQuery, undefined), wiki("nl", query, undefined)];
+  res = await commons(enQuery, undefined);
+  addTrace('🖼️ Commons (EN)', enQuery, false, res ? 'found' : 'not_found');
+  if (res) return withTrace({ eventId, ...res });
+  
+  res = await wiki("en", enQuery, undefined);
+  addTrace('📖 Wikipedia EN', enQuery, false, res ? 'found' : 'not_found');
+  if (res) return withTrace({ eventId, ...res });
+  
+  res = await wiki("nl", query, undefined);
+  addTrace('📖 Wikipedia NL', query, false, res ? 'found' : 'not_found');
+  if (res) return withTrace({ eventId, ...res });
 
-  const looseResults = await Promise.allSettled(loosePromises);
-  for (const result of looseResults) {
-    if (result.status === "fulfilled" && result.value) return { eventId, ...result.value };
-  }
-
-  return { eventId, imageUrl: null, source: null };
+  return withTrace({ eventId, imageUrl: null, source: null });
 }
 
 export async function searchImagesClientSide(queries: SearchQuery[]): Promise<ImageResult[]> {

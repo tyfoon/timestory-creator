@@ -6,7 +6,7 @@ import { TimelineScrubberBottom } from '@/components/TimelineScrubberBottom';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { FormData } from '@/types/form';
-import { TimelineEvent, FamousBirthday } from '@/types/timeline';
+import { TimelineEvent, FamousBirthday, SearchTraceEntry } from '@/types/timeline';
 import { generateTimelineStreaming } from '@/lib/api/timeline';
 import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { generateTimelinePdf } from '@/lib/pdfGenerator';
@@ -75,15 +75,16 @@ const ResultPage = () => {
   const receivedEventsRef = useRef<TimelineEvent[]>([]);
   
   // Client-side image search with concurrency control
-  const handleImageFound = useCallback((eventId: string, imageUrl: string, source: string | null) => {
+  const handleImageFound = useCallback((eventId: string, imageUrl: string, source: string | null, searchTrace?: SearchTraceEntry[]) => {
     // Keep the stream buffer in sync, otherwise subsequent onEvent renders can overwrite images.
     receivedEventsRef.current = receivedEventsRef.current.map(event => {
       if (event.id !== eventId) return event;
       return {
         ...event,
-        imageUrl,
+        imageUrl: imageUrl || undefined,
         source: source || undefined,
-        imageStatus: 'found' as const,
+        imageStatus: imageUrl ? 'found' as const : 'none' as const,
+        searchTrace, // Store the search trace for debugging
       };
     });
 
@@ -92,9 +93,10 @@ const ResultPage = () => {
         if (event.id !== eventId) return event;
         return {
           ...event,
-          imageUrl,
+          imageUrl: imageUrl || undefined,
           source: source || undefined,
-          imageStatus: 'found' as const,
+          imageStatus: imageUrl ? 'found' as const : 'none' as const,
+          searchTrace, // Store the search trace for debugging
         };
       });
 
