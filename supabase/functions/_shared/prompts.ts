@@ -284,7 +284,10 @@ export function getTimelineTool() {
                 eventScope: { type: "string", enum: ["birthdate", "birthmonth", "birthyear", "period"] },
                 isCelebrityBirthday: { type: "boolean" },
                 isMovie: { type: "boolean", description: "True ONLY for cinema FILMS (not TV series)" },
-                isTV: { type: "boolean", description: "True ONLY for TV SERIES/SHOWS (Dallas, Beverly Hills 90210, Swiebertje, etc)" },
+                isTV: {
+                  type: "boolean",
+                  description: "True ONLY for TV SERIES/SHOWS (Dallas, Beverly Hills 90210, Swiebertje, etc)",
+                },
                 spotifySearchQuery: { type: "string" },
                 movieSearchQuery: { type: "string" },
               },
