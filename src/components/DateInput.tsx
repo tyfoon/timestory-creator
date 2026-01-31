@@ -19,9 +19,6 @@ export const DateInput = ({ label, value, onChange, error }: DateInputProps) => 
   const monthRef = useRef<HTMLInputElement>(null);
   const yearRef = useRef<HTMLInputElement>(null);
 
-  // Get month names for display
-  const months = t('months') as readonly string[];
-
   const handleDayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawVal = e.target.value;
     const val = parseInt(rawVal) || 0;
@@ -61,9 +58,6 @@ export const DateInput = ({ label, value, onChange, error }: DateInputProps) => 
     }
   };
 
-  // Get month name for display in input
-  const monthName = value.month >= 1 && value.month <= 12 ? months[value.month - 1] : '';
-
   return (
     <div className="space-y-2">
       <Label className="text-sm font-medium text-foreground">{label}</Label>
@@ -83,9 +77,8 @@ export const DateInput = ({ label, value, onChange, error }: DateInputProps) => 
           />
         </div>
 
-        {/* Month input - shows month name when valid */}
-        <div className="relative">
-          {/* Hidden numeric input for actual value */}
+        {/* Month input */}
+        <div>
           <Input
             ref={monthRef}
             type="number"
@@ -95,17 +88,8 @@ export const DateInput = ({ label, value, onChange, error }: DateInputProps) => 
             onChange={handleMonthChange}
             min={1}
             max={12}
-            className={`bg-card text-center text-lg font-medium ${monthName ? 'text-transparent caret-foreground' : ''}`}
+            className="bg-card text-center text-lg font-medium"
           />
-          {/* Overlay showing month name */}
-          {monthName && (
-            <div 
-              className="absolute inset-0 flex items-center justify-center pointer-events-none text-lg font-medium text-foreground"
-              aria-hidden="true"
-            >
-              {monthName}
-            </div>
-          )}
         </div>
 
         {/* Year input */}
