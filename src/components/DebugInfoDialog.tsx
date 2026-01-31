@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Bug, Music, Film, Search, Database, ExternalLink, Image, Filter, BarChart3, Tag, Clock, Star, User, Tv, Disc } from 'lucide-react';
+import { Bug, Music, Film, Search, Database, ExternalLink, Image, Filter, Clock, Star, User, Tv, Disc, CheckCircle2, XCircle, Timer } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { TimelineEvent } from '@/types/timeline';
+import { TimelineEvent, SearchTraceEntry } from '@/types/timeline';
 
 interface DebugInfoDialogProps {
   events: TimelineEvent[];
@@ -362,6 +362,56 @@ export function DebugInfoDialog({ events }: DebugInfoDialogProps) {
                       )}
                     </div>
                   </div>
+
+                  {/* NEW: Detailed Search Trace */}
+                  {event.searchTrace && event.searchTrace.length > 0 && (
+                    <div className="flex items-start gap-2 border-t pt-2 mt-2">
+                      <Timer className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-muted-foreground font-medium">Zoeklogboek:</span>
+                        <div className="mt-1.5 space-y-1">
+                          {event.searchTrace.map((trace, i) => (
+                            <div 
+                              key={i} 
+                              className={`flex items-start gap-2 text-[11px] px-2 py-1 rounded ${
+                                trace.result === 'found' 
+                                  ? 'bg-emerald-500/10 border border-emerald-500/30' 
+                                  : 'bg-muted/50'
+                              }`}
+                            >
+                              <span className="shrink-0 mt-0.5">
+                                {trace.result === 'found' ? (
+                                  <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                                ) : trace.result === 'error' ? (
+                                  <XCircle className="h-3 w-3 text-red-500" />
+                                ) : (
+                                  <XCircle className="h-3 w-3 text-muted-foreground/50" />
+                                )}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className={`font-medium ${trace.result === 'found' ? 'text-emerald-700 dark:text-emerald-300' : 'text-muted-foreground'}`}>
+                                    {trace.source}
+                                  </span>
+                                  {trace.withYear && (
+                                    <span className="px-1 py-0.5 rounded bg-blue-500/20 text-blue-700 dark:text-blue-300 text-[9px]">
+                                      +jaar
+                                    </span>
+                                  )}
+                                  <span className="text-muted-foreground/70 text-[9px]">
+                                    {trace.timestamp}ms
+                                  </span>
+                                </div>
+                                <p className="font-mono text-[10px] text-muted-foreground truncate mt-0.5">
+                                  "{trace.query}"
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

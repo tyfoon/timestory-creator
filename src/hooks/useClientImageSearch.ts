@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { searchSingleImage, ImageResult } from '@/lib/api/wikiImageSearch';
+import { searchSingleImage, ImageResult, SearchTraceEntry } from '@/lib/api/wikiImageSearch';
 import { TimelineEvent } from '@/types/timeline';
 
 interface UseClientImageSearchOptions {
   maxConcurrent?: number;
-  onImageFound?: (eventId: string, imageUrl: string, source: string | null) => void;
+  onImageFound?: (eventId: string, imageUrl: string, source: string | null, searchTrace?: SearchTraceEntry[]) => void;
 }
 
 // Check if this is the "Welcome to the world" / birth announcement event
@@ -86,12 +86,13 @@ export function useClientImageSearch(options: UseClientImageSearchOptions = {}) 
           .then((result: ImageResult) => {
             setSearchedCount(c => c + 1);
             
+            // Always call onImageFound to pass the search trace, even if no image was found
+            if (onImageFoundRef.current) {
+              onImageFoundRef.current(result.eventId, result.imageUrl || '', result.source, result.searchTrace);
+            }
+            
             if (result.imageUrl) {
               setFoundCount(c => c + 1);
-              // Use ref to get latest callback
-              if (onImageFoundRef.current) {
-                onImageFoundRef.current(result.eventId, result.imageUrl, result.source);
-              }
             }
           })
           .catch((err) => {
