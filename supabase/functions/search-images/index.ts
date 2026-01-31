@@ -160,46 +160,44 @@ function titleMatchesQuery(title: string, query: string, strict: boolean = true)
   const normalizedTitle = normalizeText(title);
   const normalizedQuery = normalizeText(query);
 
-  // Extract significant words from query (excluding stop words and years)
   const queryWords = normalizedQuery
     .split(/\s+/)
     .filter((w) => w.length > 2 && !STOP_WORDS.has(w) && !/^\d{4}$/.test(w));
 
   if (queryWords.length === 0) return true;
 
-  // Take the MAIN SUBJECT words (typically first 2-3 important words like "Furby", "Seinfeld", "Google")
-  // These are the KEY identifiers that MUST appear in the result
   const mainSubjectWords = queryWords.slice(0, 3);
 
-  // Count how many main subject words appear in the title
+  // Count matches
   const matchCount = mainSubjectWords.filter((word) => {
-    // For short words (<=4 chars), require exact word boundary match
-    if (word.length <= 4) {
-      const regex = new RegExp(`\\b${word}\\b`, "i");
-      return regex.test(normalizedTitle);
+    // AANPASSING HIERONDER:
+    // Als het woord lang is (>4 letters), sta toe dat het ONDERDEEL is van een ander woord
+    // Dit fixt: "Oliebollen" matcht nu met "Oliebollenkraam"
+    if (word.length > 4) {
+      return normalizedTitle.includes(word);
     }
-    // For longer words, substring match is OK
-    return normalizedTitle.includes(word);
+    // Voor korte woorden (<=4) houden we de strikte grens om false positives te voorkomen (bv. "cat" in "category")
+    const regex = new RegExp(`\\b${word}\\b`, "i");
+    return regex.test(normalizedTitle);
   }).length;
 
   if (strict) {
-    // STRICT MODE: The FIRST main subject word (the actual subject like "Furby", "Seinfeld")
-    // MUST appear in the title, plus at least half of remaining words
-    const firstWordMatches =
-      mainSubjectWords.length > 0 &&
-      (mainSubjectWords[0].length <= 4
-        ? new RegExp(`\\b${mainSubjectWords[0]}\\b`, "i").test(normalizedTitle)
-        : normalizedTitle.includes(mainSubjectWords[0]));
+    // STRICT MODE:
+    const firstWord = mainSubjectWords[0];
+    let firstWordMatches = false;
 
-    if (!firstWordMatches) {
-      return false; // Primary subject not found = definitely wrong result
+    if (firstWord.length > 4) {
+      firstWordMatches = normalizedTitle.includes(firstWord);
+    } else {
+      firstWordMatches = new RegExp(`\\b${firstWord}\\b`, "i").test(normalizedTitle);
     }
 
-    // Also require at least 60% of main words to match
+    if (!firstWordMatches) return false;
+
     const threshold = Math.max(1, Math.ceil(mainSubjectWords.length * 0.6));
     return matchCount >= threshold;
   } else {
-    // LENIENT MODE: At least 1 main subject word must match
+    // LENIENT MODE
     return matchCount >= 1;
   }
 }
