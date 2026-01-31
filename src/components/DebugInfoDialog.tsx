@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Bug, Music, Film, Search, Database, ExternalLink, Image, Filter, Clock, Star, User, Tv, Disc, CheckCircle2, XCircle, Timer } from 'lucide-react';
+import { Bug, Music, Film, Search, Database, ExternalLink, Image, Filter, Clock, Star, User, Tv, Disc, CheckCircle2, XCircle, Timer, RefreshCw } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -8,13 +8,16 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { TimelineEvent, SearchTraceEntry } from '@/types/timeline';
 
 interface DebugInfoDialogProps {
   events: TimelineEvent[];
+  onRefreshImages?: () => void;
+  isRefreshing?: boolean;
 }
 
-export function DebugInfoDialog({ events }: DebugInfoDialogProps) {
+export function DebugInfoDialog({ events, onRefreshImages, isRefreshing }: DebugInfoDialogProps) {
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('');
 
@@ -139,14 +142,28 @@ export function DebugInfoDialog({ events }: DebugInfoDialogProps) {
           <Bug className="h-3.5 w-3.5" />
         </button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col" aria-describedby={undefined}>
         <DialogHeader className="shrink-0 pb-2">
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <Bug className="h-4 w-4" />
-            Debug Info
-            <span className="text-muted-foreground font-normal">
-              — {stats.total} events, {stats.withImages} met beeld ({stats.total > 0 ? Math.round((stats.withImages / stats.total) * 100) : 0}%)
-            </span>
+          <DialogTitle className="flex items-center justify-between text-base">
+            <div className="flex items-center gap-2">
+              <Bug className="h-4 w-4" />
+              Debug Info
+              <span className="text-muted-foreground font-normal">
+                — {stats.total} events, {stats.withImages} met beeld ({stats.total > 0 ? Math.round((stats.withImages / stats.total) * 100) : 0}%)
+              </span>
+            </div>
+            {onRefreshImages && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onRefreshImages}
+                disabled={isRefreshing}
+                className="gap-1.5 text-xs h-7"
+              >
+                <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Zoeken...' : 'Herlaad alle afbeeldingen'}
+              </Button>
+            )}
           </DialogTitle>
         </DialogHeader>
 
