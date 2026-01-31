@@ -70,10 +70,28 @@ KIES HET JUISTE 'visualSubjectType':
 8. 'artwork': Voor schilderijen, boekomslagen, albums.
 9. 'culture': Voor rages, muziekstromingen, dansstijlen, mode.
 
-⚠️ BELANGRIJK ONDERSCHEID FILM vs TV:
-- FILM (isMovie: true, visualSubjectType: "movie"): E.T., Titanic, Star Wars, The Matrix
-- TV-SERIE (isTV: true, visualSubjectType: "tv"): Beverly Hills 90210, Dallas, Swiebertje, Friends, The A-Team
-- BIJ TWIJFEL: Was het in de bioscoop? → movie. Was het op TV (wekelijkse afleveringen)? → tv
+⚠️ CRUCIAAL ONDERSCHEID FILM vs TV-SERIE ⚠️
+Dit is de MEEST VOORKOMENDE FOUT! Let goed op:
+
+BIOSCOOPFILM (visualSubjectType: "movie", isMovie: true):
+- E.T., Titanic, Star Wars, The Matrix, Jurassic Park, Jaws, Back to the Future
+- Kenmerk: Draait in bioscoop, is één afgesloten verhaal
+
+TV-SERIE (visualSubjectType: "tv", isTV: true):
+- Beverly Hills 90210, Dallas, Baywatch, Friends, The A-Team, Swiebertje, Knight Rider
+- Kenmerk: Wekelijkse afleveringen op televisie, meerdere seizoenen
+
+VEELGEMAAKTE FOUTEN - DIT ZIJN TV-SERIES, GEEN FILMS:
+- Baywatch → TV-SERIE (isTV: true) ✓
+- Beverly Hills 90210 → TV-SERIE (isTV: true) ✓  
+- Dallas → TV-SERIE (isTV: true) ✓
+- The A-Team → TV-SERIE (isTV: true) ✓
+- Knight Rider → TV-SERIE (isTV: true) ✓
+- Friends → TV-SERIE (isTV: true) ✓
+- Seinfeld → TV-SERIE (isTV: true) ✓
+- Miami Vice → TV-SERIE (isTV: true) ✓
+- Dynasty → TV-SERIE (isTV: true) ✓
+- Melrose Place → TV-SERIE (isTV: true) ✓
 
 ⚠️ KRITISCH - TWEE APARTE ZOEKOPDRACHTEN IN VERSCHILLENDE TALEN! ⚠️
 
@@ -173,9 +191,11 @@ ${VISUAL_DIRECTOR_INSTRUCTIONS}
 KRITISCH - OUTPUT FORMAAT (NDJSON):
 Stuur ELKE gebeurtenis als een apart JSON-object op een NIEUWE regel.
 
-FORMAT PER REGEL (Let op 'visualSubjectType'!):
+FORMAT PER REGEL (Let op 'visualSubjectType' en isTV/isMovie vlaggen!):
 {"type":"event","data":{"id":"evt_1","date":"1980-05-22","year":1980,"title":"Pac-Man","description":"...","category":"entertainment","visualSubjectType":"logo","imageSearchQuery":"Pac-Man","imageSearchQueryEn":"Pac-Man","importance":"high","eventScope":"period"}}
 {"type":"event","data":{"id":"evt_2","date":"1982","year":1982,"title":"Thriller","description":"...","category":"music","visualSubjectType":"artwork","imageSearchQuery":"Thriller Michael Jackson","imageSearchQueryEn":"Thriller Michael Jackson","importance":"high","eventScope":"period","spotifySearchQuery":"Michael Jackson - Thriller"}}
+{"type":"event","data":{"id":"evt_3","date":"1990","year":1990,"title":"Beverly Hills 90210","description":"...","category":"entertainment","visualSubjectType":"tv","isTV":true,"imageSearchQuery":"Beverly Hills 90210","imageSearchQueryEn":"Beverly Hills 90210","importance":"high","eventScope":"period"}}
+{"type":"event","data":{"id":"evt_4","date":"1982","year":1982,"title":"E.T.","description":"...","category":"entertainment","visualSubjectType":"movie","isMovie":true,"imageSearchQuery":"E.T.","imageSearchQueryEn":"E.T. the Extra-Terrestrial","importance":"high","eventScope":"period","movieSearchQuery":"E.T. trailer 1982"}}
 
 NA ALLE EVENTS:
 {"type":"summary","data":"Samenvatting..."}
@@ -184,8 +204,10 @@ NA ALLE EVENTS:
 REGELS:
 1. GEEN markdown.
 2. Genereer ${eventCount} events.
-3. Vul 'visualSubjectType' ALTIJD in.
-4. Vul 'spotifySearchQuery' / 'movieSearchQuery' in waar relevant.`;
+3. Vul 'visualSubjectType' ALTIJD in. KIES 'tv' voor TV-series, 'movie' ALLEEN voor bioscoopfilms!
+4. Zet 'isTV: true' voor ALLE TV-series (Dallas, Baywatch, Beverly Hills 90210, Friends, Seinfeld, etc.)
+5. Zet 'isMovie: true' ALLEEN voor bioscoopfilms (E.T., Titanic, Star Wars, etc.)
+6. Vul 'spotifySearchQuery' / 'movieSearchQuery' in waar relevant.`;
 }
 
 // ... (Houd getSystemPrompt en PERIOD_PROMPTS hetzelfde, maar update getTimelineTool hieronder:)
