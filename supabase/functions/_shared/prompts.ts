@@ -32,6 +32,16 @@ export const EVENT_CATEGORIES = [
 ] as const;
 
 // ... (Houd imports en LANGUAGE_INSTRUCTIONS hetzelfde)
+// =============================================================================
+// NOSTALGIE ENGINE (Voeg dit toe bovenaan, onder de imports)
+// =============================================================================
+const NOSTALGIA_INSTRUCTIONS = `
+RICHTLIJNEN VOOR SFEER & NOSTALGIE:
+1. **Zintuiglijke Details:** Beschrijf niet alleen wat er gebeurde, maar hoe het voelde, rook of klonk. (Bv. het geluid van inbellen, de geur van brommerbenzine).
+2. **De 'Lens' van de Leeftijd:** Bekijk wereldnieuws door de ogen van de gebruiker op die leeftijd.
+3. **Analoge Vertraging:** Benadruk dingen die nu weg zijn: wachten op de bus zonder mobiel, foto's laten ontwikkelen.
+4. **Schrijfstijl:** Gebruik een persoonlijke, licht mijmerende toon.
+`;
 
 // =============================================================================
 // HELPER: VISUAL DIRECTOR INSTRUCTIES
@@ -333,8 +343,11 @@ export const RANGE_PROMPT = (
   targetEvents: number,
   contentFocus: string,
 ) =>
-  `Maak een tijdlijn van ${startYear} tot ${endYear}.
+  `Maak een nostalgische tijdlijn van ${startYear} tot ${endYear}.
 Genereer ${targetEvents} events.
+
+${NOSTALGIA_INSTRUCTIONS}
+
 ${contentFocus}`;
 
 export const FAMOUS_BIRTHDAYS_ADDITION = (day: number, monthName: string, startYear: number, endYear: number) =>
@@ -352,6 +365,11 @@ export const GEOGRAPHIC_FOCUS: Record<string, string> = {
 
 export const INTERESTS_ADDITION = (interests: string) => `\nInteresses: ${interests}.`;
 
-export const CITY_ADDITION = (city: string) => `\nWoonplaats: ${city}.`;
+export const CITY_ADDITION = (city: string) => `
+LOCATIE CONTEXT: **${city}**.
+De gebruiker groeide hier op. Maak de tijdlijn specifiek voor ${city}:
+1. **Lokale Hotspots:** Zoek naar specifieke discotheken, bioscopen, parken of hangplekken in ${city} uit die tijd.
+2. **Lokale Sfeer:** Hoe voelde het om in ${city} te wonen? (Provinciaal vs Stedelijk).
+3. **Events:** Was er een groot lokaal evenement of feest in die jaren?`;
 
 export const CHILDREN_ADDITION = (childrenInfo: string[]) => `\nKinderen: ${childrenInfo.join(", ")}`;
