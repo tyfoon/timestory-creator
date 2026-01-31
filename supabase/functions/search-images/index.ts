@@ -392,9 +392,12 @@ async function searchTMDBPerson(
 }
 
 // ============== TMDB API (movie posters/backdrops) ==============
+// NOTE: isMovieExplicit parameter indicates the AI explicitly flagged this as a movie
+// When true, we ALWAYS search movies first regardless of year (to avoid TV matching for old films)
 async function searchTMDBMovie(
   query: string,
-  year?: number
+  year?: number,
+  isMovieExplicit: boolean = false
 ): Promise<{ imageUrl: string; source: string } | null> {
   const TMDB_API_KEY = Deno.env.get("TMDB_API_KEY");
   if (!TMDB_API_KEY) {
@@ -406,11 +409,14 @@ async function searchTMDBMovie(
     // Clean the query - TMDB works best with just the title
     const cleanedQuery = cleanMovieQueryForTMDB(query);
     
-    console.log(`TMDB: searching for "${cleanedQuery}" (original: "${query}", year: ${year || 'none'})`);
+    console.log(`TMDB: searching for "${cleanedQuery}" (original: "${query}", year: ${year || 'none'}, isMovieExplicit: ${isMovieExplicit})`);
     
-    // STRATEGY: For older content (pre-2000), search TV FIRST since many classic shows 
-    // have modern movie remakes that would incorrectly match (e.g., "The A-Team" 1983 TV vs 2010 movie)
+    // STRATEGY UPDATE:
+    // - If isMovieExplicit=true (AI said it's a movie): ALWAYS search movies first
+    // - If isMovieExplicit=false and year < 2000: TV first (to protect old TV series from movie remakes)
+    // - Otherwise: Movies first
     const isOlderContent = year && year < 2000;
+    const shouldSearchMoviesFirst = isMovieExplicit || !isOlderContent;
     
     // Helper to search movies - NO YEAR in query, only post-filter
     const searchMovies = async (): Promise<{ imageUrl: string; source: string } | null> => {
@@ -522,22 +528,24 @@ async function searchTMDBMovie(
       return null;
     };
     
-    // For older content (pre-2000): TV first, then movies
-    // For modern content: Movies first, then TV
-    if (isOlderContent) {
-      console.log(`TMDB: older content (${year}) - trying TV first`);
-      const tvResult = await searchTV();
-      if (tvResult) return tvResult;
-      
+    // Execute search based on priority
+    if (shouldSearchMoviesFirst) {
+      console.log(`TMDB: ${isMovieExplicit ? 'explicit movie flag' : 'modern content'} - trying movies first`);
       const movieResult = await searchMovies();
       if (movieResult) return movieResult;
+      
+      // Only fall back to TV if NOT explicitly marked as movie
+      if (!isMovieExplicit) {
+        const tvResult = await searchTV();
+        if (tvResult) return tvResult;
+      }
     } else {
-      console.log(`TMDB: modern content - trying movies first`);
-      const movieResult = await searchMovies();
-      if (movieResult) return movieResult;
-      
+      console.log(`TMDB: older content (${year}) without explicit movie flag - trying TV first`);
       const tvResult = await searchTV();
       if (tvResult) return tvResult;
+      
+      const movieResult = await searchMovies();
+      if (movieResult) return movieResult;
     }
     
     console.log("TMDB: no movie or TV results with matching year found");
@@ -746,8 +754,9 @@ async function searchAllSources(
   }
   
   // For movies, try TMDB first as it has the best movie posters/backdrops
+  // Pass isMovie=true to ensure Movie API is prioritized over TV API
   if (isMovie) {
-    const tmdbResult = await searchTMDBMovie(searchQuery, year);
+    const tmdbResult = await searchTMDBMovie(searchQuery, year, true);
     if (tmdbResult) {
       console.log(`Found movie image via TMDB for "${searchQuery}"`);
       return { eventId, imageUrl: tmdbResult.imageUrl, source: tmdbResult.source };
