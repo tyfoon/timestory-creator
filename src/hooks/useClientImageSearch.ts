@@ -64,11 +64,17 @@ export function useClientImageSearch(options: UseClientImageSearchOptions = {}) 
         // Use English query for better international results
         // Pass isCelebrityBirthday, isMovie, and music flags for specialized search
         const isMusic = event.category === 'music' || !!event.spotifySearchQuery;
+        
+        // For movies: use the movieSearchQuery as image search query for consistency
+        // This ensures we search for the same movie we're looking up on YouTube
+        const effectiveSearchQuery = event.movieSearchQuery || event.imageSearchQuery;
+        const effectiveSearchQueryEn = event.movieSearchQuery || event.imageSearchQueryEn;
+        
         searchSingleImage(
           event.id, 
-          event.imageSearchQuery, 
+          effectiveSearchQuery, 
           event.year, 
-          event.imageSearchQueryEn, 
+          effectiveSearchQueryEn, 
           (event.isCelebrityBirthday || event.category === 'music' || event.category === 'celebrity'), 
           event.isMovie, 
           event.category, 
