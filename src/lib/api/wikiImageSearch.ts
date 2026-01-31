@@ -337,7 +337,39 @@ export async function searchSingleImage(
     if (res) return { eventId, ...res };
   }
 
-  // Standaard volgorde voor events: Commons eerst (beste kwaliteit), dan Wiki
+  // Voor LOKALE events: zoek EERST met Nederlandse query op Commons/Wiki
+  // Dit voorkomt dat "Bijlmer disaster memorial, Jerusalem" wordt gevonden ipv "Bijlmerramp"
+  if (isLocal) {
+    // Fase 1: NL query met jaar
+    const nlPromises = [
+      commons(query, year),          // NL query op Commons EERST
+      wiki('nl', query, year),       // NL Wikipedia
+      commons(enQuery, year),        // EN query als backup
+      wiki('en', enQuery, year)
+    ];
+    
+    const nlResults = await Promise.allSettled(nlPromises);
+    for (const result of nlResults) {
+      if (result.status === 'fulfilled' && result.value) return { eventId, ...result.value };
+    }
+    
+    // Fase 2: NL query zonder jaar
+    const nlLoosePromises = [
+      commons(query, undefined),
+      wiki('nl', query, undefined),
+      commons(enQuery, undefined),
+      wiki('en', enQuery, undefined)
+    ];
+    
+    const nlLooseResults = await Promise.allSettled(nlLoosePromises);
+    for (const result of nlLooseResults) {
+      if (result.status === 'fulfilled' && result.value) return { eventId, ...result.value };
+    }
+    
+    return { eventId, imageUrl: null, source: null };
+  }
+
+  // Standaard volgorde voor INTERNATIONALE events: EN query eerst (beste resultaten)
   // Probeer EERST met jaartal
   const wikiPromises = [
     commons(enQuery, year),
