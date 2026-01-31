@@ -80,7 +80,8 @@ export function useClientImageSearch(options: UseClientImageSearchOptions = {}) 
           event.category, 
           event.visualSubjectType,
           isMusic,
-          event.spotifySearchQuery
+          event.spotifySearchQuery,
+          event.isTV
         )
           .then((result: ImageResult) => {
             setSearchedCount(c => c + 1);
