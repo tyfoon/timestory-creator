@@ -90,8 +90,21 @@ serve(async (req) => {
     console.log("[Spotify Auth] Successfully obtained access token");
 
     // Step B: Search for track
+    // CRITICAL: Parse "Artist - Title" format into Spotify field query for accurate results
+    // Without this, "Michael Jackson - Thriller" might return Jay-Z's "Holy Grail" (!)
+    let spotifyQuery = query;
+    if (query.includes(" - ")) {
+      const [artist, ...titleParts] = query.split(" - ");
+      const title = titleParts.join(" - ").trim(); // Handle titles with " - " in them
+      if (artist && title) {
+        // Use Spotify's field filters for precise matching
+        spotifyQuery = `track:"${title}" artist:"${artist.trim()}"`;
+        console.log(`[Spotify Search] Parsed query: "${query}" -> "${spotifyQuery}"`);
+      }
+    }
+
     const searchUrl = new URL("https://api.spotify.com/v1/search");
-    searchUrl.searchParams.set("q", query);
+    searchUrl.searchParams.set("q", spotifyQuery);
     searchUrl.searchParams.set("type", "track");
     // Ask for multiple results so we can pick one that has a preview_url (for autoplay on the client)
     searchUrl.searchParams.set("limit", "10");
