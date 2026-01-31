@@ -61,13 +61,19 @@ NOOIT decade-referenties gebruiken! Zoekmachines begrijpen deze niet:
 
 KIES HET JUISTE 'visualSubjectType':
 1. 'person': Voor artiesten, politici, sporters, beroemdheden. (Zoekt in portret-database)
-2. 'movie': Voor films en TV-series. (Zoekt filmposters)
-3. 'product': Voor gadgets, speelgoed, auto's, consoles, lifestyle items. (Zoekt productfoto's)
-4. 'logo': Voor software, websites, bedrijven, games. (Zoekt logo's/icons)
-5. 'event': Voor oorlogen, rampen, kroningen, protesten. (Zoekt nieuwsfoto's)
-6. 'location': Voor steden, gebouwen.
-7. 'artwork': Voor schilderijen, boekomslagen, albums.
-8. 'culture': Voor rages, muziekstromingen, dansstijlen, mode.
+2. 'movie': ALLEEN voor FILMS (bioscoopfilms). Zet ook 'isMovie: true'. (Zoekt filmposters)
+3. 'tv': ALLEEN voor TV-SERIES/SHOWS (Dallas, Swiebertje, Beverly Hills 90210, etc). Zet ook 'isTV: true'. (Zoekt TV-posters)
+4. 'product': Voor gadgets, speelgoed, auto's, consoles, lifestyle items. (Zoekt productfoto's)
+5. 'logo': Voor software, websites, bedrijven, games. (Zoekt logo's/icons)
+6. 'event': Voor oorlogen, rampen, kroningen, protesten. (Zoekt nieuwsfoto's)
+7. 'location': Voor steden, gebouwen.
+8. 'artwork': Voor schilderijen, boekomslagen, albums.
+9. 'culture': Voor rages, muziekstromingen, dansstijlen, mode.
+
+⚠️ BELANGRIJK ONDERSCHEID FILM vs TV:
+- FILM (isMovie: true, visualSubjectType: "movie"): E.T., Titanic, Star Wars, The Matrix
+- TV-SERIE (isTV: true, visualSubjectType: "tv"): Beverly Hills 90210, Dallas, Swiebertje, Friends, The A-Team
+- BIJ TWIJFEL: Was het in de bioscoop? → movie. Was het op TV (wekelijkse afleveringen)? → tv
 
 ⚠️ KRITISCH - TWEE APARTE ZOEKOPDRACHTEN IN VERSCHILLENDE TALEN! ⚠️
 
@@ -208,9 +214,9 @@ export function getTimelineTool() {
                 category: { type: "string", enum: EVENT_CATEGORIES },
                 visualSubjectType: {
                   type: "string",
-                  enum: ["person", "movie", "product", "logo", "event", "location", "artwork", "culture"],
+                  enum: ["person", "movie", "tv", "product", "logo", "event", "location", "artwork", "culture"],
                   description:
-                    "CRITICAL: The visual category of the subject. Used to select the correct image database.",
+                    "CRITICAL: The visual category. 'movie' = FILMS only, 'tv' = TV SERIES only (Dallas, Beverly Hills 90210, etc).",
                 },
                 imageSearchQuery: { type: "string" },
                 imageSearchQueryEn: {
@@ -220,7 +226,8 @@ export function getTimelineTool() {
                 importance: { type: "string", enum: ["high", "medium", "low"] },
                 eventScope: { type: "string", enum: ["birthdate", "birthmonth", "birthyear", "period"] },
                 isCelebrityBirthday: { type: "boolean" },
-                isMovie: { type: "boolean" },
+                isMovie: { type: "boolean", description: "True ONLY for cinema FILMS (not TV series)" },
+                isTV: { type: "boolean", description: "True ONLY for TV SERIES/SHOWS (Dallas, Beverly Hills 90210, Swiebertje, etc)" },
                 spotifySearchQuery: { type: "string" },
                 movieSearchQuery: { type: "string" },
               },
