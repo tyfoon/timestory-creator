@@ -12,6 +12,7 @@ interface ImageSearchRequest {
     year?: number;
     isCelebrity?: boolean;
     isMovie?: boolean;
+    isTV?: boolean; // NEW: Explicit TV show flag
     isMusic?: boolean;
     spotifySearchQuery?: string;
   }[];
@@ -517,13 +518,15 @@ async function searchTMDBPerson(query: string): Promise<{ imageUrl: string; sour
   }
 }
 
-// ============== TMDB API (movie posters/backdrops) ==============
-// NOTE: isMovieExplicit parameter indicates the AI explicitly flagged this as a movie
-// When true, we ALWAYS search movies first regardless of year (to avoid TV matching for old films)
+// ============== TMDB API (movie posters/backdrops AND TV shows) ==============
+// NOTE: isMovieExplicit=true means AI flagged this as a MOVIE -> search movies only
+// NOTE: isTVExplicit=true means AI flagged this as a TV SHOW -> search TV only
+// When neither is set, use heuristic based on year
 async function searchTMDBMovie(
   query: string,
   year?: number,
   isMovieExplicit: boolean = false,
+  isTVExplicit: boolean = false,
 ): Promise<{ imageUrl: string; source: string } | null> {
   const TMDB_API_KEY = Deno.env.get("TMDB_API_KEY");
   if (!TMDB_API_KEY) {
@@ -536,15 +539,16 @@ async function searchTMDBMovie(
     const cleanedQuery = cleanMovieQueryForTMDB(query);
 
     console.log(
-      `TMDB: searching for "${cleanedQuery}" (original: "${query}", year: ${year || "none"}, isMovieExplicit: ${isMovieExplicit})`,
+      `TMDB: searching for "${cleanedQuery}" (original: "${query}", year: ${year || "none"}, isMovieExplicit: ${isMovieExplicit}, isTVExplicit: ${isTVExplicit})`,
     );
 
-    // STRATEGY UPDATE:
-    // - If isMovieExplicit=true (AI said it's a movie): ALWAYS search movies first
-    // - If isMovieExplicit=false and year < 2000: TV first (to protect old TV series from movie remakes)
+    // STRATEGY:
+    // - If isTVExplicit=true (AI said it's a TV show): ONLY search TV, never movies
+    // - If isMovieExplicit=true (AI said it's a movie): ONLY search movies, never TV
+    // - If neither is set and year < 2000: TV first (to protect old TV series from movie remakes)
     // - Otherwise: Movies first
     const isOlderContent = year && year < 2000;
-    const shouldSearchMoviesFirst = isMovieExplicit || !isOlderContent;
+    const shouldSearchMoviesFirst = isMovieExplicit || (!isTVExplicit && !isOlderContent);
 
     // Helper to search movies - NO YEAR in query, only post-filter
     const searchMovies = async (): Promise<{ imageUrl: string; source: string } | null> => {
@@ -667,7 +671,13 @@ async function searchTMDBMovie(
     };
 
     // Execute search based on priority
-    if (shouldSearchMoviesFirst) {
+    if (isTVExplicit) {
+      // EXPLICIT TV: Only search TV, never movies
+      console.log(`TMDB: explicit TV flag - searching TV ONLY`);
+      const tvResult = await searchTV();
+      if (tvResult) return tvResult;
+      // NO fallback to movies - this is explicitly a TV show
+    } else if (shouldSearchMoviesFirst) {
       console.log(`TMDB: ${isMovieExplicit ? "explicit movie flag" : "modern content"} - trying movies first`);
       const movieResult = await searchMovies();
       if (movieResult) return movieResult;
@@ -678,7 +688,7 @@ async function searchTMDBMovie(
         if (tvResult) return tvResult;
       }
     } else {
-      console.log(`TMDB: older content (${year}) without explicit movie flag - trying TV first`);
+      console.log(`TMDB: older content (${year}) without explicit flags - trying TV first`);
       const tvResult = await searchTV();
       if (tvResult) return tvResult;
 
@@ -904,11 +914,12 @@ async function searchAllSources(
   firecrawlKey: string | undefined,
   isCelebrity: boolean = false,
   isMovie: boolean = false,
+  isTV: boolean = false, // NEW: Explicit TV show flag
   isMusic: boolean = false,
   spotifySearchQuery?: string,
 ): Promise<ImageResult> {
   console.log(
-    `Searching for: "${query}" (${year || "no year"})${isCelebrity ? " [celebrity]" : ""}${isMovie ? " [movie]" : ""}${isMusic ? " [music]" : ""}`,
+    `Searching for: "${query}" (${year || "no year"})${isCelebrity ? " [celebrity]" : ""}${isMovie ? " [movie]" : ""}${isTV ? " [tv]" : ""}${isMusic ? " [music]" : ""}`,
   );
 
   // For music, clean the query (remove "album", "cover", etc.)
@@ -926,10 +937,18 @@ async function searchAllSources(
     }
   }
 
-  // For movies, try TMDB first as it has the best movie posters/backdrops
-  // Pass isMovie=true to ensure Movie API is prioritized over TV API
+  // For TV shows, try TMDB TV API ONLY (no fallback to movies)
+  if (isTV) {
+    const tmdbResult = await searchTMDBMovie(searchQuery, year, false, true); // isMovie=false, isTV=true
+    if (tmdbResult) {
+      console.log(`Found TV show image via TMDB for "${searchQuery}"`);
+      return { eventId, imageUrl: tmdbResult.imageUrl, source: tmdbResult.source };
+    }
+  }
+
+  // For movies, try TMDB Movie API ONLY (no fallback to TV)
   if (isMovie) {
-    const tmdbResult = await searchTMDBMovie(searchQuery, year, true);
+    const tmdbResult = await searchTMDBMovie(searchQuery, year, true, false); // isMovie=true, isTV=false
     if (tmdbResult) {
       console.log(`Found movie image via TMDB for "${searchQuery}"`);
       return { eventId, imageUrl: tmdbResult.imageUrl, source: tmdbResult.source };
@@ -1000,8 +1019,8 @@ serve(async (req) => {
 
     // Process all queries in parallel
     const results = await Promise.all(
-      limitedQueries.map(({ eventId, query, year, isCelebrity, isMovie, isMusic, spotifySearchQuery }) =>
-        searchAllSources(eventId, query, year, FIRECRAWL_API_KEY, isCelebrity, isMovie, isMusic, spotifySearchQuery),
+      limitedQueries.map(({ eventId, query, year, isCelebrity, isMovie, isTV, isMusic, spotifySearchQuery }) =>
+        searchAllSources(eventId, query, year, FIRECRAWL_API_KEY, isCelebrity, isMovie, isTV || false, isMusic, spotifySearchQuery),
       ),
     );
 

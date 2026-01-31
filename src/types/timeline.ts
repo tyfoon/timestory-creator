@@ -20,6 +20,7 @@ export interface TimelineEvent {
   eventScope: 'birthdate' | 'birthmonth' | 'birthyear' | 'period';
   isCelebrityBirthday?: boolean;
   isMovie?: boolean;
+  isTV?: boolean; // NEW: Explicit TV show flag (for series like Swiebertje, Dallas, etc.)
   spotifySearchQuery?: string;
   movieSearchQuery?: string;
   youtubeVideoId?: string;

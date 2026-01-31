@@ -20,6 +20,7 @@ export interface SearchQuery {
   year?: number;
   isCelebrity?: boolean;
   isMovie?: boolean;
+  isTV?: boolean; // NEW: Explicit TV show flag
   isMusic?: boolean;
   spotifySearchQuery?: string;
   category?: string;
@@ -176,8 +177,15 @@ async function searchSpotifyAlbumArt(eventId: string, spotifyQuery: string): Pro
   }
 }
 
-// TMDB Wrapper
-async function searchTMDB(eventId: string, query: string, type: 'person' | 'movie', year?: number, isMusic?: boolean, spotifySearchQuery?: string): Promise<ImageResult> {
+// TMDB Wrapper - now supports both movies and TV shows
+async function searchTMDB(
+  eventId: string, 
+  query: string, 
+  type: 'person' | 'movie' | 'tv', 
+  year?: number, 
+  isMusic?: boolean, 
+  spotifySearchQuery?: string
+): Promise<ImageResult> {
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -192,6 +200,7 @@ async function searchTMDB(eventId: string, query: string, type: 'person' | 'movi
         year, 
         isCelebrity: type === 'person', 
         isMovie: type === 'movie',
+        isTV: type === 'tv', // NEW: Pass TV flag to edge function
         isMusic,
         spotifySearchQuery
       }] }),
@@ -214,7 +223,8 @@ export async function searchSingleImage(
   category?: string,
   visualSubjectType?: string,
   isMusic?: boolean,
-  spotifySearchQuery?: string
+  spotifySearchQuery?: string,
+  isTV?: boolean // NEW: Explicit TV show flag
 ): Promise<ImageResult> {
   let enQuery = queryEn || query;
   let type = visualSubjectType;
@@ -226,6 +236,7 @@ export async function searchSingleImage(
   // BELANGRIJK: entertainment ≠ movie! Games zijn ook entertainment maar moeten naar Commons
   if (!type) {
     if (isCelebrity || musicEvent || category === 'celebrity') type = 'person';
+    else if (isTV) type = 'tv'; // Explicit TV show flag takes precedence
     else if (isMovie) type = 'movie'; // Alleen als expliciet isMovie=true
     else if (category === 'technology' || category === 'science' || category === 'entertainment') type = 'product';
     else type = 'event';
@@ -245,8 +256,17 @@ export async function searchSingleImage(
   }
 
   // ROUTING LOGICA
-  // 1. Films & Series -> TMDB
-  if (type === 'movie') {
+  // 1. TV Shows -> TMDB TV API ONLY (no fallback to movies)
+  if (type === 'tv' || isTV) {
+    console.log(`[Image Router] TV show detected, using TMDB TV API for: "${enQuery}"`);
+    const tvResult = await searchTMDB(eventId, enQuery, 'tv', year);
+    if (tvResult.imageUrl) return tvResult;
+    // Fallback to Wikipedia/Commons for TV shows not in TMDB
+  }
+
+  // 2. Films -> TMDB Movie API ONLY (no fallback to TV)
+  if (type === 'movie' && !isTV) {
+    console.log(`[Image Router] Movie detected, using TMDB Movie API for: "${enQuery}"`);
     return await searchTMDB(eventId, enQuery, 'movie', year);
   }
 
