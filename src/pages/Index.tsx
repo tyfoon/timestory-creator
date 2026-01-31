@@ -70,20 +70,40 @@ const Index = () => {
   const timelineLengthRef = useRef<HTMLDivElement>(null);
   const cityInputRef = useRef<HTMLDivElement>(null);
 
-  const [birthDate, setBirthDate] = useState<BirthDateData>({
-    day: 0,
-    month: 0,
-    year: 0,
-  });
-  const [selectedPeriod, setSelectedPeriod] = useState<PeriodType | null>(null);
-  const [customStartYear, setCustomStartYear] = useState<number>(0);
-  const [customEndYear, setCustomEndYear] = useState<number>(0);
-  const [timelineLength, setTimelineLength] = useState<"short" | "long">("short");
+  // Restore form state from sessionStorage on mount
+  const getInitialState = () => {
+    const saved = sessionStorage.getItem("homepageFormState");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const initialState = getInitialState();
+
+  const [birthDate, setBirthDate] = useState<BirthDateData>(
+    initialState?.birthDate || { day: 0, month: 0, year: 0 }
+  );
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodType | null>(
+    initialState?.selectedPeriod || null
+  );
+  const [customStartYear, setCustomStartYear] = useState<number>(
+    initialState?.customStartYear || 0
+  );
+  const [customEndYear, setCustomEndYear] = useState<number>(
+    initialState?.customEndYear || 0
+  );
+  const [timelineLength, setTimelineLength] = useState<"short" | "long">(
+    initialState?.timelineLength || "short"
+  );
   const [showCustomDialog, setShowCustomDialog] = useState(false);
-  const [optionalData, setOptionalData] = useState<OptionalData>({
-    children: [],
-    focus: "netherlands",
-  });
+  const [optionalData, setOptionalData] = useState<OptionalData>(
+    initialState?.optionalData || { children: [], focus: "netherlands" }
+  );
   const [errors, setErrors] = useState<{
     birthDate?: string;
     period?: string;
@@ -91,6 +111,19 @@ const Index = () => {
   }>({});
   const currentYear = new Date().getFullYear();
   const [bgLoaded, setBgLoaded] = useState(false);
+
+  // Persist form state to sessionStorage whenever it changes
+  useEffect(() => {
+    const formState = {
+      birthDate,
+      selectedPeriod,
+      customStartYear,
+      customEndYear,
+      timelineLength,
+      optionalData,
+    };
+    sessionStorage.setItem("homepageFormState", JSON.stringify(formState));
+  }, [birthDate, selectedPeriod, customStartYear, customEndYear, timelineLength, optionalData]);
 
   // Determine which background to use based on birth year
   const getBackgroundImage = () => {
