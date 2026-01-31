@@ -235,7 +235,7 @@ const Index = () => {
         <img
           src={currentBg}
           alt=""
-          className={`w-full h-full object-cover transition-opacity duration-700 ${bgLoaded ? "opacity-75" : "opacity-0"}`}
+          className={`w-full h-full object-cover transition-opacity duration-700 ${bgLoaded ? "opacity-75" : "opacity-50"}`}
           onLoad={() => setBgLoaded(true)}
           loading="lazy"
         />
