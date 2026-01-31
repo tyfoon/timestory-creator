@@ -251,16 +251,16 @@ const Index = () => {
       {/* Hero Section with Form */}
       <section className="relative flex-1 pt-20 pb-4 px-4 overflow-hidden flex items-center">
         <div className="container mx-auto max-w-lg relative z-10">
-          {/* Header text */}
-          <div className="text-center mb-4">
-            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-ink mb-2 leading-tight drop-shadow-sm">
-              {t("heroTitle") as string}
-            </h1>
-            <p className="text-sm text-foreground/80 font-medium">{t("heroSubtitle") as string}</p>
-          </div>
-
           {/* Form card - solid background with strong contrast */}
           <div className="bg-card rounded-xl shadow-elevated border border-border p-4 sm:p-5 space-y-5">
+            {/* Header text - now inside the card */}
+            <div className="text-center">
+              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-ink mb-2 leading-tight">
+                {t("heroTitle") as string}
+              </h1>
+              <p className="text-sm text-muted-foreground">{t("heroSubtitle") as string}</p>
+            </div>
+
             {/* Step 1: Birthdate */}
             <div>
               <DateInput
