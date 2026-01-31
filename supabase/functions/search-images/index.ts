@@ -882,10 +882,15 @@ function cleanMusicQuery(query: string): string {
   return cleaned.replace(/\s+/g, " ").trim();
 }
 
-// ============== HELPER: Clean movie query for TMDB (remove "film", "movie", "TV", etc.) ==============
+// ============== HELPER: Clean movie query for TMDB (remove "film", "movie", "TV", "trailer", etc.) ==============
 function cleanMovieQueryForTMDB(query: string): string {
   // TMDB works best with just the title - remove disambiguation words
-  const wordsToRemove = ["film", "movie", "tv", "tv show", "television", "serie", "series", "show"];
+  // CRITICAL: "trailer" moet ook weg - AI genereert soms "Home Alone trailer 1990" queries
+  const wordsToRemove = [
+    "film", "movie", "tv", "tv show", "television", "serie", "series", "show",
+    "trailer", "official trailer", "teaser", "clip", "scene", "scenes",
+    "premiere", "release", "lancering", "debut"
+  ];
   let cleaned = query;
   for (const word of wordsToRemove) {
     const regex = new RegExp(`\\b${word}\\b`, "gi");
