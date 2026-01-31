@@ -16,6 +16,7 @@ import { generateTikTokSlides, shareGeneratedFiles, canShareToTikTok } from '@/l
 import { downloadPolaroidCollage } from '@/lib/collageGenerator';
 import { ArrowLeft, Clock, Loader2, AlertCircle, RefreshCw, Cake, Star, Download, Camera, Share2, Check, Image, X, Bug } from 'lucide-react';
 import { DebugInfoDialog } from '@/components/DebugInfoDialog';
+import { PromptViewerDialog } from '@/components/PromptViewerDialog';
 import { useToast } from '@/hooks/use-toast';
 
 // Era-themed background images
@@ -64,6 +65,9 @@ const ResultPage = () => {
   const [selectedForCollage, setSelectedForCollage] = useState<string[]>([]);
   const [isGeneratingCollage, setIsGeneratingCollage] = useState(false);
   const [collageProgress, setCollageProgress] = useState(0);
+  
+  // Track maxEvents for prompt viewer
+  const [currentMaxEvents, setCurrentMaxEvents] = useState<number | undefined>(undefined);
 
   // Track current formData for cache updates
   const formDataRef = useRef<FormData | null>(null);
@@ -201,6 +205,7 @@ const ResultPage = () => {
       }
 
       const maxEvents = storedLength === 'short' ? 20 : undefined;
+      setCurrentMaxEvents(maxEvents);
       loadTimelineStreaming(data, maxEvents);
     } else {
       setError(t('noDataFound') as string);
@@ -541,6 +546,7 @@ const ResultPage = () => {
       // Reset all state
       const storedLength = sessionStorage.getItem('timelineLength') || 'short';
       const maxEvents = storedLength === 'short' ? 20 : undefined;
+      setCurrentMaxEvents(maxEvents);
       resetImageSearch();
       receivedEventsRef.current = [];
       setEvents([]);
@@ -681,7 +687,10 @@ const ResultPage = () => {
                   
                   {/* Debug info button */}
                   {events.length > 0 && !isLoading && (
-                    <DebugInfoDialog events={events} />
+                    <>
+                      <PromptViewerDialog formData={formData} language={language} maxEvents={currentMaxEvents} />
+                      <DebugInfoDialog events={events} />
+                    </>
                   )}
                   
                   {/* Compact refresh button */}
