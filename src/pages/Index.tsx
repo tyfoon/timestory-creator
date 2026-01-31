@@ -4,6 +4,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Header } from "@/components/Header";
 import { DateInput } from "@/components/DateInput";
 import { OptionalInfoForm } from "@/components/OptionalInfoForm";
+import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,6 +68,7 @@ const Index = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const timelineLengthRef = useRef<HTMLDivElement>(null);
+  const cityInputRef = useRef<HTMLDivElement>(null);
 
   const [birthDate, setBirthDate] = useState<BirthDateData>({
     day: 0,
@@ -175,9 +177,9 @@ const Index = () => {
       }
     }
 
-    // Auto-scroll to timeline length section after a short delay
+    // Auto-scroll to city input section after a short delay
     setTimeout(() => {
-      timelineLengthRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      cityInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 100);
   };
 
@@ -293,16 +295,31 @@ const Index = () => {
                   ))}
                 </div>
 
+              </div>
+            )}
+
+            {/* City input - appears after period selection */}
+            {isBirthDateComplete && selectedPeriod && (
+              <div ref={cityInputRef} className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <MapPin className="h-4 w-4 text-accent" />
+                  {t("cityLabel") as string}
+                </Label>
+                <Input
+                  placeholder={t("cityPlaceholder") as string}
+                  value={optionalData.city || ""}
+                  onChange={(e) => setOptionalData({ ...optionalData, city: e.target.value })}
+                  className="bg-card h-9"
+                />
+
                 {/* Adjust button - optional */}
-                {selectedPeriod && (
-                  <button
-                    onClick={handleAdjustClick}
-                    className="w-full flex items-center justify-center gap-2 p-2.5 rounded-lg border border-dashed border-border bg-secondary/20 text-muted-foreground hover:border-primary/50 hover:bg-secondary/40 transition-all text-sm"
-                  >
-                    <Pencil className="h-4 w-4" />
-                    <span>{t("adjustButton") as string}</span>
-                  </button>
-                )}
+                <button
+                  onClick={handleAdjustClick}
+                  className="w-full flex items-center justify-center gap-2 p-2.5 rounded-lg border border-dashed border-border bg-secondary/20 text-muted-foreground hover:border-primary/50 hover:bg-secondary/40 transition-all text-sm"
+                >
+                  <Pencil className="h-4 w-4" />
+                  <span>{t("adjustButton") as string}</span>
+                </button>
               </div>
             )}
 
