@@ -197,13 +197,11 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
   };
 
   const formatDate = () => {
-    if (event.day && event.month) {
-      return `${event.day}-${event.month}-${event.year}`;
-    } else if (event.month) {
-      const monthNames = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
-      return `${monthNames[event.month - 1]} ${event.year}`;
+    const monthNames = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+    if (event.month) {
+      return `${monthNames[event.month - 1]} '${String(event.year).slice(-2)}`;
     }
-    return event.year.toString();
+    return `'${String(event.year).slice(-2)}`;
   };
 
   // Determine image to display
@@ -240,7 +238,7 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
       `}
     >
       {/* Image section - real images or category-based placeholders */}
-      <div className="relative h-64 sm:h-80 lg:h-96 overflow-hidden bg-muted flex-shrink-0">
+      <div className="relative h-72 sm:h-80 lg:h-96 overflow-hidden bg-muted flex-shrink-0">
         {/* YouTube Trailer Player */}
         {isPlayingTrailer && youtubeVideoId ? (
           <>
@@ -340,9 +338,16 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
           </div>
         )}
         
-        {/* Spotify Player positioned bottom-left on image */}
+        {/* Date badge positioned bottom-left on image */}
+        {!isPlayingTrailer && (
+          <div className="absolute bottom-3 left-3 z-10 px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-sm text-white text-sm font-medium font-mono">
+            {formatDate()}
+          </div>
+        )}
+        
+        {/* Spotify Player positioned bottom-right on image */}
         {event.spotifySearchQuery && !isPlayingTrailer && (
-          <div className="absolute bottom-3 left-3 z-10">
+          <div className="absolute bottom-3 right-3 z-10">
             <SpotifyPlayer searchQuery={event.spotifySearchQuery} compact />
           </div>
         )}
@@ -355,18 +360,13 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
 
       {/* Content section - flex grow */}
       <div className="p-4 sm:p-5 flex-1 flex flex-col">
-        {/* Date */}
-        <time className="text-sm font-medium text-accent font-mono mb-2">
-          {formatDate()}
-        </time>
-
         {/* Title */}
-        <h3 className="font-serif text-lg sm:text-xl font-semibold text-foreground mb-3 leading-tight line-clamp-2">
+        <h3 className="font-serif text-lg sm:text-xl font-semibold text-foreground mb-2 leading-tight line-clamp-2">
           {event.title}
         </h3>
 
-        {/* Description - more space */}
-        <p className="text-muted-foreground text-sm sm:text-base leading-relaxed flex-1 line-clamp-4">
+        {/* Description - more space with extra lines */}
+        <p className="text-muted-foreground text-sm sm:text-base leading-relaxed flex-1 line-clamp-5">
           {event.description}
         </p>
 
