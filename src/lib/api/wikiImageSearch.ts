@@ -72,6 +72,46 @@ function stripDecades(query: string): string {
     .trim();
 }
 
+// Strip location info from weather queries for better image matches
+// "Sneeuwpret in Hilversum" -> "Sneeuwpret", "Hittegolf Sittard" -> "Hittegolf"
+function simplifyWeatherQuery(query: string): string {
+  const weatherTerms = [
+    "sneeuwpret", "sneeuwstorm", "sneeuw", "sneeuwval", "sneeuwjacht",
+    "hittegolf", "hitte", "warmterecord",
+    "koudegolf", "koude", "vorst", "ijzel", "ijskoude",
+    "storm", "orkaan", "tornado", "wervelstorm",
+    "overstroming", "watersnood", "hoogwater",
+    "droogte", "heatwave", "snowstorm", "blizzard", "flood",
+    "koudste winter", "warmste zomer", "natste", "droogste"
+  ];
+  
+  const queryLower = query.toLowerCase();
+  
+  // Check if this is a weather-related query
+  for (const term of weatherTerms) {
+    if (queryLower.includes(term)) {
+      // Extract just the weather term(s), strip locations like "in Hilversum", "te Amsterdam"
+      let simplified = query
+        .replace(/\b(in|te|bij|nabij|rond|rondom)\s+[A-Z][a-zA-Z\-]+/gi, "") // "in Hilversum"
+        .replace(/\b[A-Z][a-zA-Z\-]+\s+(in|te)\b/gi, "") // "Hilversum in"
+        .replace(/\b(nederland|holland|belgi[eë]|europa)\b/gi, "") // Countries
+        .replace(/\b\d{4}\b/g, "") // Years
+        .replace(/\s+/g, " ")
+        .trim();
+      
+      // If we stripped too much, return just the weather term
+      if (simplified.length < 5) {
+        return term.charAt(0).toUpperCase() + term.slice(1);
+      }
+      
+      console.log(`[Weather Query] Simplified "${query}" -> "${simplified}"`);
+      return simplified;
+    }
+  }
+  
+  return query; // Not a weather query, return as-is
+}
+
 // Opschonen voor TMDB (haalt jaartallen en haakjes weg)
 // function cleanQueryForTMDB(query: string): string {
 //  return query.replace(/\b\d{4}\b/g, '').replace(/[()]/g, '').trim();
@@ -278,7 +318,13 @@ export async function searchSingleImage(
   isTV?: boolean, // NEW: Explicit TV show flag
 ): Promise<ImageResult> {
   let enQuery = queryEn || query;
+  let nlQuery = query;
   let type = visualSubjectType;
+  
+  // Simplify weather-related queries by stripping location info
+  // "Sneeuwpret in Hilversum" -> "Sneeuwpret" (generic images are easier to find)
+  enQuery = simplifyWeatherQuery(enQuery);
+  nlQuery = simplifyWeatherQuery(nlQuery);
   
   // Search trace for debugging
   const searchTrace: SearchTraceEntry[] = [];
@@ -374,8 +420,8 @@ export async function searchSingleImage(
     if (wikiEnRes) return withTrace({ eventId, ...wikiEnRes });
 
     // Fallback 3: NL Wikipedia (voor lokale bekende personen)
-    const wikiNlRes = await wiki("nl", query, undefined, false);
-    addTrace('📖 Wikipedia NL', query, false, wikiNlRes ? 'found' : 'not_found');
+    const wikiNlRes = await wiki("nl", nlQuery, undefined, false);
+    addTrace('📖 Wikipedia NL', nlQuery, false, wikiNlRes ? 'found' : 'not_found');
     if (wikiNlRes) return withTrace({ eventId, ...wikiNlRes });
     
     return withTrace({ eventId, imageUrl: null, source: null });
@@ -393,16 +439,16 @@ export async function searchSingleImage(
     if (res) return withTrace({ eventId, ...res });
 
     // Probeer ook Nederlandse query op Commons
-    res = await commons(query, undefined, false, false);
-    addTrace('🖼️ Commons (NL)', query, false, res ? 'found' : 'not_found');
+    res = await commons(nlQuery, undefined, false, false);
+    addTrace('🖼️ Commons (NL)', nlQuery, false, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
 
     res = await wiki("en", enQuery, undefined, false, false);
     addTrace('📖 Wikipedia EN', enQuery, false, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
 
-    res = await wiki("nl", query, undefined, false, false);
-    addTrace('📖 Wikipedia NL', query, false, res ? 'found' : 'not_found');
+    res = await wiki("nl", nlQuery, undefined, false, false);
+    addTrace('📖 Wikipedia NL', nlQuery, false, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
 
     // FALLBACK: Als geen echte afbeelding, probeer met SVG
@@ -433,20 +479,20 @@ export async function searchSingleImage(
   if (isLocal) {
     // Probeer Nationaal Archief alleen als het "Lokaal/Politiek" is
     if (category === "local" || category === "politics") {
-      const res = await nationaal(query, year);
-      addTrace('🏛️ Nationaal Archief', query, !!year, res ? 'found' : 'not_found');
+      const res = await nationaal(nlQuery, year);
+      addTrace('🏛️ Nationaal Archief', nlQuery, !!year, res ? 'found' : 'not_found');
       if (res) return withTrace({ eventId, ...res });
     }
 
     // Voor LOKALE/CULTURELE events: zoek EERST met Nederlandse query op Commons/Wiki
     // Dit voorkomt dat "Bijlmer disaster memorial, Jerusalem" wordt gevonden ipv "Bijlmerramp"
     // Fase 1: NL query met jaar
-    let res = await commons(query, year);
-    addTrace('🖼️ Commons (NL)', query, true, res ? 'found' : 'not_found');
+    let res = await commons(nlQuery, year);
+    addTrace('🖼️ Commons (NL)', nlQuery, true, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
     
-    res = await wiki("nl", query, year);
-    addTrace('📖 Wikipedia NL', query, true, res ? 'found' : 'not_found');
+    res = await wiki("nl", nlQuery, year);
+    addTrace('📖 Wikipedia NL', nlQuery, true, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
     
     res = await commons(enQuery, year);
@@ -458,12 +504,12 @@ export async function searchSingleImage(
     if (res) return withTrace({ eventId, ...res });
 
     // Fase 2: NL query zonder jaar
-    res = await commons(query, undefined);
-    addTrace('🖼️ Commons (NL)', query, false, res ? 'found' : 'not_found');
+    res = await commons(nlQuery, undefined);
+    addTrace('🖼️ Commons (NL)', nlQuery, false, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
     
-    res = await wiki("nl", query, undefined);
-    addTrace('📖 Wikipedia NL', query, false, res ? 'found' : 'not_found');
+    res = await wiki("nl", nlQuery, undefined);
+    addTrace('📖 Wikipedia NL', nlQuery, false, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
     
     res = await commons(enQuery, undefined);
@@ -487,8 +533,8 @@ export async function searchSingleImage(
   addTrace('📖 Wikipedia EN', enQuery, true, res ? 'found' : 'not_found');
   if (res) return withTrace({ eventId, ...res });
   
-  res = await wiki("nl", query, year);
-  addTrace('📖 Wikipedia NL', query, true, res ? 'found' : 'not_found');
+  res = await wiki("nl", nlQuery, year);
+  addTrace('📖 Wikipedia NL', nlQuery, true, res ? 'found' : 'not_found');
   if (res) return withTrace({ eventId, ...res });
 
   // FALLBACK: Probeer Commons en Wiki ZONDER jaartal (veel events hebben geen jaar in de titel)
@@ -500,8 +546,8 @@ export async function searchSingleImage(
   addTrace('📖 Wikipedia EN', enQuery, false, res ? 'found' : 'not_found');
   if (res) return withTrace({ eventId, ...res });
   
-  res = await wiki("nl", query, undefined);
-  addTrace('📖 Wikipedia NL', query, false, res ? 'found' : 'not_found');
+  res = await wiki("nl", nlQuery, undefined);
+  addTrace('📖 Wikipedia NL', nlQuery, false, res ? 'found' : 'not_found');
   if (res) return withTrace({ eventId, ...res });
 
   return withTrace({ eventId, imageUrl: null, source: null });
