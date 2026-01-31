@@ -373,7 +373,8 @@ export async function searchSingleImage(
 
   // 4. Events & Locaties & Overig
   // Probeer Nationaal Archief alleen als het "Lokaal/Politiek" is
-  const isLocal = type === "event" && (category === "local" || category === "politics");
+  // NL-prioriteit voor lokale, politieke EN culturele events (bijv. Oliebol, Sinterklaas)
+  const isLocal = type === "event" && (category === "local" || category === "politics" || category === "culture");
 
   if (isLocal) {
     const res = await nationaal(query, year);
