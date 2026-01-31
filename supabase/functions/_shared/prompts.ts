@@ -162,6 +162,41 @@ SPORT EVENTS (category: sports):
   - imageSearchQuery="Italië WK voetbal", imageSearchQueryEn="Italy FIFA World Cup football"
   - imageSearchQuery="Wimbledon tennis finale", imageSearchQueryEn="Wimbledon tennis final"
 
+WEER EVENTS (sneeuw, hitte, storm, etc.):
+⚠️ KRITISCH: Zoek ALTIJD op het weer-fenomeen, NOOIT op de specifieke locatie!
+Wikimedia heeft geen foto's van "Sneeuwpret in Hilversum" of "Hittegolf Sittard".
+Ze HEBBEN wel generieke foto's van "Sneeuwpret", "Hittegolf", "Watersnood", etc.
+
+VERPLICHTE AANPAK:
+- imageSearchQuery = ALLEEN het weer-fenomeen (sneeuwpret, hittegolf, storm, etc.)
+- imageSearchQueryEn = ALLEEN de Engelse vertaling (snowfall, heatwave, storm, etc.)
+- visualSubjectType = "event" (zoekt in nieuwsfoto's)
+
+VOORBEELDEN:
+- Titel "Sneeuwpret op de Anna's Hoeve":
+  imageSearchQuery="Sneeuwpret" ✓ (NIET "Anna's Hoeve", NIET "Sneeuwpret Hilversum")
+  imageSearchQueryEn="Children playing in snow" ✓
+  
+- Titel "Hittegolf in Sittard":
+  imageSearchQuery="Hittegolf" ✓ (NIET "Sittard", NIET "Hittegolf Limburg")
+  imageSearchQueryEn="Heatwave" ✓
+
+- Titel "Koudste winter ooit gemeten":
+  imageSearchQuery="Strenge winter" ✓ (NIET jaartal, NIET locatie)
+  imageSearchQueryEn="Severe winter frost" ✓
+
+- Titel "Watersnood in Limburg":
+  imageSearchQuery="Watersnood overstroming" ✓ (NIET "Limburg")
+  imageSearchQueryEn="Flood disaster" ✓
+
+WEER-TERMEN VERTALING:
+- sneeuwpret → children playing in snow
+- hittegolf → heatwave
+- koude/vorst → frost/cold spell  
+- watersnood → flood
+- storm/orkaan → storm/hurricane
+- droogte → drought
+
 MUZIEK EVENTS (category: music):
 - Gebruik 'artwork' type voor albums, 'person' voor artiesten
 - ALLEEN "Artiest Titel" voor albums - NIETS ANDERS TOEVOEGEN!
