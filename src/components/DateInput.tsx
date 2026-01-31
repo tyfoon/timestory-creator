@@ -20,13 +20,12 @@ export const DateInput = ({ label, value, onChange, error }: DateInputProps) => 
   const yearRef = useRef<HTMLInputElement>(null);
 
   const handleDayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawVal = e.target.value;
+    const rawVal = e.target.value.replace(/\D/g, ''); // Remove non-digits
     const val = parseInt(rawVal) || 0;
-    // Clamp between 0-31
     const day = Math.min(31, Math.max(0, val));
     onChange({ ...value, day });
     
-    // Auto-advance to month if we have a complete 2-digit day (01-31)
+    // Auto-advance to month if we have 2 digits and valid day
     if (rawVal.length >= 2 && day >= 1 && day <= 31) {
       monthRef.current?.focus();
       monthRef.current?.select();
@@ -34,13 +33,12 @@ export const DateInput = ({ label, value, onChange, error }: DateInputProps) => 
   };
 
   const handleMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawVal = e.target.value;
+    const rawVal = e.target.value.replace(/\D/g, ''); // Remove non-digits
     const val = parseInt(rawVal) || 0;
-    // Clamp between 0-12
     const month = Math.min(12, Math.max(0, val));
     onChange({ ...value, month });
     
-    // Auto-advance to year if we have a complete 2-digit month (01-12)
+    // Auto-advance to year if we have 2 digits and valid month
     if (rawVal.length >= 2 && month >= 1 && month <= 12) {
       yearRef.current?.focus();
       yearRef.current?.select();
@@ -48,7 +46,7 @@ export const DateInput = ({ label, value, onChange, error }: DateInputProps) => 
   };
 
   const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawVal = e.target.value;
+    const rawVal = e.target.value.replace(/\D/g, ''); // Remove non-digits
     const val = parseInt(rawVal) || 0;
     onChange({ ...value, year: val });
     
@@ -62,32 +60,32 @@ export const DateInput = ({ label, value, onChange, error }: DateInputProps) => 
     <div className="space-y-2">
       <Label className="text-sm font-medium text-foreground">{label}</Label>
       <div className="grid grid-cols-3 gap-2">
-        {/* Day input */}
+        {/* Day input - use text type to preserve leading zeros for length check */}
         <div>
           <Input
             ref={dayRef}
-            type="number"
+            type="text"
             inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={2}
             placeholder={t('dayLabel') as string}
             value={value.day || ''}
             onChange={handleDayChange}
-            min={1}
-            max={31}
             className="bg-card text-center text-lg font-medium"
           />
         </div>
 
-        {/* Month input */}
+        {/* Month input - use text type to preserve leading zeros for length check */}
         <div>
           <Input
             ref={monthRef}
-            type="number"
+            type="text"
             inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={2}
             placeholder={t('monthLabel') as string}
             value={value.month || ''}
             onChange={handleMonthChange}
-            min={1}
-            max={12}
             className="bg-card text-center text-lg font-medium"
           />
         </div>
@@ -96,13 +94,13 @@ export const DateInput = ({ label, value, onChange, error }: DateInputProps) => 
         <div>
           <Input
             ref={yearRef}
-            type="number"
+            type="text"
             inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={4}
             placeholder={t('yearLabel') as string}
             value={value.year || ''}
             onChange={handleYearChange}
-            min={1900}
-            max={currentYear}
             className="bg-card text-center text-lg font-medium"
           />
         </div>
