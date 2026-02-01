@@ -133,8 +133,10 @@ REGELS VOOR 'imageSearchQuery' (NEDERLANDS):
 - NOOIT jaartallen: "1980", "1990", "2000"
 - NOOIT decennia: "jaren 80", "jaren 90", "jaren 70", "80s", "90s"
 - NOOIT extra context: fabrikanten, merknamen die niet in de titel staan
+- NOOIT type-woorden: "film", "serie", "show", "programma", "album", "single", "boek"
 - type 'person': ALLEEN de naam. "David Bowie" (NIET "David Bowie zanger")
-- type 'movie': ALLEEN de titel. "The A-Team" (NIET "The A-Team serie")
+- type 'movie': ALLEEN de titel. "E.T." (NIET "E.T. film", NIET "E.T. de film")
+- type 'tv': ALLEEN de titel. "Dallas" (NIET "Dallas serie", NIET "Dallas TV")
 - type 'product': ALLEEN productnaam. "Star Wars actiefiguren" (NIET "Star Wars actiefiguren Kenner")
 - UITZONDERING: Voor de originele Sony Walkman uit 1979: "Sony Walkman TPS-L2" (het specifieke model)
 - type 'logo': ALLEEN de naam. "Pac-Man" (NIET "Pac-Man logo", NIET "Pac-Man Namco")
@@ -145,8 +147,10 @@ REGELS VOOR 'imageSearchQueryEn' (ENGELS):
 - NOOIT jaartallen: "1980", "1990", "2000"  
 - NOOIT decennia: "80s", "90s", "1980s", "eighties", "nineties"
 - NOOIT extra context: fabrikanten, merknamen die niet in de titel staan
+- NOOIT type-woorden: "film", "movie", "series", "show", "program", "album", "single", "book"
 - type 'person': ALLEEN de naam. "David Bowie" (NIET "David Bowie singer")
-- type 'movie': ALLEEN de titel. "The A-Team" (NIET "The A-Team series")
+- type 'movie': ALLEEN de titel. "E.T." (NIET "E.T. film", NIET "E.T. the movie")
+- type 'tv': ALLEEN de titel. "Dallas" (NIET "Dallas series", NIET "Dallas TV show")
 - type 'product': ALLEEN productnaam. "Star Wars action figures" (NIET "Star Wars action figures Kenner")
 - UITZONDERING: Voor de originele Sony Walkman uit 1979: "Sony Walkman TPS-L2" (het specifieke model)
 - type 'logo': ALLEEN de naam. "Pac-Man" (NIET "Pac-Man logo", NIET "Pac-Man Namco")
