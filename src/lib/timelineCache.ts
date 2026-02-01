@@ -5,6 +5,8 @@ interface CachedTimeline {
   events: TimelineEvent[];
   summary: string;
   famousBirthdays: FamousBirthday[];
+  storyTitle?: string;
+  storyIntroduction?: string;
   cachedAt: number;
 }
 
@@ -48,7 +50,8 @@ export function cacheTimeline(
   language: string,
   events: TimelineEvent[],
   summary: string,
-  famousBirthdays: FamousBirthday[]
+  famousBirthdays: FamousBirthday[],
+  meta?: { storyTitle?: string; storyIntroduction?: string }
 ): void {
   try {
     const key = getCacheKey(formData, language);
@@ -56,6 +59,8 @@ export function cacheTimeline(
       events,
       summary,
       famousBirthdays,
+      storyTitle: meta?.storyTitle,
+      storyIntroduction: meta?.storyIntroduction,
       cachedAt: Date.now(),
     };
     sessionStorage.setItem(key, JSON.stringify(payload));

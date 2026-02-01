@@ -502,9 +502,10 @@ const TimelineStoryPage = () => {
 
         receivedEventsRef.current = normalizedCachedEvents;
         setEvents(normalizedCachedEvents);
-        
-        // Set story fields if available (from TimelineData type)
-        // Note: These would need to be cached as well
+
+        // Set story fields if available (cached by other pages)
+        setStoryTitle(cached.storyTitle || '');
+        setStoryIntroduction(cached.storyIntroduction || '');
         
         setIsLoading(false);
 
@@ -594,7 +595,10 @@ const TimelineStoryPage = () => {
                 return (a.day || 0) - (b.day || 0);
               });
 
-            cacheTimeline(data, language, sorted, completeData.summary, completeData.famousBirthdays || []);
+            cacheTimeline(data, language, sorted, completeData.summary, completeData.famousBirthdays || [], {
+              storyTitle: completeData.storyTitle,
+              storyIntroduction: completeData.storyIntroduction,
+            });
             return sorted;
           });
 
