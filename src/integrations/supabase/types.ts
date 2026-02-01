@@ -14,7 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      image_blacklist: {
+        Row: {
+          created_at: string
+          event_title: string | null
+          id: string
+          image_url: string
+          search_query: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_title?: string | null
+          id?: string
+          image_url: string
+          search_query?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_title?: string | null
+          id?: string
+          image_url?: string
+          search_query?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

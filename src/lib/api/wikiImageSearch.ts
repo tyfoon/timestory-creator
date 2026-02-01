@@ -3,11 +3,14 @@
  * * SIMPLIFIED "TRAFFIC CONTROLLER" VERSION:
  * - Uses 'visualSubjectType' to strictly route to the correct DB.
  * - Allows SVGs for Logos/Products.
- * - Supports image blacklisting to skip previously rejected images.
+ * - Supports image blacklisting to skip previously rejected images (global DB + local cache).
  */
 
-// Import blacklist checker
-import { getBlacklistedImages } from '@/hooks/useImageBlacklist';
+// Import blacklist checker (uses cached data, initialized on app load)
+import { getBlacklistedImages, initializeBlacklistCache } from '@/hooks/useImageBlacklist';
+
+// Initialize blacklist cache when this module loads
+initializeBlacklistCache();
 
 const THUMB_WIDTH = 960;
 
