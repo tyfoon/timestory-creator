@@ -68,7 +68,7 @@ function isAllowedImageUrl(maybeUrl: string, allowSvg: boolean = false): boolean
     return false;
   }
 }
-// 3. VOEG DEZE NIEUWE FUNCTIE TOE (Voor het strippen van "jaren 80")
+// Strip decades like "jaren 80", "80s", "1980s" from queries
 function stripDecades(query: string): string {
   return query
     .replace(/\b(19|20)\d{2}s?\b/gi, "") // Matches 1980, 1980s
@@ -77,6 +77,80 @@ function stripDecades(query: string): string {
     .replace(/\bdecade\b/gi, "")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+// Strip colors from object searches (e.g., "rode fiets" -> "fiets")
+function stripColors(query: string): string {
+  const colors = [
+    "rood", "rode", "blauw", "blauwe", "groen", "groene", "geel", "gele",
+    "oranje", "paars", "paarse", "roze", "wit", "witte", "zwart", "zwarte",
+    "grijs", "grijze", "bruin", "bruine", "goud", "gouden", "zilver", "zilveren",
+    "red", "blue", "green", "yellow", "orange", "purple", "pink", "white", "black",
+    "grey", "gray", "brown", "gold", "golden", "silver"
+  ];
+  const colorPattern = new RegExp(`\\b(${colors.join("|")})\\b`, "gi");
+  return query.replace(colorPattern, "").replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Normalize search queries based on common patterns that cause poor results.
+ * These rules are based on observed failures:
+ * - Sinterklaas: always search just "sinterklaas" (not "Sinterklaasavond met de familie")
+ * - Perfume/geur: if specific brand fails, fallback to generic "perfume"
+ * - Colors: strip colors from object searches
+ * - Decades: strip "jaren 80" etc.
+ * - Nightclubs: always search "Discotheque" (not specific club names)
+ * - Kerstmis: always search just "kerstmis" (not "Kerstmis met opa en oma")
+ */
+function normalizeSearchQuery(query: string, queryType: 'nl' | 'en' = 'nl'): string {
+  const lowerQuery = query.toLowerCase();
+  
+  // Sinterklaas: always simplify to just "sinterklaas"
+  if (lowerQuery.includes("sinterklaas")) {
+    console.log(`[Query Normalize] Sinterklaas detected: "${query}" -> "Sinterklaas"`);
+    return "Sinterklaas";
+  }
+  
+  // Kerstmis: always simplify to just "kerstmis" (NL) or "christmas" (EN)
+  if (lowerQuery.includes("kerstmis") || lowerQuery.includes("kerst")) {
+    const result = queryType === 'nl' ? "Kerstmis" : "Christmas";
+    console.log(`[Query Normalize] Kerstmis detected: "${query}" -> "${result}"`);
+    return result;
+  }
+  if (lowerQuery.includes("christmas")) {
+    console.log(`[Query Normalize] Christmas detected: "${query}" -> "Christmas"`);
+    return "Christmas";
+  }
+  
+  // Nightclub/discotheek: always use generic "Discotheque"
+  if (lowerQuery.includes("nachtclub") || lowerQuery.includes("discotheek") || 
+      lowerQuery.includes("disco") || lowerQuery.includes("nightclub")) {
+    console.log(`[Query Normalize] Nightclub detected: "${query}" -> "Discotheque"`);
+    return "Discotheque";
+  }
+  
+  // Strip decades from all queries
+  let normalized = stripDecades(query);
+  
+  // Strip colors from object searches (but not from art/culture items)
+  // This helps find "fiets" instead of failing on "rode fiets"
+  normalized = stripColors(normalized);
+  
+  if (normalized !== query) {
+    console.log(`[Query Normalize] Cleaned: "${query}" -> "${normalized}"`);
+  }
+  
+  return normalized || query; // Fallback to original if stripping removed everything
+}
+
+/**
+ * For perfume/fragrance queries that fail, try generic "perfume" as fallback
+ */
+function isPerfumeQuery(query: string): boolean {
+  const lowerQuery = query.toLowerCase();
+  return lowerQuery.includes("parfum") || lowerQuery.includes("geur") || 
+         lowerQuery.includes("perfume") || lowerQuery.includes("fragrance") ||
+         lowerQuery.includes("eau de") || lowerQuery.includes("cologne");
 }
 
 // Strip location info from weather queries for better image matches
@@ -350,6 +424,14 @@ export async function searchSingleImage(
   enQuery = simplifyWeatherQuery(enQuery);
   nlQuery = simplifyWeatherQuery(nlQuery);
   
+  // Apply normalization rules for common problematic patterns
+  // (Sinterklaas, Kerstmis, nightclubs, decades, colors)
+  nlQuery = normalizeSearchQuery(nlQuery, 'nl');
+  enQuery = normalizeSearchQuery(enQuery, 'en');
+  
+  // Track if this is a perfume query for fallback logic
+  const perfumeQuery = isPerfumeQuery(query);
+  
   // Search trace for debugging
   const searchTrace: SearchTraceEntry[] = [];
   const startTime = Date.now();
@@ -483,6 +565,18 @@ export async function searchSingleImage(
     res = await wiki("en", enQuery, undefined, true, false, blacklist);
     addTrace('📖 Wikipedia EN +SVG', enQuery, false, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
+
+    // PARFUM FALLBACK: Als dit een parfum/geur query is en niets gevonden, zoek generiek "perfume"
+    if (perfumeQuery) {
+      console.log(`[Query Normalize] Perfume query failed, trying generic "perfume"`);
+      res = await commons("perfume", undefined, false, false, blacklist);
+      addTrace('🖼️ Commons Perfume Fallback', "perfume", false, res ? 'found' : 'not_found');
+      if (res) return withTrace({ eventId, ...res });
+      
+      res = await wiki("en", "perfume bottle", undefined, false, false, blacklist);
+      addTrace('📖 Wikipedia Perfume Fallback', "perfume bottle", false, res ? 'found' : 'not_found');
+      if (res) return withTrace({ eventId, ...res });
+    }
 
     // Geen resultaat gevonden voor game/product
     return withTrace({ eventId, imageUrl: null, source: null });
