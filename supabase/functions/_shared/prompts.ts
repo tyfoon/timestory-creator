@@ -232,7 +232,7 @@ FORMAT PER REGEL (Let op 'visualSubjectType' en isTV/isMovie vlaggen!):
 
 NA ALLE EVENTS - VERPLICHTE VOLGORDE:
 1. {"type":"storyTitle","data":"[Pakkende titel van max 10 woorden die de essentie van deze periode vangt]"}
-2. {"type":"storyIntroduction","data":"[~200 woorden nostalgische introductietekst - schrijf in tweede persoon (je/jij), beschrijf de sfeer, geuren, geluiden en gevoelens van die tijd. Maak het persoonlijk en emotioneel. Begin met de geboorte/periode en eindig met een blik vooruit.]"}
+2. {"type":"storyIntroduction","data":"[Max 150 woorden nostalgische introductietekst - schrijf in tweede persoon (je/jij), beschrijf de sfeer, geuren, geluiden en gevoelens van die tijd. Maak het persoonlijk en emotioneel.]"}
 3. {"type":"summary","data":"Korte samenvatting..."}
 4. {"type":"famousBirthdays","data":[{"name":"Naam","profession":"Beroep","birthYear":1950,"imageSearchQuery":"Naam"}]}
 
@@ -241,12 +241,12 @@ RICHTLIJNEN VOOR storyTitle:
 - Vang de essentie van de periode (bv. "Van cassettebandje naar cd: jouw jaren tachtig")
 - Mag poëtisch zijn, maar moet herkenbaar blijven
 
-RICHTLIJNEN VOOR storyIntroduction (~200 woorden):
+RICHTLIJNEN VOOR storyIntroduction (max 150 woorden):
 - Schrijf in tweede persoon: "Je werd geboren...", "Je hoorde...", "Je voelde..."
 - Gebruik zintuiglijke details: geuren (brommerbenzine, Sunsilk shampoo), geluiden (piepende modem, rinkelende telefoon)
 - Beschrijf de 'analoge vertraging': wachten op foto's, brieven schrijven, teletekst checken
 - Maak het emotioneel en persoonlijk - dit is GEEN opsomming van feiten
-- Eindig met een blik vooruit of een gevoel van nostalgie
+- Houd het KORT en krachtig - max 150 woorden!
 
 REGELS:
 1. GEEN markdown.
@@ -322,7 +322,7 @@ export function getTimelineTool() {
           storyIntroduction: {
             type: "string",
             description:
-              "~150 woorden nostalgische introductietekst in tweede persoon, met zintuiglijke details en emotie",
+              "Max 150 woorden nostalgische introductietekst in tweede persoon, met zintuiglijke details en emotie",
           },
           famousBirthdays: {
             type: "array",
