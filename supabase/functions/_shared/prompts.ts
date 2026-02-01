@@ -447,3 +447,10 @@ export const GENDER_ADDITION = (gender: 'male' | 'female') => {
   const genderText = gender === 'male' ? 'man' : 'vrouw';
   return `\nDe persoon voor wie deze tijdlijn is, is een ${genderText}. Pas de beschrijvingen subtiel aan zodat ze herkenbaar zijn vanuit dit perspectief.`;
 };
+
+export const ATTITUDE_ADDITION = (attitude: 'conservative' | 'progressive') => {
+  const attitudeText = attitude === 'conservative' 
+    ? 'conservatieve/traditionele' 
+    : 'progressieve/vooruitstrevende';
+  return `\nDe persoon heeft een ${attitudeText} levenshouding. Kies events en beschrijf ze op een manier die resoneert met dit perspectief (zonder politiek te worden).`;
+};

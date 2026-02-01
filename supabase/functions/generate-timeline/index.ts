@@ -15,6 +15,7 @@ import {
   CITY_ADDITION,
   CHILDREN_ADDITION,
   GENDER_ADDITION,
+  ATTITUDE_ADDITION,
 } from "../_shared/prompts.ts";
 
 const corsHeaders = {
@@ -31,6 +32,7 @@ interface TimelineRequest {
     lastName?: string;
     city?: string;
     gender?: 'male' | 'female' | 'none';
+    attitude?: 'conservative' | 'neutral' | 'progressive';
     children: { name: string; birthDate?: { day: number; month: number; year: number } }[];
     partnerName?: string;
     partnerBirthDate?: { day: number; month: number; year: number };
@@ -432,6 +434,10 @@ function buildPrompt(data: TimelineRequest): string {
 
   if (optionalData.gender && optionalData.gender !== 'none') {
     prompt += GENDER_ADDITION(optionalData.gender);
+  }
+
+  if (optionalData.attitude && optionalData.attitude !== 'neutral') {
+    prompt += ATTITUDE_ADDITION(optionalData.attitude);
   }
 
   if (optionalData.city) {

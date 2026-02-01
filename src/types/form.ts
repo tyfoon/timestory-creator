@@ -4,6 +4,8 @@ export type GeographicFocus = 'netherlands' | 'europe' | 'world';
 
 export type Gender = 'male' | 'female' | 'none';
 
+export type Attitude = 'conservative' | 'neutral' | 'progressive';
+
 export type PeriodType = 'birthyear' | 'childhood' | 'puberty' | 'young-adult' | 'custom';
 
 export type BirthDateData = {
@@ -27,6 +29,7 @@ export type OptionalData = {
   lastName?: string;
   city?: string;
   gender: Gender;
+  attitude: Attitude;
   children: ChildData[];
   partnerName?: string;
   partnerBirthDate?: BirthDateData;
