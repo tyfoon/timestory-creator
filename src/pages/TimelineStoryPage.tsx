@@ -680,7 +680,7 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading }: HeroSe
               <StaggeredText
                 text={storyTitle}
                 className={`${theme.fontDisplay} font-black text-foreground leading-[0.9] tracking-tight`}
-                style={{ fontSize: 'clamp(2.5rem, 10vw, 7rem)' }}
+                style={{ fontSize: 'clamp(2rem, 7vw, 4.5rem)' }}
                 as="h1"
                 highlightWords={[0, 2, 4]} // Alternate weight pattern
               />
