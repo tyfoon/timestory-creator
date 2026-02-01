@@ -138,16 +138,20 @@ export const generateTimelineStreaming = async (
               break;
 
             case 'storyTitle':
-              if (parsed.data) {
-                collectedStoryTitle = parsed.data;
-                callbacks.onStoryTitle?.(parsed.data);
+              // Edge function sends: { type: "storyTitle", storyTitle: "..." }
+              if (parsed.storyTitle) {
+                collectedStoryTitle = parsed.storyTitle;
+                callbacks.onStoryTitle?.(parsed.storyTitle);
+                console.log('Received storyTitle:', parsed.storyTitle.substring(0, 50));
               }
               break;
 
             case 'storyIntroduction':
-              if (parsed.data) {
-                collectedStoryIntroduction = parsed.data;
-                callbacks.onStoryIntroduction?.(parsed.data);
+              // Edge function sends: { type: "storyIntroduction", storyIntroduction: "..." }
+              if (parsed.storyIntroduction) {
+                collectedStoryIntroduction = parsed.storyIntroduction;
+                callbacks.onStoryIntroduction?.(parsed.storyIntroduction);
+                console.log('Received storyIntroduction:', parsed.storyIntroduction.substring(0, 50));
               }
               break;
               
