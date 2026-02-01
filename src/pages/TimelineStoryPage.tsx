@@ -357,37 +357,37 @@ const LayoutWhisper = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatte
   const isInView = useInView(ref, { once: true, margin: '-100px' });
   
   return (
-    <div ref={ref} className="relative min-h-[70vh] flex items-end py-16 px-6 sm:px-12 lg:px-24">
-      {/* Large image taking most of the space */}
+    <div ref={ref} className="relative py-24 sm:py-32 lg:py-40 px-6 sm:px-12 lg:px-24">
+      {/* Large image with clear separation */}
       <motion.div
         initial={{ opacity: 0, scale: 1.05 }}
         animate={isInView ? { opacity: 1, scale: 1 } : {}}
         transition={{ duration: 1.2 }}
-        className="absolute inset-8 sm:inset-16 lg:inset-24"
+        className="relative w-full max-w-4xl mx-auto"
       >
         <ImageWithBlacklist 
           src={imageUrl} 
           alt={event.title}
-          className="w-full h-full object-cover rounded-2xl"
+          className="w-full h-auto rounded-2xl"
           event={event}
           onBlacklistImage={onBlacklistImage}
         />
       </motion.div>
       
-      {/* Text whispered in corner */}
+      {/* Text BELOW image - no overlap */}
       <motion.div
-        initial={{ opacity: 0, x: -30 }}
-        animate={isInView ? { opacity: 1, x: 0 } : {}}
+        initial={{ opacity: 0, y: 30 }}
+        animate={isInView ? { opacity: 1, y: 0 } : {}}
         transition={{ delay: 0.6 }}
-        className="relative z-10 max-w-xs bg-background/95 backdrop-blur-sm p-6 rounded-lg shadow-lg space-y-3"
+        className="relative z-10 max-w-2xl mx-auto mt-8 bg-background p-6 sm:p-8 rounded-lg shadow-lg space-y-3 border border-border/50"
       >
         <span className={`${theme.fontMono} text-[10px] uppercase tracking-[0.2em] text-muted-foreground block`}>
           {event.date}
         </span>
-        <h2 className={`${theme.fontDisplay} text-lg sm:text-xl font-bold text-foreground leading-tight`}>
+        <h2 className={`${theme.fontDisplay} text-xl sm:text-2xl font-bold text-foreground leading-tight`}>
           {event.title}
         </h2>
-        <p className={`${theme.fontBody} text-sm text-muted-foreground leading-relaxed font-light`}>
+        <p className={`${theme.fontBody} text-sm sm:text-base text-muted-foreground leading-relaxed font-light`}>
           {event.description}
         </p>
         <MediaButtons 
@@ -400,22 +400,22 @@ const LayoutWhisper = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatte
   );
 };
 
-// Pattern: "THE MAGAZINE" - Drop cap, editorial columns, rotated date
+// Pattern: "THE MAGAZINE" - Drop cap, editorial columns, clear separation
 const LayoutMagazine = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatternProps) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
   
   return (
-    <div ref={ref} className="relative py-16 sm:py-24 lg:py-32 px-6 sm:px-12 lg:px-24">
-      <div className="flex flex-row gap-8 sm:gap-12 lg:gap-20 items-start">
-        {/* Left column: Image with rotated date */}
-        <div className="relative w-2/5 flex-shrink-0">
+    <div ref={ref} className="relative py-24 sm:py-32 lg:py-40 px-6 sm:px-12 lg:px-24">
+      <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-start max-w-6xl mx-auto">
+        {/* Left column: Image */}
+        <div className="relative w-full lg:w-2/5 flex-shrink-0">
           {/* Rotated date along left edge */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={isInView ? { opacity: 1 } : {}}
             transition={{ delay: 0.4 }}
-            className="absolute -left-2 sm:-left-4 top-0 bottom-0 flex items-center"
+            className="hidden lg:flex absolute -left-4 top-0 bottom-0 items-center"
             style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
           >
             <span className={`${theme.fontMono} text-xs uppercase tracking-[0.3em] text-muted-foreground/60 rotate-180`}>
@@ -445,14 +445,19 @@ const LayoutMagazine = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatt
           </motion.div>
         </div>
         
-        {/* Right column: Editorial text */}
-        <div className="flex-1 space-y-6">
+        {/* Right column: Editorial text with solid background */}
+        <div className="flex-1 bg-background p-6 lg:p-8 rounded-lg space-y-6 border border-border/30">
+          {/* Mobile date */}
+          <span className={`lg:hidden ${theme.fontMono} text-xs uppercase tracking-[0.3em] text-muted-foreground block`}>
+            {event.date}
+          </span>
+          
           <motion.h2
             initial={{ opacity: 0, x: -20 }}
             animate={isInView ? { opacity: 1, x: 0 } : {}}
             transition={{ delay: 0.3 }}
             className={`${theme.fontDisplay} font-bold text-foreground leading-tight`}
-            style={{ fontSize: 'clamp(1.5rem, 4vw, 3.5rem)' }}
+            style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)' }}
           >
             {event.title}
           </motion.h2>
@@ -470,15 +475,15 @@ const LayoutMagazine = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatt
   );
 };
 
-// Pattern: "THE OVERLAP" - Text bleeding over image
+// Pattern: "THE OVERLAP" - Text with solid background overlapping image edge
 const LayoutOverlap = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatternProps) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
   
   return (
-    <div ref={ref} className="relative py-16 sm:py-24 lg:py-32 px-6 sm:px-12">
+    <div ref={ref} className="relative py-24 sm:py-32 lg:py-40 px-6 sm:px-12">
       <div className="relative max-w-6xl mx-auto">
-        {/* Image */}
+        {/* Image - positioned to the right */}
         <motion.div
           initial={{ opacity: 0, scale: 1.02 }}
           animate={isInView ? { opacity: 1, scale: 1 } : {}}
@@ -494,14 +499,14 @@ const LayoutOverlap = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatte
           />
         </motion.div>
         
-        {/* Text overlapping from left */}
+        {/* Text card with SOLID background - overlapping from left */}
         <motion.div
           initial={{ opacity: 0, x: -40 }}
           animate={isInView ? { opacity: 1, x: 0 } : {}}
           transition={{ delay: 0.4, duration: 0.8 }}
           className="absolute left-0 top-1/2 -translate-y-1/2 w-full sm:w-2/3 lg:w-1/2 z-10"
         >
-          <div className="bg-background/90 backdrop-blur-md p-6 sm:p-10 lg:p-12 rounded-r-2xl shadow-2xl space-y-4">
+          <div className="bg-background p-6 sm:p-10 lg:p-12 rounded-2xl shadow-2xl space-y-4 border border-border/50">
             <span className={`${theme.fontMono} text-xs uppercase tracking-[0.3em] text-muted-foreground block`}>
               {event.date}
             </span>
@@ -530,86 +535,73 @@ const LayoutOverlap = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatte
   );
 };
 
-// Pattern: "THE SPLIT" - Dramatic half-and-half with huge type
+// Pattern: "THE SPLIT" - Dramatic half-and-half with clear separation
 const LayoutSplit = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatternProps) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
   
   return (
-    <div ref={ref} className="relative min-h-[60vh] flex flex-row">
-      {/* Left half: Image */}
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={isInView ? { opacity: 1, x: 0 } : {}}
-        transition={{ duration: 0.8 }}
-        className="w-1/2 relative overflow-hidden group/img"
-      >
-        <ParallaxImage 
-          src={imageUrl} 
-          alt={event.title}
-          className="absolute inset-0"
-          speed={0.3}
-        />
+    <div ref={ref} className="relative py-24 sm:py-32 lg:py-40 px-6 sm:px-12">
+      <div className="flex flex-col lg:flex-row gap-8 lg:gap-0 max-w-6xl mx-auto">
+        {/* Left half: Image */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={isInView ? { opacity: 1, x: 0 } : {}}
+          transition={{ duration: 0.8 }}
+          className="w-full lg:w-1/2 relative overflow-hidden group/img rounded-lg lg:rounded-r-none"
+        >
+          <div className="aspect-[4/3] lg:aspect-auto lg:h-[500px]">
+            <ImageWithBlacklist 
+              src={imageUrl} 
+              alt={event.title}
+              className="w-full h-full object-cover"
+              event={event}
+              onBlacklistImage={onBlacklistImage}
+            />
+          </div>
+          
+          {/* Year overlay on image */}
+          <div className="absolute bottom-4 right-4 z-10">
+            <span 
+              className={`${theme.fontDisplay} font-black text-white/20`}
+              style={{ fontSize: 'clamp(3rem, 10vw, 8rem)', lineHeight: 0.8 }}
+            >
+              {event.year.toString().slice(-2)}
+            </span>
+          </div>
+        </motion.div>
         
-        {/* Blacklist button - only for real images */}
-        {event.imageUrl && event.imageStatus === 'found' && onBlacklistImage && (
-          <button
-            onClick={async (e) => {
-              e.stopPropagation();
-              if (event.imageUrl) {
-                await addToBlacklist(event.imageUrl, event.title, event.imageSearchQuery);
-                onBlacklistImage(event.id);
-              }
-            }}
-            className="absolute top-2 left-2 z-20 w-7 h-7 rounded-full bg-black/60 hover:bg-destructive/90 text-white/70 hover:text-white flex items-center justify-center transition-all duration-200 opacity-0 group-hover/img:opacity-100 backdrop-blur-sm"
-            title="Foto blacklisten (globaal) en nieuwe zoeken"
-            aria-label="Blacklist afbeelding"
-          >
-            <Ban className="h-3.5 w-3.5" />
-          </button>
-        )}
-        
-        {/* Year bleeding across */}
-        <div className="absolute bottom-4 right-0 translate-x-1/2 z-10 mix-blend-overlay">
-          <span 
-            className={`${theme.fontDisplay} font-black text-background/30`}
-            style={{ fontSize: 'clamp(4rem, 15vw, 12rem)', lineHeight: 0.8 }}
-          >
-            {event.year.toString().slice(-2)}
-          </span>
-        </div>
-      </motion.div>
-      
-      {/* Right half: Content */}
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={isInView ? { opacity: 1, x: 0 } : {}}
-        transition={{ delay: 0.3, duration: 0.8 }}
-        className="w-1/2 flex items-center px-6 sm:px-10 lg:px-16"
-      >
-        <div className="space-y-4 sm:space-y-6">
-          <span className={`${theme.fontMono} text-xs uppercase tracking-[0.2em] text-muted-foreground`}>
-            {event.date}
-          </span>
-          
-          <h2 
-            className={`${theme.fontDisplay} font-bold text-foreground leading-tight`}
-            style={{ fontSize: 'clamp(1.25rem, 3vw, 2.5rem)' }}
-          >
-            {event.title}
-          </h2>
-          
-          <p className={`${theme.fontBody} text-sm sm:text-base text-muted-foreground leading-relaxed font-light`}>
-            {event.description}
-          </p>
-          
-          <MediaButtons 
-            spotifySearchQuery={event.spotifySearchQuery}
-            movieSearchQuery={event.movieSearchQuery}
-            eventTitle={event.title}
-          />
-        </div>
-      </motion.div>
+        {/* Right half: Content with solid background */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={isInView ? { opacity: 1, x: 0 } : {}}
+          transition={{ delay: 0.3, duration: 0.8 }}
+          className="w-full lg:w-1/2 bg-background flex items-center p-6 sm:p-10 lg:p-16 rounded-lg lg:rounded-l-none border border-border/30 lg:border-l-0"
+        >
+          <div className="space-y-4 sm:space-y-6">
+            <span className={`${theme.fontMono} text-xs uppercase tracking-[0.2em] text-muted-foreground`}>
+              {event.date}
+            </span>
+            
+            <h2 
+              className={`${theme.fontDisplay} font-bold text-foreground leading-tight`}
+              style={{ fontSize: 'clamp(1.25rem, 3vw, 2.5rem)' }}
+            >
+              {event.title}
+            </h2>
+            
+            <p className={`${theme.fontBody} text-sm sm:text-base text-muted-foreground leading-relaxed font-light`}>
+              {event.description}
+            </p>
+            
+            <MediaButtons 
+              spotifySearchQuery={event.spotifySearchQuery}
+              movieSearchQuery={event.movieSearchQuery}
+              eventTitle={event.title}
+            />
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 };
