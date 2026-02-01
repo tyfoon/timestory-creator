@@ -26,6 +26,8 @@ import {
   INTERESTS_ADDITION,
   CITY_ADDITION,
   CHILDREN_ADDITION,
+  GENDER_ADDITION,
+  ATTITUDE_ADDITION,
 } from '@/lib/promptConstants';
 
 interface PromptViewerDialogProps {
@@ -49,6 +51,8 @@ const PROMPT_COLORS = {
   interests: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border-yellow-500/30',
   city: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
   children: 'bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/30',
+  gender: 'bg-fuchsia-500/20 text-fuchsia-700 dark:text-fuchsia-300 border-fuchsia-500/30',
+  attitude: 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/30',
 };
 
 interface PromptSection {
@@ -178,7 +182,37 @@ function buildPromptSections(formData: FormData, language: string, maxEvents?: n
     });
   }
 
-  // Geographic focus
+  // City (B1 in backend order)
+  if (optionalData.city) {
+    sections.push({
+      label: '🏙️ User: Woonplaats Context',
+      content: CITY_ADDITION(optionalData.city),
+      colorClass: PROMPT_COLORS.city,
+      source: 'CITY_ADDITION',
+    });
+  }
+
+  // Gender (B2 in backend order)
+  if (optionalData.gender && optionalData.gender !== 'none') {
+    sections.push({
+      label: '👤 User: Geslacht',
+      content: GENDER_ADDITION(optionalData.gender),
+      colorClass: PROMPT_COLORS.gender,
+      source: 'GENDER_ADDITION',
+    });
+  }
+
+  // Attitude (B3 in backend order)
+  if (optionalData.attitude && optionalData.attitude !== 'neutral') {
+    sections.push({
+      label: '🧭 User: Levenshouding',
+      content: ATTITUDE_ADDITION(optionalData.attitude),
+      colorClass: PROMPT_COLORS.attitude,
+      source: 'ATTITUDE_ADDITION',
+    });
+  }
+
+  // Geographic focus (B4 in backend order)
   if (optionalData.focus) {
     const focusText = GEOGRAPHIC_FOCUS[optionalData.focus];
     if (focusText) {
@@ -198,16 +232,6 @@ function buildPromptSections(formData: FormData, language: string, maxEvents?: n
       content: INTERESTS_ADDITION(optionalData.interests),
       colorClass: PROMPT_COLORS.interests,
       source: 'INTERESTS_ADDITION',
-    });
-  }
-
-  // City
-  if (optionalData.city) {
-    sections.push({
-      label: '🏙️ User: Woonplaats Context',
-      content: CITY_ADDITION(optionalData.city),
-      colorClass: PROMPT_COLORS.city,
-      source: 'CITY_ADDITION',
     });
   }
 
@@ -342,9 +366,11 @@ export function PromptViewerDialog({ formData, language, maxEvents }: PromptView
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.visualDirector}`}>Visual</span>
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.format}`}>Format</span>
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.base}`}>Basis</span>
-          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.personalName}`}>Naam</span>
-          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.geographic}`}>Geo</span>
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.city}`}>Stad</span>
+          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.gender}`}>Geslacht</span>
+          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.attitude}`}>Houding</span>
+          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.geographic}`}>Geo</span>
+          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.personalName}`}>Naam</span>
         </div>
 
         {/* Prompt sections */}
