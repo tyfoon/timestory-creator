@@ -161,7 +161,8 @@ const ParallaxImage = ({ src, alt, className = '', speed = 0.5 }: ParallaxImageP
     offset: ['start end', 'end start'],
   });
 
-  const y = useTransform(scrollYProgress, [0, 1], ['0%', `${speed * 30}%`]);
+  // Reduced parallax range to prevent excessive zooming
+  const y = useTransform(scrollYProgress, [0, 1], ['0%', `${speed * 15}%`]);
 
   return (
     <div ref={ref} className={`overflow-hidden ${className}`}>
@@ -169,7 +170,7 @@ const ParallaxImage = ({ src, alt, className = '', speed = 0.5 }: ParallaxImageP
         src={src}
         alt={alt}
         style={{ y }}
-        className="w-full h-full object-cover object-top scale-110"
+        className="w-full h-full object-cover object-top scale-[1.05]"
       />
     </div>
   );
