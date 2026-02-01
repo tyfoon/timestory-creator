@@ -14,11 +14,13 @@ import {
   Cake,
   Loader2,
   Play,
-  X
+  X,
+  Ban
 } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { SpotifyPlayer } from './SpotifyPlayer';
 import { searchYouTube } from '@/lib/api/youtube';
+import { addToBlacklist } from '@/hooks/useImageBlacklist';
 
 // Import category placeholder images
 import placeholderBirthday from '@/assets/placeholders/birthday.jpg';
@@ -79,6 +81,8 @@ interface TimelineCardProps {
   scopeLabel?: string | null;
   /** When false, we don't render an <img> yet to avoid starting network requests for off-screen cards. */
   shouldLoadImage?: boolean;
+  /** Callback when image is blacklisted - triggers re-search */
+  onBlacklistImage?: (eventId: string) => void;
 }
 
 const categoryIcons = {
@@ -130,7 +134,7 @@ const scopeColors = {
   period: 'bg-muted text-muted-foreground',
 };
 
-export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = true }: TimelineCardProps) => {
+export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = true, onBlacklistImage }: TimelineCardProps) => {
   const [imageError, setImageError] = useState(false);
   // Track which URL we've attempted to load to prevent unnecessary resets
   const lastAttemptedUrl = useRef<string | undefined>(undefined);
@@ -289,6 +293,24 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
                 {/* Overlay for placeholders to make them more subtle */}
                 {isPlaceholder && (
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-card/60" />
+                )}
+                
+                {/* Blacklist button - only for real images, not placeholders */}
+                {!isPlaceholder && hasRealImage && onBlacklistImage && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (event.imageUrl) {
+                        addToBlacklist(event.imageUrl);
+                        onBlacklistImage(event.id);
+                      }
+                    }}
+                    className="absolute top-2 left-2 z-20 w-7 h-7 rounded-full bg-black/60 hover:bg-destructive/90 text-white/70 hover:text-white flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 backdrop-blur-sm"
+                    title="Foto blacklisten en nieuwe zoeken"
+                    aria-label="Blacklist afbeelding"
+                  >
+                    <Ban className="h-3.5 w-3.5" />
+                  </button>
                 )}
               </>
             ) : isLoading ? (

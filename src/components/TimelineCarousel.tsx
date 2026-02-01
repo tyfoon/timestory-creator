@@ -17,6 +17,8 @@ interface TimelineCarouselProps {
   selectedForCollage?: string[];
   /** Handler to toggle selection */
   onToggleSelection?: (eventId: string) => void;
+  /** Callback when image is blacklisted - triggers re-search */
+  onBlacklistImage?: (eventId: string) => void;
 }
 
 export const TimelineCarousel = ({ 
@@ -28,6 +30,7 @@ export const TimelineCarousel = ({
   isSelectingMode = false,
   selectedForCollage = [],
   onToggleSelection,
+  onBlacklistImage,
 }: TimelineCarouselProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -311,6 +314,7 @@ export const TimelineCarousel = ({
                 isActive={index === currentEventIndex}
                 scopeLabel={getScopeLabel(event)}
                 shouldLoadImage={event.imageStatus === 'found' || Math.abs(index - currentEventIndex) <= 2}
+                onBlacklistImage={onBlacklistImage}
               />
             </div>
           );

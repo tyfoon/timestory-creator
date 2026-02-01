@@ -112,6 +112,7 @@ const ResultPage = () => {
   const { 
     addToQueue: addImagesToQueue, 
     reset: resetImageSearch,
+    forceResearch,
     isSearching: isLoadingImages,
     searchedCount,
     foundCount 
@@ -119,6 +120,21 @@ const ResultPage = () => {
     maxConcurrent: 3,
     onImageFound: handleImageFound,
   });
+  
+  // Handler for blacklisting an image and triggering re-search
+  const handleBlacklistImage = useCallback((eventId: string) => {
+    const event = events.find(e => e.id === eventId);
+    if (event) {
+      // Reset the event's image status to loading
+      setEvents(prev => prev.map(e => 
+        e.id === eventId 
+          ? { ...e, imageUrl: undefined, imageStatus: 'loading' as const }
+          : e
+      ));
+      // Force a new search for this event
+      forceResearch({ ...event, imageUrl: undefined, imageStatus: 'loading' });
+    }
+  }, [events, forceResearch]);
 
   // Track whether we've already finalized image statuses to prevent flicker
   const hasFinalized = useRef(false);
@@ -786,6 +802,7 @@ const ResultPage = () => {
                   onEventSelect={handleEventSelect}
                   birthDate={formData?.birthDate}
                   isScrubbing={isScrubbing}
+                  onBlacklistImage={handleBlacklistImage}
                 />
               </section>
               
@@ -870,6 +887,7 @@ const ResultPage = () => {
               isSelectingMode={isSelectingMode}
               selectedForCollage={selectedForCollage}
               onToggleSelection={handleToggleCollageSelection}
+              onBlacklistImage={handleBlacklistImage}
             />
           </section>
 

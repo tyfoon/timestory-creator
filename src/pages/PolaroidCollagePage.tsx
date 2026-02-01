@@ -96,12 +96,28 @@ const PolaroidCollagePage = () => {
   const { 
     addToQueue: addImagesToQueue, 
     reset: resetImageSearch,
+    forceResearch,
     isSearching: isLoadingImages,
     foundCount 
   } = useClientImageSearch({
     maxConcurrent: 3,
     onImageFound: handleImageFound,
   });
+  
+  // Handler for blacklisting an image and triggering re-search
+  const handleBlacklistImage = useCallback((eventId: string) => {
+    const event = events.find(e => e.id === eventId);
+    if (event) {
+      // Reset the event's image status to loading
+      setEvents(prev => prev.map(e => 
+        e.id === eventId 
+          ? { ...e, imageUrl: undefined, imageStatus: 'loading' as const }
+          : e
+      ));
+      // Force a new search for this event
+      forceResearch({ ...event, imageUrl: undefined, imageStatus: 'loading' });
+    }
+  }, [events, forceResearch]);
 
   // Mark events without images as 'none' only AFTER a search cycle actually ran.
   // (Otherwise, on first mount `isLoadingImages` is false and we'd incorrectly mark
@@ -648,6 +664,7 @@ const PolaroidCollagePage = () => {
                   isSelectingMode={isSelectingMode}
                   isSelected={selectedForCollage.includes(event.id)}
                   onToggleSelection={() => handleToggleCollageSelection(event.id)}
+                  onBlacklistImage={handleBlacklistImage}
                 />
               ))}
             </div>
