@@ -136,6 +136,29 @@ function normalizeSearchQuery(query: string, queryType: 'nl' | 'en' = 'nl'): str
     return "plastic token coin";
   }
   
+  // Hairstyles: add "hairstyle" suffix for hair-related searches
+  const hairstyleTerms = ["matje", "mullet", "kapsel", "hanenkam", "mohawk", "afro", "paardenstaart", "kuif", "permanent", "coupe"];
+  for (const term of hairstyleTerms) {
+    if (lowerQuery.includes(term)) {
+      // Extract the core hairstyle name and add "hairstyle"
+      let hairstyleName = term;
+      // Map Dutch terms to English for better results
+      const hairstyleMap: Record<string, string> = {
+        "matje": "Mullet",
+        "hanenkam": "Mohawk",
+        "kapsel": "Hairstyle",
+        "paardenstaart": "Ponytail",
+        "kuif": "Pompadour",
+        "permanent": "Perm",
+        "coupe": "Hairstyle"
+      };
+      hairstyleName = hairstyleMap[term] || term.charAt(0).toUpperCase() + term.slice(1);
+      const result = `${hairstyleName} hairstyle`;
+      console.log(`[Query Normalize] Hairstyle detected: "${query}" -> "${result}"`);
+      return result;
+    }
+  }
+  
   // Strip decades from all queries
   let normalized = stripDecades(query);
   
