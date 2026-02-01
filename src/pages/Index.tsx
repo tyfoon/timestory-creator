@@ -102,9 +102,20 @@ const Index = () => {
     initialState?.timelineLength || "short"
   );
   const [showCustomDialog, setShowCustomDialog] = useState(false);
-  const [optionalData, setOptionalData] = useState<OptionalData>(
-    initialState?.optionalData || { children: [], focus: "netherlands" }
-  );
+  
+  // CRITICAL: Merge saved optionalData with defaults to ensure new fields (gender, attitude) are initialized
+  const [optionalData, setOptionalData] = useState<OptionalData>(() => {
+    const defaults: OptionalData = { 
+      children: [], 
+      focus: "netherlands",
+      gender: "none",
+      attitude: "neutral"
+    };
+    if (initialState?.optionalData) {
+      return { ...defaults, ...initialState.optionalData };
+    }
+    return defaults;
+  });
   const [errors, setErrors] = useState<{
     birthDate?: string;
     period?: string;
