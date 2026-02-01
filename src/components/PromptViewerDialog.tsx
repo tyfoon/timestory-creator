@@ -64,6 +64,11 @@ interface PromptSection {
   source: string;
   isCollapsible?: boolean;
   defaultCollapsed?: boolean;
+  /**
+   * When false, the section is shown in the viewer for transparency,
+   * but excluded from the concatenated prompt text and copy-to-clipboard.
+   */
+  includeInFullPrompt?: boolean;
 }
 
 function buildPromptSections(formData: FormData, language: string, maxEvents?: number): PromptSection[] {
@@ -187,20 +192,36 @@ function buildPromptSections(formData: FormData, language: string, maxEvents?: n
   // Gender (B2 in backend order)
   if (optionalData.gender && optionalData.gender !== 'none') {
     sections.push({
-      label: '👤 User: Geslacht',
+      label: '👤 User: Geslacht (GENDER)',
       content: GENDER_ADDITION(optionalData.gender),
       colorClass: PROMPT_COLORS.gender,
       source: 'GENDER_ADDITION',
+    });
+  } else {
+    sections.push({
+      label: '👤 User: Geslacht (GENDER) — geen voorkeur',
+      content: 'Geen extra geslachts-instructie toegevoegd (gender = none).',
+      colorClass: PROMPT_COLORS.gender,
+      source: 'GENDER_ADDITION (overgeslagen)',
+      includeInFullPrompt: false,
     });
   }
 
   // Attitude (B3 in backend order)
   if (optionalData.attitude && optionalData.attitude !== 'neutral') {
     sections.push({
-      label: '🧭 User: Levenshouding',
+      label: '🧭 User: Levenshouding (ATTITUDE)',
       content: ATTITUDE_ADDITION(optionalData.attitude),
       colorClass: PROMPT_COLORS.attitude,
       source: 'ATTITUDE_ADDITION',
+    });
+  } else {
+    sections.push({
+      label: '🧭 User: Levenshouding (ATTITUDE) — neutraal',
+      content: 'Geen extra houding-instructie toegevoegd (attitude = neutral).',
+      colorClass: PROMPT_COLORS.attitude,
+      source: 'ATTITUDE_ADDITION (overgeslagen)',
+      includeInFullPrompt: false,
     });
   }
 
@@ -332,9 +353,10 @@ export function PromptViewerDialog({ formData, language, maxEvents }: PromptView
   // Build full prompt: System sections first, then User sections
   const systemSections = sections.filter(s => s.label.includes('System'));
   const userSections = sections.filter(s => s.label.includes('User'));
-  
-  const fullSystemPrompt = systemSections.map(s => s.content).join('\n\n');
-  const fullUserPrompt = userSections.map(s => s.content).join('\n');
+
+  const includeInFull = (s: PromptSection) => s.includeInFullPrompt !== false;
+  const fullSystemPrompt = systemSections.filter(includeInFull).map(s => s.content).join('\n\n');
+  const fullUserPrompt = userSections.filter(includeInFull).map(s => s.content).join('\n');
 
   const handleCopy = async () => {
     const fullText = `=== SYSTEM PROMPT ===\n${fullSystemPrompt}\n\n=== USER PROMPT ===\n${fullUserPrompt}`;
