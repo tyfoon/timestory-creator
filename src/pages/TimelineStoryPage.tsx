@@ -7,9 +7,10 @@ import { generateTimelineStreaming } from '@/lib/api/timeline';
 import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents } from '@/lib/timelineCache';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ArrowLeft, ChevronDown, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Loader2, AlertCircle, RefreshCw, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { getCacheKey } from '@/lib/timelineCache';
 
 // Placeholder images by category
 import birthdayPlaceholder from '@/assets/placeholders/birthday.jpg';
@@ -156,99 +157,99 @@ const StickyYear = ({ year, theme }: StickyYearProps) => {
 // EVENT LAYOUT PATTERNS
 // =============================================
 
-// Pattern A: Text left, image right - SIDE BY SIDE
+// Pattern A: Text left, image right - ALWAYS SIDE BY SIDE (including mobile)
 const LayoutPatternA = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center py-24 lg:py-32">
-    <Reveal className="space-y-6">
-      <span className={`${theme.fontMono} text-sm uppercase tracking-widest text-muted-foreground`}>
+  <div className="flex flex-row gap-4 sm:gap-8 lg:gap-16 items-center py-12 sm:py-16 lg:py-24">
+    <Reveal className="flex-1 min-w-0 space-y-3 sm:space-y-6">
+      <span className={`${theme.fontMono} text-xs sm:text-sm uppercase tracking-widest text-muted-foreground`}>
         {event.date}
       </span>
-      <h2 className={`${theme.fontDisplay} text-3xl lg:text-5xl font-bold leading-tight text-foreground`}>
+      <h2 className={`${theme.fontDisplay} text-xl sm:text-3xl lg:text-5xl font-bold leading-tight text-foreground`}>
         {event.title}
       </h2>
-      <p className={`${theme.fontBody} text-lg lg:text-xl text-muted-foreground leading-relaxed`}>
+      <p className={`${theme.fontBody} text-sm sm:text-lg lg:text-xl text-muted-foreground leading-relaxed`}>
         {event.description}
       </p>
     </Reveal>
-    <Reveal delay={0.2}>
-      <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
+    <Reveal className="flex-shrink-0 w-28 sm:w-48 lg:w-80" delay={0.2}>
+      <div className="relative aspect-[4/3] rounded-lg sm:rounded-2xl overflow-hidden shadow-xl sm:shadow-2xl">
         <ParallaxImage src={imageUrl} alt={event.title} className="absolute inset-0" speed={0.3} />
       </div>
     </Reveal>
   </div>
 );
 
-// Pattern B: Image left, text right - SIDE BY SIDE (flipped)
+// Pattern B: Image left, text right - ALWAYS SIDE BY SIDE (flipped)
 const LayoutPatternB = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center py-24 lg:py-32">
-    <Reveal className="order-2 lg:order-1">
-      <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
+  <div className="flex flex-row gap-4 sm:gap-8 lg:gap-16 items-center py-12 sm:py-16 lg:py-24">
+    <Reveal className="flex-shrink-0 w-28 sm:w-48 lg:w-80">
+      <div className="relative aspect-[4/3] rounded-lg sm:rounded-2xl overflow-hidden shadow-xl sm:shadow-2xl">
         <ParallaxImage src={imageUrl} alt={event.title} className="absolute inset-0" speed={0.3} />
       </div>
     </Reveal>
-    <Reveal className="order-1 lg:order-2 space-y-6 lg:text-right" delay={0.2}>
-      <span className={`${theme.fontMono} text-sm uppercase tracking-widest text-muted-foreground`}>
+    <Reveal className="flex-1 min-w-0 space-y-3 sm:space-y-6 text-right" delay={0.2}>
+      <span className={`${theme.fontMono} text-xs sm:text-sm uppercase tracking-widest text-muted-foreground`}>
         {event.date}
       </span>
-      <h2 className={`${theme.fontDisplay} text-3xl lg:text-5xl font-bold leading-tight text-foreground`}>
+      <h2 className={`${theme.fontDisplay} text-xl sm:text-3xl lg:text-5xl font-bold leading-tight text-foreground`}>
         {event.title}
       </h2>
-      <p className={`${theme.fontBody} text-lg lg:text-xl text-muted-foreground leading-relaxed`}>
+      <p className={`${theme.fontBody} text-sm sm:text-lg lg:text-xl text-muted-foreground leading-relaxed`}>
         {event.description}
       </p>
     </Reveal>
   </div>
 );
 
-// Pattern C: Portrait image left, text right - SIDE BY SIDE
+// Pattern C: Portrait image left, text right - ALWAYS SIDE BY SIDE
 const LayoutPatternC = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center py-24 lg:py-32">
-    <Reveal className="order-2 lg:order-1">
-      <div className="relative aspect-[3/4] max-w-sm rounded-3xl overflow-hidden shadow-2xl">
+  <div className="flex flex-row gap-4 sm:gap-8 lg:gap-16 items-center py-12 sm:py-16 lg:py-24">
+    <Reveal className="flex-shrink-0 w-24 sm:w-40 lg:w-64">
+      <div className="relative aspect-[3/4] rounded-lg sm:rounded-3xl overflow-hidden shadow-xl sm:shadow-2xl">
         <ParallaxImage src={imageUrl} alt={event.title} className="absolute inset-0" speed={0.4} />
       </div>
     </Reveal>
-    <Reveal className="order-1 lg:order-2 space-y-6 lg:text-right" delay={0.2}>
-      <span className={`${theme.fontMono} text-sm uppercase tracking-widest text-muted-foreground`}>
+    <Reveal className="flex-1 min-w-0 space-y-3 sm:space-y-6 text-right" delay={0.2}>
+      <span className={`${theme.fontMono} text-xs sm:text-sm uppercase tracking-widest text-muted-foreground`}>
         {event.date}
       </span>
-      <h2 className={`${theme.fontDisplay} text-3xl lg:text-5xl font-bold leading-tight text-foreground`}>
+      <h2 className={`${theme.fontDisplay} text-xl sm:text-3xl lg:text-5xl font-bold leading-tight text-foreground`}>
         {event.title}
       </h2>
-      <p className={`${theme.fontBody} text-lg lg:text-xl text-muted-foreground leading-relaxed`}>
+      <p className={`${theme.fontBody} text-sm sm:text-lg lg:text-xl text-muted-foreground leading-relaxed`}>
         {event.description}
       </p>
     </Reveal>
   </div>
 );
 
-// Pattern D: Text left, square image right - SIDE BY SIDE
+// Pattern D: Text left, square image right - ALWAYS SIDE BY SIDE
 const LayoutPatternD = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center py-24 lg:py-32">
-    <Reveal className="space-y-6">
-      <span className={`${theme.fontMono} text-sm uppercase tracking-widest text-muted-foreground`}>
+  <div className="flex flex-row gap-4 sm:gap-8 lg:gap-16 items-center py-12 sm:py-16 lg:py-24">
+    <Reveal className="flex-1 min-w-0 space-y-3 sm:space-y-6">
+      <span className={`${theme.fontMono} text-xs sm:text-sm uppercase tracking-widest text-muted-foreground`}>
         {event.date}
       </span>
-      <h2 className={`${theme.fontDisplay} text-3xl lg:text-5xl font-bold leading-tight text-foreground`}>
+      <h2 className={`${theme.fontDisplay} text-xl sm:text-3xl lg:text-5xl font-bold leading-tight text-foreground`}>
         {event.title}
       </h2>
-      <p className={`${theme.fontBody} text-lg lg:text-xl text-muted-foreground leading-relaxed`}>
+      <p className={`${theme.fontBody} text-sm sm:text-lg lg:text-xl text-muted-foreground leading-relaxed`}>
         {event.description}
       </p>
     </Reveal>
-    <Reveal delay={0.2}>
-      <div className="relative aspect-square max-w-md ml-auto rounded-xl overflow-hidden shadow-2xl">
+    <Reveal className="flex-shrink-0 w-24 sm:w-40 lg:w-64" delay={0.2}>
+      <div className="relative aspect-square rounded-lg sm:rounded-xl overflow-hidden shadow-xl sm:shadow-2xl">
         <ParallaxImage src={imageUrl} alt={event.title} className="absolute inset-0" speed={0.2} />
       </div>
     </Reveal>
   </div>
 );
 
-// Pattern E: Circular image left, text right - SIDE BY SIDE
+// Pattern E: Circular image left, text right - ALWAYS SIDE BY SIDE
 const LayoutPatternE = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center py-24 lg:py-32">
-    <Reveal className="order-2 lg:order-1 flex justify-center lg:justify-start">
-      <div className="relative w-56 h-56 lg:w-72 lg:h-72 rounded-full overflow-hidden shadow-2xl ring-8 ring-background flex-shrink-0">
+  <div className="flex flex-row gap-4 sm:gap-8 lg:gap-16 items-center py-12 sm:py-16 lg:py-24">
+    <Reveal className="flex-shrink-0">
+      <div className="relative w-20 h-20 sm:w-40 sm:h-40 lg:w-56 lg:h-56 rounded-full overflow-hidden shadow-xl sm:shadow-2xl ring-4 sm:ring-8 ring-background">
         <img 
           src={imageUrl} 
           alt={event.title} 
@@ -256,14 +257,14 @@ const LayoutPatternE = ({ event, theme, imageUrl }: { event: TimelineEvent; them
         />
       </div>
     </Reveal>
-    <Reveal className="order-1 lg:order-2 space-y-6 lg:text-right" delay={0.2}>
-      <span className={`${theme.fontMono} text-sm uppercase tracking-widest text-muted-foreground`}>
+    <Reveal className="flex-1 min-w-0 space-y-3 sm:space-y-6 text-right" delay={0.2}>
+      <span className={`${theme.fontMono} text-xs sm:text-sm uppercase tracking-widest text-muted-foreground`}>
         {event.date}
       </span>
-      <h2 className={`${theme.fontDisplay} text-3xl lg:text-4xl font-bold leading-tight text-foreground`}>
+      <h2 className={`${theme.fontDisplay} text-xl sm:text-3xl lg:text-4xl font-bold leading-tight text-foreground`}>
         {event.title}
       </h2>
-      <p className={`${theme.fontBody} text-lg text-muted-foreground leading-relaxed`}>
+      <p className={`${theme.fontBody} text-sm sm:text-lg text-muted-foreground leading-relaxed`}>
         {event.description}
       </p>
     </Reveal>
@@ -410,7 +411,11 @@ const TimelineStoryPage = () => {
     });
   }, [language]);
 
-  const { addToQueue: addImagesToQueue, reset: resetImageSearch } = useClientImageSearch({
+  const { 
+    addToQueue: addImagesToQueue, 
+    reset: resetImageSearch,
+    isSearching: isLoadingImages,
+  } = useClientImageSearch({
     maxConcurrent: 3,
     onImageFound: handleImageFound,
   });
@@ -586,6 +591,36 @@ const TimelineStoryPage = () => {
     }
   };
 
+  const handleClearCache = () => {
+    if (formData) {
+      const key = getCacheKey(formData, language);
+      sessionStorage.removeItem(key);
+      // Reset all state
+      const storedLength = sessionStorage.getItem('timelineLength') || 'short';
+      const maxEvents = storedLength === 'short' ? 20 : undefined;
+      setCurrentMaxEvents(maxEvents);
+      resetImageSearch();
+      receivedEventsRef.current = [];
+      setEvents([]);
+      setStoryTitle('');
+      setStoryIntroduction('');
+      setIsLoading(true);
+      loadTimelineStreaming(formData, maxEvents);
+    }
+  };
+
+  const getTitle = () => {
+    if (!formData) return t('yourTimeJourney') as string;
+    
+    if (formData.type === 'birthdate' && formData.birthDate) {
+      const { day, month, year } = formData.birthDate;
+      return `${day} - ${month} - ${year}`;
+    } else if (formData.yearRange) {
+      return `${formData.yearRange.startYear} - ${formData.yearRange.endYear}`;
+    }
+    return t('yourTimeJourney') as string;
+  };
+
   const handleRetry = () => {
     if (formData) {
       loadTimelineStreaming(formData, currentMaxEvents);
@@ -624,34 +659,81 @@ const TimelineStoryPage = () => {
 
   return (
     <div className={`min-h-screen bg-background ${!isHeroReady ? 'overflow-hidden max-h-screen' : ''}`}>
-      {/* Back button */}
-      <div className="fixed top-6 left-6 z-50">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => navigate('/')}
-          className="bg-background/80 backdrop-blur-sm"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Terug
-        </Button>
-      </div>
+      {/* Header - same style as ResultPage */}
+      <section className="pt-3 pb-1 px-4 relative z-50 bg-background/80 backdrop-blur-sm sticky top-0">
+        <div className="container mx-auto max-w-6xl">
+          <div className="flex items-center justify-between mb-2 fade-in">
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>{t('backToInput') as string}</span>
+            </button>
+            
+            <div className="flex items-center gap-2">
+              {/* Refresh button */}
+              {events.length > 0 && !isLoading && (
+                <button
+                  onClick={handleClearCache}
+                  className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+                  title={t('refreshButton') as string}
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                </button>
+              )}
+              
+              <h1 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
+                {getTitle()}
+              </h1>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Loading state - initial */}
+      {isLoading && events.length === 0 && (
+        <div className="flex-1 flex flex-col items-center justify-center py-24 fade-in min-h-[60vh]">
+          <div className="w-16 h-16 rounded-full bg-gradient-gold flex items-center justify-center mb-4 animate-pulse">
+            <Clock className="h-8 w-8 text-primary-foreground" />
+          </div>
+          <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
+            {t('loadingTitle') as string}
+          </h2>
+          <p className="text-muted-foreground text-sm mb-3">
+            {t('loadingSubtitle') as string}
+          </p>
+          <Loader2 className="h-5 w-5 animate-spin text-accent" />
+        </div>
+      )}
+
+      {/* Image loading indicator - minimal */}
+      {isLoadingImages && !isLoading && (
+        <div className="container mx-auto max-w-6xl px-4 py-2 sticky top-12 z-40 bg-background/80 backdrop-blur-sm">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>{t('loadingImages') as string}</span>
+          </div>
+        </div>
+      )}
 
       {/* Sticky year indicator */}
       {currentYear && !isLoading && (
         <StickyYear year={currentYear} theme={theme} />
       )}
 
-      {/* Hero section */}
-      <HeroSection 
-        storyTitle={storyTitle}
-        storyIntroduction={storyIntroduction}
-        theme={theme}
-        isLoading={isLoading && events.length === 0}
-      />
+      {/* Hero section - only show when we have content */}
+      {(storyTitle || storyIntroduction || events.length > 0) && (
+        <HeroSection 
+          storyTitle={storyTitle}
+          storyIntroduction={storyIntroduction}
+          theme={theme}
+          isLoading={isLoading && events.length === 0}
+        />
+      )}
 
       {/* Timeline events */}
-      <div className="container mx-auto px-6 lg:px-12">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-12">
         {events.map((event, index) => {
           const LayoutPattern = getLayoutPattern(index);
           const imageUrl = getEventImageUrl(event);
@@ -670,10 +752,13 @@ const TimelineStoryPage = () => {
         })}
       </div>
 
-      {/* Loading indicator for additional events */}
+      {/* Loading indicator for streaming events */}
       {isLoading && events.length > 0 && (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="container mx-auto max-w-6xl px-4 py-8">
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>{events.length} {t('eventsLoaded') as string}</span>
+          </div>
         </div>
       )}
 
