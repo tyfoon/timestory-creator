@@ -91,6 +91,10 @@ interface StaggeredTextProps {
 const StaggeredText = ({ text, className = '', as: Component = 'h2', highlightWords = [], style }: StaggeredTextProps) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-50px' });
+  
+  // Guard against undefined text
+  if (!text) return null;
+  
   const words = text.split(' ');
 
   return (
