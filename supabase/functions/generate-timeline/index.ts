@@ -16,6 +16,7 @@ import {
   CHILDREN_ADDITION,
   GENDER_ADDITION,
   ATTITUDE_ADDITION,
+  getGenerationPerspective,
 } from "../_shared/prompts.ts";
 
 const corsHeaders = {
@@ -481,6 +482,9 @@ function buildPrompt(data: TimelineRequest): string {
   // We zetten ze direct na de tijdsopdracht, zodat de AI ze als "hoofdfilter" gebruikt.
 
   // B1. Locatie (Sfeer & Lokale Events)
+  if (data.birthDate && data.birthDate.year) {
+    promptParts.push(getGenerationPerspective(data.birthDate.year));
+  }
   if (optionalData.city) {
     promptParts.push(CITY_ADDITION(optionalData.city));
   }
