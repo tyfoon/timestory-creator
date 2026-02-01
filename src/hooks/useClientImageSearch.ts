@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { searchSingleImage, ImageResult, SearchTraceEntry } from '@/lib/api/wikiImageSearch';
 import { TimelineEvent } from '@/types/timeline';
-import { getBlacklistedImages } from '@/hooks/useImageBlacklist';
 
 interface UseClientImageSearchOptions {
   maxConcurrent?: number;
@@ -87,17 +86,13 @@ export function useClientImageSearch(options: UseClientImageSearchOptions = {}) 
           .then((result: ImageResult) => {
             setSearchedCount(c => c + 1);
             
-            // Check if the found image is blacklisted
-            const blacklistedUrls = getBlacklistedImages();
-            const isBlacklisted = result.imageUrl && blacklistedUrls.includes(result.imageUrl);
-            
-            // Always call onImageFound to pass the search trace, even if no image was found
+            // The search function now internally skips blacklisted images,
+            // so we can directly pass the result
             if (onImageFoundRef.current) {
-              // If blacklisted, pass empty URL so system knows to try again or mark as none
               onImageFoundRef.current(
                 result.eventId, 
-                isBlacklisted ? '' : (result.imageUrl || ''), 
-                isBlacklisted ? null : result.source, 
+                result.imageUrl || '', 
+                result.source, 
                 result.searchTrace
               );
             }

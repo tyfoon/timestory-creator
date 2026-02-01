@@ -3,7 +3,11 @@
  * * SIMPLIFIED "TRAFFIC CONTROLLER" VERSION:
  * - Uses 'visualSubjectType' to strictly route to the correct DB.
  * - Allows SVGs for Logos/Products.
+ * - Supports image blacklisting to skip previously rejected images.
  */
+
+// Import blacklist checker
+import { getBlacklistedImages } from '@/hooks/useImageBlacklist';
 
 const THUMB_WIDTH = 960;
 
@@ -142,12 +146,13 @@ function contentMatchesQuery(title: string, snippet: string | undefined, query: 
   return words.some((w) => t.includes(w) || s.includes(w));
 }
 
-// Generic Fetcher
+// Generic Fetcher - now checks blacklist to skip rejected images
 async function fetchWikiResults(
   url: string,
   query: string,
   allowSvg: boolean,
   strictMatch: boolean = true,
+  blacklist: string[] = [],
 ): Promise<{ imageUrl: string; source: string } | null> {
   try {
     const res = await fetch(url);
@@ -184,6 +189,12 @@ async function fetchWikiResults(
       let thumb = page.thumbnail?.source || page.imageinfo?.[0]?.thumburl || page.imageinfo?.[0]?.url;
 
       if (thumb && isAllowedImageUrl(thumb, allowSvg)) {
+        // Check if this image is blacklisted
+        if (blacklist.includes(thumb)) {
+          console.log(`[Wiki Search] Skipping blacklisted image: ${thumb.substring(0, 60)}...`);
+          continue; // Try next result
+        }
+        
         // Correcte source URL voor Commons vs Wikipedia
         const isCommons = url.includes("commons.wikimedia.org");
         const sourceUrl = isCommons
@@ -199,28 +210,32 @@ async function fetchWikiResults(
 }
 
 // API wrappers (strictMatch = false voor products/logos)
-const wiki = (lang: string, q: string, y?: number, svg = false, strict = true) =>
+// Now accept optional blacklist parameter
+const wiki = (lang: string, q: string, y?: number, svg = false, strict = true, blacklist: string[] = []) =>
   fetchWikiResults(
     `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(y ? `${q} ${y}` : q)}&format=json&origin=*`,
     q,
     svg,
     strict,
+    blacklist,
   );
 
-const commons = (q: string, y?: number, svg = false, strict = true) =>
+const commons = (q: string, y?: number, svg = false, strict = true, blacklist: string[] = []) =>
   fetchWikiResults(
     `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(y ? `${q} ${y}` : q)}&srnamespace=6&format=json&origin=*`,
     q,
     svg,
     strict,
+    blacklist,
   );
 
-const nationaal = (q: string, y?: number) =>
+const nationaal = (q: string, y?: number, blacklist: string[] = []) =>
   fetchWikiResults(
     `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(`${q} ${y || ""} Nationaal Archief`)}&srnamespace=6&format=json&origin=*`,
     q,
     false,
     true,
+    blacklist,
   );
 
 // Spotify Album Art Wrapper - Returns album artwork from Spotify
@@ -321,6 +336,12 @@ export async function searchSingleImage(
   let nlQuery = query;
   let type = visualSubjectType;
   
+  // Get current blacklist to skip rejected images
+  const blacklist = getBlacklistedImages();
+  if (blacklist.length > 0) {
+    console.log(`[Image Search] Active blacklist with ${blacklist.length} images`);
+  }
+  
   // Simplify weather-related queries by stripping location info
   // "Sneeuwpret in Hilversum" -> "Sneeuwpret" (generic images are easier to find)
   enQuery = simplifyWeatherQuery(enQuery);
@@ -410,17 +431,17 @@ export async function searchSingleImage(
     }
 
     // Fallback 1: Commons ZONDER jaartal (voor royalty, politici, etc. die niet in TMDB staan)
-    const commonsRes = await commons(enQuery, undefined, false, false);
+    const commonsRes = await commons(enQuery, undefined, false, false, blacklist);
     addTrace('🖼️ Commons (EN)', enQuery, false, commonsRes ? 'found' : 'not_found');
     if (commonsRes) return withTrace({ eventId, ...commonsRes });
 
     // Fallback 2: EN Wikipedia ZONDER jaartal
-    const wikiEnRes = await wiki("en", enQuery, undefined, false);
+    const wikiEnRes = await wiki("en", enQuery, undefined, false, true, blacklist);
     addTrace('📖 Wikipedia EN', enQuery, false, wikiEnRes ? 'found' : 'not_found');
     if (wikiEnRes) return withTrace({ eventId, ...wikiEnRes });
 
     // Fallback 3: NL Wikipedia (voor lokale bekende personen)
-    const wikiNlRes = await wiki("nl", nlQuery, undefined, false);
+    const wikiNlRes = await wiki("nl", nlQuery, undefined, false, true, blacklist);
     addTrace('📖 Wikipedia NL', nlQuery, false, wikiNlRes ? 'found' : 'not_found');
     if (wikiNlRes) return withTrace({ eventId, ...wikiNlRes });
     
@@ -434,29 +455,29 @@ export async function searchSingleImage(
   if (isGameOrProduct) {
     // Voor products: gebruik LOSSE matching (strict = false) - eerste woord moet matchen
     // Probeer EERST zonder SVG (echte afbeeldingen hebben voorkeur)
-    let res = await commons(enQuery, undefined, false, false);
+    let res = await commons(enQuery, undefined, false, false, blacklist);
     addTrace('🖼️ Commons (EN)', enQuery, false, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
 
     // Probeer ook Nederlandse query op Commons
-    res = await commons(nlQuery, undefined, false, false);
+    res = await commons(nlQuery, undefined, false, false, blacklist);
     addTrace('🖼️ Commons (NL)', nlQuery, false, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
 
-    res = await wiki("en", enQuery, undefined, false, false);
+    res = await wiki("en", enQuery, undefined, false, false, blacklist);
     addTrace('📖 Wikipedia EN', enQuery, false, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
 
-    res = await wiki("nl", nlQuery, undefined, false, false);
+    res = await wiki("nl", nlQuery, undefined, false, false, blacklist);
     addTrace('📖 Wikipedia NL', nlQuery, false, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
 
     // FALLBACK: Als geen echte afbeelding, probeer met SVG
-    res = await commons(enQuery, undefined, true, false);
+    res = await commons(enQuery, undefined, true, false, blacklist);
     addTrace('🖼️ Commons (EN) +SVG', enQuery, false, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
 
-    res = await wiki("en", enQuery, undefined, true, false);
+    res = await wiki("en", enQuery, undefined, true, false, blacklist);
     addTrace('📖 Wikipedia EN +SVG', enQuery, false, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
 
@@ -479,7 +500,7 @@ export async function searchSingleImage(
   if (isLocal) {
     // Probeer Nationaal Archief alleen als het "Lokaal/Politiek" is
     if (category === "local" || category === "politics") {
-      const res = await nationaal(nlQuery, year);
+      const res = await nationaal(nlQuery, year, blacklist);
       addTrace('🏛️ Nationaal Archief', nlQuery, !!year, res ? 'found' : 'not_found');
       if (res) return withTrace({ eventId, ...res });
     }
@@ -487,36 +508,36 @@ export async function searchSingleImage(
     // Voor LOKALE/CULTURELE events: zoek EERST met Nederlandse query op Commons/Wiki
     // Dit voorkomt dat "Bijlmer disaster memorial, Jerusalem" wordt gevonden ipv "Bijlmerramp"
     // Fase 1: NL query met jaar
-    let res = await commons(nlQuery, year);
+    let res = await commons(nlQuery, year, false, true, blacklist);
     addTrace('🖼️ Commons (NL)', nlQuery, true, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
     
-    res = await wiki("nl", nlQuery, year);
+    res = await wiki("nl", nlQuery, year, false, true, blacklist);
     addTrace('📖 Wikipedia NL', nlQuery, true, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
     
-    res = await commons(enQuery, year);
+    res = await commons(enQuery, year, false, true, blacklist);
     addTrace('🖼️ Commons (EN)', enQuery, true, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
     
-    res = await wiki("en", enQuery, year);
+    res = await wiki("en", enQuery, year, false, true, blacklist);
     addTrace('📖 Wikipedia EN', enQuery, true, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
 
     // Fase 2: NL query zonder jaar
-    res = await commons(nlQuery, undefined);
+    res = await commons(nlQuery, undefined, false, true, blacklist);
     addTrace('🖼️ Commons (NL)', nlQuery, false, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
     
-    res = await wiki("nl", nlQuery, undefined);
+    res = await wiki("nl", nlQuery, undefined, false, true, blacklist);
     addTrace('📖 Wikipedia NL', nlQuery, false, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
     
-    res = await commons(enQuery, undefined);
+    res = await commons(enQuery, undefined, false, true, blacklist);
     addTrace('🖼️ Commons (EN)', enQuery, false, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
     
-    res = await wiki("en", enQuery, undefined);
+    res = await wiki("en", enQuery, undefined, false, true, blacklist);
     addTrace('📖 Wikipedia EN', enQuery, false, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
 
@@ -525,28 +546,28 @@ export async function searchSingleImage(
 
   // Standaard volgorde voor INTERNATIONALE events: EN query eerst (beste resultaten)
   // Probeer EERST met jaartal
-  let res = await commons(enQuery, year);
+  let res = await commons(enQuery, year, false, true, blacklist);
   addTrace('🖼️ Commons (EN)', enQuery, true, res ? 'found' : 'not_found');
   if (res) return withTrace({ eventId, ...res });
   
-  res = await wiki("en", enQuery, year);
+  res = await wiki("en", enQuery, year, false, true, blacklist);
   addTrace('📖 Wikipedia EN', enQuery, true, res ? 'found' : 'not_found');
   if (res) return withTrace({ eventId, ...res });
   
-  res = await wiki("nl", nlQuery, year);
+  res = await wiki("nl", nlQuery, year, false, true, blacklist);
   addTrace('📖 Wikipedia NL', nlQuery, true, res ? 'found' : 'not_found');
   if (res) return withTrace({ eventId, ...res });
 
   // FALLBACK: Probeer Commons en Wiki ZONDER jaartal (veel events hebben geen jaar in de titel)
-  res = await commons(enQuery, undefined);
+  res = await commons(enQuery, undefined, false, true, blacklist);
   addTrace('🖼️ Commons (EN)', enQuery, false, res ? 'found' : 'not_found');
   if (res) return withTrace({ eventId, ...res });
   
-  res = await wiki("en", enQuery, undefined);
+  res = await wiki("en", enQuery, undefined, false, true, blacklist);
   addTrace('📖 Wikipedia EN', enQuery, false, res ? 'found' : 'not_found');
   if (res) return withTrace({ eventId, ...res });
   
-  res = await wiki("nl", nlQuery, undefined);
+  res = await wiki("nl", nlQuery, undefined, false, true, blacklist);
   addTrace('📖 Wikipedia NL', nlQuery, false, res ? 'found' : 'not_found');
   if (res) return withTrace({ eventId, ...res });
 
