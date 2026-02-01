@@ -9,6 +9,24 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { FormData } from '@/types/form';
+import {
+  LANGUAGE_INSTRUCTIONS,
+  MONTH_NAMES,
+  NOSTALGIA_INSTRUCTIONS,
+  VISUAL_DIRECTOR_INSTRUCTIONS,
+  getContentFocusForPeriod,
+  getNDJSONFormatInstructions,
+  BIRTHDATE_PROMPT_SHORT,
+  BIRTHDATE_PROMPT_FULL,
+  RANGE_PROMPT,
+  FAMOUS_BIRTHDAYS_ADDITION,
+  BIRTHYEAR_IN_RANGE_ADDITION,
+  PERSONAL_NAME_ADDITION,
+  GEOGRAPHIC_FOCUS,
+  INTERESTS_ADDITION,
+  CITY_ADDITION,
+  CHILDREN_ADDITION,
+} from '@/lib/promptConstants';
 
 interface PromptViewerDialogProps {
   formData: FormData | null;
@@ -33,18 +51,6 @@ const PROMPT_COLORS = {
   children: 'bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/30',
 };
 
-const MONTH_NAMES = [
-  'januari', 'februari', 'maart', 'april', 'mei', 'juni',
-  'juli', 'augustus', 'september', 'oktober', 'november', 'december'
-];
-
-const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
-  nl: "Schrijf alle tekst in het Nederlands.",
-  en: "Write all text in English.",
-  de: "Schreibe alle Texte auf Deutsch.",
-  fr: "Écrivez tout le texte en français.",
-};
-
 interface PromptSection {
   label: string;
   content: string;
@@ -52,58 +58,6 @@ interface PromptSection {
   source: string;
   isCollapsible?: boolean;
   defaultCollapsed?: boolean;
-}
-
-// Mirrored from prompts.ts - Visual Director Instructions
-const VISUAL_DIRECTOR_INSTRUCTIONS = `ROL: BEELDREDACTEUR (CRUCIAAL)
-Jij bepaalt NIET ALLEEN de zoekterm, maar ook het TYPE afbeelding ('visualSubjectType').
-
-⚠️ ABSOLUUT VERBODEN IN ZOEKOPDRACHTEN ⚠️
-NOOIT decade-referenties: "1980s", "80s", "jaren 80"
-
-KIES HET JUISTE 'visualSubjectType':
-1. 'person': Artiesten, politici, sporters
-2. 'movie': ALLEEN bioscoopFILMS (E.T., Titanic)
-3. 'tv': ALLEEN TV-SERIES (Dallas, Beverly Hills 90210, Friends)
-4. 'product': Gadgets, speelgoed, auto's
-5. 'logo': Software, websites, games
-6. 'event': Oorlogen, rampen, kroningen
-7. 'location': Steden, gebouwen
-8. 'artwork': Albums, boekomslagen
-9. 'culture': Rages, mode, dansstijlen
-
-⚠️ CRUCIAAL: FILM vs TV-SERIE ⚠️
-BIOSCOOPFILM (isMovie: true): E.T., Titanic, Star Wars
-TV-SERIE (isTV: true): Beverly Hills 90210, Dallas, Baywatch
-
-⚠️ TWEE TALEN! ⚠️
-'imageSearchQuery' = NEDERLANDS
-'imageSearchQueryEn' = ENGELS
-
-WEER EVENTS: Zoek ALLEEN op fenomeen (Sneeuwpret, Hittegolf), NIET op locatie!
-SPORT: ALTIJD de sport vermelden (voetbal, tennis)
-MUZIEK: "Artiest Titel" formaat, GEEN extra woorden`;
-
-// Mirrored from prompts.ts - Nostalgia Instructions
-const NOSTALGIA_INSTRUCTIONS = `RICHTLIJNEN VOOR SFEER & NOSTALGIE:
-1. **Zintuiglijke Details:** Beschrijf hoe het voelde, rook of klonk.
-2. **De 'Lens' van de Leeftijd:** Bekijk nieuws door de ogen van de gebruiker.
-3. **Analoge Vertraging:** Benadruk dingen die nu weg zijn.
-4. **Schrijfstijl:** Persoonlijke, licht mijmerende toon.`;
-
-function getContentFocusForPeriod(periodType?: string): string {
-  switch (periodType) {
-    case 'birthyear':
-      return 'FOCUS: Events uit het exacte geboortejaar. Wereldgebeurtenissen, politiek, muziek, films, cultuur van dat jaar.';
-    case 'childhood':
-      return 'FOCUS: Kindertijd (0-12 jaar). Speelgoed, tekenfilms, kinderprogramma\'s, games, snoep, lagere school.';
-    case 'puberty':
-      return 'FOCUS: Puberteit (12-18 jaar). Muziek, films, TV, mode, games, eerste telefoons, middelbare school.';
-    case 'young-adult':
-      return 'FOCUS: Jongvolwassenheid (18-25 jaar). Studententijd, eerste baan, festivals, politiek, technologie.';
-    default:
-      return 'FOCUS: Algemene mix van belangrijke wereldgebeurtenissen, cultuur, sport, wetenschap en entertainment.';
-  }
 }
 
 function buildPromptSections(formData: FormData, language: string, maxEvents?: number): PromptSection[] {
@@ -120,7 +74,7 @@ function buildPromptSections(formData: FormData, language: string, maxEvents?: n
   // 1. Base System Role
   sections.push({
     label: '🤖 System: Basis Rol',
-    content: 'Je bent een historicus en expert beeldredacteur.',
+    content: 'Je bent een nostalgische verhalenverteller, historicus en expert beeldredacteur.',
     colorClass: PROMPT_COLORS.system,
     source: 'getNDJSONSystemPrompt',
   });
@@ -136,7 +90,7 @@ function buildPromptSections(formData: FormData, language: string, maxEvents?: n
   // 3. Visual Director Instructions (collapsible because it's huge)
   sections.push({
     label: '🎬 System: Visual Director',
-    content: VISUAL_DIRECTOR_INSTRUCTIONS,
+    content: VISUAL_DIRECTOR_INSTRUCTIONS.trim(),
     colorClass: PROMPT_COLORS.visualDirector,
     source: 'VISUAL_DIRECTOR_INSTRUCTIONS',
     isCollapsible: true,
@@ -146,31 +100,16 @@ function buildPromptSections(formData: FormData, language: string, maxEvents?: n
   // 4. NDJSON Format Instructions
   sections.push({
     label: '📋 System: Output Formaat (NDJSON)',
-    content: `KRITISCH - OUTPUT FORMAAT (NDJSON):
-Stuur ELKE gebeurtenis als apart JSON-object op nieuwe regel.
-
-FORMAT PER REGEL:
-{"type":"event","data":{"id":"evt_1","date":"1980-05-22","year":1980,"title":"...","category":"...","visualSubjectType":"...","imageSearchQuery":"...","imageSearchQueryEn":"...",...}}
-
-NA ALLE EVENTS:
-{"type":"summary","data":"Samenvatting..."}
-{"type":"famousBirthdays","data":[...]}
-
-REGELS:
-1. GEEN markdown
-2. Genereer ${eventCount} events
-3. Vul 'visualSubjectType' ALTIJD in
-4. 'isTV: true' voor TV-series, 'isMovie: true' voor films
-5. Vul 'spotifySearchQuery' / 'movieSearchQuery' in waar relevant`,
+    content: getNDJSONFormatInstructions(eventCount),
     colorClass: PROMPT_COLORS.format,
-    source: 'getNDJSONSystemPrompt',
+    source: 'getNDJSONFormatInstructions',
   });
 
   // =====================================================
   // USER PROMPT SECTIONS
   // =====================================================
 
-  // Base prompt based on type (includes contentFocus embedded!)
+  // Base prompt based on type
   if (formData.type === 'birthdate' && formData.birthDate) {
     const { day, month, year } = formData.birthDate;
     const monthName = MONTH_NAMES[month - 1];
@@ -178,24 +117,14 @@ REGELS:
     if (isShort) {
       sections.push({
         label: '📝 User: Basis Prompt (Kort)',
-        content: `Maak een KORTE tijdlijn voor iemand geboren op ${day} ${monthName} ${year}.
-Genereer PRECIES ${maxEvents} events in NDJSON formaat.
-HARDE EISEN:
-- MUZIEK: Minimaal 2, Maximaal 4 (Nr 1 hits).
-- BEROEMDHEDEN: Maximaal 2.
-${contentFocus}`,
+        content: BIRTHDATE_PROMPT_SHORT(day, monthName, year, maxEvents!, contentFocus),
         colorClass: PROMPT_COLORS.base,
         source: 'BIRTHDATE_PROMPT_SHORT',
       });
     } else {
       sections.push({
         label: '📝 User: Basis Prompt (Volledig)',
-        content: `Maak een uitgebreide tijdlijn voor iemand geboren op ${day} ${monthName} ${year}.
-Genereer 50 events in NDJSON formaat.
-HARDE EISEN:
-- MUZIEK: 5-10 events.
-- BEROEMDHEDEN: Max 5.
-${contentFocus}`,
+        content: BIRTHDATE_PROMPT_FULL(day, monthName, year, contentFocus),
         colorClass: PROMPT_COLORS.base,
         source: 'BIRTHDATE_PROMPT_FULL',
       });
@@ -208,12 +137,7 @@ ${contentFocus}`,
     // RANGE_PROMPT includes nostalgia + contentFocus embedded
     sections.push({
       label: '📝 User: Basis Prompt (Periode)',
-      content: `Maak een nostalgische tijdlijn van ${startYear} tot ${endYear}.
-Genereer ${targetEvents} events.
-
-${NOSTALGIA_INSTRUCTIONS}
-
-${contentFocus}`,
+      content: RANGE_PROMPT(startYear, endYear, targetEvents, contentFocus),
       colorClass: PROMPT_COLORS.base,
       source: 'RANGE_PROMPT (bevat NOSTALGIA + contentFocus)',
     });
@@ -225,7 +149,7 @@ ${contentFocus}`,
 
       sections.push({
         label: '🎂 User: Beroemde Verjaardagen',
-        content: `Zoek personen die op ${day} ${monthName} jarig zijn.`,
+        content: FAMOUS_BIRTHDAYS_ADDITION(day, monthName),
         colorClass: PROMPT_COLORS.famousBirthdays,
         source: 'FAMOUS_BIRTHDAYS_ADDITION',
       });
@@ -233,7 +157,7 @@ ${contentFocus}`,
       if (year >= startYear && year <= endYear) {
         sections.push({
           label: '⭐ User: Geboortejaar in Periode',
-          content: `Het geboortejaar ${year} is speciaal.`,
+          content: BIRTHYEAR_IN_RANGE_ADDITION(year),
           colorClass: PROMPT_COLORS.birthyearInRange,
           source: 'BIRTHYEAR_IN_RANGE_ADDITION',
         });
@@ -248,7 +172,7 @@ ${contentFocus}`,
     const fullName = [optionalData.firstName, optionalData.lastName].filter(Boolean).join(' ');
     sections.push({
       label: '👤 User: Persoonlijke Naam',
-      content: `Tijdlijn voor: ${fullName}.`,
+      content: PERSONAL_NAME_ADDITION(fullName),
       colorClass: PROMPT_COLORS.personalName,
       source: 'PERSONAL_NAME_ADDITION',
     });
@@ -256,24 +180,22 @@ ${contentFocus}`,
 
   // Geographic focus
   if (optionalData.focus) {
-    const focusMap: Record<string, string> = {
-      netherlands: 'Focus: Nederland.',
-      europe: 'Focus: Europa.',
-      world: 'Focus: Wereld.',
-    };
-    sections.push({
-      label: '🗺️ User: Geografische Focus',
-      content: focusMap[optionalData.focus] || '',
-      colorClass: PROMPT_COLORS.geographic,
-      source: 'GEOGRAPHIC_FOCUS',
-    });
+    const focusText = GEOGRAPHIC_FOCUS[optionalData.focus];
+    if (focusText) {
+      sections.push({
+        label: '🗺️ User: Geografische Focus',
+        content: focusText,
+        colorClass: PROMPT_COLORS.geographic,
+        source: 'GEOGRAPHIC_FOCUS',
+      });
+    }
   }
 
   // Interests
   if (optionalData.interests) {
     sections.push({
       label: '💡 User: Interesses',
-      content: `Interesses: ${optionalData.interests}.`,
+      content: INTERESTS_ADDITION(optionalData.interests),
       colorClass: PROMPT_COLORS.interests,
       source: 'INTERESTS_ADDITION',
     });
@@ -283,11 +205,7 @@ ${contentFocus}`,
   if (optionalData.city) {
     sections.push({
       label: '🏙️ User: Woonplaats Context',
-      content: `LOCATIE CONTEXT: **${optionalData.city}**.
-De gebruiker groeide hier op. Maak de tijdlijn specifiek voor ${optionalData.city}:
-1. **Lokale Hotspots:** Zoek naar discotheken, bioscopen, parken uit die tijd.
-2. **Lokale Sfeer:** Hoe voelde het om hier te wonen?
-3. **Events:** Was er een groot lokaal evenement?`,
+      content: CITY_ADDITION(optionalData.city),
       colorClass: PROMPT_COLORS.city,
       source: 'CITY_ADDITION',
     });
@@ -302,7 +220,7 @@ De gebruiker groeide hier op. Maak de tijdlijn specifiek voor ${optionalData.cit
     if (childrenInfo.length > 0) {
       sections.push({
         label: '👶 User: Kinderen',
-        content: `Kinderen: ${childrenInfo.join(', ')}`,
+        content: CHILDREN_ADDITION(childrenInfo),
         colorClass: PROMPT_COLORS.children,
         source: 'CHILDREN_ADDITION',
       });
@@ -412,8 +330,13 @@ export function PromptViewerDialog({ formData, language, maxEvents }: PromptView
           </DialogTitle>
         </DialogHeader>
 
+        {/* Sync warning */}
+        <div className="shrink-0 text-[10px] text-muted-foreground bg-muted/30 px-2 py-1 rounded border border-dashed">
+          ⚠️ Mirror van <code className="font-mono">supabase/functions/_shared/prompts.ts</code> via <code className="font-mono">src/lib/promptConstants.ts</code>
+        </div>
+
         {/* Legend */}
-        <div className="shrink-0 flex flex-wrap gap-1.5 text-[10px] pb-2 border-b">
+        <div className="shrink-0 flex flex-wrap gap-1.5 text-[10px] py-2 border-b">
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.system}`}>System</span>
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.language}`}>Taal</span>
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.visualDirector}`}>Visual</span>
