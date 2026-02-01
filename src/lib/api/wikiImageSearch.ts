@@ -242,6 +242,9 @@ function cleanQueryForTMDB(query: string): string {
 }
 
 // Simpele check of woorden matchen
+// FIX: Voor korte queries (1-2 woorden) was de matching te streng - 
+// "moon landing" zou geen Apollo 11 foto's vinden omdat de woorden 
+// niet letterlijk in de bestandsnaam staan. Nu checken we ook de snippet.
 function contentMatchesQuery(title: string, snippet: string | undefined, query: string): boolean {
   const normalize = (s: string) =>
     s
@@ -252,13 +255,16 @@ function contentMatchesQuery(title: string, snippet: string | undefined, query: 
   const t = normalize(title);
   const s = snippet ? normalize(snippet) : "";
 
-  // Als er 2 of minder woorden zijn, MOETEN ze in de titel staan (strenge check)
   const words = q.split(/\s+/).filter((w) => w.length > 2);
-  if (words.length <= 2) {
-    return words.every((w) => t.includes(w));
-  }
-  // Anders kijken we ook in de snippet
-  return words.some((w) => t.includes(w) || s.includes(w));
+  
+  // Eerst checken: staan ALLE woorden in titel OF snippet?
+  // Dit is de meest accurate match (bijv. "moon landing" vindt Apollo foto's via snippet)
+  const allWordsInTitleOrSnippet = words.every((w) => t.includes(w) || s.includes(w));
+  if (allWordsInTitleOrSnippet) return true;
+  
+  // Fallback: minstens één woord moet in de titel staan
+  // Dit voorkomt totaal irrelevante resultaten
+  return words.some((w) => t.includes(w));
 }
 
 // Generic Fetcher - now checks blacklist to skip rejected images
