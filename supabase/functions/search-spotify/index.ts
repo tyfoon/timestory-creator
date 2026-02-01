@@ -65,29 +65,59 @@ serve(async (req) => {
 
     console.log(`[Spotify Search] Searching for: "${query}"`);
 
-    // Step A: Get access token using Client Credentials flow
+    // Step A: Get access token using Client Credentials flow (with retry for transient errors)
     const credentials = btoa(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`);
     
-    const tokenResponse = await fetch("https://accounts.spotify.com/api/token", {
-      method: "POST",
-      headers: {
-        "Authorization": `Basic ${credentials}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: "grant_type=client_credentials",
-    });
+    let tokenData: SpotifyTokenResponse | null = null;
+    const maxRetries = 2;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const tokenResponse = await fetch("https://accounts.spotify.com/api/token", {
+          method: "POST",
+          headers: {
+            "Authorization": `Basic ${credentials}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: "grant_type=client_credentials",
+        });
 
-    if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text();
-      console.error(`[Spotify Auth] Failed to get access token: ${tokenResponse.status} - ${errorText}`);
+        if (tokenResponse.ok) {
+          tokenData = await tokenResponse.json();
+          console.log("[Spotify Auth] Successfully obtained access token");
+          break;
+        }
+
+        const errorText = await tokenResponse.text();
+        console.error(`[Spotify Auth] Attempt ${attempt + 1}/${maxRetries + 1} failed: ${tokenResponse.status} - ${errorText}`);
+        
+        // Only retry on 5xx errors (server-side issues)
+        if (tokenResponse.status >= 500 && attempt < maxRetries) {
+          console.log(`[Spotify Auth] Retrying in ${(attempt + 1) * 500}ms...`);
+          await new Promise(resolve => setTimeout(resolve, (attempt + 1) * 500));
+          continue;
+        }
+        
+        return new Response(
+          JSON.stringify({ error: "Failed to authenticate with Spotify" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (fetchError) {
+        console.error(`[Spotify Auth] Network error on attempt ${attempt + 1}:`, fetchError);
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, (attempt + 1) * 500));
+          continue;
+        }
+        throw fetchError;
+      }
+    }
+
+    if (!tokenData) {
       return new Response(
-        JSON.stringify({ error: "Failed to authenticate with Spotify" }),
+        JSON.stringify({ error: "Failed to authenticate with Spotify after retries" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    const tokenData: SpotifyTokenResponse = await tokenResponse.json();
-    console.log("[Spotify Auth] Successfully obtained access token");
 
     // Step B: Search for track
     // CRITICAL: Parse "Artist - Title" format into Spotify field query for accurate results
