@@ -230,9 +230,23 @@ FORMAT PER REGEL (Let op 'visualSubjectType' en isTV/isMovie vlaggen!):
 {"type":"event","data":{"id":"evt_3","date":"1990","year":1990,"title":"Beverly Hills 90210","description":"...","category":"entertainment","visualSubjectType":"tv","isTV":true,"imageSearchQuery":"Beverly Hills 90210","imageSearchQueryEn":"Beverly Hills 90210","importance":"high","eventScope":"period"}}
 {"type":"event","data":{"id":"evt_4","date":"1982","year":1982,"title":"E.T.","description":"...","category":"entertainment","visualSubjectType":"movie","isMovie":true,"imageSearchQuery":"E.T.","imageSearchQueryEn":"E.T. the Extra-Terrestrial","importance":"high","eventScope":"period","movieSearchQuery":"E.T. trailer 1982"}}
 
-NA ALLE EVENTS:
-{"type":"summary","data":"Samenvatting..."}
-{"type":"famousBirthdays","data":[{"name":"Naam","profession":"Beroep","birthYear":1950,"imageSearchQuery":"Naam"}]}
+NA ALLE EVENTS - VERPLICHTE VOLGORDE:
+1. {"type":"storyTitle","data":"[Pakkende titel van max 10 woorden die de essentie van deze periode vangt]"}
+2. {"type":"storyIntroduction","data":"[~200 woorden nostalgische introductietekst - schrijf in tweede persoon (je/jij), beschrijf de sfeer, geuren, geluiden en gevoelens van die tijd. Maak het persoonlijk en emotioneel. Begin met de geboorte/periode en eindig met een blik vooruit.]"}
+3. {"type":"summary","data":"Korte samenvatting..."}
+4. {"type":"famousBirthdays","data":[{"name":"Naam","profession":"Beroep","birthYear":1950,"imageSearchQuery":"Naam"}]}
+
+RICHTLIJNEN VOOR storyTitle:
+- Max 10 woorden, pakkend en emotioneel
+- Vang de essentie van de periode (bv. "Van cassettebandje naar cd: jouw jaren tachtig")
+- Mag poëtisch zijn, maar moet herkenbaar blijven
+
+RICHTLIJNEN VOOR storyIntroduction (~200 woorden):
+- Schrijf in tweede persoon: "Je werd geboren...", "Je hoorde...", "Je voelde..."
+- Gebruik zintuiglijke details: geuren (brommerbenzine, Sunsilk shampoo), geluiden (piepende modem, rinkelende telefoon)
+- Beschrijf de 'analoge vertraging': wachten op foto's, brieven schrijven, teletekst checken
+- Maak het emotioneel en persoonlijk - dit is GEEN opsomming van feiten
+- Eindig met een blik vooruit of een gevoel van nostalgie
 
 REGELS:
 1. GEEN markdown.
@@ -240,7 +254,8 @@ REGELS:
 3. Vul 'visualSubjectType' ALTIJD in. KIES 'tv' voor TV-series, 'movie' ALLEEN voor bioscoopfilms!
 4. Zet 'isTV: true' voor ALLE TV-series (Dallas, Baywatch, Beverly Hills 90210, Friends, Seinfeld, etc.)
 5. Zet 'isMovie: true' ALLEEN voor bioscoopfilms (E.T., Titanic, Star Wars, etc.)
-6. Vul 'spotifySearchQuery' / 'movieSearchQuery' in waar relevant.`;
+6. Vul 'spotifySearchQuery' / 'movieSearchQuery' in waar relevant.
+7. storyTitle en storyIntroduction zijn VERPLICHT na alle events!`;
 }
 
 export function getTimelineTool() {
@@ -300,6 +315,14 @@ export function getTimelineTool() {
             },
           },
           summary: { type: "string" },
+          storyTitle: { 
+            type: "string", 
+            description: "Pakkende titel van max 10 woorden die de essentie van de periode vangt" 
+          },
+          storyIntroduction: { 
+            type: "string", 
+            description: "~200 woorden nostalgische introductietekst in tweede persoon, met zintuiglijke details en emotie" 
+          },
           famousBirthdays: {
             type: "array",
             items: {
@@ -314,7 +337,7 @@ export function getTimelineTool() {
             },
           },
         },
-        required: ["events", "summary"],
+        required: ["events", "summary", "storyTitle", "storyIntroduction"],
       },
     },
   };
