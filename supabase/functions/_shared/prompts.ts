@@ -31,16 +31,14 @@ export const EVENT_CATEGORIES = [
   "celebrity",
 ] as const;
 
-// ... (Houd imports en LANGUAGE_INSTRUCTIONS hetzelfde)
 // =============================================================================
-// NOSTALGIE ENGINE (Voeg dit toe bovenaan, onder de imports)
+// NOSTALGIE ENGINE
 // =============================================================================
 const NOSTALGIA_INSTRUCTIONS = `
-RICHTLIJNEN VOOR SFEER & NOSTALGIE:
-1. **Zintuiglijke Details:** Beschrijf niet alleen wat er gebeurde, maar hoe het voelde, rook of klonk. (Bv. het geluid van inbellen, de geur van brommerbenzine).
-2. **De 'Lens' van de Leeftijd:** Bekijk wereldnieuws door de ogen van de gebruiker op die leeftijd.
-3. **Analoge Vertraging:** Benadruk dingen die nu weg zijn: wachten op de bus zonder mobiel, foto's laten ontwikkelen.
-4. **Schrijfstijl:** Gebruik een persoonlijke, licht mijmerende toon.
+RICHTLIJNEN VOOR SFEER & STIJL:
+1. **Zintuiglijke Details:** Beschrijf niet alleen feiten, maar geuren, geluiden en gevoelens. (Bv. de geur van brommerbenzine, het ratelende geluid van een videoband terugspoelen, de spanning van teletekst checken).
+2. **Analoge Vertraging:** Benadruk dingen die nu weg zijn: wachten op de bus zonder mobiel, foto's laten ontwikkelen, inbellen met een modem.
+3. **Persoonlijke Toon:** Gebruik een mijmerende, verhalende stijl. Bekijk alles door de bril van de leeftijd die de gebruiker toen had.
 `;
 
 // =============================================================================
@@ -217,7 +215,7 @@ export function getNDJSONSystemPrompt(language: string, maxEvents?: number): str
   const isShort = maxEvents && maxEvents <= 20;
   const eventCount = isShort ? maxEvents : 50;
 
-  return `Je bent een historicus en expert beeldredacteur.
+  return `Je bent een nostalgische verhalenverteller, historicus en expert beeldredacteur.
 
 ${langInstruction}
 
@@ -244,8 +242,6 @@ REGELS:
 5. Zet 'isMovie: true' ALLEEN voor bioscoopfilms (E.T., Titanic, Star Wars, etc.)
 6. Vul 'spotifySearchQuery' / 'movieSearchQuery' in waar relevant.`;
 }
-
-// ... (Houd getSystemPrompt en PERIOD_PROMPTS hetzelfde, maar update getTimelineTool hieronder:)
 
 export function getTimelineTool() {
   return {
@@ -331,7 +327,7 @@ export function getSystemPrompt(language: string, maxEvents?: number): string {
   const langInstruction = LANGUAGE_INSTRUCTIONS[language] || LANGUAGE_INSTRUCTIONS.nl;
   const eventCount = maxEvents || 50;
 
-  return `Je bent een historicus en expert beeldredacteur.
+  return `Je bent een nostalgische verhalenverteller, historicus en expert beeldredacteur.
 
 ${langInstruction}
 
@@ -410,17 +406,22 @@ export const RANGE_PROMPT = (
   targetEvents: number,
   contentFocus: string,
 ) =>
-  `Maak een nostalgische tijdlijn van ${startYear} tot ${endYear}.
+  `ROL & CONTEXT:
+Je bent een nostalgische verhalenverteller.
+${contentFocus}
+
+DE OPDRACHT:
+Maak een gedetailleerde tijdlijn van ${startYear} tot ${endYear}.
 Genereer ${targetEvents} events.
+Let op: Verdeel de events gelijkmatig (bv. in blokken van 2 jaar) en behoud de kwaliteit en detaillering tot aan het laatste event.
 
-${NOSTALGIA_INSTRUCTIONS}
-
-${contentFocus}`;
+${NOSTALGIA_INSTRUCTIONS}`;
 
 export const FAMOUS_BIRTHDAYS_ADDITION = (day: number, monthName: string, startYear: number, endYear: number) =>
-  `\nZoek personen die op ${day} ${monthName} jarig zijn.`;
+  `\n\n--- EXTRA TAAK: VERJAARDAGEN ---\nZoek 3 bekende personen die op ${day} ${monthName} jarig zijn (dit staat los van de tijdlijn).`;
 
-export const BIRTHYEAR_IN_RANGE_ADDITION = (year: number) => `\nHet geboortejaar ${year} is speciaal.`;
+export const BIRTHYEAR_IN_RANGE_ADDITION = (year: number) =>
+  `\nHet geboortejaar ${year} is speciaal: focus hier extra op.`;
 
 export const PERSONAL_NAME_ADDITION = (fullName: string) => `\nTijdlijn voor: ${fullName}.`;
 
@@ -433,10 +434,11 @@ export const GEOGRAPHIC_FOCUS: Record<string, string> = {
 export const INTERESTS_ADDITION = (interests: string) => `\nInteresses: ${interests}.`;
 
 export const CITY_ADDITION = (city: string) => `
-LOCATIE CONTEXT: **${city}**.
-De gebruiker groeide hier op. Maak de tijdlijn specifiek voor ${city}:
-1. **Lokale Hotspots:** Zoek naar specifieke discotheken, bioscopen, parken of hangplekken in ${city} uit die tijd.
-2. **Lokale Sfeer:** Hoe voelde het om in ${city} te wonen? (Provinciaal vs Stedelijk).
+CRUCIAAL - LOKALE LENS (${city}):
+De gebruiker groeide op in **${city}**.
+Dit is de bril waardoor je de hele bovenstaande tijdlijn bekijkt en inkleurt.
+1. **Lokale Hotspots:** Noem specifieke discotheken, bioscopen, scholen of hangplekken in ${city} (indien bekend).
+2. **Lokale Sfeer:** Beschrijf het specifieke gevoel van wonen in ${city} (Provinciaal vs Stedelijk).
 3. **Events:** Was er een groot lokaal evenement of feest in die jaren?`;
 
 export const CHILDREN_ADDITION = (childrenInfo: string[]) => `\nKinderen: ${childrenInfo.join(", ")}`;
