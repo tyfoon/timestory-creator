@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getCacheKey } from '@/lib/timelineCache';
 import { DebugInfoDialog } from '@/components/DebugInfoDialog';
 import { PromptViewerDialog } from '@/components/PromptViewerDialog';
+import { MediaButtons } from '@/components/story/MediaButtons';
 
 // Placeholder images by category
 import birthdayPlaceholder from '@/assets/placeholders/birthday.jpg';
@@ -257,10 +258,24 @@ const LayoutShout = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: 
           initial={{ opacity: 0 }}
           animate={isInView ? { opacity: 1 } : {}}
           transition={{ delay: 0.8 }}
-          className={`${theme.fontBody} text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto font-light`}
+          className={`${theme.fontBody} text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto font-light mb-8`}
         >
           {event.description}
         </motion.p>
+        
+        {/* Media buttons centered */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 1 }}
+          className="flex justify-center"
+        >
+          <MediaButtons 
+            spotifySearchQuery={event.spotifySearchQuery}
+            movieSearchQuery={event.movieSearchQuery}
+            eventTitle={event.title}
+          />
+        </motion.div>
       </div>
       
       {/* Small floating image */}
@@ -306,17 +321,22 @@ const LayoutWhisper = ({ event, theme, imageUrl }: { event: TimelineEvent; theme
         initial={{ opacity: 0, x: -30 }}
         animate={isInView ? { opacity: 1, x: 0 } : {}}
         transition={{ delay: 0.6 }}
-        className="relative z-10 max-w-xs bg-background/95 backdrop-blur-sm p-6 rounded-lg shadow-lg"
+        className="relative z-10 max-w-xs bg-background/95 backdrop-blur-sm p-6 rounded-lg shadow-lg space-y-3"
       >
-        <span className={`${theme.fontMono} text-[10px] uppercase tracking-[0.2em] text-muted-foreground block mb-2`}>
+        <span className={`${theme.fontMono} text-[10px] uppercase tracking-[0.2em] text-muted-foreground block`}>
           {event.date}
         </span>
-        <h2 className={`${theme.fontDisplay} text-lg sm:text-xl font-bold text-foreground leading-tight mb-2`}>
+        <h2 className={`${theme.fontDisplay} text-lg sm:text-xl font-bold text-foreground leading-tight`}>
           {event.title}
         </h2>
         <p className={`${theme.fontBody} text-sm text-muted-foreground leading-relaxed font-light`}>
           {event.description}
         </p>
+        <MediaButtons 
+          spotifySearchQuery={event.spotifySearchQuery}
+          movieSearchQuery={event.movieSearchQuery}
+          eventTitle={event.title}
+        />
       </motion.div>
     </div>
   );
@@ -349,11 +369,18 @@ const LayoutMagazine = ({ event, theme, imageUrl }: { event: TimelineEvent; them
             initial={{ opacity: 0, y: 30 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8 }}
+            className="space-y-4"
           >
             <img 
               src={imageUrl} 
               alt={event.title}
               className="w-full h-auto rounded-sm shadow-xl"
+            />
+            {/* Media buttons below image */}
+            <MediaButtons 
+              spotifySearchQuery={event.spotifySearchQuery}
+              movieSearchQuery={event.movieSearchQuery}
+              eventTitle={event.title}
             />
           </motion.div>
         </div>
@@ -412,14 +439,14 @@ const LayoutOverlap = ({ event, theme, imageUrl }: { event: TimelineEvent; theme
           transition={{ delay: 0.4, duration: 0.8 }}
           className="absolute left-0 top-1/2 -translate-y-1/2 w-full sm:w-2/3 lg:w-1/2 z-10"
         >
-          <div className="bg-background/90 backdrop-blur-md p-6 sm:p-10 lg:p-12 rounded-r-2xl shadow-2xl">
-            <span className={`${theme.fontMono} text-xs uppercase tracking-[0.3em] text-muted-foreground block mb-4`}>
+          <div className="bg-background/90 backdrop-blur-md p-6 sm:p-10 lg:p-12 rounded-r-2xl shadow-2xl space-y-4">
+            <span className={`${theme.fontMono} text-xs uppercase tracking-[0.3em] text-muted-foreground block`}>
               {event.date}
             </span>
             
             <StaggeredText
               text={event.title}
-              className={`${theme.fontDisplay} font-black text-foreground leading-none mb-6`}
+              className={`${theme.fontDisplay} font-black text-foreground leading-none`}
               style={{ fontSize: 'clamp(1.5rem, 5vw, 3rem)' }}
               as="h2"
               highlightWords={[0, 1]} // Highlight first two words
@@ -428,6 +455,12 @@ const LayoutOverlap = ({ event, theme, imageUrl }: { event: TimelineEvent; theme
             <p className={`${theme.fontBody} text-sm sm:text-base lg:text-lg text-muted-foreground leading-relaxed`}>
               {event.description}
             </p>
+            
+            <MediaButtons 
+              spotifySearchQuery={event.spotifySearchQuery}
+              movieSearchQuery={event.movieSearchQuery}
+              eventTitle={event.title}
+            />
           </div>
         </motion.div>
       </div>
@@ -489,6 +522,12 @@ const LayoutSplit = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: 
           <p className={`${theme.fontBody} text-sm sm:text-base text-muted-foreground leading-relaxed font-light`}>
             {event.description}
           </p>
+          
+          <MediaButtons 
+            spotifySearchQuery={event.spotifySearchQuery}
+            movieSearchQuery={event.movieSearchQuery}
+            eventTitle={event.title}
+          />
         </div>
       </motion.div>
     </div>
