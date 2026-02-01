@@ -161,7 +161,7 @@ const StickyYear = ({ year, theme }: StickyYearProps) => {
 
 // Pattern A: Text left, image right - ALWAYS SIDE BY SIDE (including mobile)
 const LayoutPatternA = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="flex flex-row gap-6 sm:gap-12 lg:gap-20 items-center py-12 sm:py-16 lg:py-24">
+  <div className="flex flex-row gap-8 sm:gap-16 lg:gap-28 items-center py-12 sm:py-16 lg:py-24 px-4 sm:px-8 lg:px-16">
     <Reveal className="flex-1 min-w-0 space-y-3 sm:space-y-6 text-left">
       <span className={`${theme.fontMono} text-xs sm:text-sm uppercase tracking-widest text-muted-foreground`}>
         {event.date}
@@ -173,21 +173,25 @@ const LayoutPatternA = ({ event, theme, imageUrl }: { event: TimelineEvent; them
         {event.description}
       </p>
     </Reveal>
-    <Reveal className="w-1/3 min-w-[120px] sm:min-w-[180px] lg:min-w-[280px] flex-shrink-0" delay={0.2}>
-      <div className="relative aspect-[4/3] rounded-lg sm:rounded-2xl overflow-hidden shadow-xl sm:shadow-2xl">
-        <ParallaxImage src={imageUrl} alt={event.title} className="absolute inset-0" speed={0.3} />
-      </div>
+    <Reveal className="w-2/5 min-w-[140px] sm:min-w-[220px] lg:min-w-[340px] flex-shrink-0" delay={0.2}>
+      <img 
+        src={imageUrl} 
+        alt={event.title} 
+        className="w-full h-auto rounded-lg sm:rounded-2xl shadow-xl sm:shadow-2xl object-contain"
+      />
     </Reveal>
   </div>
 );
 
 // Pattern B: Image left, text right - ALWAYS SIDE BY SIDE (flipped)
 const LayoutPatternB = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="flex flex-row gap-6 sm:gap-12 lg:gap-20 items-center py-12 sm:py-16 lg:py-24">
-    <Reveal className="w-1/3 min-w-[120px] sm:min-w-[180px] lg:min-w-[280px] flex-shrink-0">
-      <div className="relative aspect-[4/3] rounded-lg sm:rounded-2xl overflow-hidden shadow-xl sm:shadow-2xl">
-        <ParallaxImage src={imageUrl} alt={event.title} className="absolute inset-0" speed={0.3} />
-      </div>
+  <div className="flex flex-row gap-8 sm:gap-16 lg:gap-28 items-center py-12 sm:py-16 lg:py-24 px-4 sm:px-8 lg:px-16">
+    <Reveal className="w-2/5 min-w-[140px] sm:min-w-[220px] lg:min-w-[340px] flex-shrink-0">
+      <img 
+        src={imageUrl} 
+        alt={event.title} 
+        className="w-full h-auto rounded-lg sm:rounded-2xl shadow-xl sm:shadow-2xl object-contain"
+      />
     </Reveal>
     <Reveal className="flex-1 min-w-0 space-y-3 sm:space-y-6 text-left" delay={0.2}>
       <span className={`${theme.fontMono} text-xs sm:text-sm uppercase tracking-widest text-muted-foreground`}>
@@ -203,13 +207,15 @@ const LayoutPatternB = ({ event, theme, imageUrl }: { event: TimelineEvent; them
   </div>
 );
 
-// Pattern C: Portrait image left, text right - ALWAYS SIDE BY SIDE
+// Pattern C: Image left, text right - ALWAYS SIDE BY SIDE
 const LayoutPatternC = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="flex flex-row gap-6 sm:gap-12 lg:gap-20 items-center py-12 sm:py-16 lg:py-24">
-    <Reveal className="w-1/3 min-w-[100px] sm:min-w-[150px] lg:min-w-[240px] flex-shrink-0">
-      <div className="relative aspect-[3/4] rounded-lg sm:rounded-3xl overflow-hidden shadow-xl sm:shadow-2xl">
-        <ParallaxImage src={imageUrl} alt={event.title} className="absolute inset-0" speed={0.4} />
-      </div>
+  <div className="flex flex-row gap-8 sm:gap-16 lg:gap-28 items-center py-12 sm:py-16 lg:py-24 px-4 sm:px-8 lg:px-16">
+    <Reveal className="w-2/5 min-w-[120px] sm:min-w-[180px] lg:min-w-[300px] flex-shrink-0">
+      <img 
+        src={imageUrl} 
+        alt={event.title} 
+        className="w-full h-auto rounded-lg sm:rounded-3xl shadow-xl sm:shadow-2xl object-contain"
+      />
     </Reveal>
     <Reveal className="flex-1 min-w-0 space-y-3 sm:space-y-6 text-left" delay={0.2}>
       <span className={`${theme.fontMono} text-xs sm:text-sm uppercase tracking-widest text-muted-foreground`}>
@@ -225,9 +231,9 @@ const LayoutPatternC = ({ event, theme, imageUrl }: { event: TimelineEvent; them
   </div>
 );
 
-// Pattern D: Text left, square image right - ALWAYS SIDE BY SIDE
+// Pattern D: Text left, image right - ALWAYS SIDE BY SIDE
 const LayoutPatternD = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="flex flex-row gap-6 sm:gap-12 lg:gap-20 items-center py-12 sm:py-16 lg:py-24">
+  <div className="flex flex-row gap-8 sm:gap-16 lg:gap-28 items-center py-12 sm:py-16 lg:py-24 px-4 sm:px-8 lg:px-16">
     <Reveal className="flex-1 min-w-0 space-y-3 sm:space-y-6 text-left">
       <span className={`${theme.fontMono} text-xs sm:text-sm uppercase tracking-widest text-muted-foreground`}>
         {event.date}
@@ -239,25 +245,25 @@ const LayoutPatternD = ({ event, theme, imageUrl }: { event: TimelineEvent; them
         {event.description}
       </p>
     </Reveal>
-    <Reveal className="w-1/3 min-w-[100px] sm:min-w-[150px] lg:min-w-[240px] flex-shrink-0" delay={0.2}>
-      <div className="relative aspect-square rounded-lg sm:rounded-xl overflow-hidden shadow-xl sm:shadow-2xl">
-        <ParallaxImage src={imageUrl} alt={event.title} className="absolute inset-0" speed={0.2} />
-      </div>
+    <Reveal className="w-2/5 min-w-[120px] sm:min-w-[180px] lg:min-w-[300px] flex-shrink-0" delay={0.2}>
+      <img 
+        src={imageUrl} 
+        alt={event.title} 
+        className="w-full h-auto rounded-lg sm:rounded-xl shadow-xl sm:shadow-2xl object-contain"
+      />
     </Reveal>
   </div>
 );
 
-// Pattern E: Circular image left, text right - ALWAYS SIDE BY SIDE
+// Pattern E: Image left, text right - ALWAYS SIDE BY SIDE
 const LayoutPatternE = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="flex flex-row gap-6 sm:gap-12 lg:gap-20 items-center py-12 sm:py-16 lg:py-24">
-    <Reveal className="w-1/3 min-w-[100px] sm:min-w-[150px] lg:min-w-[200px] flex-shrink-0 flex justify-center">
-      <div className="relative w-full max-w-[200px] aspect-square rounded-full overflow-hidden shadow-xl sm:shadow-2xl ring-4 sm:ring-8 ring-background">
-        <img 
-          src={imageUrl} 
-          alt={event.title} 
-          className="w-full h-full object-cover object-center"
-        />
-      </div>
+  <div className="flex flex-row gap-8 sm:gap-16 lg:gap-28 items-center py-12 sm:py-16 lg:py-24 px-4 sm:px-8 lg:px-16">
+    <Reveal className="w-2/5 min-w-[120px] sm:min-w-[180px] lg:min-w-[280px] flex-shrink-0">
+      <img 
+        src={imageUrl} 
+        alt={event.title} 
+        className="w-full h-auto rounded-lg sm:rounded-2xl shadow-xl sm:shadow-2xl object-contain"
+      />
     </Reveal>
     <Reveal className="flex-1 min-w-0 space-y-3 sm:space-y-6 text-left" delay={0.2}>
       <span className={`${theme.fontMono} text-xs sm:text-sm uppercase tracking-widest text-muted-foreground`}>
