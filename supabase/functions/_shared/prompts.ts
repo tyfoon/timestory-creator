@@ -38,9 +38,9 @@ const NOSTALGIA_INSTRUCTIONS = `
 RICHTLIJNEN VOOR SFEER & STIJL:
 1. **Zintuiglijke Details:** Beschrijf niet alleen feiten, maar geuren, geluiden en gevoelens. (Bv. de geur van brommerbenzine, het ratelende geluid van een videoband terugspoelen, de spanning van teletekst checken).
 2. **Analoge Vertraging:** Benadruk dingen die nu weg zijn: wachten op de bus zonder mobiel, foto's laten ontwikkelen, inbellen met een modem.
-3. **Persoonlijke Toon:** Gebruik een mijmerende, verhalende stijl. Bekijk alles door de bril van de leeftijd die de gebruiker toen had.
+3. **Sociale Spanning:** Beschrijf de 'onmogelijkheid' van contact: urenlang naar de vaste telefoon staren, de zenuwen bij het vragen van een dans, en de hiërarchie in de groep.
+4. **Persoonlijke Toon:** Gebruik een mijmerende, verhalende stijl. Bekijk alles door de bril van de leeftijd die de gebruiker toen had.
 `;
-
 // =============================================================================
 // HELPER: VISUAL DIRECTOR INSTRUCTIES
 // =============================================================================
@@ -382,10 +382,9 @@ export function getContentFocusForPeriod(periodType?: string): string {
       NIET: Politiek, oorlogen, economische crises (tenzij ouders erover fluisterden), saaie 'grote mensen' zaken.`;
 
     case "puberty":
-      // AANGEPAST: Specifieke instructie om politiek te weren
-      return `FOCUS: Puberteit (11-17 jaar). De 'bubbel' van de tiener.
-      WEL: Muziek (Top 40, videoclips), uitgaan, discotheek, brommers, middelbare school, eerste verliefdheid, schoolfeesten, rages, mode, TV-series, techniek (Walkman/mobiel).
-      NIET: Amerikaanse politiek (geen Reagan/Clinton/Bush tenzij pop-cultureel relevant), verdragen, beursnieuws. Voor een puber in de provincie bestaat Washington niet, de discotheek wel.`;
+      return `FOCUS: Puberteit (11-17 jaar). De 'bubbel' van de tiener met nadruk op het sociale leven.
+      WEL: De 'uitgaans-economie' (sparen voor entree, muntjes), discotheken (de hiërarchie, de portier, de 'slow'), versierpogingen, trends in uitgaanskleding (merkjes, haardracht), geuren (parfum/aftershave zoals Kouros/Bac), schoolfeesten en brommers.
+      NIET: Amerikaanse politiek, verdragen, beursnieuws. Voor een puber bestaat Washington niet, de discotheek wel.`;
 
     case "young-adult":
       return `FOCUS: Jongvolwassenheid (18-25 jaar). De wereld gaat open.
@@ -474,10 +473,10 @@ export const INTERESTS_ADDITION = (interests: string) => `\nInteresses: ${intere
 export const CITY_ADDITION = (city: string) => `
 CRUCIAAL - LOKALE LENS (${city}):
 De gebruiker groeide op in **${city}**.
-Dit is de bril waardoor je de hele bovenstaande tijdlijn bekijkt en inkleurt.
-1. **Lokale Hotspots:** Noem specifieke discotheken, bioscopen, scholen of hangplekken in ${city} of in de buurt ervan (indien bekend).
-2. **Lokale Sfeer:** Beschrijf het specifieke gevoel van wonen in ${city} (Provinciaal vs Stedelijk).
-3. **Events:** Was er een groot lokaal evenement of feest in die jaren?`;
+Dit is het decor. Omdat exacte namen van toen soms vervaagd zijn, gebruik je **archetypische beschrijvingen** die passen bij ${city}:
+1. **De Hotspots:** Beschrijf de lokale 'kelderdiscotheek', de snackbar op de hoek van de markt, en de vaste hangplek (bijv. 'bij de fontein' of 'het plein').
+2. **De Route:** Beschrijf de rit (fiets/brommer) vanuit de wijk/dorp naar het centrum van ${city}.
+3. **Lokale Sfeer:** Beschrijf het specifieke gevoel van wonen in ${city} (Provinciaal vs Stedelijk) en de rivaliteit met omliggende plaatsen.`;
 
 export const CHILDREN_ADDITION = (childrenInfo: string[]) => `\nKinderen: ${childrenInfo.join(", ")}`;
 
