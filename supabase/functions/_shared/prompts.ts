@@ -442,3 +442,8 @@ Dit is de bril waardoor je de hele bovenstaande tijdlijn bekijkt en inkleurt.
 3. **Events:** Was er een groot lokaal evenement of feest in die jaren?`;
 
 export const CHILDREN_ADDITION = (childrenInfo: string[]) => `\nKinderen: ${childrenInfo.join(", ")}`;
+
+export const GENDER_ADDITION = (gender: 'male' | 'female') => {
+  const genderText = gender === 'male' ? 'man' : 'vrouw';
+  return `\nDe persoon voor wie deze tijdlijn is, is een ${genderText}. Pas de beschrijvingen subtiel aan zodat ze herkenbaar zijn vanuit dit perspectief.`;
+};
