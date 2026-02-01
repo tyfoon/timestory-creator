@@ -315,13 +315,14 @@ export function getTimelineTool() {
             },
           },
           summary: { type: "string" },
-          storyTitle: { 
-            type: "string", 
-            description: "Pakkende titel van max 10 woorden die de essentie van de periode vangt" 
+          storyTitle: {
+            type: "string",
+            description: "Pakkende titel van max 10 woorden die de essentie van de periode vangt",
           },
-          storyIntroduction: { 
-            type: "string", 
-            description: "~200 woorden nostalgische introductietekst in tweede persoon, met zintuiglijke details en emotie" 
+          storyIntroduction: {
+            type: "string",
+            description:
+              "~150 woorden nostalgische introductietekst in tweede persoon, met zintuiglijke details en emotie",
           },
           famousBirthdays: {
             type: "array",
