@@ -728,21 +728,13 @@ const TimelineStoryPage = () => {
         </div>
       </section>
 
-      {/* Loading state - only show if no story content yet */}
-      {isLoading && events.length === 0 && !storyTitle && !storyIntroduction && (
-        <div className="flex-1 flex flex-col items-center justify-center py-24 fade-in min-h-[60vh]">
-          <div className="w-16 h-16 rounded-full bg-gradient-gold flex items-center justify-center mb-4 animate-pulse">
-            <Clock className="h-8 w-8 text-primary-foreground" />
-          </div>
-          <h2 className="font-serif text-xl font-semibold text-foreground mb-2">
-            {t('loadingTitle') as string}
-          </h2>
-          <p className="text-muted-foreground text-sm mb-3">
-            {t('loadingSubtitle') as string}
-          </p>
-          <Loader2 className="h-5 w-5 animate-spin text-accent" />
-        </div>
-      )}
+      {/* Hero section - ALTIJD tonen, met loading state als nog geen content */}
+      <HeroSection 
+        storyTitle={storyTitle}
+        storyIntroduction={storyIntroduction}
+        theme={theme}
+        isLoading={isLoading && !storyTitle && !storyIntroduction}
+      />
 
       {/* Image loading indicator - minimal */}
       {isLoadingImages && !isLoading && (
@@ -757,16 +749,6 @@ const TimelineStoryPage = () => {
       {/* Sticky year indicator */}
       {currentYear && !isLoading && (
         <StickyYear year={currentYear} theme={theme} />
-      )}
-
-      {/* Hero section - ALWAYS show when we have storyTitle or storyIntroduction */}
-      {(storyTitle || storyIntroduction) && (
-        <HeroSection 
-          storyTitle={storyTitle}
-          storyIntroduction={storyIntroduction}
-          theme={theme}
-          isLoading={false}
-        />
       )}
 
       {/* Timeline events */}
