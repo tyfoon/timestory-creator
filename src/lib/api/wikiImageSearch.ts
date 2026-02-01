@@ -129,6 +129,13 @@ function normalizeSearchQuery(query: string, queryType: 'nl' | 'en' = 'nl'): str
     return "Discotheque";
   }
   
+  // Bar tokens/coins: always use "plastic token coin"
+  if (lowerQuery.includes("muntje") || lowerQuery.includes("muntjes") || 
+      (lowerQuery.includes("munt") && (lowerQuery.includes("bar") || lowerQuery.includes("café") || lowerQuery.includes("cafe")))) {
+    console.log(`[Query Normalize] Bar token detected: "${query}" -> "plastic token coin"`);
+    return "plastic token coin";
+  }
+  
   // Strip decades from all queries
   let normalized = stripDecades(query);
   
