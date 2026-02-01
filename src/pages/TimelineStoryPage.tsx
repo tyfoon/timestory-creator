@@ -155,7 +155,27 @@ interface ParallaxImageProps {
 }
 
 const ParallaxImage = ({ src, alt, className = '', speed = 0.5 }: ParallaxImageProps) => {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
+  const [containerAspect, setContainerAspect] = useState<number | null>(null);
+  const [imageAspect, setImageAspect] = useState<number | null>(null);
+  const [fitMode, setFitMode] = useState<'cover' | 'contain'>('cover');
+
+  // Measure container aspect ratio (reacts to responsive layout changes)
+  useEffect(() => {
+    if (!ref.current) return;
+    const el = ref.current;
+
+    const update = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) setContainerAspect(rect.width / rect.height);
+    };
+
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ['start end', 'end start'],
@@ -164,13 +184,31 @@ const ParallaxImage = ({ src, alt, className = '', speed = 0.5 }: ParallaxImageP
   // Reduced parallax range to prevent excessive zooming
   const y = useTransform(scrollYProgress, [0, 1], ['0%', `${speed * 15}%`]);
 
+  // Switch to object-contain when the image ratio is very different from the container ratio.
+  // This prevents “extreme crop/zoom” on panoramic or very tall images.
+  useEffect(() => {
+    if (!containerAspect || !imageAspect) return;
+    const mismatch = Math.max(imageAspect / containerAspect, containerAspect / imageAspect);
+    setFitMode(mismatch >= 1.75 ? 'contain' : 'cover');
+  }, [containerAspect, imageAspect]);
+
   return (
-    <div ref={ref} className={`overflow-hidden ${className}`}>
+    <div ref={ref} className={`overflow-hidden bg-muted ${className}`}>
       <motion.img
         src={src}
         alt={alt}
-        style={{ y }}
-        className="w-full h-full object-cover object-top scale-[1.05]"
+        onLoad={(e) => {
+          const img = e.currentTarget;
+          if (img.naturalWidth && img.naturalHeight) {
+            setImageAspect(img.naturalWidth / img.naturalHeight);
+          }
+        }}
+        style={{ y: fitMode === 'contain' ? 0 : y }}
+        className={`w-full h-full bg-muted ${
+          fitMode === 'contain'
+            ? 'object-contain scale-100'
+            : 'object-cover object-top scale-[1.02]'
+        }`}
       />
     </div>
   );
@@ -240,10 +278,48 @@ interface ImageWithBlacklistProps {
 const ImageWithBlacklist = ({ src, alt, className = '', event, onBlacklistImage }: ImageWithBlacklistProps) => {
   // Check if this is a placeholder (not a real searched image)
   const isPlaceholder = !event.imageUrl || event.imageStatus !== 'found';
+
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [boxAspect, setBoxAspect] = useState<number | null>(null);
+  const [imgAspect, setImgAspect] = useState<number | null>(null);
+  const [fitMode, setFitMode] = useState<'cover' | 'contain'>('cover');
+
+  // Measure the rendered box aspect ratio (responds to resize/breakpoints)
+  useEffect(() => {
+    if (!imgRef.current) return;
+    const el = imgRef.current;
+
+    const update = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) setBoxAspect(rect.width / rect.height);
+    };
+
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!boxAspect || !imgAspect) return;
+    const mismatch = Math.max(imgAspect / boxAspect, boxAspect / imgAspect);
+    setFitMode(mismatch >= 1.75 ? 'contain' : 'cover');
+  }, [boxAspect, imgAspect]);
   
   return (
     <div className="relative group/img">
-      <img src={src} alt={alt} className={className} />
+      <img
+        ref={imgRef}
+        src={src}
+        alt={alt}
+        onLoad={(e) => {
+          const img = e.currentTarget;
+          if (img.naturalWidth && img.naturalHeight) {
+            setImgAspect(img.naturalWidth / img.naturalHeight);
+          }
+        }}
+        className={`${className} bg-muted ${fitMode === 'contain' ? 'object-contain' : 'object-cover'}`}
+      />
       {/* Blacklist button - only for real images */}
       {!isPlaceholder && event.imageUrl && onBlacklistImage && (
         <button
