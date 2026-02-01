@@ -76,6 +76,43 @@ const getCategoryPlaceholder = (category: TimelineEvent['category']): string => 
 };
 
 // =============================================
+// STAGGERED TEXT REVEAL - Word by word animation
+// =============================================
+interface StaggeredTextProps {
+  text: string;
+  className?: string;
+  as?: 'h1' | 'h2' | 'h3' | 'p' | 'span';
+  highlightWords?: number[];
+  style?: React.CSSProperties;
+}
+
+const StaggeredText = ({ text, className = '', as: Component = 'h2', highlightWords = [], style }: StaggeredTextProps) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-50px' });
+  const words = text.split(' ');
+
+  return (
+    <Component ref={ref} className={className} style={style}>
+      {words.map((word, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0, y: 20, filter: 'blur(4px)' }}
+          animate={isInView ? { opacity: 1, y: 0, filter: 'blur(0px)' } : {}}
+          transition={{ 
+            duration: 0.5, 
+            delay: i * 0.08,
+            ease: [0.25, 0.1, 0.25, 1] 
+          }}
+          className={`inline-block mr-[0.25em] ${highlightWords.includes(i) ? 'font-black' : 'font-light'}`}
+        >
+          {word}
+        </motion.span>
+      ))}
+    </Component>
+  );
+};
+
+// =============================================
 // REVEAL ANIMATION COMPONENT
 // =============================================
 interface RevealProps {
@@ -108,7 +145,7 @@ interface ParallaxImageProps {
   src: string;
   alt: string;
   className?: string;
-  speed?: number; // 0.5 = slower, 1 = normal, 2 = faster
+  speed?: number;
 }
 
 const ParallaxImage = ({ src, alt, className = '', speed = 0.5 }: ParallaxImageProps) => {
@@ -126,7 +163,7 @@ const ParallaxImage = ({ src, alt, className = '', speed = 0.5 }: ParallaxImageP
         src={src}
         alt={alt}
         style={{ y }}
-        className="w-full h-full object-cover object-center scale-110"
+        className="w-full h-full object-cover object-top scale-110"
       />
     </div>
   );
@@ -142,11 +179,11 @@ interface StickyYearProps {
 
 const StickyYear = ({ year, theme }: StickyYearProps) => {
   return (
-    <div className="hidden lg:block fixed left-8 top-1/2 -translate-y-1/2 z-40">
+    <div className="hidden lg:block fixed left-4 xl:left-8 top-1/2 -translate-y-1/2 z-40 pointer-events-none">
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
-        className={`${theme.fontMono} text-7xl font-bold text-muted-foreground/20 tracking-tighter`}
+        className={`${theme.fontDisplay} text-[8rem] xl:text-[12rem] font-black text-muted-foreground/10 tracking-tighter leading-none`}
         style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
       >
         {year}
@@ -156,132 +193,311 @@ const StickyYear = ({ year, theme }: StickyYearProps) => {
 };
 
 // =============================================
-// EVENT LAYOUT PATTERNS
+// DROP CAP COMPONENT - Magazine style initial
+// =============================================
+const DropCap = ({ children, theme }: { children: string; theme: EditorialTheme }) => {
+  const firstLetter = children.charAt(0);
+  const rest = children.slice(1);
+  
+  return (
+    <p className={`${theme.fontBody} text-base sm:text-lg lg:text-xl text-muted-foreground leading-relaxed`}>
+      <span className={`${theme.fontDisplay} float-left text-6xl sm:text-7xl lg:text-8xl font-black leading-none mr-3 mt-1 text-foreground`}>
+        {firstLetter}
+      </span>
+      {rest}
+    </p>
+  );
+};
+
+// =============================================
+// EVENT LAYOUT PATTERNS - Dramatic variations
 // =============================================
 
-// Pattern A: Text left, image right - ALWAYS SIDE BY SIDE (including mobile)
-const LayoutPatternA = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="flex flex-row gap-8 sm:gap-16 lg:gap-28 items-center py-12 sm:py-16 lg:py-24 px-4 sm:px-8 lg:px-16">
-    <Reveal className="flex-1 min-w-0 space-y-3 sm:space-y-6 text-left">
-      <span className={`${theme.fontMono} text-xs sm:text-sm uppercase tracking-widest text-muted-foreground`}>
-        {event.date}
-      </span>
-      <h2 className={`${theme.fontDisplay} text-xl sm:text-3xl lg:text-5xl font-bold leading-tight text-foreground`}>
-        {event.title}
-      </h2>
-      <p className={`${theme.fontBody} text-sm sm:text-lg lg:text-xl text-muted-foreground leading-relaxed`}>
-        {event.description}
-      </p>
-    </Reveal>
-    <Reveal className="w-2/5 min-w-[140px] sm:min-w-[220px] lg:min-w-[340px] flex-shrink-0" delay={0.2}>
-      <img 
-        src={imageUrl} 
-        alt={event.title} 
-        className="w-full h-auto rounded-lg sm:rounded-2xl shadow-xl sm:shadow-2xl object-contain"
-      />
-    </Reveal>
-  </div>
-);
+// Pattern: "THE SHOUT" - Giant year, bold statement, minimal
+const LayoutShout = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-100px' });
+  
+  return (
+    <div ref={ref} className="relative min-h-[80vh] flex items-center justify-center py-16 overflow-hidden">
+      {/* Giant background year */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={isInView ? { opacity: 0.05, scale: 1 } : {}}
+        transition={{ duration: 1.2 }}
+        className={`absolute inset-0 flex items-center justify-center pointer-events-none select-none`}
+      >
+        <span 
+          className={`${theme.fontDisplay} font-black text-foreground`}
+          style={{ fontSize: 'clamp(10rem, 40vw, 35rem)', lineHeight: 0.8 }}
+        >
+          {event.year}
+        </span>
+      </motion.div>
+      
+      {/* Content overlay */}
+      <div className="relative z-10 text-center max-w-4xl mx-auto px-6">
+        <motion.span
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.3 }}
+          className={`${theme.fontMono} text-xs sm:text-sm uppercase tracking-[0.3em] text-muted-foreground block mb-6`}
+        >
+          {event.date}
+        </motion.span>
+        
+        <StaggeredText
+          text={event.title}
+          className={`${theme.fontDisplay} font-black text-foreground leading-none mb-8`}
+          style={{ fontSize: 'clamp(2rem, 8vw, 6rem)' }}
+          as="h2"
+        />
+        
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={isInView ? { opacity: 1 } : {}}
+          transition={{ delay: 0.8 }}
+          className={`${theme.fontBody} text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto font-light`}
+        >
+          {event.description}
+        </motion.p>
+      </div>
+      
+      {/* Small floating image */}
+      <motion.div
+        initial={{ opacity: 0, x: 50, rotate: 3 }}
+        animate={isInView ? { opacity: 1, x: 0, rotate: 3 } : {}}
+        transition={{ delay: 0.5, duration: 0.8 }}
+        className="absolute bottom-8 right-8 w-32 sm:w-48 lg:w-64 z-20"
+      >
+        <img 
+          src={imageUrl} 
+          alt={event.title}
+          className="w-full h-auto rounded-lg shadow-2xl"
+        />
+      </motion.div>
+    </div>
+  );
+};
 
-// Pattern B: Image left, text right - ALWAYS SIDE BY SIDE (flipped)
-const LayoutPatternB = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="flex flex-row gap-8 sm:gap-16 lg:gap-28 items-center py-12 sm:py-16 lg:py-24 px-4 sm:px-8 lg:px-16">
-    <Reveal className="w-2/5 min-w-[140px] sm:min-w-[220px] lg:min-w-[340px] flex-shrink-0">
-      <img 
-        src={imageUrl} 
-        alt={event.title} 
-        className="w-full h-auto rounded-lg sm:rounded-2xl shadow-xl sm:shadow-2xl object-contain"
-      />
-    </Reveal>
-    <Reveal className="flex-1 min-w-0 space-y-3 sm:space-y-6 text-left" delay={0.2}>
-      <span className={`${theme.fontMono} text-xs sm:text-sm uppercase tracking-widest text-muted-foreground`}>
-        {event.date}
-      </span>
-      <h2 className={`${theme.fontDisplay} text-xl sm:text-3xl lg:text-5xl font-bold leading-tight text-foreground`}>
-        {event.title}
-      </h2>
-      <p className={`${theme.fontBody} text-sm sm:text-lg lg:text-xl text-muted-foreground leading-relaxed`}>
-        {event.description}
-      </p>
-    </Reveal>
-  </div>
-);
+// Pattern: "THE WHISPER" - Minimal, lots of whitespace, text in corner
+const LayoutWhisper = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-100px' });
+  
+  return (
+    <div ref={ref} className="relative min-h-[70vh] flex items-end py-16 px-6 sm:px-12 lg:px-24">
+      {/* Large image taking most of the space */}
+      <motion.div
+        initial={{ opacity: 0, scale: 1.05 }}
+        animate={isInView ? { opacity: 1, scale: 1 } : {}}
+        transition={{ duration: 1.2 }}
+        className="absolute inset-8 sm:inset-16 lg:inset-24"
+      >
+        <img 
+          src={imageUrl} 
+          alt={event.title}
+          className="w-full h-full object-cover rounded-2xl"
+        />
+      </motion.div>
+      
+      {/* Text whispered in corner */}
+      <motion.div
+        initial={{ opacity: 0, x: -30 }}
+        animate={isInView ? { opacity: 1, x: 0 } : {}}
+        transition={{ delay: 0.6 }}
+        className="relative z-10 max-w-xs bg-background/95 backdrop-blur-sm p-6 rounded-lg shadow-lg"
+      >
+        <span className={`${theme.fontMono} text-[10px] uppercase tracking-[0.2em] text-muted-foreground block mb-2`}>
+          {event.date}
+        </span>
+        <h2 className={`${theme.fontDisplay} text-lg sm:text-xl font-bold text-foreground leading-tight mb-2`}>
+          {event.title}
+        </h2>
+        <p className={`${theme.fontBody} text-sm text-muted-foreground leading-relaxed font-light`}>
+          {event.description}
+        </p>
+      </motion.div>
+    </div>
+  );
+};
 
-// Pattern C: Image left, text right - ALWAYS SIDE BY SIDE
-const LayoutPatternC = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="flex flex-row gap-8 sm:gap-16 lg:gap-28 items-center py-12 sm:py-16 lg:py-24 px-4 sm:px-8 lg:px-16">
-    <Reveal className="w-2/5 min-w-[120px] sm:min-w-[180px] lg:min-w-[300px] flex-shrink-0">
-      <img 
-        src={imageUrl} 
-        alt={event.title} 
-        className="w-full h-auto rounded-lg sm:rounded-3xl shadow-xl sm:shadow-2xl object-contain"
-      />
-    </Reveal>
-    <Reveal className="flex-1 min-w-0 space-y-3 sm:space-y-6 text-left" delay={0.2}>
-      <span className={`${theme.fontMono} text-xs sm:text-sm uppercase tracking-widest text-muted-foreground`}>
-        {event.date}
-      </span>
-      <h2 className={`${theme.fontDisplay} text-xl sm:text-3xl lg:text-5xl font-bold leading-tight text-foreground`}>
-        {event.title}
-      </h2>
-      <p className={`${theme.fontBody} text-sm sm:text-lg lg:text-xl text-muted-foreground leading-relaxed`}>
-        {event.description}
-      </p>
-    </Reveal>
-  </div>
-);
+// Pattern: "THE MAGAZINE" - Drop cap, editorial columns, rotated date
+const LayoutMagazine = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-100px' });
+  
+  return (
+    <div ref={ref} className="relative py-16 sm:py-24 lg:py-32 px-6 sm:px-12 lg:px-24">
+      <div className="flex flex-row gap-8 sm:gap-12 lg:gap-20 items-start">
+        {/* Left column: Image with rotated date */}
+        <div className="relative w-2/5 flex-shrink-0">
+          {/* Rotated date along left edge */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={isInView ? { opacity: 1 } : {}}
+            transition={{ delay: 0.4 }}
+            className="absolute -left-2 sm:-left-4 top-0 bottom-0 flex items-center"
+            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+          >
+            <span className={`${theme.fontMono} text-xs uppercase tracking-[0.3em] text-muted-foreground/60 rotate-180`}>
+              {event.date}
+            </span>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.8 }}
+          >
+            <img 
+              src={imageUrl} 
+              alt={event.title}
+              className="w-full h-auto rounded-sm shadow-xl"
+            />
+          </motion.div>
+        </div>
+        
+        {/* Right column: Editorial text */}
+        <div className="flex-1 space-y-6">
+          <motion.h2
+            initial={{ opacity: 0, x: -20 }}
+            animate={isInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ delay: 0.3 }}
+            className={`${theme.fontDisplay} font-bold text-foreground leading-tight`}
+            style={{ fontSize: 'clamp(1.5rem, 4vw, 3.5rem)' }}
+          >
+            {event.title}
+          </motion.h2>
+          
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={isInView ? { opacity: 1 } : {}}
+            transition={{ delay: 0.5 }}
+          >
+            <DropCap theme={theme}>{event.description}</DropCap>
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-// Pattern D: Text left, image right - ALWAYS SIDE BY SIDE
-const LayoutPatternD = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="flex flex-row gap-8 sm:gap-16 lg:gap-28 items-center py-12 sm:py-16 lg:py-24 px-4 sm:px-8 lg:px-16">
-    <Reveal className="flex-1 min-w-0 space-y-3 sm:space-y-6 text-left">
-      <span className={`${theme.fontMono} text-xs sm:text-sm uppercase tracking-widest text-muted-foreground`}>
-        {event.date}
-      </span>
-      <h2 className={`${theme.fontDisplay} text-xl sm:text-3xl lg:text-5xl font-bold leading-tight text-foreground`}>
-        {event.title}
-      </h2>
-      <p className={`${theme.fontBody} text-sm sm:text-lg lg:text-xl text-muted-foreground leading-relaxed`}>
-        {event.description}
-      </p>
-    </Reveal>
-    <Reveal className="w-2/5 min-w-[120px] sm:min-w-[180px] lg:min-w-[300px] flex-shrink-0" delay={0.2}>
-      <img 
-        src={imageUrl} 
-        alt={event.title} 
-        className="w-full h-auto rounded-lg sm:rounded-xl shadow-xl sm:shadow-2xl object-contain"
-      />
-    </Reveal>
-  </div>
-);
+// Pattern: "THE OVERLAP" - Text bleeding over image
+const LayoutOverlap = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-100px' });
+  
+  return (
+    <div ref={ref} className="relative py-16 sm:py-24 lg:py-32 px-6 sm:px-12">
+      <div className="relative max-w-6xl mx-auto">
+        {/* Image */}
+        <motion.div
+          initial={{ opacity: 0, scale: 1.02 }}
+          animate={isInView ? { opacity: 1, scale: 1 } : {}}
+          transition={{ duration: 1 }}
+          className="w-full sm:w-3/4 lg:w-2/3 ml-auto"
+        >
+          <img 
+            src={imageUrl} 
+            alt={event.title}
+            className="w-full h-auto rounded-lg"
+          />
+        </motion.div>
+        
+        {/* Text overlapping from left */}
+        <motion.div
+          initial={{ opacity: 0, x: -40 }}
+          animate={isInView ? { opacity: 1, x: 0 } : {}}
+          transition={{ delay: 0.4, duration: 0.8 }}
+          className="absolute left-0 top-1/2 -translate-y-1/2 w-full sm:w-2/3 lg:w-1/2 z-10"
+        >
+          <div className="bg-background/90 backdrop-blur-md p-6 sm:p-10 lg:p-12 rounded-r-2xl shadow-2xl">
+            <span className={`${theme.fontMono} text-xs uppercase tracking-[0.3em] text-muted-foreground block mb-4`}>
+              {event.date}
+            </span>
+            
+            <StaggeredText
+              text={event.title}
+              className={`${theme.fontDisplay} font-black text-foreground leading-none mb-6`}
+              style={{ fontSize: 'clamp(1.5rem, 5vw, 3rem)' }}
+              as="h2"
+              highlightWords={[0, 1]} // Highlight first two words
+            />
+            
+            <p className={`${theme.fontBody} text-sm sm:text-base lg:text-lg text-muted-foreground leading-relaxed`}>
+              {event.description}
+            </p>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+};
 
-// Pattern E: Image left, text right - ALWAYS SIDE BY SIDE
-const LayoutPatternE = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="flex flex-row gap-8 sm:gap-16 lg:gap-28 items-center py-12 sm:py-16 lg:py-24 px-4 sm:px-8 lg:px-16">
-    <Reveal className="w-2/5 min-w-[120px] sm:min-w-[180px] lg:min-w-[280px] flex-shrink-0">
-      <img 
-        src={imageUrl} 
-        alt={event.title} 
-        className="w-full h-auto rounded-lg sm:rounded-2xl shadow-xl sm:shadow-2xl object-contain"
-      />
-    </Reveal>
-    <Reveal className="flex-1 min-w-0 space-y-3 sm:space-y-6 text-left" delay={0.2}>
-      <span className={`${theme.fontMono} text-xs sm:text-sm uppercase tracking-widest text-muted-foreground`}>
-        {event.date}
-      </span>
-      <h2 className={`${theme.fontDisplay} text-xl sm:text-3xl lg:text-4xl font-bold leading-tight text-foreground`}>
-        {event.title}
-      </h2>
-      <p className={`${theme.fontBody} text-sm sm:text-lg text-muted-foreground leading-relaxed`}>
-        {event.description}
-      </p>
-    </Reveal>
-  </div>
-);
+// Pattern: "THE SPLIT" - Dramatic half-and-half with huge type
+const LayoutSplit = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-100px' });
+  
+  return (
+    <div ref={ref} className="relative min-h-[60vh] flex flex-row">
+      {/* Left half: Image */}
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={isInView ? { opacity: 1, x: 0 } : {}}
+        transition={{ duration: 0.8 }}
+        className="w-1/2 relative overflow-hidden"
+      >
+        <ParallaxImage 
+          src={imageUrl} 
+          alt={event.title}
+          className="absolute inset-0"
+          speed={0.3}
+        />
+        
+        {/* Year bleeding across */}
+        <div className="absolute bottom-4 right-0 translate-x-1/2 z-10 mix-blend-overlay">
+          <span 
+            className={`${theme.fontDisplay} font-black text-background/30`}
+            style={{ fontSize: 'clamp(4rem, 15vw, 12rem)', lineHeight: 0.8 }}
+          >
+            {event.year.toString().slice(-2)}
+          </span>
+        </div>
+      </motion.div>
+      
+      {/* Right half: Content */}
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={isInView ? { opacity: 1, x: 0 } : {}}
+        transition={{ delay: 0.3, duration: 0.8 }}
+        className="w-1/2 flex items-center px-6 sm:px-10 lg:px-16"
+      >
+        <div className="space-y-4 sm:space-y-6">
+          <span className={`${theme.fontMono} text-xs uppercase tracking-[0.2em] text-muted-foreground`}>
+            {event.date}
+          </span>
+          
+          <h2 
+            className={`${theme.fontDisplay} font-bold text-foreground leading-tight`}
+            style={{ fontSize: 'clamp(1.25rem, 3vw, 2.5rem)' }}
+          >
+            {event.title}
+          </h2>
+          
+          <p className={`${theme.fontBody} text-sm sm:text-base text-muted-foreground leading-relaxed font-light`}>
+            {event.description}
+          </p>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
 
-// Layout selector based on index
+// Layout selector based on index - cycles through dramatic patterns
 const getLayoutPattern = (index: number) => {
-  const patterns = [LayoutPatternA, LayoutPatternB, LayoutPatternC, LayoutPatternD, LayoutPatternE];
+  const patterns = [LayoutShout, LayoutMagazine, LayoutOverlap, LayoutWhisper, LayoutSplit];
   return patterns[index % patterns.length];
 };
 
@@ -299,43 +515,72 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading }: HeroSe
   const { scrollY } = useScroll();
   const opacity = useTransform(scrollY, [0, 400], [1, 0]);
   const y = useTransform(scrollY, [0, 400], [0, 100]);
+  const scale = useTransform(scrollY, [0, 400], [1, 0.95]);
 
   return (
     <motion.section 
-      className="min-h-screen flex flex-col items-center justify-center relative px-6"
+      className="min-h-screen flex flex-col items-center justify-center relative px-6 overflow-hidden"
       style={{ opacity }}
     >
+      {/* Background decorative year */}
+      {storyTitle && !isLoading && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.03 }}
+          transition={{ delay: 1, duration: 1.5 }}
+          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
+        >
+          <span 
+            className={`${theme.fontDisplay} font-black text-foreground`}
+            style={{ fontSize: 'clamp(15rem, 50vw, 45rem)', lineHeight: 0.7 }}
+          >
+            ∞
+          </span>
+        </motion.div>
+      )}
+      
       <motion.div 
-        className="text-center max-w-4xl mx-auto space-y-8"
-        style={{ y }}
+        className="text-center max-w-5xl mx-auto space-y-10 relative z-10"
+        style={{ y, scale }}
       >
         {isLoading ? (
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
-            <p className={`${theme.fontBody} text-lg text-muted-foreground`}>
+          <div className="flex flex-col items-center gap-6">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            >
+              <Clock className="h-16 w-16 text-muted-foreground/50" />
+            </motion.div>
+            <p className={`${theme.fontBody} text-xl text-muted-foreground font-light tracking-wide`}>
               Je verhaal wordt geschreven...
             </p>
           </div>
         ) : (
           <>
-            <motion.h1 
-              className={`${theme.fontDisplay} text-4xl sm:text-5xl lg:text-7xl font-bold leading-tight text-foreground`}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 0.2 }}
-            >
-              {storyTitle || 'Jouw Verhaal'}
-            </motion.h1>
+            {storyTitle && (
+              <StaggeredText
+                text={storyTitle}
+                className={`${theme.fontDisplay} font-black text-foreground leading-[0.9] tracking-tight`}
+                style={{ fontSize: 'clamp(2.5rem, 10vw, 7rem)' }}
+                as="h1"
+                highlightWords={[0, 2, 4]} // Alternate weight pattern
+              />
+            )}
             
             {storyIntroduction && (
-              <motion.p 
-                className={`${theme.fontBody} text-lg lg:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto`}
-                initial={{ opacity: 0, y: 30 }}
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1, delay: 0.4 }}
+                transition={{ duration: 1, delay: 0.8 }}
+                className="max-w-3xl mx-auto"
               >
-                {storyIntroduction}
-              </motion.p>
+                <p className={`${theme.fontBody} text-lg lg:text-xl text-muted-foreground leading-relaxed font-light`}>
+                  <span className={`${theme.fontDisplay} text-4xl lg:text-5xl font-black float-left mr-3 mt-1 leading-none text-foreground`}>
+                    {storyIntroduction.charAt(0)}
+                  </span>
+                  {storyIntroduction.slice(1)}
+                </p>
+              </motion.div>
             )}
           </>
         )}
