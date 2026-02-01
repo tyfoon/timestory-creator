@@ -4,12 +4,12 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Header } from "@/components/Header";
 import { DateInput } from "@/components/DateInput";
 import { OptionalInfoForm } from "@/components/OptionalInfoForm";
-import { MapPin, Users } from "lucide-react";
+import { MapPin, Users, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { FormData, BirthDateData, OptionalData, PeriodType, Gender } from "@/types/form";
+import { FormData, BirthDateData, OptionalData, PeriodType, Gender, Attitude } from "@/types/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   ArrowRight,
@@ -369,6 +369,40 @@ const Index = () => {
                           flex items-center justify-center py-1.5 px-2 rounded-md cursor-pointer
                           border-2 transition-all duration-200
                           ${optionalData.gender === option.value || (!optionalData.gender && option.value === 'none')
+                            ? 'border-accent bg-accent/10 text-foreground' 
+                            : 'border-border bg-card hover:border-muted-foreground/30 text-muted-foreground'
+                          }
+                        `}
+                      >
+                        <RadioGroupItem value={option.value} className="sr-only" />
+                        <span className="text-xs font-medium">{option.label}</span>
+                      </Label>
+                    ))}
+                  </RadioGroup>
+                </div>
+
+                {/* Attitude selection */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <Scale className="h-4 w-4 text-accent" />
+                    Houding
+                  </Label>
+                  <RadioGroup
+                    value={optionalData.attitude || 'neutral'}
+                    onValueChange={(v) => setOptionalData({ ...optionalData, attitude: v as Attitude })}
+                    className="grid grid-cols-3 gap-2"
+                  >
+                    {([
+                      { value: 'conservative', label: 'Conservatief' },
+                      { value: 'neutral', label: 'Neutraal' },
+                      { value: 'progressive', label: 'Progressief' }
+                    ] as const).map((option) => (
+                      <Label
+                        key={option.value}
+                        className={`
+                          flex items-center justify-center py-1.5 px-2 rounded-md cursor-pointer
+                          border-2 transition-all duration-200
+                          ${optionalData.attitude === option.value || (!optionalData.attitude && option.value === 'neutral')
                             ? 'border-accent bg-accent/10 text-foreground' 
                             : 'border-border bg-card hover:border-muted-foreground/30 text-muted-foreground'
                           }
