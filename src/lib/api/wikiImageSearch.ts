@@ -277,18 +277,32 @@ async function fetchWikiResults(
 ): Promise<{ imageUrl: string; source: string } | null> {
   try {
     const res = await fetch(url);
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.log(`[Wiki Fetch] HTTP error for query "${query}": ${res.status}`);
+      return null;
+    }
     const data = await res.json();
-    for (const result of data.query?.search || []) {
-      // === VOEG DIT BLOK TOE ===
+    const results = data.query?.search || [];
+    
+    // Debug: log aantal resultaten
+    if (results.length === 0) {
+      console.log(`[Wiki Fetch] No results for query "${query}" from ${url.includes('commons') ? 'Commons' : 'Wikipedia'}`);
+    } else {
+      console.log(`[Wiki Fetch] Found ${results.length} results for "${query}"`);
+    }
+    
+    for (const result of results) {
       // Dit zorgt dat PDF's en video's direct worden genegeerd op basis van hun titel
       if (result.title.match(/\.(pdf|djvu|stl|ogg|ogv|oga|mp3|wav|flac|webm|mp4|avi|mov|mkv|svg|tif|tiff)$/i)) {
+        console.log(`[Wiki Fetch] Skipping non-image file: ${result.title}`);
         continue;
       }
-      // ========================
 
       // Voor products/logos: minder strenge matching ...
-      if (strictMatch && !contentMatchesQuery(result.title, result.snippet, query)) continue;
+      if (strictMatch && !contentMatchesQuery(result.title, result.snippet, query)) {
+        console.log(`[Wiki Fetch] Content mismatch - Title: "${result.title}", Query: "${query}"`);
+        continue;
+      }
       if (!strictMatch) {
         // Losse check: minstens het eerste significante woord moet ergens voorkomen
         const firstWord = query
@@ -316,6 +330,8 @@ async function fetchWikiResults(
           continue; // Try next result
         }
         
+        console.log(`[Wiki Fetch] ✓ Found image for "${query}": ${result.title}`);
+        
         // Correcte source URL voor Commons vs Wikipedia
         const isCommons = url.includes("commons.wikimedia.org");
         const sourceUrl = isCommons
@@ -325,7 +341,8 @@ async function fetchWikiResults(
       }
     }
     return null;
-  } catch {
+  } catch (err) {
+    console.error(`[Wiki Fetch] Error for query "${query}":`, err);
     return null;
   }
 }
