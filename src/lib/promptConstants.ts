@@ -216,20 +216,53 @@ MUZIEK EVENTS (category: music):
 `;
 
 // =============================================================================
+// GENERATIE PERSPECTIEF (Wie is de klant NU?)
+// =============================================================================
+export function getGenerationPerspective(birthYear: number): string {
+  if (birthYear <= 1964) {
+    return `GENERATIE PERSPECTIEF (Baby Boomer):
+De klant is nu een 60-plusser. Kijk terug met een gevoel van rijkdom en verandering.
+Toon waardering voor de wederopbouw en de enorme welvaartsgroei die ze hebben meegemaakt.`;
+  } else if (birthYear <= 1980) {
+    return `GENERATIE PERSPECTIEF (Generatie X):
+De klant is nu tussen de 45 en 60. Gebruik een nuchtere, no-nonsense toon.
+Dit is de 'verloren generatie' die alles zelf moest oplossen. Ze houden van authenticiteit en hebben een hekel aan opsmuk.`;
+  } else if (birthYear <= 1996) {
+    return `GENERATIE PERSPECTIEF (Millennial):
+De klant is nu dertiger of veertiger. Focus op de overgang van analoog naar digitaal.
+Er is veel nostalgie naar de 'onschuldige' tijd vóór sociale media en smartphones. Gebruik een toon van 'weet je nog?'.`;
+  } else {
+    return `GENERATIE PERSPECTIEF (Gen Z):
+De klant is een twintiger. Ze zijn 'digital natives'.
+Hun nostalgie is esthetisch (Y2K mode, oude digitale camera's). Ze kijken met ironie en verwondering naar de 'oude' wereld.`;
+  }
+}
+
+// =============================================================================
 // CONTENT FOCUS PER PERIODE TYPE
 // =============================================================================
 export function getContentFocusForPeriod(periodType?: string): string {
   switch (periodType) {
     case "birthyear":
-      return `FOCUS: Events uit het exacte geboortejaar. Wereldgebeurtenissen, politiek, muziek, films, cultuur van dat jaar.`;
+      return `FOCUS: Het geboortejaar. Beschrijf de wereld waarin de wieg stond. Welke liedjes stonden op 1? Wat was het 'gesprek van de dag' bij de buren?`;
+
     case "childhood":
-      return `FOCUS: Kindertijd (0-12 jaar). Speelgoed, tekenfilms, kinderprogramma's, games, snoep, lagere school, kindercultuur.`;
+      return `FOCUS: Kindertijd (4-12 jaar). De wereld is klein en magisch.
+WEL: Speelgoed, tekenfilms, snoep, schoolplein-spelletjes, kinderprogramma's, sneeuwpret, Sinterklaas.
+NIET: Politiek, oorlogen, economische crises (tenzij ouders erover fluisterden), saaie 'grote mensen' zaken.`;
+
     case "puberty":
-      return `FOCUS: Puberteit (12-18 jaar). Muziek, films, TV, mode, games, eerste telefoons, sociale media, middelbare school, jeugdcultuur.`;
+      return `FOCUS: Puberteit (11-17 jaar). De 'bubbel' van de tiener.
+WEL: Muziek (Top 40, videoclips), brommers, eerste verliefdheid, schoolfeesten, rages, mode, TV-series, techniek (Walkman/mobiel).
+NIET: Amerikaanse politiek (geen Reagan/Clinton/Bush tenzij pop-cultureel relevant), verdragen, beursnieuws. Voor een puber in de provincie bestaat Washington niet, de discotheek wel.`;
+
     case "young-adult":
-      return `FOCUS: Jongvolwassenheid (18-25 jaar). Studententijd, eerste baan, festivals, politiek ontwaken, technologie.`;
+      return `FOCUS: Jongvolwassenheid (18-25 jaar). De wereld gaat open.
+WEL: Festivals, studentenleven, eerste baan, reizen, politiek bewustzijn (nu wel!), technologische doorbraken, samenwonen.
+NIET: Kinderachtige zaken. Focus op onafhankelijkheid en ontdekking.`;
+
     default:
-      return `FOCUS: Algemene mix van belangrijke wereldgebeurtenissen, cultuur, sport, wetenschap en entertainment.`;
+      return `FOCUS: Algemene mix van belangrijke wereldgebeurtenissen, cultuur en entertainment.`;
   }
 }
 
@@ -292,6 +325,7 @@ ${contentFocus}`;
 export const RANGE_PROMPT = (
   startYear: number,
   endYear: number,
+  isShort: boolean,
   targetEvents: number,
   contentFocus: string
 ) =>
@@ -308,7 +342,9 @@ ${NOSTALGIA_INSTRUCTIONS}`;
 
 export const FAMOUS_BIRTHDAYS_ADDITION = (
   day: number,
-  monthName: string
+  monthName: string,
+  startYear: number,
+  endYear: number
 ) =>
   `\n\n--- EXTRA TAAK: VERJAARDAGEN ---\nZoek 3 bekende personen die op ${day} ${monthName} jarig zijn (dit staat los van de tijdlijn).`;
 

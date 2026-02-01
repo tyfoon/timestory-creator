@@ -15,6 +15,7 @@ import {
   NOSTALGIA_INSTRUCTIONS,
   VISUAL_DIRECTOR_INSTRUCTIONS,
   getContentFocusForPeriod,
+  getGenerationPerspective,
   getNDJSONFormatInstructions,
   BIRTHDATE_PROMPT_SHORT,
   BIRTHDATE_PROMPT_FULL,
@@ -43,6 +44,7 @@ const PROMPT_COLORS = {
   visualDirector: 'bg-violet-500/20 text-violet-700 dark:text-violet-300 border-violet-500/30',
   format: 'bg-gray-500/20 text-gray-700 dark:text-gray-300 border-gray-500/30',
   base: 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30',
+  generation: 'bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-500/30',
   nostalgia: 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30',
   famousBirthdays: 'bg-pink-500/20 text-pink-700 dark:text-pink-300 border-pink-500/30',
   birthyearInRange: 'bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/30',
@@ -141,23 +143,14 @@ function buildPromptSections(formData: FormData, language: string, maxEvents?: n
     // RANGE_PROMPT includes nostalgia + contentFocus embedded
     sections.push({
       label: '📝 User: Basis Prompt (Periode)',
-      content: RANGE_PROMPT(startYear, endYear, targetEvents, contentFocus),
+      content: RANGE_PROMPT(startYear, endYear, isShort || false, targetEvents, contentFocus),
       colorClass: PROMPT_COLORS.base,
       source: 'RANGE_PROMPT (bevat NOSTALGIA + contentFocus)',
     });
 
-    // Famous birthdays addition for range
+    // Birthyear in range addition (comes before famous birthdays in backend)
     if (formData.birthDate) {
-      const { day, month, year } = formData.birthDate;
-      const monthName = MONTH_NAMES[month - 1];
-
-      sections.push({
-        label: '🎂 User: Beroemde Verjaardagen',
-        content: FAMOUS_BIRTHDAYS_ADDITION(day, monthName),
-        colorClass: PROMPT_COLORS.famousBirthdays,
-        source: 'FAMOUS_BIRTHDAYS_ADDITION',
-      });
-
+      const { year } = formData.birthDate;
       if (year >= startYear && year <= endYear) {
         sections.push({
           label: '⭐ User: Geboortejaar in Periode',
@@ -169,18 +162,17 @@ function buildPromptSections(formData: FormData, language: string, maxEvents?: n
     }
   }
 
-  const { optionalData } = formData;
-
-  // Personal name
-  if (optionalData.firstName || optionalData.lastName) {
-    const fullName = [optionalData.firstName, optionalData.lastName].filter(Boolean).join(' ');
+  // Generation perspective (added after base prompt, before other personalization)
+  if (formData.birthDate && formData.birthDate.year) {
     sections.push({
-      label: '👤 User: Persoonlijke Naam',
-      content: PERSONAL_NAME_ADDITION(fullName),
-      colorClass: PROMPT_COLORS.personalName,
-      source: 'PERSONAL_NAME_ADDITION',
+      label: '🎯 User: Generatie Perspectief',
+      content: getGenerationPerspective(formData.birthDate.year),
+      colorClass: PROMPT_COLORS.generation,
+      source: 'getGenerationPerspective',
     });
   }
+
+  const { optionalData } = formData;
 
   // City (B1 in backend order)
   if (optionalData.city) {
@@ -225,7 +217,18 @@ function buildPromptSections(formData: FormData, language: string, maxEvents?: n
     }
   }
 
-  // Interests
+  // Personal name (C1 in backend order)
+  if (optionalData.firstName || optionalData.lastName) {
+    const fullName = [optionalData.firstName, optionalData.lastName].filter(Boolean).join(' ');
+    sections.push({
+      label: '👤 User: Persoonlijke Naam',
+      content: PERSONAL_NAME_ADDITION(fullName),
+      colorClass: PROMPT_COLORS.personalName,
+      source: 'PERSONAL_NAME_ADDITION',
+    });
+  }
+
+  // Interests (C2 in backend order)
   if (optionalData.interests) {
     sections.push({
       label: '💡 User: Interesses',
@@ -235,7 +238,7 @@ function buildPromptSections(formData: FormData, language: string, maxEvents?: n
     });
   }
 
-  // Children
+  // Children (C3 in backend order)
   if (optionalData.children && optionalData.children.length > 0) {
     const childrenInfo = optionalData.children
       .filter(c => c.name && c.birthDate?.year)
@@ -249,6 +252,30 @@ function buildPromptSections(formData: FormData, language: string, maxEvents?: n
         source: 'CHILDREN_ADDITION',
       });
     }
+  }
+
+  // Partner name
+  if (optionalData.partnerName) {
+    sections.push({
+      label: '💑 User: Partner',
+      content: `Partner: ${optionalData.partnerName}`,
+      colorClass: PROMPT_COLORS.personalName,
+      source: 'partnerName',
+    });
+  }
+
+  // Famous birthdays addition (at the end, D block in backend)
+  if (formData.type === 'range' && formData.yearRange && formData.birthDate) {
+    const { day, month } = formData.birthDate;
+    const monthName = MONTH_NAMES[month - 1];
+    const { startYear, endYear } = formData.yearRange;
+
+    sections.push({
+      label: '🎂 User: Beroemde Verjaardagen',
+      content: FAMOUS_BIRTHDAYS_ADDITION(day, monthName, startYear, endYear),
+      colorClass: PROMPT_COLORS.famousBirthdays,
+      source: 'FAMOUS_BIRTHDAYS_ADDITION',
+    });
   }
 
   return sections;
@@ -366,6 +393,7 @@ export function PromptViewerDialog({ formData, language, maxEvents }: PromptView
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.visualDirector}`}>Visual</span>
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.format}`}>Format</span>
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.base}`}>Basis</span>
+          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.generation}`}>Generatie</span>
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.city}`}>Stad</span>
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.gender}`}>Geslacht</span>
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.attitude}`}>Houding</span>
