@@ -122,11 +122,25 @@ function normalizeSearchQuery(query: string, queryType: 'nl' | 'en' = 'nl'): str
     return "Christmas";
   }
   
-  // Nightclub/discotheek: always use generic "Discotheque"
+  // Nightclub/discotheek: ALWAYS use only "Discotheque" - no interieur, no vintage, no nothing
+  // This catches: disco, discotheek, discothèque, nachtclub, nightclub, uitgaan, dansen
   if (lowerQuery.includes("nachtclub") || lowerQuery.includes("discotheek") || 
-      lowerQuery.includes("disco") || lowerQuery.includes("nightclub")) {
-    console.log(`[Query Normalize] Nightclub detected: "${query}" -> "Discotheque"`);
+      lowerQuery.includes("discothèque") || lowerQuery.includes("disco") || 
+      lowerQuery.includes("nightclub") || lowerQuery.includes("dancing") ||
+      lowerQuery.includes("uitgaan")) {
+    console.log(`[Query Normalize] Nightclub/disco detected: "${query}" -> "Discotheque"`);
     return "Discotheque";
+  }
+  
+  // Parfum/geur: ALWAYS simplify to just "perfume" or "perfume bottle"
+  // Do NOT search for specific brands like "Kouros Yves Saint Laurent"
+  if (lowerQuery.includes("parfum") || lowerQuery.includes("geur") || 
+      lowerQuery.includes("perfume") || lowerQuery.includes("fragrance") ||
+      lowerQuery.includes("eau de") || lowerQuery.includes("cologne") ||
+      lowerQuery.includes("aftershave") || lowerQuery.includes("after shave")) {
+    const result = queryType === 'nl' ? "parfum fles" : "perfume bottle";
+    console.log(`[Query Normalize] Perfume detected: "${query}" -> "${result}"`);
+    return result;
   }
   
   // Bar tokens/coins: always use "plastic token coin"
@@ -140,8 +154,6 @@ function normalizeSearchQuery(query: string, queryType: 'nl' | 'en' = 'nl'): str
   const hairstyleTerms = ["matje", "mullet", "kapsel", "hanenkam", "mohawk", "afro", "paardenstaart", "kuif", "permanent", "coupe"];
   for (const term of hairstyleTerms) {
     if (lowerQuery.includes(term)) {
-      // Extract the core hairstyle name and add "hairstyle"
-      let hairstyleName = term;
       // Map Dutch terms to English for better results
       const hairstyleMap: Record<string, string> = {
         "matje": "Mullet",
@@ -152,7 +164,7 @@ function normalizeSearchQuery(query: string, queryType: 'nl' | 'en' = 'nl'): str
         "permanent": "Perm",
         "coupe": "Hairstyle"
       };
-      hairstyleName = hairstyleMap[term] || term.charAt(0).toUpperCase() + term.slice(1);
+      const hairstyleName = hairstyleMap[term] || term.charAt(0).toUpperCase() + term.slice(1);
       const result = `${hairstyleName} hairstyle`;
       console.log(`[Query Normalize] Hairstyle detected: "${query}" -> "${result}"`);
       return result;
@@ -163,7 +175,7 @@ function normalizeSearchQuery(query: string, queryType: 'nl' | 'en' = 'nl'): str
   let normalized = stripDecades(query);
   
   // Remove nostalgic/vintage terms that don't help image search
-  normalized = normalized.replace(/\b(vroeger|vintage)\b/gi, '').replace(/\s+/g, ' ').trim();
+  normalized = normalized.replace(/\b(vroeger|vintage|interieur|interior)\b/gi, '').replace(/\s+/g, ' ').trim();
   
   // Strip colors from object searches (but not from art/culture items)
   // This helps find "fiets" instead of failing on "rode fiets"
@@ -176,15 +188,8 @@ function normalizeSearchQuery(query: string, queryType: 'nl' | 'en' = 'nl'): str
   return normalized || query; // Fallback to original if stripping removed everything
 }
 
-/**
- * For perfume/fragrance queries that fail, try generic "perfume" as fallback
- */
-function isPerfumeQuery(query: string): boolean {
-  const lowerQuery = query.toLowerCase();
-  return lowerQuery.includes("parfum") || lowerQuery.includes("geur") || 
-         lowerQuery.includes("perfume") || lowerQuery.includes("fragrance") ||
-         lowerQuery.includes("eau de") || lowerQuery.includes("cologne");
-}
+// isPerfumeQuery is no longer needed - perfume queries are now normalized directly
+// to "perfume bottle" in normalizeSearchQuery()
 
 // Strip location info from weather queries for better image matches
 // "Sneeuwpret in Hilversum" -> "Sneeuwpret", "Hittegolf Sittard" -> "Hittegolf"
@@ -462,9 +467,8 @@ export async function searchSingleImage(
   nlQuery = normalizeSearchQuery(nlQuery, 'nl');
   enQuery = normalizeSearchQuery(enQuery, 'en');
   
-  // Track if this is a perfume query for fallback logic
-  const perfumeQuery = isPerfumeQuery(query);
-  
+  // Note: Perfume queries are now normalized directly to "perfume bottle" 
+  // in normalizeSearchQuery(), so no separate fallback needed
   // Search trace for debugging
   const searchTrace: SearchTraceEntry[] = [];
   const startTime = Date.now();
@@ -599,17 +603,7 @@ export async function searchSingleImage(
     addTrace('📖 Wikipedia EN +SVG', enQuery, false, res ? 'found' : 'not_found');
     if (res) return withTrace({ eventId, ...res });
 
-    // PARFUM FALLBACK: Als dit een parfum/geur query is en niets gevonden, zoek generiek "perfume"
-    if (perfumeQuery) {
-      console.log(`[Query Normalize] Perfume query failed, trying generic "perfume"`);
-      res = await commons("perfume", undefined, false, false, blacklist);
-      addTrace('🖼️ Commons Perfume Fallback', "perfume", false, res ? 'found' : 'not_found');
-      if (res) return withTrace({ eventId, ...res });
-      
-      res = await wiki("en", "perfume bottle", undefined, false, false, blacklist);
-      addTrace('📖 Wikipedia Perfume Fallback', "perfume bottle", false, res ? 'found' : 'not_found');
-      if (res) return withTrace({ eventId, ...res });
-    }
+    // Note: Perfume fallback removed - queries are now normalized directly to "perfume bottle"
 
     // Geen resultaat gevonden voor game/product
     return withTrace({ eventId, imageUrl: null, source: null });
