@@ -320,7 +320,10 @@ const ResultPage = () => {
               });
             
             // Cache the merged result
-            cacheTimeline(data, language, sorted, completeData.summary, completeData.famousBirthdays || []);
+            cacheTimeline(data, language, sorted, completeData.summary, completeData.famousBirthdays || [], {
+              storyTitle: completeData.storyTitle,
+              storyIntroduction: completeData.storyIntroduction,
+            });
             
             return sorted;
           });
