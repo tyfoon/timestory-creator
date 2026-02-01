@@ -384,7 +384,7 @@ export function getContentFocusForPeriod(periodType?: string): string {
     case "puberty":
       // AANGEPAST: Specifieke instructie om politiek te weren
       return `FOCUS: Puberteit (11-17 jaar). De 'bubbel' van de tiener.
-      WEL: Muziek (Top 40, videoclips), brommers, eerste verliefdheid, schoolfeesten, rages, mode, TV-series, techniek (Walkman/mobiel).
+      WEL: Muziek (Top 40, videoclips), uitgaan, discotheek, brommers, middelbare school, eerste verliefdheid, schoolfeesten, rages, mode, TV-series, techniek (Walkman/mobiel).
       NIET: Amerikaanse politiek (geen Reagan/Clinton/Bush tenzij pop-cultureel relevant), verdragen, beursnieuws. Voor een puber in de provincie bestaat Washington niet, de discotheek wel.`;
 
     case "young-adult":
@@ -475,7 +475,7 @@ export const CITY_ADDITION = (city: string) => `
 CRUCIAAL - LOKALE LENS (${city}):
 De gebruiker groeide op in **${city}**.
 Dit is de bril waardoor je de hele bovenstaande tijdlijn bekijkt en inkleurt.
-1. **Lokale Hotspots:** Noem specifieke discotheken, bioscopen, scholen of hangplekken in ${city} (indien bekend).
+1. **Lokale Hotspots:** Noem specifieke discotheken, bioscopen, scholen of hangplekken in ${city} of in de buurt ervan (indien bekend).
 2. **Lokale Sfeer:** Beschrijf het specifieke gevoel van wonen in ${city} (Provinciaal vs Stedelijk).
 3. **Events:** Was er een groot lokaal evenement of feest in die jaren?`;
 
