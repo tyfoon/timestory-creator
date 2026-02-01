@@ -222,40 +222,45 @@ ${langInstruction}
 ${VISUAL_DIRECTOR_INSTRUCTIONS}
 
 KRITISCH - OUTPUT FORMAAT (NDJSON):
-Stuur ELKE gebeurtenis als een apart JSON-object op een NIEUWE regel.
+Stuur output als aparte JSON-objecten op NIEUWE regels.
 
-FORMAT PER REGEL (Let op 'visualSubjectType' en isTV/isMovie vlaggen!):
+⚡ VERPLICHTE VOLGORDE - STORY EERST! ⚡
+Om de gebruiker direct content te tonen MOET je beginnen met storyTitle en storyIntroduction:
+
+1. EERST (direct als eerste output!):
+{"type":"storyTitle","data":"[Pakkende titel van max 10 woorden die de essentie van deze periode vangt]"}
+{"type":"storyIntroduction","data":"[Max 150 woorden nostalgische introductietekst in tweede persoon]"}
+
+2. DAARNA alle events:
 {"type":"event","data":{"id":"evt_1","date":"1980-05-22","year":1980,"title":"Pac-Man","description":"...","category":"entertainment","visualSubjectType":"logo","imageSearchQuery":"Pac-Man","imageSearchQueryEn":"Pac-Man","importance":"high","eventScope":"period"}}
 {"type":"event","data":{"id":"evt_2","date":"1982","year":1982,"title":"Thriller","description":"...","category":"music","visualSubjectType":"artwork","imageSearchQuery":"Thriller Michael Jackson","imageSearchQueryEn":"Thriller Michael Jackson","importance":"high","eventScope":"period","spotifySearchQuery":"Michael Jackson - Thriller"}}
 {"type":"event","data":{"id":"evt_3","date":"1990","year":1990,"title":"Beverly Hills 90210","description":"...","category":"entertainment","visualSubjectType":"tv","isTV":true,"imageSearchQuery":"Beverly Hills 90210","imageSearchQueryEn":"Beverly Hills 90210","importance":"high","eventScope":"period"}}
 {"type":"event","data":{"id":"evt_4","date":"1982","year":1982,"title":"E.T.","description":"...","category":"entertainment","visualSubjectType":"movie","isMovie":true,"imageSearchQuery":"E.T.","imageSearchQueryEn":"E.T. the Extra-Terrestrial","importance":"high","eventScope":"period","movieSearchQuery":"E.T. trailer 1982"}}
 
-NA ALLE EVENTS - VERPLICHTE VOLGORDE:
-1. {"type":"storyTitle","data":"[Pakkende titel van max 10 woorden die de essentie van deze periode vangt]"}
-2. {"type":"storyIntroduction","data":"[Max 150 woorden nostalgische introductietekst - schrijf in tweede persoon (je/jij), beschrijf de sfeer, geuren, geluiden en gevoelens van die tijd. Maak het persoonlijk en emotioneel.]"}
-3. {"type":"summary","data":"Korte samenvatting..."}
-4. {"type":"famousBirthdays","data":[{"name":"Naam","profession":"Beroep","birthYear":1950,"imageSearchQuery":"Naam"}]}
+3. NA ALLE EVENTS:
+{"type":"summary","data":"Korte samenvatting..."}
+{"type":"famousBirthdays","data":[{"name":"Naam","profession":"Beroep","birthYear":1950,"imageSearchQuery":"Naam"}]}
 
-RICHTLIJNEN VOOR storyTitle:
+RICHTLIJNEN VOOR storyTitle (EERST genereren!):
 - Max 10 woorden, pakkend en emotioneel
 - Vang de essentie van de periode (bv. "Van cassettebandje naar cd: jouw jaren tachtig")
 - Mag poëtisch zijn, maar moet herkenbaar blijven
 
-RICHTLIJNEN VOOR storyIntroduction (max 150 woorden):
+RICHTLIJNEN VOOR storyIntroduction (DIRECT NA storyTitle!):
+- Max 150 woorden
 - Schrijf in tweede persoon: "Je werd geboren...", "Je hoorde...", "Je voelde..."
 - Gebruik zintuiglijke details: geuren (brommerbenzine, Sunsilk shampoo), geluiden (piepende modem, rinkelende telefoon)
 - Beschrijf de 'analoge vertraging': wachten op foto's, brieven schrijven, teletekst checken
 - Maak het emotioneel en persoonlijk - dit is GEEN opsomming van feiten
-- Houd het KORT en krachtig - max 150 woorden!
 
 REGELS:
 1. GEEN markdown.
-2. Genereer ${eventCount} events.
-3. Vul 'visualSubjectType' ALTIJD in. KIES 'tv' voor TV-series, 'movie' ALLEEN voor bioscoopfilms!
-4. Zet 'isTV: true' voor ALLE TV-series (Dallas, Baywatch, Beverly Hills 90210, Friends, Seinfeld, etc.)
-5. Zet 'isMovie: true' ALLEEN voor bioscoopfilms (E.T., Titanic, Star Wars, etc.)
-6. Vul 'spotifySearchQuery' / 'movieSearchQuery' in waar relevant.
-7. storyTitle en storyIntroduction zijn VERPLICHT na alle events!`;
+2. BEGIN MET storyTitle en storyIntroduction - dit geeft de gebruiker direct iets te lezen!
+3. Genereer daarna ${eventCount} events.
+4. Vul 'visualSubjectType' ALTIJD in. KIES 'tv' voor TV-series, 'movie' ALLEEN voor bioscoopfilms!
+5. Zet 'isTV: true' voor ALLE TV-series (Dallas, Baywatch, Beverly Hills 90210, Friends, Seinfeld, etc.)
+6. Zet 'isMovie: true' ALLEEN voor bioscoopfilms (E.T., Titanic, Star Wars, etc.)
+7. Vul 'spotifySearchQuery' / 'movieSearchQuery' in waar relevant.`;
 }
 
 export function getTimelineTool() {
