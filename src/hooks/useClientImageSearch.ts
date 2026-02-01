@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { searchSingleImage, ImageResult, SearchTraceEntry } from '@/lib/api/wikiImageSearch';
 import { TimelineEvent } from '@/types/timeline';
+import { getBlacklistedImages } from '@/hooks/useImageBlacklist';
 
 interface UseClientImageSearchOptions {
   maxConcurrent?: number;
@@ -86,9 +87,19 @@ export function useClientImageSearch(options: UseClientImageSearchOptions = {}) 
           .then((result: ImageResult) => {
             setSearchedCount(c => c + 1);
             
+            // Check if the found image is blacklisted
+            const blacklistedUrls = getBlacklistedImages();
+            const isBlacklisted = result.imageUrl && blacklistedUrls.includes(result.imageUrl);
+            
             // Always call onImageFound to pass the search trace, even if no image was found
             if (onImageFoundRef.current) {
-              onImageFoundRef.current(result.eventId, result.imageUrl || '', result.source, result.searchTrace);
+              // If blacklisted, pass empty URL so system knows to try again or mark as none
+              onImageFoundRef.current(
+                result.eventId, 
+                isBlacklisted ? '' : (result.imageUrl || ''), 
+                isBlacklisted ? null : result.source, 
+                result.searchTrace
+              );
             }
             
             if (result.imageUrl) {
@@ -137,9 +148,21 @@ export function useClientImageSearch(options: UseClientImageSearchOptions = {}) 
     setFoundCount(0);
   }, []);
   
+  // Force re-search for a specific event (after blacklisting)
+  const forceResearch = useCallback((event: TimelineEvent) => {
+    // Remove from processed so it can be searched again
+    processedIdsRef.current.delete(event.id);
+    // Add back to queue
+    if (event.imageSearchQuery) {
+      queueRef.current.push(event);
+      processQueue();
+    }
+  }, [processQueue]);
+  
   return {
     addToQueue,
     reset,
+    forceResearch,
     isSearching,
     searchedCount,
     foundCount,

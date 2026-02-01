@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { TimelineEvent } from '@/types/timeline';
-import { Loader2, RotateCcw, Play, X } from 'lucide-react';
+import { Loader2, RotateCcw, Play, X, Ban } from 'lucide-react';
 import { searchYouTube } from '@/lib/api/youtube';
 import { SpotifyPlayer } from './SpotifyPlayer';
+import { addToBlacklist } from '@/hooks/useImageBlacklist';
 
 // Import category placeholder images
 import placeholderBirthday from '@/assets/placeholders/birthday.jpg';
@@ -30,6 +31,8 @@ interface PolaroidCardProps {
   isSelected?: boolean;
   /** Handler for selection toggle */
   onToggleSelection?: () => void;
+  /** Callback when image is blacklisted - triggers re-search */
+  onBlacklistImage?: (eventId: string) => void;
 }
 
 const monthNames = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
@@ -113,6 +116,7 @@ export const PolaroidCard = ({
   isSelectingMode = false,
   isSelected = false,
   onToggleSelection,
+  onBlacklistImage,
 }: PolaroidCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const rotation = getRotation(event.id);
@@ -263,7 +267,7 @@ export const PolaroidCard = ({
                   </button>
                 </div>
               ) : displayImage ? (
-                <div className="relative w-full h-full">
+                <div className="relative w-full h-full group/image">
                   <img 
                     src={displayImage} 
                     alt={event.title}
@@ -272,6 +276,24 @@ export const PolaroidCard = ({
                   {/* Subtle overlay for placeholders to indicate it's not the real image */}
                   {isPlaceholder && (
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+                  )}
+                  
+                  {/* Blacklist button - only for real images, not placeholders */}
+                  {!isPlaceholder && event.imageUrl && onBlacklistImage && !isSelectingMode && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (event.imageUrl) {
+                          addToBlacklist(event.imageUrl);
+                          onBlacklistImage(event.id);
+                        }
+                      }}
+                      className="absolute top-1 left-1 z-20 w-6 h-6 rounded-full bg-black/60 hover:bg-destructive/90 text-white/70 hover:text-white flex items-center justify-center transition-all duration-200 opacity-0 group-hover/image:opacity-100 backdrop-blur-sm"
+                      title="Foto blacklisten en nieuwe zoeken"
+                      aria-label="Blacklist afbeelding"
+                    >
+                      <Ban className="h-3 w-3" />
+                    </button>
                   )}
                   
                   {/* Play buttons container - bottom left - no width constraint, let content flow naturally */}
@@ -286,7 +308,7 @@ export const PolaroidCard = ({
                       <button
                         onClick={handlePlayTrailer}
                         disabled={isLoadingTrailer}
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded-full text-[10px] font-medium transition-colors shadow-md disabled:opacity-50"
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-full text-[10px] font-medium transition-colors shadow-md disabled:opacity-50"
                         aria-label="Play trailer"
                       >
                         {isLoadingTrailer ? (

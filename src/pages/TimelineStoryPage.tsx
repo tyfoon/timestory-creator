@@ -7,13 +7,14 @@ import { generateTimelineStreaming } from '@/lib/api/timeline';
 import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents } from '@/lib/timelineCache';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ArrowLeft, ChevronDown, Loader2, AlertCircle, RefreshCw, Clock } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Loader2, AlertCircle, RefreshCw, Clock, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getCacheKey } from '@/lib/timelineCache';
 import { DebugInfoDialog } from '@/components/DebugInfoDialog';
 import { PromptViewerDialog } from '@/components/PromptViewerDialog';
 import { MediaButtons } from '@/components/story/MediaButtons';
+import { addToBlacklist } from '@/hooks/useImageBlacklist';
 
 // Placeholder images by category
 import birthdayPlaceholder from '@/assets/placeholders/birthday.jpg';
@@ -211,11 +212,60 @@ const DropCap = ({ children, theme }: { children: string; theme: EditorialTheme 
 };
 
 // =============================================
+// LAYOUT PROPS INTERFACE
+// =============================================
+interface LayoutPatternProps {
+  event: TimelineEvent;
+  theme: EditorialTheme;
+  imageUrl: string;
+  onBlacklistImage?: (eventId: string) => void;
+}
+
+// =============================================
+// IMAGE WITH BLACKLIST BUTTON
+// =============================================
+interface ImageWithBlacklistProps {
+  src: string;
+  alt: string;
+  className?: string;
+  event: TimelineEvent;
+  onBlacklistImage?: (eventId: string) => void;
+}
+
+const ImageWithBlacklist = ({ src, alt, className = '', event, onBlacklistImage }: ImageWithBlacklistProps) => {
+  // Check if this is a placeholder (not a real searched image)
+  const isPlaceholder = !event.imageUrl || event.imageStatus !== 'found';
+  
+  return (
+    <div className="relative group/img">
+      <img src={src} alt={alt} className={className} />
+      {/* Blacklist button - only for real images */}
+      {!isPlaceholder && event.imageUrl && onBlacklistImage && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (event.imageUrl) {
+              addToBlacklist(event.imageUrl);
+              onBlacklistImage(event.id);
+            }
+          }}
+          className="absolute top-2 left-2 z-20 w-7 h-7 rounded-full bg-black/60 hover:bg-destructive/90 text-white/70 hover:text-white flex items-center justify-center transition-all duration-200 opacity-0 group-hover/img:opacity-100 backdrop-blur-sm"
+          title="Foto blacklisten en nieuwe zoeken"
+          aria-label="Blacklist afbeelding"
+        >
+          <Ban className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
+  );
+};
+
+// =============================================
 // EVENT LAYOUT PATTERNS - Dramatic variations
 // =============================================
 
 // Pattern: "THE SHOUT" - Giant year, bold statement, minimal
-const LayoutShout = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => {
+const LayoutShout = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatternProps) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
   
@@ -285,10 +335,12 @@ const LayoutShout = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: 
         transition={{ delay: 0.5, duration: 0.8 }}
         className="absolute bottom-8 right-8 w-32 sm:w-48 lg:w-64 z-20"
       >
-        <img 
+        <ImageWithBlacklist 
           src={imageUrl} 
           alt={event.title}
           className="w-full h-auto rounded-lg shadow-2xl"
+          event={event}
+          onBlacklistImage={onBlacklistImage}
         />
       </motion.div>
     </div>
@@ -296,7 +348,7 @@ const LayoutShout = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: 
 };
 
 // Pattern: "THE WHISPER" - Minimal, lots of whitespace, text in corner
-const LayoutWhisper = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => {
+const LayoutWhisper = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatternProps) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
   
@@ -309,10 +361,12 @@ const LayoutWhisper = ({ event, theme, imageUrl }: { event: TimelineEvent; theme
         transition={{ duration: 1.2 }}
         className="absolute inset-8 sm:inset-16 lg:inset-24"
       >
-        <img 
+        <ImageWithBlacklist 
           src={imageUrl} 
           alt={event.title}
           className="w-full h-full object-cover rounded-2xl"
+          event={event}
+          onBlacklistImage={onBlacklistImage}
         />
       </motion.div>
       
@@ -343,7 +397,7 @@ const LayoutWhisper = ({ event, theme, imageUrl }: { event: TimelineEvent; theme
 };
 
 // Pattern: "THE MAGAZINE" - Drop cap, editorial columns, rotated date
-const LayoutMagazine = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => {
+const LayoutMagazine = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatternProps) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
   
@@ -371,10 +425,12 @@ const LayoutMagazine = ({ event, theme, imageUrl }: { event: TimelineEvent; them
             transition={{ duration: 0.8 }}
             className="space-y-4"
           >
-            <img 
+            <ImageWithBlacklist 
               src={imageUrl} 
               alt={event.title}
               className="w-full h-auto rounded-sm shadow-xl"
+              event={event}
+              onBlacklistImage={onBlacklistImage}
             />
             {/* Media buttons below image */}
             <MediaButtons 
@@ -411,7 +467,7 @@ const LayoutMagazine = ({ event, theme, imageUrl }: { event: TimelineEvent; them
 };
 
 // Pattern: "THE OVERLAP" - Text bleeding over image
-const LayoutOverlap = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => {
+const LayoutOverlap = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatternProps) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
   
@@ -425,10 +481,12 @@ const LayoutOverlap = ({ event, theme, imageUrl }: { event: TimelineEvent; theme
           transition={{ duration: 1 }}
           className="w-full sm:w-3/4 lg:w-2/3 ml-auto"
         >
-          <img 
+          <ImageWithBlacklist 
             src={imageUrl} 
             alt={event.title}
             className="w-full h-auto rounded-lg"
+            event={event}
+            onBlacklistImage={onBlacklistImage}
           />
         </motion.div>
         
@@ -469,7 +527,7 @@ const LayoutOverlap = ({ event, theme, imageUrl }: { event: TimelineEvent; theme
 };
 
 // Pattern: "THE SPLIT" - Dramatic half-and-half with huge type
-const LayoutSplit = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => {
+const LayoutSplit = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatternProps) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
   
@@ -480,7 +538,7 @@ const LayoutSplit = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: 
         initial={{ opacity: 0, x: -20 }}
         animate={isInView ? { opacity: 1, x: 0 } : {}}
         transition={{ duration: 0.8 }}
-        className="w-1/2 relative overflow-hidden"
+        className="w-1/2 relative overflow-hidden group/img"
       >
         <ParallaxImage 
           src={imageUrl} 
@@ -488,6 +546,24 @@ const LayoutSplit = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: 
           className="absolute inset-0"
           speed={0.3}
         />
+        
+        {/* Blacklist button - only for real images */}
+        {event.imageUrl && event.imageStatus === 'found' && onBlacklistImage && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (event.imageUrl) {
+                addToBlacklist(event.imageUrl);
+                onBlacklistImage(event.id);
+              }
+            }}
+            className="absolute top-2 left-2 z-20 w-7 h-7 rounded-full bg-black/60 hover:bg-destructive/90 text-white/70 hover:text-white flex items-center justify-center transition-all duration-200 opacity-0 group-hover/img:opacity-100 backdrop-blur-sm"
+            title="Foto blacklisten en nieuwe zoeken"
+            aria-label="Blacklist afbeelding"
+          >
+            <Ban className="h-3.5 w-3.5" />
+          </button>
+        )}
         
         {/* Year bleeding across */}
         <div className="absolute bottom-4 right-0 translate-x-1/2 z-10 mix-blend-overlay">
@@ -706,11 +782,27 @@ const TimelineStoryPage = () => {
   const { 
     addToQueue: addImagesToQueue, 
     reset: resetImageSearch,
+    forceResearch,
     isSearching: isLoadingImages,
   } = useClientImageSearch({
     maxConcurrent: 3,
     onImageFound: handleImageFound,
   });
+  
+  // Handler for blacklisting an image and triggering re-search
+  const handleBlacklistImage = useCallback((eventId: string) => {
+    const event = events.find(e => e.id === eventId);
+    if (event) {
+      // Reset the event's image status to loading
+      setEvents(prev => prev.map(e => 
+        e.id === eventId 
+          ? { ...e, imageUrl: undefined, imageStatus: 'loading' as const }
+          : e
+      ));
+      // Force a new search for this event
+      forceResearch({ ...event, imageUrl: undefined, imageStatus: 'loading' });
+    }
+  }, [events, forceResearch]);
 
   const loadImagesForEvents = useCallback((newEvents: TimelineEvent[]) => {
     const eventsNeedingImages = newEvents.filter(
@@ -1059,7 +1151,7 @@ const TimelineStoryPage = () => {
               }}
               className="border-b border-border/30 last:border-0"
             >
-              <LayoutPattern event={event} theme={theme} imageUrl={imageUrl} />
+              <LayoutPattern event={event} theme={theme} imageUrl={imageUrl} onBlacklistImage={handleBlacklistImage} />
             </div>
           );
         })}
