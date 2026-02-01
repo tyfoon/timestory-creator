@@ -24,21 +24,21 @@ const corsHeaders = {
 };
 
 interface TimelineRequest {
-  type: 'birthdate' | 'range';
+  type: "birthdate" | "range";
   birthDate?: { day: number; month: number; year: number };
   yearRange?: { startYear: number; endYear: number };
   optionalData: {
     firstName?: string;
     lastName?: string;
     city?: string;
-    gender?: 'male' | 'female' | 'none';
-    attitude?: 'conservative' | 'neutral' | 'progressive';
+    gender?: "male" | "female" | "none";
+    attitude?: "conservative" | "neutral" | "progressive";
     children: { name: string; birthDate?: { day: number; month: number; year: number } }[];
     partnerName?: string;
     partnerBirthDate?: { day: number; month: number; year: number };
     interests?: string;
-    focus: 'netherlands' | 'europe' | 'world';
-    periodType?: 'birthyear' | 'childhood' | 'puberty' | 'young-adult' | 'custom';
+    focus: "netherlands" | "europe" | "world";
+    periodType?: "birthyear" | "childhood" | "puberty" | "young-adult" | "custom";
   };
   language: string;
   stream?: boolean;
@@ -81,7 +81,7 @@ serve(async (req) => {
           { role: "user", content: prompt },
         ],
         tools: [getTimelineTool()],
-        tool_choice: { type: "function", function: { name: "create_timeline" } }
+        tool_choice: { type: "function", function: { name: "create_timeline" } },
       }),
     });
 
@@ -98,16 +98,14 @@ serve(async (req) => {
     const timelineData = JSON.parse(toolCall.function.arguments);
     console.log(`Generated ${timelineData.events?.length || 0} events`);
 
-    return new Response(
-      JSON.stringify({ success: true, data: timelineData }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-
+    return new Response(JSON.stringify({ success: true, data: timelineData }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("Error generating timeline:", error);
     return new Response(
       JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
@@ -116,11 +114,7 @@ serve(async (req) => {
  * NDJSON Streaming: Uses message-based streaming to send each event as a complete JSON line
  * immediately when parsed, eliminating complex partial JSON parsing.
  */
-async function handleNDJSONStreaming(
-  requestData: TimelineRequest,
-  prompt: string,
-  apiKey: string
-): Promise<Response> {
+async function handleNDJSONStreaming(requestData: TimelineRequest, prompt: string, apiKey: string): Promise<Response> {
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -143,7 +137,7 @@ async function handleNDJSONStreaming(
 
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
-  
+
   let buffer = "";
   let contentBuffer = "";
   let isStreamClosed = false;
@@ -159,7 +153,7 @@ async function handleNDJSONStreaming(
     try {
       controller.enqueue(encoder.encode(data));
     } catch (e) {
-      console.error('Enqueue error:', e);
+      console.error("Enqueue error:", e);
       isStreamClosed = true;
     }
   };
@@ -167,55 +161,58 @@ async function handleNDJSONStreaming(
   const readable = new ReadableStream({
     async start(controller) {
       const reader = response.body!.getReader();
-      
+
       try {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          
+
           buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
+          const lines = buffer.split("\n");
           buffer = lines.pop() || "";
-          
+
           for (const line of lines) {
             if (isStreamClosed) break;
-            if (!line.startsWith('data: ')) continue;
+            if (!line.startsWith("data: ")) continue;
             const data = line.slice(6).trim();
-            
-            if (data === '[DONE]') {
+
+            if (data === "[DONE]") {
               continue;
             }
-            
+
             try {
               const parsed = JSON.parse(data);
               const delta = parsed.choices?.[0]?.delta;
-              
+
               if (delta?.content) {
                 contentBuffer += delta.content;
-                
+
                 // Process complete NDJSON lines
-                const ndjsonLines = contentBuffer.split('\n');
+                const ndjsonLines = contentBuffer.split("\n");
                 contentBuffer = ndjsonLines.pop() || "";
-                
+
                 for (const ndjsonLine of ndjsonLines) {
                   const trimmed = ndjsonLine.trim();
                   if (!trimmed) continue;
-                  
+
                   try {
                     const obj = JSON.parse(trimmed);
-                    
-                    if (obj.type === 'event' && obj.data) {
+
+                    if (obj.type === "event" && obj.data) {
                       eventCount++;
                       allEvents.push(obj.data);
-                      safeEnqueue(controller, `data: ${JSON.stringify({ type: 'event', event: obj.data })}\n\n`);
+                      safeEnqueue(controller, `data: ${JSON.stringify({ type: "event", event: obj.data })}\n\n`);
                       console.log(`Streamed event ${eventCount}: ${obj.data.title?.substring(0, 40)}`);
-                    } else if (obj.type === 'summary' && obj.data && !sentSummary) {
+                    } else if (obj.type === "summary" && obj.data && !sentSummary) {
                       summary = obj.data;
-                      safeEnqueue(controller, `data: ${JSON.stringify({ type: 'summary', summary: obj.data })}\n\n`);
+                      safeEnqueue(controller, `data: ${JSON.stringify({ type: "summary", summary: obj.data })}\n\n`);
                       sentSummary = true;
-                    } else if (obj.type === 'famousBirthdays' && obj.data && !sentFamousBirthdays) {
+                    } else if (obj.type === "famousBirthdays" && obj.data && !sentFamousBirthdays) {
                       famousBirthdays = obj.data;
-                      safeEnqueue(controller, `data: ${JSON.stringify({ type: 'famousBirthdays', famousBirthdays: obj.data })}\n\n`);
+                      safeEnqueue(
+                        controller,
+                        `data: ${JSON.stringify({ type: "famousBirthdays", famousBirthdays: obj.data })}\n\n`,
+                      );
                       sentFamousBirthdays = true;
                     }
                   } catch {
@@ -228,28 +225,31 @@ async function handleNDJSONStreaming(
             }
           }
         }
-        
+
         // Process any remaining content in buffer
         if (contentBuffer.trim()) {
-          const remainingLines = contentBuffer.split('\n');
+          const remainingLines = contentBuffer.split("\n");
           for (const ndjsonLine of remainingLines) {
             const trimmed = ndjsonLine.trim();
             if (!trimmed) continue;
-            
+
             try {
               const obj = JSON.parse(trimmed);
-              
-              if (obj.type === 'event' && obj.data) {
+
+              if (obj.type === "event" && obj.data) {
                 eventCount++;
                 allEvents.push(obj.data);
-                safeEnqueue(controller, `data: ${JSON.stringify({ type: 'event', event: obj.data })}\n\n`);
-              } else if (obj.type === 'summary' && obj.data && !sentSummary) {
+                safeEnqueue(controller, `data: ${JSON.stringify({ type: "event", event: obj.data })}\n\n`);
+              } else if (obj.type === "summary" && obj.data && !sentSummary) {
                 summary = obj.data;
-                safeEnqueue(controller, `data: ${JSON.stringify({ type: 'summary', summary: obj.data })}\n\n`);
+                safeEnqueue(controller, `data: ${JSON.stringify({ type: "summary", summary: obj.data })}\n\n`);
                 sentSummary = true;
-              } else if (obj.type === 'famousBirthdays' && obj.data && !sentFamousBirthdays) {
+              } else if (obj.type === "famousBirthdays" && obj.data && !sentFamousBirthdays) {
                 famousBirthdays = obj.data;
-                safeEnqueue(controller, `data: ${JSON.stringify({ type: 'famousBirthdays', famousBirthdays: obj.data })}\n\n`);
+                safeEnqueue(
+                  controller,
+                  `data: ${JSON.stringify({ type: "famousBirthdays", famousBirthdays: obj.data })}\n\n`,
+                );
                 sentFamousBirthdays = true;
               }
             } catch {
@@ -257,32 +257,37 @@ async function handleNDJSONStreaming(
             }
           }
         }
-        
+
         // Send complete message with all collected data
-        console.log(`Stream complete: ${eventCount} events, summary: ${!!summary}, birthdays: ${famousBirthdays.length}`);
-        safeEnqueue(controller, `data: ${JSON.stringify({ 
-          type: 'complete', 
-          data: { 
-            events: allEvents, 
-            summary: summary || "Een overzicht van belangrijke gebeurtenissen uit deze periode.",
-            famousBirthdays 
-          } 
-        })}\n\n`);
-        
-        safeEnqueue(controller, 'data: [DONE]\n\n');
-        
+        console.log(
+          `Stream complete: ${eventCount} events, summary: ${!!summary}, birthdays: ${famousBirthdays.length}`,
+        );
+        safeEnqueue(
+          controller,
+          `data: ${JSON.stringify({
+            type: "complete",
+            data: {
+              events: allEvents,
+              summary: summary || "Een overzicht van belangrijke gebeurtenissen uit deze periode.",
+              famousBirthdays,
+            },
+          })}\n\n`,
+        );
+
+        safeEnqueue(controller, "data: [DONE]\n\n");
+
         if (!isStreamClosed) {
           isStreamClosed = true;
           controller.close();
         }
       } catch (e) {
-        console.error('Stream error:', e);
+        console.error("Stream error:", e);
         if (!isStreamClosed) {
           isStreamClosed = true;
           controller.error(e);
         }
       }
-    }
+    },
   });
 
   return new Response(readable, {
@@ -290,23 +295,23 @@ async function handleNDJSONStreaming(
       ...corsHeaders,
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
-      "Connection": "keep-alive",
-    }
+      Connection: "keep-alive",
+    },
   });
 }
 
 async function handleErrorResponse(response: Response): Promise<Response> {
   if (response.status === 429) {
-    return new Response(
-      JSON.stringify({ error: "Te veel verzoeken. Probeer het later opnieuw." }),
-      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Te veel verzoeken. Probeer het later opnieuw." }), {
+      status: 429,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
   if (response.status === 402) {
-    return new Response(
-      JSON.stringify({ error: "Credits op. Voeg credits toe aan je workspace." }),
-      { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Credits op. Voeg credits toe aan je workspace." }), {
+      status: 402,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
   const errorText = await response.text();
   console.error("AI gateway error:", response.status, errorText);
@@ -334,30 +339,68 @@ function getTimelineTool() {
                 day: { type: "number" },
                 title: { type: "string" },
                 description: { type: "string" },
-                category: { 
-                  type: "string", 
-                  enum: ["politics", "sports", "entertainment", "science", "culture", "world", "local", "personal", "music", "technology", "celebrity"] 
+                category: {
+                  type: "string",
+                  enum: [
+                    "politics",
+                    "sports",
+                    "entertainment",
+                    "science",
+                    "culture",
+                    "world",
+                    "local",
+                    "personal",
+                    "music",
+                    "technology",
+                    "celebrity",
+                  ],
                 },
-                imageSearchQuery: { type: "string", description: "Search query in the user's language to find a relevant image for this event" },
-                imageSearchQueryEn: { type: "string", description: "English search query for finding images on Wikimedia Commons (translated from imageSearchQuery)" },
+                imageSearchQuery: {
+                  type: "string",
+                  description: "Search query in the user's language to find a relevant image for this event",
+                },
+                imageSearchQueryEn: {
+                  type: "string",
+                  description:
+                    "English search query for finding images on Wikimedia Commons (translated from imageSearchQuery)",
+                },
                 importance: { type: "string", enum: ["high", "medium", "low"] },
-                eventScope: { 
-                  type: "string", 
+                eventScope: {
+                  type: "string",
                   enum: ["birthdate", "birthmonth", "birthyear", "period"],
-                  description: "Whether this event is from the exact birth date, birth month, birth year, or general period"
+                  description:
+                    "Whether this event is from the exact birth date, birth month, birth year, or general period",
                 },
-                isCelebrityBirthday: { type: "boolean", description: "True if this is about a famous person born on the same date" },
-                isMovie: { type: "boolean", description: "True ONLY for cinema FILMS (E.T., Titanic, Star Wars). NOT for TV series!" },
-                isTV: { type: "boolean", description: "True ONLY for TV SERIES/SHOWS (Dallas, Beverly Hills 90210, Swiebertje, Friends, The A-Team)" },
-                spotifySearchQuery: { type: "string", description: "Search query for a relevant song/hit from that time, e.g. 'artist - title'. Fill this for music events (category=music) or important cultural moments with a #1 hit of that moment." },
-                movieSearchQuery: { type: "string", description: "Search query for YouTube to find a movie trailer, e.g. 'Titanic trailer 1997'. Fill this for movie/film events (isMovie=true)." }
+                isCelebrityBirthday: {
+                  type: "boolean",
+                  description: "True if this is about a famous person born on the same date",
+                },
+                isMovie: {
+                  type: "boolean",
+                  description: "True ONLY for cinema FILMS (E.T., Titanic, Star Wars). NOT for TV series!",
+                },
+                isTV: {
+                  type: "boolean",
+                  description:
+                    "True ONLY for TV SERIES/SHOWS (Dallas, Beverly Hills 90210, Swiebertje, Friends, The A-Team)",
+                },
+                spotifySearchQuery: {
+                  type: "string",
+                  description:
+                    "Search query for a relevant song/hit from that time, e.g. 'artist - title'. Fill this for music events (category=music) or important cultural moments with a #1 hit of that moment.",
+                },
+                movieSearchQuery: {
+                  type: "string",
+                  description:
+                    "Search query for YouTube to find a movie trailer, e.g. 'Titanic trailer 1997'. Fill this for movie/film events (isMovie=true).",
+                },
               },
-              required: ["id", "date", "year", "title", "description", "category", "importance", "eventScope"]
-            }
+              required: ["id", "date", "year", "title", "description", "category", "importance", "eventScope"],
+            },
           },
           summary: {
             type: "string",
-            description: "A brief summary of the era/period covered"
+            description: "A brief summary of the era/period covered",
           },
           famousBirthdays: {
             type: "array",
@@ -368,91 +411,144 @@ function getTimelineTool() {
                 name: { type: "string" },
                 profession: { type: "string" },
                 birthYear: { type: "number" },
-                imageSearchQuery: { type: "string" }
+                imageSearchQuery: { type: "string" },
               },
-              required: ["name", "profession", "birthYear"]
-            }
-          }
+              required: ["name", "profession", "birthYear"],
+            },
+          },
         },
-        required: ["events", "summary"]
-      }
-    }
+        required: ["events", "summary"],
+      },
+    },
   };
 }
 
+// =============================================================================
+// DE BUILD PROMPT FUNCTIE - LOGISCH OPGEDEELD IN BLOKKEN
+// =============================================================================
 function buildPrompt(data: TimelineRequest): string {
-  let prompt = "";
+  const { optionalData } = data;
+
+  // ---------------------------------------------------------------------------
+  // 1. CONFIGURATIE (Instellingen voor de AI)
+  // ---------------------------------------------------------------------------
   const isShort = data.maxEvents && data.maxEvents <= 20;
   const periodType = data.optionalData?.periodType;
-  
-  // Get content focus based on period type
   const contentFocus = getContentFocusForPeriod(periodType);
-  
-  if (data.type === 'birthdate' && data.birthDate) {
+
+  // We gebruiken een array om de prompt-blokken in de juiste volgorde te zetten.
+  // Dit maakt het makkelijk om later te schuiven met prioriteiten.
+  const promptParts: string[] = [];
+
+  // ---------------------------------------------------------------------------
+  // 2. BLOK A: DE BASIS OPDRACHT (TIJD & PERIODE)
+  // ---------------------------------------------------------------------------
+  // Dit is het fundament. De AI moet eerst weten WAT hij moet maken (welke jaren).
+
+  if (data.type === "birthdate" && data.birthDate) {
+    // Scenario 1: Specifieke geboortedag
     const { day, month, year } = data.birthDate;
     const monthName = MONTH_NAMES[month - 1];
-    
+
     if (isShort) {
-      prompt = BIRTHDATE_PROMPT_SHORT(day, monthName, year, data.maxEvents!, contentFocus);
+      promptParts.push(BIRTHDATE_PROMPT_SHORT(day, monthName, year, data.maxEvents!, contentFocus));
     } else {
-      prompt = BIRTHDATE_PROMPT_FULL(day, monthName, year, contentFocus);
+      promptParts.push(BIRTHDATE_PROMPT_FULL(day, monthName, year, contentFocus));
     }
-  } else if (data.type === 'range' && data.yearRange) {
+  } else if (data.type === "range" && data.yearRange) {
+    // Scenario 2: Een periode (Range)
     const { startYear, endYear } = data.yearRange;
     const yearSpan = endYear - startYear;
     const targetEvents = isShort ? data.maxEvents! : Math.max(50, yearSpan * 5);
-    
-    prompt = RANGE_PROMPT(startYear, endYear, isShort || false, targetEvents, contentFocus);
 
-    // Always add famous birthdays for the user's birthday
+    // Voeg de basis range prompt toe
+    promptParts.push(RANGE_PROMPT(startYear, endYear, isShort || false, targetEvents, contentFocus));
+
+    // Als het geboortejaar in deze range valt, benadruk dit dan (voor context)
     if (data.birthDate) {
-      const { day, month, year } = data.birthDate;
-      const monthName = MONTH_NAMES[month - 1];
-      
-      prompt += FAMOUS_BIRTHDAYS_ADDITION(day, monthName, startYear, endYear);
-      
+      const { year } = data.birthDate;
       if (year >= startYear && year <= endYear) {
-        prompt += BIRTHYEAR_IN_RANGE_ADDITION(year);
+        promptParts.push(BIRTHYEAR_IN_RANGE_ADDITION(year));
       }
     }
   }
 
-  const { optionalData } = data;
+  // ---------------------------------------------------------------------------
+  // 3. BLOK B: DE "LENS" (PLAATS, GESLACHT, HOUDING) - HOOGSTE PRIORITEIT
+  // ---------------------------------------------------------------------------
+  // Dit zijn de belangrijkste parameters volgens jouw wensen.
+  // Ze bepalen HOE de AI naar de periode kijkt.
+  // We zetten ze direct na de tijdsopdracht, zodat de AI ze als "hoofdfilter" gebruikt.
 
-  if (optionalData.firstName || optionalData.lastName) {
-    const fullName = [optionalData.firstName, optionalData.lastName].filter(Boolean).join(' ');
-    prompt += PERSONAL_NAME_ADDITION(fullName);
-  }
-  
-  if (optionalData.focus) {
-    prompt += GEOGRAPHIC_FOCUS[optionalData.focus];
-  }
-
-  if (optionalData.interests) {
-    prompt += INTERESTS_ADDITION(optionalData.interests);
-  }
-
-  if (optionalData.gender && optionalData.gender !== 'none') {
-    prompt += GENDER_ADDITION(optionalData.gender);
-  }
-
-  if (optionalData.attitude && optionalData.attitude !== 'neutral') {
-    prompt += ATTITUDE_ADDITION(optionalData.attitude);
-  }
-
+  // B1. Locatie (Sfeer & Lokale Events)
   if (optionalData.city) {
-    prompt += CITY_ADDITION(optionalData.city);
+    promptParts.push(CITY_ADDITION(optionalData.city));
   }
 
+  // B2. Geslacht (Perspectief)
+  // Bepaalt de keuze van onderwerpen (bv. mode, idolen, speelgoed, tijdschriften)
+  if (optionalData.gender && optionalData.gender !== "none") {
+    promptParts.push(GENDER_ADDITION(optionalData.gender));
+  }
+
+  // B3. Houding (Toon & Sfeer)
+  // Bepaalt de "vibe" (bv. rebels vs braaf, alternatief vs mainstream)
+  if (optionalData.attitude && optionalData.attitude !== "neutral") {
+    promptParts.push(ATTITUDE_ADDITION(optionalData.attitude));
+  }
+
+  // B4. Geografische Focus (Land/Wereld)
+  if (optionalData.focus) {
+    promptParts.push(GEOGRAPHIC_FOCUS[optionalData.focus]);
+  }
+
+  // ---------------------------------------------------------------------------
+  // 4. BLOK C: PERSOONLIJKE CONTEXT (SECUNDAIR)
+  // ---------------------------------------------------------------------------
+  // Naam, Partner, Kinderen en Interesses zijn "leuk voor erbij" (versiering).
+  // Ze mogen de tijdlijn niet overheersen, dus ze staan lager in de prompt.
+
+  // C1. Naam
+  if (optionalData.firstName || optionalData.lastName) {
+    const fullName = [optionalData.firstName, optionalData.lastName].filter(Boolean).join(" ");
+    promptParts.push(PERSONAL_NAME_ADDITION(fullName));
+  }
+
+  // C2. Interesses (Specifieke hobby's toevoegen)
+  if (optionalData.interests) {
+    promptParts.push(INTERESTS_ADDITION(optionalData.interests));
+  }
+
+  // C3. Familie (Kinderen & Partner)
+  // Dit geeft kleur aan het persoonlijke leven, maar verandert de wereldgeschiedenis niet.
   if (optionalData.children && optionalData.children.length > 0) {
     const childrenInfo = optionalData.children
-      .filter(c => c.name && c.birthDate?.year)
-      .map(c => `${c.name} (${c.birthDate?.day}-${c.birthDate?.month}-${c.birthDate?.year})`);
-    
+      .filter((c) => c.name && c.birthDate?.year)
+      .map((c) => `${c.name} (${c.birthDate?.day}-${c.birthDate?.month}-${c.birthDate?.year})`);
+
     if (childrenInfo.length > 0) {
-      prompt += CHILDREN_ADDITION(childrenInfo);
+      promptParts.push(CHILDREN_ADDITION(childrenInfo));
     }
   }
 
-  return prompt;
+  if (optionalData.partnerName) {
+    promptParts.push(`Partner: ${optionalData.partnerName}`);
+  }
+
+  // ---------------------------------------------------------------------------
+  // 5. BLOK D: EXTRA TAKEN (LOSSTAAND)
+  // ---------------------------------------------------------------------------
+  // Verjaardagen zoeken is een aparte taak die losstaat van de tijdlijn-generatie.
+  // Dit staat helemaal onderaan om verwarring te voorkomen.
+
+  if (data.type === "range" && data.yearRange && data.birthDate) {
+    const { day, month } = data.birthDate;
+    const monthName = MONTH_NAMES[month - 1];
+    const { startYear, endYear } = data.yearRange;
+
+    promptParts.push(FAMOUS_BIRTHDAYS_ADDITION(day, monthName, startYear, endYear));
+  }
+
+  // Voeg alles samen met dubbele witregels voor leesbaarheid voor de AI
+  return promptParts.join("\n\n");
 }
