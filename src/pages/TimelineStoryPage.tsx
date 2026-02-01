@@ -123,7 +123,7 @@ const ParallaxImage = ({ src, alt, className = '', speed = 0.5 }: ParallaxImageP
         src={src}
         alt={alt}
         style={{ y }}
-        className="w-full h-full object-cover scale-110"
+        className="w-full h-full object-cover object-center scale-110"
       />
     </div>
   );
@@ -156,10 +156,10 @@ const StickyYear = ({ year, theme }: StickyYearProps) => {
 // EVENT LAYOUT PATTERNS
 // =============================================
 
-// Pattern A: Text far left, small image far right (asymmetric)
+// Pattern A: Text left, image right - SIDE BY SIDE
 const LayoutPatternA = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start py-24 lg:py-32">
-    <Reveal className="lg:col-span-6 lg:col-start-1 space-y-6">
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center py-24 lg:py-32">
+    <Reveal className="space-y-6">
       <span className={`${theme.fontMono} text-sm uppercase tracking-widest text-muted-foreground`}>
         {event.date}
       </span>
@@ -170,46 +170,23 @@ const LayoutPatternA = ({ event, theme, imageUrl }: { event: TimelineEvent; them
         {event.description}
       </p>
     </Reveal>
-    <Reveal className="lg:col-span-4 lg:col-start-8 lg:mt-16" delay={0.2}>
-      <div className="relative aspect-[4/5] max-w-xs ml-auto rounded-2xl overflow-hidden shadow-2xl">
+    <Reveal delay={0.2}>
+      <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
         <ParallaxImage src={imageUrl} alt={event.title} className="absolute inset-0" speed={0.3} />
       </div>
     </Reveal>
   </div>
 );
 
-// Pattern B: Full-width background image with text left-aligned
+// Pattern B: Image left, text right - SIDE BY SIDE (flipped)
 const LayoutPatternB = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="relative min-h-[70vh] flex items-center py-24">
-    {/* Background parallax image */}
-    <div className="absolute inset-0 -z-10">
-      <ParallaxImage src={imageUrl} alt="" className="absolute inset-0 h-full" speed={0.2} />
-      <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-transparent" />
-    </div>
-    
-    <Reveal className="max-w-2xl space-y-6">
-      <span className={`${theme.fontMono} text-sm uppercase tracking-widest text-muted-foreground`}>
-        {event.date}
-      </span>
-      <h2 className={`${theme.fontDisplay} text-4xl lg:text-6xl font-bold leading-tight text-foreground`}>
-        {event.title}
-      </h2>
-      <p className={`${theme.fontBody} text-lg lg:text-xl text-muted-foreground leading-relaxed`}>
-        {event.description}
-      </p>
-    </Reveal>
-  </div>
-);
-
-// Pattern C: Large portrait image far left, text far right
-const LayoutPatternC = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center py-24 lg:py-32">
-    <Reveal className="lg:col-span-5 lg:col-start-1 order-2 lg:order-1">
-      <div className="relative aspect-[3/4] max-w-md rounded-3xl overflow-hidden shadow-2xl">
-        <ParallaxImage src={imageUrl} alt={event.title} className="absolute inset-0" speed={0.4} />
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center py-24 lg:py-32">
+    <Reveal className="order-2 lg:order-1">
+      <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
+        <ParallaxImage src={imageUrl} alt={event.title} className="absolute inset-0" speed={0.3} />
       </div>
     </Reveal>
-    <Reveal className="lg:col-span-5 lg:col-start-8 order-1 lg:order-2 space-y-6" delay={0.2}>
+    <Reveal className="order-1 lg:order-2 space-y-6 lg:text-right" delay={0.2}>
       <span className={`${theme.fontMono} text-sm uppercase tracking-widest text-muted-foreground`}>
         {event.date}
       </span>
@@ -223,32 +200,63 @@ const LayoutPatternC = ({ event, theme, imageUrl }: { event: TimelineEvent; them
   </div>
 );
 
-// Pattern D: Quote style with subtle background
-const LayoutPatternD = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="relative py-32 lg:py-48">
-    {/* Subtle background image */}
-    <div className="absolute inset-0 -z-10 opacity-10">
-      <ParallaxImage src={imageUrl} alt="" className="absolute inset-0 h-full" speed={0.1} />
-    </div>
-    
-    <Reveal className="max-w-4xl mx-auto px-6 text-center space-y-8">
+// Pattern C: Portrait image left, text right - SIDE BY SIDE
+const LayoutPatternC = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center py-24 lg:py-32">
+    <Reveal className="order-2 lg:order-1">
+      <div className="relative aspect-[3/4] max-w-sm rounded-3xl overflow-hidden shadow-2xl">
+        <ParallaxImage src={imageUrl} alt={event.title} className="absolute inset-0" speed={0.4} />
+      </div>
+    </Reveal>
+    <Reveal className="order-1 lg:order-2 space-y-6 lg:text-right" delay={0.2}>
       <span className={`${theme.fontMono} text-sm uppercase tracking-widest text-muted-foreground`}>
         {event.date}
       </span>
-      <blockquote className={`${theme.fontDisplay} text-3xl lg:text-5xl xl:text-6xl font-bold leading-tight text-foreground italic`}>
-        "{event.title}"
-      </blockquote>
-      <p className={`${theme.fontBody} text-lg lg:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto`}>
+      <h2 className={`${theme.fontDisplay} text-3xl lg:text-5xl font-bold leading-tight text-foreground`}>
+        {event.title}
+      </h2>
+      <p className={`${theme.fontBody} text-lg lg:text-xl text-muted-foreground leading-relaxed`}>
         {event.description}
       </p>
     </Reveal>
   </div>
 );
 
-// Pattern E: Circular image right, text left (flipped asymmetric)
+// Pattern D: Text left, square image right - SIDE BY SIDE
+const LayoutPatternD = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center py-24 lg:py-32">
+    <Reveal className="space-y-6">
+      <span className={`${theme.fontMono} text-sm uppercase tracking-widest text-muted-foreground`}>
+        {event.date}
+      </span>
+      <h2 className={`${theme.fontDisplay} text-3xl lg:text-5xl font-bold leading-tight text-foreground`}>
+        {event.title}
+      </h2>
+      <p className={`${theme.fontBody} text-lg lg:text-xl text-muted-foreground leading-relaxed`}>
+        {event.description}
+      </p>
+    </Reveal>
+    <Reveal delay={0.2}>
+      <div className="relative aspect-square max-w-md ml-auto rounded-xl overflow-hidden shadow-2xl">
+        <ParallaxImage src={imageUrl} alt={event.title} className="absolute inset-0" speed={0.2} />
+      </div>
+    </Reveal>
+  </div>
+);
+
+// Pattern E: Circular image left, text right - SIDE BY SIDE
 const LayoutPatternE = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center py-24 lg:py-32">
-    <Reveal className="lg:col-span-6 lg:col-start-1 space-y-6">
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center py-24 lg:py-32">
+    <Reveal className="order-2 lg:order-1 flex justify-center lg:justify-start">
+      <div className="relative w-56 h-56 lg:w-72 lg:h-72 rounded-full overflow-hidden shadow-2xl ring-8 ring-background flex-shrink-0">
+        <img 
+          src={imageUrl} 
+          alt={event.title} 
+          className="w-full h-full object-cover object-center"
+        />
+      </div>
+    </Reveal>
+    <Reveal className="order-1 lg:order-2 space-y-6 lg:text-right" delay={0.2}>
       <span className={`${theme.fontMono} text-sm uppercase tracking-widest text-muted-foreground`}>
         {event.date}
       </span>
@@ -258,11 +266,6 @@ const LayoutPatternE = ({ event, theme, imageUrl }: { event: TimelineEvent; them
       <p className={`${theme.fontBody} text-lg text-muted-foreground leading-relaxed`}>
         {event.description}
       </p>
-    </Reveal>
-    <Reveal className="lg:col-span-4 lg:col-start-9 flex justify-end" delay={0.2}>
-      <div className="relative w-56 h-56 lg:w-72 lg:h-72 rounded-full overflow-hidden shadow-2xl ring-8 ring-background">
-        <ParallaxImage src={imageUrl} alt={event.title} className="absolute inset-0" speed={0.2} />
-      </div>
     </Reveal>
   </div>
 );
