@@ -2,6 +2,8 @@ export type TimelineType = 'birthdate' | 'range';
 
 export type GeographicFocus = 'netherlands' | 'europe' | 'world';
 
+export type Gender = 'male' | 'female' | 'none';
+
 export type PeriodType = 'birthyear' | 'childhood' | 'puberty' | 'young-adult' | 'custom';
 
 export type BirthDateData = {
@@ -24,6 +26,7 @@ export type OptionalData = {
   firstName?: string;
   lastName?: string;
   city?: string;
+  gender: Gender;
   children: ChildData[];
   partnerName?: string;
   partnerBirthDate?: BirthDateData;
