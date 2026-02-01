@@ -641,13 +641,18 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading }: HeroSe
   const y = useTransform(scrollY, [0, 400], [0, 100]);
   const scale = useTransform(scrollY, [0, 400], [1, 0.95]);
 
+  // Show hero content as soon as storyTitle arrives, even if still loading events
+  const hasStoryContent = !!storyTitle;
+  const showLoadingSpinner = isLoading && !hasStoryContent;
+  const showStoryLoading = isLoading && hasStoryContent;
+
   return (
     <motion.section 
       className="min-h-screen flex flex-col items-center justify-center relative px-6 overflow-hidden"
       style={{ opacity }}
     >
       {/* Background decorative year */}
-      {storyTitle && !isLoading && (
+      {storyTitle && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.03 }}
@@ -667,7 +672,7 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading }: HeroSe
         className="text-center max-w-5xl mx-auto space-y-10 relative z-10"
         style={{ y, scale }}
       >
-        {isLoading ? (
+        {showLoadingSpinner ? (
           <div className="flex flex-col items-center gap-6">
             <motion.div
               animate={{ rotate: 360 }}
@@ -706,12 +711,27 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading }: HeroSe
                 </p>
               </motion.div>
             )}
+
+            {/* Events loading indicator while story is shown but events still streaming */}
+            {showStoryLoading && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.2 }}
+                className="flex items-center justify-center gap-3 pt-4"
+              >
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground/60" />
+                <span className={`${theme.fontMono} text-sm text-muted-foreground/60`}>
+                  Gebeurtenissen laden...
+                </span>
+              </motion.div>
+            )}
           </>
         )}
       </motion.div>
 
-      {/* Scroll indicator */}
-      {!isLoading && (
+      {/* Scroll indicator - show when story is loaded, events still loading OR when fully done */}
+      {hasStoryContent && (
         <motion.div 
           className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
           initial={{ opacity: 0 }}
@@ -719,7 +739,7 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading }: HeroSe
           transition={{ delay: 1.5 }}
         >
           <span className={`${theme.fontMono} text-xs uppercase tracking-widest text-muted-foreground`}>
-            Scroll to begin
+            {isLoading ? 'Begin met scrollen' : 'Scroll to begin'}
           </span>
           <motion.div
             animate={{ y: [0, 8, 0] }}
