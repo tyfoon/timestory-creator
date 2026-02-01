@@ -139,6 +139,9 @@ function normalizeSearchQuery(query: string, queryType: 'nl' | 'en' = 'nl'): str
   // Strip decades from all queries
   let normalized = stripDecades(query);
   
+  // Remove nostalgic/vintage terms that don't help image search
+  normalized = normalized.replace(/\b(vroeger|vintage)\b/gi, '').replace(/\s+/g, ' ').trim();
+  
   // Strip colors from object searches (but not from art/culture items)
   // This helps find "fiets" instead of failing on "rode fiets"
   normalized = stripColors(normalized);
