@@ -11,6 +11,8 @@ import { ArrowLeft, ChevronDown, Loader2, AlertCircle, RefreshCw, Clock } from '
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getCacheKey } from '@/lib/timelineCache';
+import { DebugInfoDialog } from '@/components/DebugInfoDialog';
+import { PromptViewerDialog } from '@/components/PromptViewerDialog';
 
 // Placeholder images by category
 import birthdayPlaceholder from '@/assets/placeholders/birthday.jpg';
@@ -428,6 +430,29 @@ const TimelineStoryPage = () => {
     addImagesToQueue(eventsNeedingImages);
   }, [addImagesToQueue]);
 
+  // Force refresh all images (for debug purposes - to get search traces)
+  const handleRefreshAllImages = useCallback(() => {
+    const resetEvents = events.map(e => {
+      if (!e.imageSearchQuery) return e;
+      return {
+        ...e,
+        imageUrl: undefined,
+        source: undefined,
+        imageStatus: 'loading' as const,
+        searchTrace: undefined,
+      };
+    });
+    
+    setEvents(resetEvents);
+    receivedEventsRef.current = resetEvents;
+    resetImageSearch();
+    
+    const eventsToSearch = resetEvents.filter(e => e.imageSearchQuery);
+    if (eventsToSearch.length > 0) {
+      addImagesToQueue(eventsToSearch);
+    }
+  }, [events, resetImageSearch, addImagesToQueue]);
+
   // Track scroll position to update current year
   useEffect(() => {
     const handleScroll = () => {
@@ -672,6 +697,18 @@ const TimelineStoryPage = () => {
             </button>
             
             <div className="flex items-center gap-2">
+              {/* Debug dialogs */}
+              {events.length > 0 && !isLoading && (
+                <>
+                  <PromptViewerDialog formData={formData} language={language} maxEvents={currentMaxEvents} />
+                  <DebugInfoDialog 
+                    events={events} 
+                    onRefreshImages={handleRefreshAllImages}
+                    isRefreshing={isLoadingImages}
+                  />
+                </>
+              )}
+              
               {/* Refresh button */}
               {events.length > 0 && !isLoading && (
                 <button
@@ -691,8 +728,8 @@ const TimelineStoryPage = () => {
         </div>
       </section>
 
-      {/* Loading state - initial */}
-      {isLoading && events.length === 0 && (
+      {/* Loading state - only show if no story content yet */}
+      {isLoading && events.length === 0 && !storyTitle && !storyIntroduction && (
         <div className="flex-1 flex flex-col items-center justify-center py-24 fade-in min-h-[60vh]">
           <div className="w-16 h-16 rounded-full bg-gradient-gold flex items-center justify-center mb-4 animate-pulse">
             <Clock className="h-8 w-8 text-primary-foreground" />
@@ -722,13 +759,13 @@ const TimelineStoryPage = () => {
         <StickyYear year={currentYear} theme={theme} />
       )}
 
-      {/* Hero section - only show when we have content */}
-      {(storyTitle || storyIntroduction || events.length > 0) && (
+      {/* Hero section - ALWAYS show when we have storyTitle or storyIntroduction */}
+      {(storyTitle || storyIntroduction) && (
         <HeroSection 
           storyTitle={storyTitle}
           storyIntroduction={storyIntroduction}
           theme={theme}
-          isLoading={isLoading && events.length === 0}
+          isLoading={false}
         />
       )}
 
