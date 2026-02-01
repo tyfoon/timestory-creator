@@ -145,9 +145,13 @@ async function handleNDJSONStreaming(requestData: TimelineRequest, prompt: strin
   let eventCount = 0;
   let sentSummary = false;
   let sentFamousBirthdays = false;
+  let sentStoryTitle = false;
+  let sentStoryIntroduction = false;
   const allEvents: any[] = [];
   let summary = "";
   let famousBirthdays: any[] = [];
+  let storyTitle = "";
+  let storyIntroduction = "";
 
   const safeEnqueue = (controller: ReadableStreamDefaultController, data: string) => {
     if (isStreamClosed) return;
@@ -204,6 +208,16 @@ async function handleNDJSONStreaming(requestData: TimelineRequest, prompt: strin
                       allEvents.push(obj.data);
                       safeEnqueue(controller, `data: ${JSON.stringify({ type: "event", event: obj.data })}\n\n`);
                       console.log(`Streamed event ${eventCount}: ${obj.data.title?.substring(0, 40)}`);
+                    } else if (obj.type === "storyTitle" && obj.data && !sentStoryTitle) {
+                      storyTitle = obj.data;
+                      safeEnqueue(controller, `data: ${JSON.stringify({ type: "storyTitle", storyTitle: obj.data })}\n\n`);
+                      sentStoryTitle = true;
+                      console.log(`Streamed storyTitle: ${obj.data.substring(0, 50)}`);
+                    } else if (obj.type === "storyIntroduction" && obj.data && !sentStoryIntroduction) {
+                      storyIntroduction = obj.data;
+                      safeEnqueue(controller, `data: ${JSON.stringify({ type: "storyIntroduction", storyIntroduction: obj.data })}\n\n`);
+                      sentStoryIntroduction = true;
+                      console.log(`Streamed storyIntroduction: ${obj.data.substring(0, 50)}...`);
                     } else if (obj.type === "summary" && obj.data && !sentSummary) {
                       summary = obj.data;
                       safeEnqueue(controller, `data: ${JSON.stringify({ type: "summary", summary: obj.data })}\n\n`);
@@ -241,6 +255,14 @@ async function handleNDJSONStreaming(requestData: TimelineRequest, prompt: strin
                 eventCount++;
                 allEvents.push(obj.data);
                 safeEnqueue(controller, `data: ${JSON.stringify({ type: "event", event: obj.data })}\n\n`);
+              } else if (obj.type === "storyTitle" && obj.data && !sentStoryTitle) {
+                storyTitle = obj.data;
+                safeEnqueue(controller, `data: ${JSON.stringify({ type: "storyTitle", storyTitle: obj.data })}\n\n`);
+                sentStoryTitle = true;
+              } else if (obj.type === "storyIntroduction" && obj.data && !sentStoryIntroduction) {
+                storyIntroduction = obj.data;
+                safeEnqueue(controller, `data: ${JSON.stringify({ type: "storyIntroduction", storyIntroduction: obj.data })}\n\n`);
+                sentStoryIntroduction = true;
               } else if (obj.type === "summary" && obj.data && !sentSummary) {
                 summary = obj.data;
                 safeEnqueue(controller, `data: ${JSON.stringify({ type: "summary", summary: obj.data })}\n\n`);
@@ -261,7 +283,7 @@ async function handleNDJSONStreaming(requestData: TimelineRequest, prompt: strin
 
         // Send complete message with all collected data
         console.log(
-          `Stream complete: ${eventCount} events, summary: ${!!summary}, birthdays: ${famousBirthdays.length}`,
+          `Stream complete: ${eventCount} events, summary: ${!!summary}, title: ${!!storyTitle}, intro: ${!!storyIntroduction}, birthdays: ${famousBirthdays.length}`,
         );
         safeEnqueue(
           controller,
@@ -270,6 +292,8 @@ async function handleNDJSONStreaming(requestData: TimelineRequest, prompt: strin
             data: {
               events: allEvents,
               summary: summary || "Een overzicht van belangrijke gebeurtenissen uit deze periode.",
+              storyTitle: storyTitle || "",
+              storyIntroduction: storyIntroduction || "",
               famousBirthdays,
             },
           })}\n\n`,

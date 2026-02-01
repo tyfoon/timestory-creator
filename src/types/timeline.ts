@@ -50,6 +50,9 @@ export interface TimelineData {
   events: TimelineEvent[];
   summary: string;
   famousBirthdays?: FamousBirthday[];
+  // NEW: Story elements for the timeline
+  storyTitle?: string;        // Evocative title capturing the era's feeling (~10 words)
+  storyIntroduction?: string; // ~200 word nostalgic introduction text
 }
 
 export interface TimelineResponse {
