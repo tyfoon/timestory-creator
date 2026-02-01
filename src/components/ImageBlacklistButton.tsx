@@ -4,29 +4,33 @@ import { addToBlacklist } from '@/hooks/useImageBlacklist';
 interface ImageBlacklistButtonProps {
   imageUrl: string;
   eventId: string;
+  eventTitle?: string;
+  searchQuery?: string;
   onBlacklist: (eventId: string) => void;
   className?: string;
 }
 
 /**
  * Small button overlay for blacklisting an image.
- * When clicked, adds the image to the blacklist and triggers a new search.
+ * When clicked, adds the image to the global blacklist (database) and triggers a new search.
  * 
  * TEMPORARY: This feature is for development/testing only.
  * Remove before production release.
  */
 export const ImageBlacklistButton = ({ 
   imageUrl, 
-  eventId, 
+  eventId,
+  eventTitle,
+  searchQuery,
   onBlacklist,
   className = ''
 }: ImageBlacklistButtonProps) => {
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     
-    // Add to blacklist
-    addToBlacklist(imageUrl);
+    // Add to global blacklist (database + local cache)
+    await addToBlacklist(imageUrl, eventTitle, searchQuery);
     
     // Trigger re-search for this event
     onBlacklist(eventId);
@@ -46,7 +50,7 @@ export const ImageBlacklistButton = ({
         backdrop-blur-sm
         ${className}
       `}
-      title="Foto blacklisten en nieuwe zoeken"
+      title="Foto blacklisten (globaal) en nieuwe zoeken"
       aria-label="Blacklist afbeelding"
     >
       <Ban className="h-3.5 w-3.5" />

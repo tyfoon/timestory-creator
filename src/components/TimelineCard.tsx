@@ -298,15 +298,15 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
                 {/* Blacklist button - only for real images, not placeholders */}
                 {!isPlaceholder && hasRealImage && onBlacklistImage && (
                   <button
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation();
                       if (event.imageUrl) {
-                        addToBlacklist(event.imageUrl);
+                        await addToBlacklist(event.imageUrl, event.title, event.imageSearchQuery);
                         onBlacklistImage(event.id);
                       }
                     }}
                     className="absolute top-2 left-2 z-20 w-7 h-7 rounded-full bg-black/60 hover:bg-destructive/90 text-white/70 hover:text-white flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 backdrop-blur-sm"
-                    title="Foto blacklisten en nieuwe zoeken"
+                    title="Foto blacklisten (globaal) en nieuwe zoeken"
                     aria-label="Blacklist afbeelding"
                   >
                     <Ban className="h-3.5 w-3.5" />
