@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Play, Loader2, X } from 'lucide-react';
 import { SpotifyPlayer } from '@/components/SpotifyPlayer';
 import { searchYouTube } from '@/lib/api/youtube';
+import { useToast } from '@/hooks/use-toast';
 
 interface MediaButtonsProps {
   spotifySearchQuery?: string;
@@ -24,26 +25,46 @@ export const MediaButtons = ({
   onTrailerPlay,
   onTrailerStop,
 }: MediaButtonsProps) => {
+  const { toast } = useToast();
   const [isLoadingTrailer, setIsLoadingTrailer] = useState(false);
   const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
   const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
+  const [trailerError, setTrailerError] = useState(false);
 
   const handlePlayTrailer = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!movieSearchQuery) return;
     
+    // Reset error state on retry
+    setTrailerError(false);
     setIsLoadingTrailer(true);
+    
     try {
       const result = await searchYouTube(movieSearchQuery);
       if (result.success && result.videoId) {
         setYoutubeVideoId(result.videoId);
         setIsPlayingTrailer(true);
         onTrailerPlay?.();
+      } else if (result.error) {
+        console.warn('YouTube search error:', result.error);
+        setTrailerError(true);
+        toast({
+          title: "Trailer niet gevonden",
+          description: "Kon geen trailer vinden voor deze film.",
+          variant: "destructive",
+        });
       } else {
         console.warn('No YouTube video found for:', movieSearchQuery);
+        setTrailerError(true);
       }
     } catch (error) {
       console.error('Error fetching YouTube video:', error);
+      setTrailerError(true);
+      toast({
+        title: "Verbindingsfout",
+        description: "Kon geen verbinding maken met de server. Probeer het later opnieuw.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoadingTrailer(false);
     }
