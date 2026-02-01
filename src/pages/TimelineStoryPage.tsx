@@ -161,7 +161,7 @@ const StickyYear = ({ year, theme }: StickyYearProps) => {
 
 // Pattern A: Text left, image right - ALWAYS SIDE BY SIDE (including mobile)
 const LayoutPatternA = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="flex flex-row gap-4 sm:gap-8 lg:gap-16 items-center py-12 sm:py-16 lg:py-24">
+  <div className="flex flex-row gap-4 sm:gap-8 lg:gap-12 items-center py-12 sm:py-16 lg:py-24">
     <Reveal className="flex-1 min-w-0 space-y-3 sm:space-y-6">
       <span className={`${theme.fontMono} text-xs sm:text-sm uppercase tracking-widest text-muted-foreground`}>
         {event.date}
@@ -173,7 +173,7 @@ const LayoutPatternA = ({ event, theme, imageUrl }: { event: TimelineEvent; them
         {event.description}
       </p>
     </Reveal>
-    <Reveal className="flex-shrink-0 w-28 sm:w-48 lg:w-80" delay={0.2}>
+    <Reveal className="w-1/3 min-w-[120px] sm:min-w-[180px] lg:min-w-[280px] flex-shrink-0" delay={0.2}>
       <div className="relative aspect-[4/3] rounded-lg sm:rounded-2xl overflow-hidden shadow-xl sm:shadow-2xl">
         <ParallaxImage src={imageUrl} alt={event.title} className="absolute inset-0" speed={0.3} />
       </div>
@@ -183,8 +183,8 @@ const LayoutPatternA = ({ event, theme, imageUrl }: { event: TimelineEvent; them
 
 // Pattern B: Image left, text right - ALWAYS SIDE BY SIDE (flipped)
 const LayoutPatternB = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="flex flex-row gap-4 sm:gap-8 lg:gap-16 items-center py-12 sm:py-16 lg:py-24">
-    <Reveal className="flex-shrink-0 w-28 sm:w-48 lg:w-80">
+  <div className="flex flex-row gap-4 sm:gap-8 lg:gap-12 items-center py-12 sm:py-16 lg:py-24">
+    <Reveal className="w-1/3 min-w-[120px] sm:min-w-[180px] lg:min-w-[280px] flex-shrink-0">
       <div className="relative aspect-[4/3] rounded-lg sm:rounded-2xl overflow-hidden shadow-xl sm:shadow-2xl">
         <ParallaxImage src={imageUrl} alt={event.title} className="absolute inset-0" speed={0.3} />
       </div>
@@ -205,8 +205,8 @@ const LayoutPatternB = ({ event, theme, imageUrl }: { event: TimelineEvent; them
 
 // Pattern C: Portrait image left, text right - ALWAYS SIDE BY SIDE
 const LayoutPatternC = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="flex flex-row gap-4 sm:gap-8 lg:gap-16 items-center py-12 sm:py-16 lg:py-24">
-    <Reveal className="flex-shrink-0 w-24 sm:w-40 lg:w-64">
+  <div className="flex flex-row gap-4 sm:gap-8 lg:gap-12 items-center py-12 sm:py-16 lg:py-24">
+    <Reveal className="w-1/3 min-w-[100px] sm:min-w-[150px] lg:min-w-[240px] flex-shrink-0">
       <div className="relative aspect-[3/4] rounded-lg sm:rounded-3xl overflow-hidden shadow-xl sm:shadow-2xl">
         <ParallaxImage src={imageUrl} alt={event.title} className="absolute inset-0" speed={0.4} />
       </div>
@@ -227,7 +227,7 @@ const LayoutPatternC = ({ event, theme, imageUrl }: { event: TimelineEvent; them
 
 // Pattern D: Text left, square image right - ALWAYS SIDE BY SIDE
 const LayoutPatternD = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="flex flex-row gap-4 sm:gap-8 lg:gap-16 items-center py-12 sm:py-16 lg:py-24">
+  <div className="flex flex-row gap-4 sm:gap-8 lg:gap-12 items-center py-12 sm:py-16 lg:py-24">
     <Reveal className="flex-1 min-w-0 space-y-3 sm:space-y-6">
       <span className={`${theme.fontMono} text-xs sm:text-sm uppercase tracking-widest text-muted-foreground`}>
         {event.date}
@@ -239,7 +239,7 @@ const LayoutPatternD = ({ event, theme, imageUrl }: { event: TimelineEvent; them
         {event.description}
       </p>
     </Reveal>
-    <Reveal className="flex-shrink-0 w-24 sm:w-40 lg:w-64" delay={0.2}>
+    <Reveal className="w-1/3 min-w-[100px] sm:min-w-[150px] lg:min-w-[240px] flex-shrink-0" delay={0.2}>
       <div className="relative aspect-square rounded-lg sm:rounded-xl overflow-hidden shadow-xl sm:shadow-2xl">
         <ParallaxImage src={imageUrl} alt={event.title} className="absolute inset-0" speed={0.2} />
       </div>
@@ -249,9 +249,9 @@ const LayoutPatternD = ({ event, theme, imageUrl }: { event: TimelineEvent; them
 
 // Pattern E: Circular image left, text right - ALWAYS SIDE BY SIDE
 const LayoutPatternE = ({ event, theme, imageUrl }: { event: TimelineEvent; theme: EditorialTheme; imageUrl: string }) => (
-  <div className="flex flex-row gap-4 sm:gap-8 lg:gap-16 items-center py-12 sm:py-16 lg:py-24">
-    <Reveal className="flex-shrink-0">
-      <div className="relative w-20 h-20 sm:w-40 sm:h-40 lg:w-56 lg:h-56 rounded-full overflow-hidden shadow-xl sm:shadow-2xl ring-4 sm:ring-8 ring-background">
+  <div className="flex flex-row gap-4 sm:gap-8 lg:gap-12 items-center py-12 sm:py-16 lg:py-24">
+    <Reveal className="w-1/3 min-w-[100px] sm:min-w-[150px] lg:min-w-[200px] flex-shrink-0 flex justify-center">
+      <div className="relative w-full max-w-[200px] aspect-square rounded-full overflow-hidden shadow-xl sm:shadow-2xl ring-4 sm:ring-8 ring-background">
         <img 
           src={imageUrl} 
           alt={event.title} 
