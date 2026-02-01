@@ -23,6 +23,7 @@ import {
   Zap,
   Crown,
   Check,
+  BookOpen,
 } from "lucide-react";
 import heroBg from "@/assets/hero-bg-new.png";
 import heroBg70s from "@/assets/hero-bg-70s.png";
@@ -486,6 +487,17 @@ const Index = () => {
               >
                 <Camera className="mr-2 h-4 w-4 text-accent" />
                 <span>{t("createPolaroidButton") as string}</span>
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+
+              <Button
+                onClick={() => handleGenerate("/story")}
+                variant="outline"
+                className="w-full h-11 text-base font-semibold rounded-lg border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-accent/5 hover:from-primary/10 hover:to-accent/10 text-foreground"
+                disabled={!isBirthDateComplete || !selectedPeriod}
+              >
+                <BookOpen className="mr-2 h-4 w-4 text-primary" />
+                <span>Timeline Story</span>
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>

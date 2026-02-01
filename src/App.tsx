@@ -7,8 +7,8 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import Index from "./pages/Index";
 import ResultPage from "./pages/ResultPage";
 import PolaroidCollagePage from "./pages/PolaroidCollagePage";
+import TimelineStoryPage from "./pages/TimelineStoryPage";
 import NotFound from "./pages/NotFound";
-
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -22,6 +22,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/resultaat" element={<ResultPage />} />
             <Route path="/polaroid" element={<PolaroidCollagePage />} />
+            <Route path="/story" element={<TimelineStoryPage />} />
             {/* Redirect old routes to home */}
             <Route path="/keuze" element={<Navigate to="/" replace />} />
             <Route path="/invoer" element={<Navigate to="/" replace />} />

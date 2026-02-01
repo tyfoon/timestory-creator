@@ -9,7 +9,9 @@ export interface StreamCallbacks {
   onEvent: (event: TimelineEvent) => void;
   onSummary: (summary: string) => void;
   onFamousBirthdays: (birthdays: FamousBirthday[]) => void;
-  onComplete: (data: { events: TimelineEvent[]; summary: string; famousBirthdays: FamousBirthday[] }) => void;
+  onStoryTitle?: (title: string) => void;
+  onStoryIntroduction?: (introduction: string) => void;
+  onComplete: (data: { events: TimelineEvent[]; summary: string; famousBirthdays: FamousBirthday[]; storyTitle?: string; storyIntroduction?: string }) => void;
   onError: (error: string) => void;
 }
 
@@ -36,6 +38,8 @@ export const generateTimelineStreaming = async (
   const collectedEvents: TimelineEvent[] = [];
   let collectedSummary = '';
   let collectedBirthdays: FamousBirthday[] = [];
+  let collectedStoryTitle = '';
+  let collectedStoryIntroduction = '';
   let receivedComplete = false;
 
   try {
@@ -132,10 +136,28 @@ export const generateTimelineStreaming = async (
                 callbacks.onFamousBirthdays(parsed.famousBirthdays);
               }
               break;
+
+            case 'storyTitle':
+              if (parsed.data) {
+                collectedStoryTitle = parsed.data;
+                callbacks.onStoryTitle?.(parsed.data);
+              }
+              break;
+
+            case 'storyIntroduction':
+              if (parsed.data) {
+                collectedStoryIntroduction = parsed.data;
+                callbacks.onStoryIntroduction?.(parsed.data);
+              }
+              break;
               
             case 'complete':
               receivedComplete = true;
-              callbacks.onComplete(parsed.data);
+              callbacks.onComplete({
+                ...parsed.data,
+                storyTitle: parsed.data?.storyTitle || collectedStoryTitle,
+                storyIntroduction: parsed.data?.storyIntroduction || collectedStoryIntroduction,
+              });
               break;
           }
         } catch {
@@ -158,6 +180,8 @@ export const generateTimelineStreaming = async (
         events: collectedEvents,
         summary: collectedSummary || 'Een overzicht van belangrijke gebeurtenissen.',
         famousBirthdays: collectedBirthdays,
+        storyTitle: collectedStoryTitle,
+        storyIntroduction: collectedStoryIntroduction,
       });
     }
     
