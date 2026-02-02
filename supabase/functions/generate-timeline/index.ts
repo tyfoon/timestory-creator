@@ -426,7 +426,7 @@ function getTimelineTool() {
                     "A short, specific English search query for a sound effect that matches this event (e.g. 'camera shutter', 'applause', '8-bit game sound', 'techno beat loop', 'printing press'). Keep it under 3 words.",
                 },
               },
-              required: ["id", "date", "year", "title", "description", "category", "importance", "eventScope"],
+              required: ["id", "date", "year", "title", "description", "category", "importance", "eventScope", "soundEffectSearchQuery"],
             },
           },
           summary: {

@@ -82,6 +82,20 @@ NOOIT decade-referenties gebruiken! Zoekmachines begrijpen deze niet:
 - FOUT: "eighties", "nineties", "seventies"
 - GOED: Zoek op SPECIFIEKE namen, titels, of producten
 
+🔊 GELUIDSEFFECTEN (VERPLICHT VOOR ELKE EVENT!)
+Vul ALTIJD 'soundEffectSearchQuery' in met een korte Engelse zoekterm (max 3 woorden) voor een passend geluidseffect.
+Dit wordt gebruikt om sfeervolle achtergrondgeluiden toe te voegen aan de video-versie.
+
+VOORBEELDEN per categorie:
+- Muziek: "crowd cheering", "vinyl scratch", "guitar riff", "concert applause"
+- Film/TV: "movie projector", "tv static", "dramatic music", "action sound"
+- Sport: "stadium crowd", "whistle blow", "ball kick", "race engine"
+- Politiek: "parliament debate", "camera shutter", "crowd protest", "speech applause"
+- Technologie: "computer beep", "modem dial", "keyboard typing", "game coin"
+- Cultuur: "disco beat", "punk guitar", "dance music", "festival crowd"
+- Wetenschap: "rocket launch", "laboratory beep", "space ambience"
+- Geboorte/Verjaardag: "baby cry", "birthday party", "champagne pop"
+
 KIES HET JUISTE 'visualSubjectType':
 1. 'person': Voor artiesten, politici, sporters, beroemdheden. (Zoekt in portret-database)
 2. 'movie': ALLEEN voor FILMS (bioscoopfilms). Zet ook 'isMovie: true'. (Zoekt filmposters)
@@ -353,6 +367,7 @@ export function getTimelineTool() {
                 "category",
                 "visualSubjectType",
                 "imageSearchQueryEn",
+                "soundEffectSearchQuery",
               ],
             },
           },
