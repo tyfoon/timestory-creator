@@ -339,6 +339,10 @@ export function getTimelineTool() {
                 },
                 spotifySearchQuery: { type: "string" },
                 movieSearchQuery: { type: "string" },
+                soundEffectSearchQuery: {
+                  type: "string",
+                  description: "A short, specific English search query for a sound effect that matches this event (e.g. 'camera shutter', 'applause', '8-bit game sound', 'techno beat loop', 'printing press'). Keep it under 3 words.",
+                },
               },
               required: [
                 "id",
