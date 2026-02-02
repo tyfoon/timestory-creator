@@ -1,5 +1,5 @@
 import React from 'react';
-import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
+import { interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
 
 interface KenBurnsProps {
   children: React.ReactNode;
@@ -24,22 +24,25 @@ export const KenBurns: React.FC<KenBurnsProps> = ({
   // Vary animation direction based on step (creates variety between slides)
   const pattern = step % 4;
 
-  // Scale range: 1.0 to 1.15 (or reverse)
-  const scaleStart = pattern % 2 === 0 ? 1.0 : 1.15;
-  const scaleEnd = pattern % 2 === 0 ? 1.15 : 1.0;
+  // Scale range: 1.0 to 1.12 (subtle zoom)
+  const scaleStart = pattern % 2 === 0 ? 1.0 : 1.12;
+  const scaleEnd = pattern % 2 === 0 ? 1.12 : 1.0;
   const scale = interpolate(
     frame,
     [0, durationInFrames],
     [scaleStart, scaleEnd],
     { extrapolateRight: 'clamp' }
-  ) * (0.5 + intensity * 0.5) + (1 - (0.5 + intensity * 0.5));
+  );
+
+  // Blend scale with intensity
+  const finalScale = 1 + (scale - 1) * intensity;
 
   // Pan directions based on pattern
   const panDirections = [
-    { x: [-2, 2], y: [-1, 1] },    // Pan right and down
-    { x: [2, -2], y: [1, -1] },    // Pan left and up
-    { x: [-1, 1], y: [2, -2] },    // Pan slight right, up
-    { x: [1, -1], y: [-2, 2] },    // Pan slight left, down
+    { x: [-1, 1], y: [-0.5, 0.5] },    // Pan right and down
+    { x: [1, -1], y: [0.5, -0.5] },    // Pan left and up
+    { x: [-0.5, 0.5], y: [1, -1] },    // Pan slight right, up
+    { x: [0.5, -0.5], y: [-1, 1] },    // Pan slight left, down
   ];
 
   const panConfig = panDirections[pattern];
@@ -47,33 +50,36 @@ export const KenBurns: React.FC<KenBurnsProps> = ({
   const translateX = interpolate(
     frame,
     [0, durationInFrames],
-    [panConfig.x[0] * intensity * 15, panConfig.x[1] * intensity * 15],
+    [panConfig.x[0] * intensity * 12, panConfig.x[1] * intensity * 12],
     { extrapolateRight: 'clamp' }
   );
 
   const translateY = interpolate(
     frame,
     [0, durationInFrames],
-    [panConfig.y[0] * intensity * 10, panConfig.y[1] * intensity * 10],
+    [panConfig.y[0] * intensity * 8, panConfig.y[1] * intensity * 8],
     { extrapolateRight: 'clamp' }
   );
 
   return (
-    <AbsoluteFill
+    <div
       style={{
+        width: '100%',
+        height: '100%',
         overflow: 'hidden',
+        position: 'relative',
       }}
     >
       <div
         style={{
           width: '100%',
           height: '100%',
-          transform: `scale(${scale}) translate(${translateX}px, ${translateY}px)`,
+          transform: `scale(${finalScale}) translate(${translateX}px, ${translateY}px)`,
           transformOrigin: 'center center',
         }}
       >
         {children}
       </div>
-    </AbsoluteFill>
+    </div>
   );
 };
