@@ -7,7 +7,7 @@ import { TransitionSlide } from './components/TransitionSlide';
 import { getEventImageUrl } from './utils/placeholders';
 
 const TRANSITION_DURATION_FRAMES = 15; // ~0.5 seconds at 30fps - snappy transitions
-
+const SOUND_EFFECT_DELAY_FRAMES = 60; // 2 seconds delay at 30fps - starts after voiceover begins
 /**
  * Main Remotion composition for the timeline video.
  * Renders intro, then each event with transitions.
@@ -64,6 +64,7 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
     const imageUrl = getEventImageUrl(event);
     const eventDuration = event.audioDurationFrames || Math.round(5 * fps); // Default 5 seconds
 
+    // Main event sequence with voiceover
     sequences.push(
       <Sequence
         key={`event-${event.id}`}
@@ -74,12 +75,23 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
         {event.audioUrl && (
           <Audio src={event.audioUrl} />
         )}
-        {/* Sound effect - plays at 25% volume under voiceover */}
-        {event.soundEffectAudioUrl && (
-          <Audio src={event.soundEffectAudioUrl} volume={0.25} />
-        )}
       </Sequence>
     );
+
+    // Sound effect sequence - delayed start (2 seconds after voiceover begins)
+    // Only add if sound effect exists and event is long enough for the delay
+    if (event.soundEffectAudioUrl && eventDuration > SOUND_EFFECT_DELAY_FRAMES) {
+      sequences.push(
+        <Sequence
+          key={`sfx-${event.id}`}
+          from={currentFrame + SOUND_EFFECT_DELAY_FRAMES}
+          durationInFrames={eventDuration - SOUND_EFFECT_DELAY_FRAMES}
+        >
+          <Audio src={event.soundEffectAudioUrl} volume={0.25} />
+        </Sequence>
+      );
+    }
+
     currentFrame += eventDuration;
   });
 
