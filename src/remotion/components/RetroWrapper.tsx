@@ -1,10 +1,15 @@
 import React, { useMemo } from 'react';
 import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig, random } from 'remotion';
+import { CamcorderOverlay } from './CamcorderOverlay';
 
 interface RetroWrapperProps {
   children: React.ReactNode;
   intensity?: number; // 0 to 1, default 1
   enableGlitches?: boolean;
+  /** Date string to display in camcorder overlay */
+  date?: string;
+  /** Whether to show camcorder overlay */
+  showCamcorderOverlay?: boolean;
 }
 
 /**
@@ -15,6 +20,8 @@ export const RetroWrapper: React.FC<RetroWrapperProps> = ({
   children,
   intensity = 1,
   enableGlitches = true,
+  date,
+  showCamcorderOverlay = true,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -228,6 +235,11 @@ export const RetroWrapper: React.FC<RetroWrapperProps> = ({
             pointerEvents: 'none',
           }}
         />
+      )}
+
+      {/* Camcorder Overlay - REC indicator, date, battery */}
+      {showCamcorderOverlay && date && (
+        <CamcorderOverlay date={date} />
       )}
     </AbsoluteFill>
   );

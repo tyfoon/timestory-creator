@@ -29,10 +29,15 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
   const sequences: React.ReactNode[] = [];
 
   // Helper to wrap content in RetroWrapper if enabled
-  const wrapContent = (content: React.ReactNode) => {
+  const wrapContent = (content: React.ReactNode, date?: string) => {
     if (enableRetroEffect) {
       return (
-        <RetroWrapper intensity={retroIntensity} enableGlitches={true}>
+        <RetroWrapper 
+          intensity={retroIntensity} 
+          enableGlitches={true}
+          date={date}
+          showCamcorderOverlay={!!date}
+        >
           {content}
         </RetroWrapper>
       );
@@ -88,7 +93,10 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
         from={currentFrame}
         durationInFrames={eventDuration}
       >
-        {wrapContent(<EventCard event={event} imageUrl={imageUrl} eventIndex={index} periodLabel={periodLabel} />)}
+        {wrapContent(
+          <EventCard event={event} imageUrl={imageUrl} eventIndex={index} periodLabel={periodLabel} />,
+          event.date // Pass date for camcorder overlay
+        )}
         {event.audioUrl && (
           <Audio src={event.audioUrl} />
         )}
