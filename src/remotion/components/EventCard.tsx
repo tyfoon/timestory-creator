@@ -1,6 +1,7 @@
 import React from 'react';
 import { AbsoluteFill, Img, interpolate, useCurrentFrame } from 'remotion';
 import { EventCardProps } from '../types';
+import { KenBurns } from './KenBurns';
 
 /**
  * Playful event card for Remotion video with varied layouts.
@@ -122,18 +123,20 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
           </p>
         </div>
         
-        {/* Floating image - larger, more prominent */}
+        {/* Floating image with Ken Burns effect */}
         <div style={{
           position: 'absolute',
           bottom: 40,
           right: 50,
           width: 380,
-          transform: `rotate(2deg) scale(${imageScale})`,
+          transform: `rotate(2deg)`,
           boxShadow: '0 35px 70px -15px rgba(0, 0, 0, 0.3)',
           borderRadius: 10,
           overflow: 'hidden',
         }}>
-          <Img src={imageUrl} style={{ width: '100%', height: 'auto' }} />
+          <KenBurns step={eventIndex} intensity={0.6}>
+            <Img src={imageUrl} style={{ width: '100%', height: 'auto' }} />
+          </KenBurns>
         </div>
       </AbsoluteFill>
     );
@@ -168,18 +171,19 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
               borderRadius: 12,
               overflow: 'hidden',
               boxShadow: '0 35px 70px -15px rgba(0, 0, 0, 0.35)',
-              transform: `scale(${imageScale})`,
               maxHeight: 780,
             }}>
-              <Img
-                src={imageUrl}
-                style={{
-                  width: '100%',
-                  maxHeight: 780,
-                  objectFit: 'cover',
-                  objectPosition: 'top',
-                }}
-              />
+              <KenBurns step={eventIndex} intensity={0.7}>
+                <Img
+                  src={imageUrl}
+                  style={{
+                    width: '100%',
+                    maxHeight: 780,
+                    objectFit: 'cover',
+                    objectPosition: 'top',
+                  }}
+                />
+              </KenBurns>
               {/* Date badge on image */}
               <div style={{
                 position: 'absolute',
@@ -193,6 +197,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
                 fontSize: 14,
                 letterSpacing: '0.15em',
                 textTransform: 'uppercase',
+                zIndex: 10,
               }}>
                 {event.date}
               </div>
@@ -268,7 +273,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
     <AbsoluteFill style={{ backgroundColor: '#f8f8f5', opacity: fadeIn }}>
       <PeriodBadge />
       
-      {/* Large background image - fills most of frame */}
+      {/* Large background image with Ken Burns effect */}
       <div style={{
         position: 'absolute',
         top: 60,
@@ -277,17 +282,18 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
         bottom: 60,
         borderRadius: 16,
         overflow: 'hidden',
-        transform: `scale(${imageScale})`,
       }}>
-        <Img
-          src={imageUrl}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'top',
-          }}
-        />
+        <KenBurns step={eventIndex} intensity={0.8}>
+          <Img
+            src={imageUrl}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'top',
+            }}
+          />
+        </KenBurns>
       </div>
       
       {/* Elegant floating text card - bottom left, larger */}
