@@ -2,6 +2,7 @@ import React from 'react';
 import { Sequence, Audio } from 'remotion';
 import { TimelineVideoProps, VideoEvent } from './types';
 import { EventCard } from './components/EventCard';
+import { RetroCard } from './components/RetroCard';
 import { IntroCard } from './components/IntroCard';
 import { TransitionSlide } from './components/TransitionSlide';
 import { RetroWrapper } from './components/RetroWrapper';
@@ -87,6 +88,9 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
     const eventDuration = event.audioDurationFrames || Math.round(5 * fps); // Default 5 seconds
 
     // Main event sequence with voiceover
+    // Use RetroCard when retro effect is enabled, otherwise use EventCard
+    const CardComponent = enableRetroEffect ? RetroCard : EventCard;
+
     sequences.push(
       <Sequence
         key={`event-${event.id}`}
@@ -94,7 +98,7 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
         durationInFrames={eventDuration}
       >
         {wrapContent(
-          <EventCard event={event} imageUrl={imageUrl} eventIndex={index} periodLabel={periodLabel} />,
+          <CardComponent event={event} imageUrl={imageUrl} eventIndex={index} periodLabel={periodLabel} />,
           event.date // Pass date for camcorder overlay
         )}
         {event.audioUrl && (

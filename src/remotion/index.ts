@@ -1,6 +1,7 @@
 // Remotion exports
 export { TimelineVideo, TimelineVideoComponent, calculateTotalDuration } from './TimelineVideo';
 export { EventCard } from './components/EventCard';
+export { RetroCard } from './components/RetroCard';
 export { IntroCard } from './components/IntroCard';
 export { TransitionSlide } from './components/TransitionSlide';
 export { RetroWrapper } from './components/RetroWrapper';
