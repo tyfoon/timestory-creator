@@ -52,16 +52,26 @@ serve(async (req) => {
 
     console.log(`Searching Freesound for: "${query}"`);
 
-    // Build the Freesound API URL with filters
-    // - duration:[3 TO 15] = sounds between 3 and 15 seconds for better atmosphere
+    // Simplify query for better Freesound matches
+    // Remove decade prefixes and overly specific terms
+    const simplifiedQuery = query
+      .replace(/\b(70s|80s|90s|00s|10s)\b/gi, '') // Remove decade prefixes
+      .replace(/\b(ambience|ambient)\b/gi, '')     // Often too specific
+      .replace(/\s+/g, ' ')                        // Clean up whitespace
+      .trim();
+    
+    console.log(`Simplified query: "${query}" -> "${simplifiedQuery}"`);
+
+    // Build the Freesound API URL with relaxed filters
+    // - duration:[1 TO 30] = wider range for more results
     // - fields = only fetch what we need
     // - sort = sort by rating descending for quality
     const params = new URLSearchParams({
-      query: query,
-      filter: "duration:[3 TO 15]",
+      query: simplifiedQuery || query, // fallback to original if simplified is empty
+      filter: "duration:[1 TO 30]",
       fields: "id,name,previews,duration,avg_rating",
       sort: "rating_desc",
-      page_size: "10", // Get top 10 results to have more options
+      page_size: "15", // Get more results to find good matches
       token: FREESOUND_API_KEY,
     });
 
