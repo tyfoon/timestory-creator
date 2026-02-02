@@ -20,10 +20,11 @@ interface VideoDialogProps {
   storyIntroduction?: string;
 }
 
-// Fetch sound effect from Freesound
+// Fetch sound effect from Freesound and proxy it to avoid CORS issues
 const fetchSoundEffect = async (query: string): Promise<string | null> => {
   try {
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/search-freesound`, {
+    // First, search for the sound effect
+    const searchResponse = await fetch(`${SUPABASE_URL}/functions/v1/search-freesound`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -33,10 +34,32 @@ const fetchSoundEffect = async (query: string): Promise<string | null> => {
       body: JSON.stringify({ query }),
     });
 
-    if (!response.ok) return null;
+    if (!searchResponse.ok) return null;
     
-    const data = await response.json();
-    return data.success && data.sound?.previewUrl ? data.sound.previewUrl : null;
+    const data = await searchResponse.json();
+    if (!data.success || !data.sound?.previewUrl) return null;
+
+    // Proxy the audio through our edge function to avoid CORS issues
+    const proxyResponse = await fetch(`${SUPABASE_URL}/functions/v1/proxy-audio`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ url: data.sound.previewUrl }),
+    });
+
+    if (!proxyResponse.ok) {
+      console.error('Failed to proxy audio:', proxyResponse.status);
+      return null;
+    }
+
+    // Convert the proxied audio to a blob URL
+    const audioBlob = await proxyResponse.blob();
+    const blobUrl = URL.createObjectURL(audioBlob);
+    console.log(`Proxied sound effect for "${query}": ${blobUrl}`);
+    return blobUrl;
   } catch (error) {
     console.error('Sound effect fetch error:', error);
     return null;
