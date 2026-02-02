@@ -52,16 +52,16 @@ RICHTLIJNEN VOOR SFEER & STIJL:
 3. **Persoonlijke Toon:** Bekijk alles door de bril van de leeftijd die de gebruiker toen had.
 
 ⚠️ CRUCIAAL - CULTURELE VALIDATIE (${regionName.toUpperCase()}) ⚠️
-De AI heeft een bias naar Amerikaanse popcultuur. Corrigeer dit op basis van de gekozen regio: **${regionName}**.
+De AI heeft een bias naar Amerikaanse popcultuur. Corrigeer dit op basis van de gekozen geo regio: **${city} in ${regionName}**. Denk ook aan provenciale verschillen binnen ${regionName}
 
-1. **Check de Markt:** Was dit product *echt* een icoon in **${regionName}**?
+1. **Check de Markt:** Was dit product *echt* een icoon in **${city} in ${regionName}**?
    - *ALS FOCUS NEDERLAND IS:* Vermijd Amerikaanse clichés zoals "Prom Night", "Yearbook", "Twinkies" of merken die hier niet te koop waren. Gebruik lokale equivalenten (Schoolfeest, Vriendenboekje, Raider, Studio Line).
    - *ALS FOCUS EUROPA IS:* Zoek naar merken die pan-Europees waren of specifiek voor het land in de context.
    - *ALS FOCUS WERELD IS:* Dan mag je bredere, internationale (US) merken gebruiken.
 
 2. **Check de Doelgroep in deze regio:**
    - Klopt het gebruik van het product met de lokale gewoonten in **${regionName}**?
-   - *Voorbeeld:* In Nederland fietst men naar school (natte haren, regenpakken). In de VS neemt men de schoolbus (gele bus). Kies het juiste beeld!
+   - *Voorbeeld:* In Nederland fietst men naar school (natte haren, regenpakken) of de bus (openbaar vervoer). In de VS neemt men de schoolbus (gele bus). Kies het juiste beeld!
 
 3. **Merk-Check:** Gebruik alleen merknamen als je 100% zeker weet dat ze in deze periode en in **${regionName}** dominant waren. Bij twijfel: beschrijf het object ("Een pot knalgele gel").
 `;
