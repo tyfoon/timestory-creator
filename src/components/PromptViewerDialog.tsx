@@ -28,7 +28,7 @@ import {
   CITY_ADDITION,
   CHILDREN_ADDITION,
   GENDER_ADDITION,
-  ATTITUDE_ADDITION,
+  SUBCULTURE_ADDITION,
 } from '@/lib/promptConstants';
 
 interface PromptViewerDialogProps {
@@ -54,7 +54,7 @@ const PROMPT_COLORS = {
   city: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
   children: 'bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/30',
   gender: 'bg-fuchsia-500/20 text-fuchsia-700 dark:text-fuchsia-300 border-fuchsia-500/30',
-  attitude: 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/30',
+  subculture: 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/30',
 };
 
 interface PromptSection {
@@ -207,20 +207,23 @@ function buildPromptSections(formData: FormData, language: string, maxEvents?: n
     });
   }
 
-  // Attitude (B3 in backend order)
-  if (optionalData.attitude && optionalData.attitude !== 'neutral') {
+  // Subculture (B3 in backend order)
+  if (optionalData.subculture?.myGroup) {
+    const otherGroups = optionalData.subculture.otherGroupsFromEra
+      ? optionalData.subculture.otherGroupsFromEra.split(", ").filter(Boolean)
+      : [];
     sections.push({
-      label: '🧭 User: Levenshouding (ATTITUDE)',
-      content: ATTITUDE_ADDITION(optionalData.attitude),
-      colorClass: PROMPT_COLORS.attitude,
-      source: 'ATTITUDE_ADDITION',
+      label: '🎸 User: Subcultuur (IDENTITEIT)',
+      content: SUBCULTURE_ADDITION(optionalData.subculture.myGroup, otherGroups),
+      colorClass: PROMPT_COLORS.subculture,
+      source: 'SUBCULTURE_ADDITION',
     });
   } else {
     sections.push({
-      label: '🧭 User: Levenshouding (ATTITUDE) — neutraal',
-      content: 'Geen extra houding-instructie toegevoegd (attitude = neutral).',
-      colorClass: PROMPT_COLORS.attitude,
-      source: 'ATTITUDE_ADDITION (overgeslagen)',
+      label: '🎸 User: Subcultuur (IDENTITEIT) — geen voorkeur',
+      content: 'Geen extra subcultuur-instructie toegevoegd (myGroup = null).',
+      colorClass: PROMPT_COLORS.subculture,
+      source: 'SUBCULTURE_ADDITION (overgeslagen)',
       includeInFullPrompt: false,
     });
   }
@@ -418,7 +421,7 @@ export function PromptViewerDialog({ formData, language, maxEvents }: PromptView
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.generation}`}>Generatie</span>
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.city}`}>Stad</span>
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.gender}`}>Geslacht</span>
-          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.attitude}`}>Houding</span>
+          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.subculture}`}>Subcultuur</span>
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.geographic}`}>Geo</span>
           <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.personalName}`}>Naam</span>
         </div>

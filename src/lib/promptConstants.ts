@@ -383,9 +383,30 @@ export const GENDER_ADDITION = (gender: 'male' | 'female') => {
   return `\nDe persoon voor wie deze tijdlijn is, is een ${genderText}. Pas de beschrijvingen subtiel aan zodat ze herkenbaar zijn vanuit dit perspectief.`;
 };
 
-export const ATTITUDE_ADDITION = (attitude: 'conservative' | 'progressive') => {
-  const attitudeText = attitude === 'conservative' 
-    ? 'conservatieve/traditionele' 
-    : 'progressieve/vooruitstrevende';
-  return `\nDe persoon heeft een ${attitudeText} levenshouding. Kies events en beschrijf ze op een manier die resoneert met dit perspectief (zonder politiek te worden).`;
+export const SUBCULTURE_ADDITION = (myGroup: string, otherGroupsFromEra: string[]) => {
+  // Filter de eigen groep uit de lijst van 'anderen' en maak er een leesbare string van
+  const othersList = otherGroupsFromEra
+    .filter(g => g.toLowerCase() !== myGroup.toLowerCase())
+    .join(", ");
+
+  return `
+SUBCULTUUR & IDENTITEIT (WIJ vs DE REST):
+De gebruiker hoorde in deze periode bij de groep: **"${myGroup}"**.
+Dit is de lens waardoor we naar alles kijken.
+
+1. **De 'In-Group' (Wij):**
+   - Focus sterk op de muziek, kleding, taal en hangplekken die cool waren voor **${myGroup}**.
+   - Gebruik jargon of slang dat bij deze groep past.
+   - Beschrijf het gevoel van verbondenheid met deze 'tribe'.
+
+2. **De 'Out-Group' (Zij - ${othersList}):**
+   - De andere stromingen in die tijd waren: ${othersList}.
+   - Benadruk het contrast. Als de gebruiker een ${myGroup} was, hoe keken ze dan naar die andere groepen? (Bijv. arrogant, spottend, jaloers of onbegrijpend).
+   - *Voorbeeld:* Als de gebruiker een 'Gabber' was, beschrijf de 'Alto's' dan als traag of zweverig. Als de gebruiker een 'Kakker' was, beschrijf de rest dan als onverzorgd.
+
+3. **Conflicten & Kruisbestuiving:**
+   - Waren er specifieke plekken waar deze groepen botsten (schoolplein, uitgaansgebied)?
+   - Of waren er juist onverwachte momenten van overlap?
+
+`;
 };
