@@ -184,12 +184,24 @@ serve(async (req) => {
       );
     }
 
-    // Estimate audio duration based on text length and speaking rate
-    // Average speaking rate is ~150 words per minute
+    // Count words for logging
     const wordCount = text.split(/\s+/).length;
-    const estimatedDurationSeconds = (wordCount / 150) * 60 / speakingRate;
+    
+    // Calculate actual audio duration from MP3 data
+    // MP3 at 32kbps (Google's default for this config) = 4000 bytes per second
+    // Base64 encoding adds ~33% overhead, so base64_length * 0.75 = raw bytes
+    const base64Length = ttsData.audioContent.length;
+    const rawBytes = base64Length * 0.75;
+    
+    // Google TTS uses ~32kbps for MP3 with headphone profile
+    // 32kbps = 4000 bytes/second
+    const BYTES_PER_SECOND = 4000;
+    const calculatedDurationSeconds = rawBytes / BYTES_PER_SECOND;
+    
+    // Use calculated duration (more accurate than word-based estimate)
+    const estimatedDurationSeconds = calculatedDurationSeconds;
 
-    console.log(`Speech generated successfully. Estimated duration: ${estimatedDurationSeconds.toFixed(1)}s`);
+    console.log(`Speech generated. Calculated duration: ${calculatedDurationSeconds.toFixed(2)}s (${rawBytes} bytes, ${wordCount} words)`);
 
     return new Response(
       JSON.stringify({
