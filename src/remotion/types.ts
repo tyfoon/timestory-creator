@@ -14,6 +14,10 @@ export interface TimelineVideoProps {
   introAudioUrl?: string;
   introDurationFrames: number;
   fps: number;
+  /** Enable 80s VHS/CRT retro effects */
+  enableRetroEffect?: boolean;
+  /** Intensity of retro effects (0-1) */
+  retroIntensity?: number;
 }
 
 export interface EventCardProps {

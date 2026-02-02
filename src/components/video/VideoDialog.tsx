@@ -3,7 +3,7 @@ import { Player } from '@remotion/player';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Video, Volume2, Download, AlertCircle, Music } from 'lucide-react';
+import { Loader2, Video, Volume2, Download, AlertCircle, Music, Tv } from 'lucide-react';
 import { TimelineEvent } from '@/types/timeline';
 import { TimelineVideoComponent, calculateTotalDuration, VideoEvent } from '@/remotion';
 import { generateSpeech, base64ToAudioUrl } from '@/remotion/lib/speechApi';
@@ -191,6 +191,25 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
     return videoEvents.filter(e => e.soundEffectAudioUrl).length;
   }, [videoEvents]);
 
+  // Determine if the timeline is primarily from the 1980s
+  // Enable retro VHS effect if most events are from 1980-1989
+  const { enableRetroEffect, primaryEra } = useMemo(() => {
+    if (events.length === 0) return { enableRetroEffect: false, primaryEra: null };
+    
+    const eightiesEvents = events.filter(e => e.year >= 1980 && e.year <= 1989);
+    const isEighties = eightiesEvents.length >= events.length * 0.5; // 50%+ events from 80s
+    
+    // Determine primary era for display
+    const years = events.map(e => e.year);
+    const avgYear = years.reduce((a, b) => a + b, 0) / years.length;
+    let era: string | null = null;
+    if (avgYear >= 1980 && avgYear < 1990) era = '80s';
+    else if (avgYear >= 1970 && avgYear < 1980) era = '70s';
+    else if (avgYear >= 1990 && avgYear < 2000) era = '90s';
+    
+    return { enableRetroEffect: isEighties, primaryEra: era };
+  }, [events]);
+
   // Reset state when dialog closes
   const handleOpenChange = useCallback((newOpen: boolean) => {
     if (!newOpen) {
@@ -283,6 +302,8 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                     introAudioUrl,
                     introDurationFrames,
                     fps: FPS,
+                    enableRetroEffect,
+                    retroIntensity: 0.85,
                   }}
                   durationInFrames={totalDuration}
                   compositionWidth={1920}
@@ -302,6 +323,12 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                   Duur: {Math.floor(totalDuration / FPS / 60)}:{String(Math.floor((totalDuration / FPS) % 60)).padStart(2, '0')}
                 </span>
                 <div className="flex items-center gap-4">
+                  {enableRetroEffect && (
+                    <span className="flex items-center gap-1 text-primary">
+                      <Tv className="h-3 w-3" />
+                      VHS Effect
+                    </span>
+                  )}
                   {soundEffectsCount > 0 && (
                     <span className="flex items-center gap-1">
                       <Music className="h-3 w-3" />

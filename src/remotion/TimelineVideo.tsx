@@ -4,13 +4,16 @@ import { TimelineVideoProps, VideoEvent } from './types';
 import { EventCard } from './components/EventCard';
 import { IntroCard } from './components/IntroCard';
 import { TransitionSlide } from './components/TransitionSlide';
+import { RetroWrapper } from './components/RetroWrapper';
 import { getEventImageUrl } from './utils/placeholders';
 
 const TRANSITION_DURATION_FRAMES = 15; // ~0.5 seconds at 30fps - snappy transitions
 const SOUND_EFFECT_DELAY_FRAMES = 60; // 2 seconds delay at 30fps - starts after voiceover begins
+
 /**
  * Main Remotion composition for the timeline video.
  * Renders intro, then each event with transitions.
+ * Optionally wraps content in RetroWrapper for 80s VHS effect.
  */
 export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
   events,
@@ -19,15 +22,29 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
   introAudioUrl,
   introDurationFrames,
   fps,
+  enableRetroEffect = false,
+  retroIntensity = 1,
 }) => {
   let currentFrame = 0;
   const sequences: React.ReactNode[] = [];
+
+  // Helper to wrap content in RetroWrapper if enabled
+  const wrapContent = (content: React.ReactNode) => {
+    if (enableRetroEffect) {
+      return (
+        <RetroWrapper intensity={retroIntensity} enableGlitches={true}>
+          {content}
+        </RetroWrapper>
+      );
+    }
+    return content;
+  };
 
   // Intro sequence
   if (storyTitle) {
     sequences.push(
       <Sequence key="intro" from={currentFrame} durationInFrames={introDurationFrames}>
-        <IntroCard storyTitle={storyTitle} storyIntroduction={storyIntroduction} />
+        {wrapContent(<IntroCard storyTitle={storyTitle} storyIntroduction={storyIntroduction} />)}
         {introAudioUrl && (
           <Audio src={introAudioUrl} />
         )}
@@ -53,7 +70,7 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
           from={currentFrame}
           durationInFrames={TRANSITION_DURATION_FRAMES}
         >
-          <TransitionSlide year={event.year} durationFrames={TRANSITION_DURATION_FRAMES} />
+          {wrapContent(<TransitionSlide year={event.year} durationFrames={TRANSITION_DURATION_FRAMES} />)}
         </Sequence>
       );
       currentFrame += TRANSITION_DURATION_FRAMES;
@@ -71,7 +88,7 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
         from={currentFrame}
         durationInFrames={eventDuration}
       >
-        <EventCard event={event} imageUrl={imageUrl} eventIndex={index} periodLabel={periodLabel} />
+        {wrapContent(<EventCard event={event} imageUrl={imageUrl} eventIndex={index} periodLabel={periodLabel} />)}
         {event.audioUrl && (
           <Audio src={event.audioUrl} />
         )}
