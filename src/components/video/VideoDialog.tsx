@@ -55,11 +55,17 @@ const fetchSoundEffect = async (query: string): Promise<string | null> => {
       return null;
     }
 
-    // Convert the proxied audio to a blob URL
+    // Convert the proxied audio to a data URL.
+    // Remotion's audio pipeline is more reliable with data URLs than blob: URLs in some browsers.
     const audioBlob = await proxyResponse.blob();
-    const blobUrl = URL.createObjectURL(audioBlob);
-    console.log(`Proxied sound effect for "${query}": ${blobUrl}`);
-    return blobUrl;
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error('Failed to read audio blob'));
+      reader.readAsDataURL(audioBlob);
+    });
+
+    return dataUrl;
   } catch (error) {
     console.error('Sound effect fetch error:', error);
     return null;
