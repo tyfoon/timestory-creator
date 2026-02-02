@@ -24,6 +24,13 @@ export type ChildData = {
   birthDate?: BirthDateData;
 };
 
+// Subculture selection data
+export type SubcultureData = {
+  myGroup: string | null;           // Selected subculture (or null for neutral)
+  otherGroupsFromEra: string;       // All other available options as comma-separated string
+  availableOptions: string[];       // The 5 subcultures available for this era
+};
+
 export type OptionalData = {
   firstName?: string;
   lastName?: string;
@@ -36,6 +43,7 @@ export type OptionalData = {
   interests?: string;
   focus: GeographicFocus;
   periodType?: PeriodType;
+  subculture?: SubcultureData;      // New: replaces attitude for prompt generation
 };
 
 export type FormData = {
