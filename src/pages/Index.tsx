@@ -158,6 +158,22 @@ const Index = () => {
 
   const mainPeriodOptions = getMainPeriodOptions(t);
 
+  // Update custom year range when birth year changes (to keep subculture selector in sync)
+  useEffect(() => {
+    if (!birthDate.year || !selectedPeriod) return;
+    
+    if (selectedPeriod === "birthyear") {
+      setCustomStartYear(birthDate.year);
+      setCustomEndYear(birthDate.year);
+    } else {
+      const option = mainPeriodOptions.find((p) => p.id === selectedPeriod);
+      if (option?.ageRange) {
+        setCustomStartYear(birthDate.year + option.ageRange[0]);
+        setCustomEndYear(Math.min(birthDate.year + option.ageRange[1], currentYear));
+      }
+    }
+  }, [birthDate.year, selectedPeriod, currentYear, mainPeriodOptions]);
+
   const calculateYearRange = (): {
     startYear: number;
     endYear: number;
