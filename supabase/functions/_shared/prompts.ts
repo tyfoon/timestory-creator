@@ -483,6 +483,16 @@ ${contentFocus}
 DE OPDRACHT:
 Maak een gedetailleerde tijdlijn van ${startYear} tot ${endYear}.
 Genereer ${targetEvents} events.
+
+CRUCIAAL - LEEFTIJDS-PROGRESSIE (GROEIPROCES):
+De gebruiker wordt elk jaar ouder. De interesses MOETEN meegroeien met de jaren.
+1. **Rekenwerk:** Bepaal voor elk event eerst hoe oud de gebruiker in dat jaar ongeveer is.
+2. **De 'Eerste Keer' Regel:** Plaats mijlpalen pas op de leeftijd dat ze logisch zijn.
+   - *12-13 jaar:* Brugklas, speelgoed wordt minder, eerste muziekidolen, schoolfeestjes.
+   - *14-15 jaar:* Huiswerkstress, vriendengroepen, verliefdheid, rages, kleedgeld.
+   - *16-17 jaar:* Brommers/scooters, eerste bijbaan, uitgaan, examenstress, rijles.
+   - *18+ jaar:* Rijbewijs, studeren, zelfstandigheid.
+
 Let op: Verdeel de events gelijkmatig (bv. in blokken van 2 jaar) en behoud de kwaliteit en detaillering tot aan het laatste event.
 
 ${NOSTALGIA_INSTRUCTIONS}`;
