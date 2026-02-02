@@ -2,8 +2,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { OptionalData, GeographicFocus, Gender, Attitude } from '@/types/form';
-import { MapPin, Compass, Sparkles, User, Users, Scale } from 'lucide-react';
+import { OptionalData, GeographicFocus, Gender } from '@/types/form';
+import { MapPin, Compass, Sparkles, User, Users } from 'lucide-react';
 
 interface OptionalInfoFormProps {
   value: OptionalData;
@@ -85,39 +85,7 @@ export const OptionalInfoForm = ({ value, onChange }: OptionalInfoFormProps) => 
         </RadioGroup>
       </div>
 
-      {/* Attitude selection */}
-      <div className="space-y-2">
-        <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <Scale className="h-4 w-4 text-accent" />
-          Houding
-        </Label>
-        <RadioGroup
-          value={value.attitude || 'neutral'}
-          onValueChange={(v) => onChange({ ...value, attitude: v as Attitude })}
-          className="grid grid-cols-3 gap-2"
-        >
-          {([
-            { value: 'conservative', label: 'Conservatief' },
-            { value: 'neutral', label: 'Neutraal' },
-            { value: 'progressive', label: 'Progressief' }
-          ] as const).map((option) => (
-            <Label
-              key={option.value}
-              className={`
-                flex items-center justify-center py-1.5 px-2 rounded-md cursor-pointer
-                border-2 transition-all duration-200
-                ${value.attitude === option.value || (!value.attitude && option.value === 'neutral')
-                  ? 'border-accent bg-accent/10 text-foreground' 
-                  : 'border-border bg-card hover:border-muted-foreground/30 text-muted-foreground'
-                }
-              `}
-            >
-              <RadioGroupItem value={option.value} className="sr-only" />
-              <span className="text-xs font-medium">{option.label}</span>
-            </Label>
-          ))}
-        </RadioGroup>
-      </div>
+      {/* Note: Attitude selection has been moved to SubcultureSelector on the main form */}
 
       {/* Interests - compact */}
       <div className="space-y-2">
