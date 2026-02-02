@@ -12,7 +12,7 @@ import { FormData } from '@/types/form';
 import {
   LANGUAGE_INSTRUCTIONS,
   MONTH_NAMES,
-  NOSTALGIA_INSTRUCTIONS,
+  GET_NOSTALGIA_INSTRUCTIONS,
   VISUAL_DIRECTOR_INSTRUCTIONS,
   getContentFocusForPeriod,
   getGenerationPerspective,
@@ -144,11 +144,12 @@ function buildPromptSections(formData: FormData, language: string, maxEvents?: n
     const { startYear, endYear } = formData.yearRange;
     const yearSpan = endYear - startYear;
     const targetEvents = isShort ? maxEvents! : Math.max(50, yearSpan * 5);
+    const geoFocus = formData.optionalData?.focus || 'netherlands';
 
     // RANGE_PROMPT includes nostalgia + contentFocus embedded
     sections.push({
       label: '📝 User: Basis Prompt (Periode)',
-      content: RANGE_PROMPT(startYear, endYear, isShort || false, targetEvents, contentFocus),
+      content: RANGE_PROMPT(startYear, endYear, isShort || false, targetEvents, contentFocus, geoFocus),
       colorClass: PROMPT_COLORS.base,
       source: 'RANGE_PROMPT (bevat NOSTALGIA + contentFocus)',
     });
@@ -212,9 +213,10 @@ function buildPromptSections(formData: FormData, language: string, maxEvents?: n
     const otherGroups = optionalData.subculture.otherGroupsFromEra
       ? optionalData.subculture.otherGroupsFromEra.split(", ").filter(Boolean)
       : [];
+    const geoFocus = optionalData.focus || 'netherlands';
     sections.push({
       label: '🎸 User: Subcultuur (IDENTITEIT)',
-      content: SUBCULTURE_ADDITION(optionalData.subculture.myGroup, otherGroups),
+      content: SUBCULTURE_ADDITION(optionalData.subculture.myGroup, otherGroups, geoFocus),
       colorClass: PROMPT_COLORS.subculture,
       source: 'SUBCULTURE_ADDITION',
     });
