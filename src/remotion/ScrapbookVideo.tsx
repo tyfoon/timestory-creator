@@ -12,19 +12,23 @@ const SOUND_EFFECT_DELAY_FRAMES = 45; // 1.5 seconds delay for sound effects
 
 /**
  * Calculate canvas dimensions based on number of events
+ * Canvas should be large enough to fit all cards with good spacing
+ * but not so large that the overview shot shows too much empty space
  */
 const calculateCanvasDimensions = (eventCount: number): { width: number; height: number } => {
   // Cards are approximately 650x550
-  const cardWidth = 700;
-  const cardHeight = 600;
-  const spacing = 150;
+  const cardWidth = 650;
+  const cardHeight = 550;
+  const spacingX = 200;
+  const spacingY = 250;
   
-  // 2-3 cards per row
+  // 2-3 cards per row for a nice serpentine layout
   const cardsPerRow = Math.min(3, Math.max(2, Math.ceil(Math.sqrt(eventCount))));
   const rows = Math.ceil(eventCount / cardsPerRow);
   
-  const width = Math.max(2400, cardsPerRow * (cardWidth + spacing) + 400);
-  const height = Math.max(1800, rows * (cardHeight + 200) + 400);
+  // Tighter canvas - just enough room for cards with margins
+  const width = Math.max(1920, cardsPerRow * (cardWidth + spacingX) + 300);
+  const height = Math.max(1080, rows * (cardHeight + spacingY) + 300);
   
   return { width, height };
 };
