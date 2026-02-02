@@ -558,7 +558,7 @@ const LayoutOverlap = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatte
   const isInView = useInView(ref, { once: true, margin: '-100px' });
   
   return (
-    <div ref={ref} className="relative py-16 sm:py-24 lg:py-32 px-6 sm:px-12">
+    <div ref={ref} className="relative py-24 sm:py-32 lg:py-40 px-6 sm:px-12 my-8 sm:my-12 lg:my-16">
       <div className="relative max-w-6xl mx-auto">
         {/* Image - constrained to max 50vh */}
         <motion.div
