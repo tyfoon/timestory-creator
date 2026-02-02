@@ -9,7 +9,6 @@ interface CameraPanProps {
   cardPositions: CardPosition[];
   canvasWidth: number;
   canvasHeight: number;
-  introDurationFrames: number;
 }
 
 interface EventTiming {
@@ -21,7 +20,10 @@ interface EventTiming {
 
 /**
  * CameraPan - animates a virtual camera over the scrapbook canvas
- * Features Ken Burns micro-movements and smooth swoosh transitions
+ * Features Ken Burns micro-movements and smooth swoosh transitions between cards
+ * 
+ * Note: This component is placed inside a Sequence that starts AFTER the intro,
+ * so frame 0 here = first frame of scrapbook content (not video start)
  */
 export const CameraPan: React.FC<CameraPanProps> = ({
   children,
@@ -29,15 +31,14 @@ export const CameraPan: React.FC<CameraPanProps> = ({
   cardPositions,
   canvasWidth,
   canvasHeight,
-  introDurationFrames,
 }) => {
   const frame = useCurrentFrame();
-  const { fps, width: viewportWidth, height: viewportHeight } = useVideoConfig();
+  const { fps, width: viewportWidth, height: viewportHeight, durationInFrames } = useVideoConfig();
 
-  // Calculate timing for each event
+  // Calculate timing for each event (frame 0 = start of scrapbook section)
   const eventTimings = useMemo((): EventTiming[] => {
     const timings: EventTiming[] = [];
-    let currentFrame = introDurationFrames;
+    let currentFrame = 0; // Start at 0 since we're inside a Sequence
 
     events.forEach((event, index) => {
       const duration = event.audioDurationFrames || Math.round(5 * fps);
@@ -46,112 +47,129 @@ export const CameraPan: React.FC<CameraPanProps> = ({
       timings.push({
         startFrame: currentFrame,
         endFrame: currentFrame + duration,
-        centerX: pos?.x || 0,
-        centerY: pos?.y || 0,
+        centerX: pos?.x || canvasWidth / 2,
+        centerY: pos?.y || canvasHeight / 2,
       });
       
       currentFrame += duration;
     });
 
     return timings;
-  }, [events, cardPositions, introDurationFrames, fps]);
+  }, [events, cardPositions, fps, canvasWidth, canvasHeight]);
 
-  // Find current and next event based on frame
+  // Find current event based on frame
   const getCurrentEventIndex = (): number => {
     for (let i = 0; i < eventTimings.length; i++) {
       if (frame < eventTimings[i].endFrame) {
         return i;
       }
     }
-    return eventTimings.length - 1;
+    return Math.max(0, eventTimings.length - 1);
   };
 
   const currentEventIndex = getCurrentEventIndex();
   const currentEvent = eventTimings[currentEventIndex];
   const prevEvent = currentEventIndex > 0 ? eventTimings[currentEventIndex - 1] : null;
 
-  // Calculate camera position
-  const calculateCameraTransform = () => {
-    // During intro, show overview of canvas (zoom out)
-    if (frame < introDurationFrames) {
-      const introProgress = frame / introDurationFrames;
-      
-      // Start zoomed out showing multiple cards, then zoom to first card
-      const startScale = 0.3;
-      const endScale = 0.85;
-      const scale = interpolate(introProgress, [0, 0.7, 1], [startScale, startScale, endScale]);
-      
-      // Pan from center of canvas to first card
-      const firstCard = cardPositions[0] || { x: canvasWidth / 2, y: canvasHeight / 2 };
-      const centerX = interpolate(
-        introProgress,
-        [0, 0.7, 1],
-        [canvasWidth / 2, canvasWidth / 2, firstCard.x]
-      );
-      const centerY = interpolate(
-        introProgress,
-        [0, 0.7, 1],
-        [canvasHeight / 2, canvasHeight / 2, firstCard.y]
-      );
+  // Transition and animation settings
+  const TRANSITION_FRAMES = 30; // 1 second swoosh at 30fps
+  const INITIAL_ZOOM_FRAMES = 45; // 1.5 seconds for initial zoom-in
 
-      // Calculate translation to center the target point
+  // Calculate camera position and scale
+  const calculateCameraTransform = () => {
+    // If no events, center on canvas
+    if (!currentEvent || eventTimings.length === 0) {
+      const scale = 0.5;
+      return {
+        translateX: viewportWidth / 2 - (canvasWidth / 2) * scale,
+        translateY: viewportHeight / 2 - (canvasHeight / 2) * scale,
+        scale,
+      };
+    }
+
+    // Initial zoom-in to first card (first 1.5 seconds)
+    if (frame < INITIAL_ZOOM_FRAMES && currentEventIndex === 0) {
+      const zoomProgress = spring({
+        frame,
+        fps,
+        config: {
+          damping: 20,
+          stiffness: 40,
+          mass: 1.2,
+        },
+      });
+
+      // Start zoomed out showing overview, zoom in to first card
+      const startScale = 0.25;
+      const endScale = 0.85;
+      const scale = interpolate(zoomProgress, [0, 1], [startScale, endScale]);
+
+      const firstCard = cardPositions[0] || { x: canvasWidth / 2, y: canvasHeight / 2 };
+      
+      // Pan from center to first card
+      const centerX = interpolate(zoomProgress, [0, 1], [canvasWidth / 2, firstCard.x]);
+      const centerY = interpolate(zoomProgress, [0, 1], [canvasHeight / 2, firstCard.y]);
+
       const translateX = viewportWidth / 2 - centerX * scale;
       const translateY = viewportHeight / 2 - centerY * scale;
 
       return { translateX, translateY, scale };
     }
 
-    // Calculate transition between events
-    const transitionDuration = 25; // frames for swoosh transition
+    // Calculate frame relative to current event
     const frameInEvent = frame - currentEvent.startFrame;
     const eventDuration = currentEvent.endFrame - currentEvent.startFrame;
 
-    // Determine if we're in transition phase
-    const isInTransition = prevEvent && frameInEvent < transitionDuration;
+    // Check if we're in transition phase (swooshing to this card)
+    const isTransitioning = prevEvent && frameInEvent < TRANSITION_FRAMES;
 
     let targetX: number;
     let targetY: number;
     let scale: number;
 
-    if (isInTransition && prevEvent) {
-      // Smooth swoosh transition from previous card to current
+    if (isTransitioning && prevEvent) {
+      // SWOOSH TRANSITION: Fly from previous card to current card
       const transitionProgress = spring({
         frame: frameInEvent,
         fps,
         config: {
-          damping: 18,
-          stiffness: 80,
-          mass: 0.8,
+          damping: 15,
+          stiffness: 60,
+          mass: 0.9,
         },
       });
 
+      // Interpolate position
       targetX = interpolate(transitionProgress, [0, 1], [prevEvent.centerX, currentEvent.centerX]);
       targetY = interpolate(transitionProgress, [0, 1], [prevEvent.centerY, currentEvent.centerY]);
-      
-      // Scale down during transition (zoom out slightly), then back in
-      const midTransition = transitionProgress > 0.3 && transitionProgress < 0.7;
-      scale = midTransition ? 0.75 : 0.85;
-      scale = interpolate(transitionProgress, [0, 0.3, 0.7, 1], [0.85, 0.72, 0.72, 0.85]);
+
+      // Zoom out during mid-transition, then back in (creates swoosh feel)
+      scale = interpolate(
+        transitionProgress,
+        [0, 0.3, 0.5, 0.7, 1],
+        [0.88, 0.65, 0.55, 0.65, 0.88]
+      );
     } else {
-      // Ken Burns micro-movement while on a card
-      const restFrame = isInTransition ? 0 : frameInEvent - transitionDuration;
-      const restDuration = eventDuration - transitionDuration;
-      
-      // Slow drift movement (Ken Burns)
-      const driftProgress = restDuration > 0 ? restFrame / restDuration : 0;
-      
-      // Subtle position drift
-      const driftX = Math.sin(driftProgress * Math.PI) * 30;
-      const driftY = Math.cos(driftProgress * Math.PI * 0.5) * 20;
-      
-      // Gentle zoom in during viewing
-      const zoomProgress = interpolate(driftProgress, [0, 1], [0.85, 0.92], {
+      // KEN BURNS: Slow drift while viewing current card
+      const restStartFrame = prevEvent ? TRANSITION_FRAMES : INITIAL_ZOOM_FRAMES;
+      const restFrame = Math.max(0, frameInEvent - restStartFrame);
+      const restDuration = Math.max(1, eventDuration - restStartFrame);
+      const driftProgress = Math.min(1, restFrame / restDuration);
+
+      // Subtle position drift (sine wave for smooth back-and-forth)
+      const driftAmplitude = 25;
+      const driftX = Math.sin(driftProgress * Math.PI * 2) * driftAmplitude;
+      const driftY = Math.cos(driftProgress * Math.PI) * (driftAmplitude * 0.6);
+
+      // Slow zoom in during viewing
+      const zoomStart = 0.85;
+      const zoomEnd = 0.95;
+      scale = interpolate(driftProgress, [0, 1], [zoomStart, zoomEnd], {
         extrapolateRight: 'clamp',
       });
-      
+
       targetX = currentEvent.centerX + driftX;
       targetY = currentEvent.centerY + driftY;
-      scale = zoomProgress;
     }
 
     // Calculate translation to center the target point in viewport
