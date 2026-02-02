@@ -192,16 +192,24 @@ serve(async (req) => {
     const base64Length = ttsData.audioContent.length;
     const rawBytes = Math.round(base64Length * 0.75);
     
-    // Google TTS with headphone-class-device profile uses higher bitrate (~192kbps = 24000 bytes/sec)
-    // Word-based estimate: Dutch at ~150 words/min = 2.5 words/sec, average ~4 chars/word
-    // Estimate duration from words (more reliable than variable bitrate MP3 decoding)
-    const wordsPerSecond = 2.5;
+    // MP3 duration calculation:
+    // Google TTS outputs MP3 at ~32kbps for speech (very efficient encoding)
+    // With speakingRate 0.95, actual bitrate is around 32000 bits/sec = 4000 bytes/sec
+    // However, this varies. A more reliable approach:
+    // - Google TTS at 24kHz sample rate, mono, typically ~32-48kbps for speech
+    // - Average ~5000 bytes per second of audio is a good estimate
+    const bytesPerSecond = 5000;
+    const byteBasedDuration = rawBytes / bytesPerSecond;
+    
+    // Also calculate word-based as sanity check (Dutch ~3.0 words/sec with speakingRate 0.95)
+    const wordsPerSecond = 3.0;
     const wordBasedDuration = wordCount / wordsPerSecond;
     
-    // Use word-based duration as it's more predictable
-    const estimatedDurationSeconds = wordBasedDuration;
+    // Use the SHORTER of the two estimates to avoid long pauses
+    // If byte-based is significantly shorter, it's likely more accurate
+    const estimatedDurationSeconds = Math.min(byteBasedDuration, wordBasedDuration);
 
-    console.log(`Speech generated. Duration: ${estimatedDurationSeconds.toFixed(2)}s (${wordCount} words, ${rawBytes} raw bytes)`);
+    console.log(`Speech generated. Duration: ${estimatedDurationSeconds.toFixed(2)}s (byte-based: ${byteBasedDuration.toFixed(2)}s, word-based: ${wordBasedDuration.toFixed(2)}s, ${wordCount} words, ${rawBytes} bytes)`);
 
     return new Response(
       JSON.stringify({
