@@ -42,8 +42,9 @@ serve(async (req) => {
     // Limit text length to prevent abuse (Google TTS has a 5000 character limit per request)
     const text = body.text.slice(0, 5000);
     
-    // Default to Dutch Neural2-B voice (male, natural sounding)
-    const voice = body.voice || 'nl-NL-Neural2-B';
+    // Default to Dutch Neural2-D voice (male, natural sounding)
+    // Available Dutch Neural2 voices: nl-NL-Neural2-C (female), nl-NL-Neural2-D (male)
+    const voice = body.voice || 'nl-NL-Neural2-D';
     const languageCode = body.languageCode || 'nl-NL';
     const speakingRate = body.speakingRate || 0.95; // Slightly slower for storytelling
     const pitch = body.pitch || 0;
