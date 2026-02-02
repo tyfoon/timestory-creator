@@ -34,6 +34,10 @@ export interface TimelineEvent {
   movieSearchQuery?: string;
   youtubeVideoId?: string;
   
+  // Sound effects for video narration
+  soundEffectSearchQuery?: string;
+  soundEffectUrl?: string;
+  
   // NEW: Detailed search trace for debugging
   searchTrace?: SearchTraceEntry[];
 }

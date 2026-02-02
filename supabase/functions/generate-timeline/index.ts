@@ -420,6 +420,11 @@ function getTimelineTool() {
                   description:
                     "Search query for YouTube to find a movie trailer, e.g. 'Titanic trailer 1997'. Fill this for movie/film events (isMovie=true).",
                 },
+                soundEffectSearchQuery: {
+                  type: "string",
+                  description:
+                    "A short, specific English search query for a sound effect that matches this event (e.g. 'camera shutter', 'applause', '8-bit game sound', 'techno beat loop', 'printing press'). Keep it under 3 words.",
+                },
               },
               required: ["id", "date", "year", "title", "description", "category", "importance", "eventScope"],
             },
