@@ -504,6 +504,7 @@ export const RANGE_PROMPT = (
   isShort: boolean,
   targetEvents: number,
   contentFocus: string,
+  geoFocus: string = "netherlands",
 ) =>
   `ROL & CONTEXT:
 Je bent een nostalgische verhalenverteller.
@@ -521,8 +522,8 @@ De gebruiker wordt elk jaar ouder. De interesses MOETEN meegroeien met de jaren.
    - *14-15 jaar:* Huiswerkstress, vriendengroepen, verliefdheid, rages, kleedgeld.
    - *16-17 jaar:* Brommers/scooters, eerste bijbaan, uitgaan (discotheken), examenstress, rijles.
    - *18+ jaar:* Rijbewijs, studeren, zelfstandigheid, stemrecht.
-;
-${NOSTALGIA_INSTRUCTIONS}`;
+
+${GET_NOSTALGIA_INSTRUCTIONS(geoFocus)}`;
 
 export const FAMOUS_BIRTHDAYS_ADDITION = (day: number, monthName: string, startYear: number, endYear: number) =>
   `\n\n--- EXTRA TAAK: VERJAARDAGEN ---\nZoek 3 bekende personen die op ${day} ${monthName} jarig zijn (dit staat los van de tijdlijn).`;

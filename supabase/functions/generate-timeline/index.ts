@@ -526,7 +526,7 @@ function buildPrompt(data: TimelineRequest): string {
     const otherGroups = optionalData.subculture.otherGroupsFromEra
       ? optionalData.subculture.otherGroupsFromEra.split(", ").filter(Boolean)
       : [];
-    promptParts.push(SUBCULTURE_ADDITION(optionalData.subculture.myGroup, otherGroups));
+    promptParts.push(SUBCULTURE_ADDITION(optionalData.subculture.myGroup, otherGroups, optionalData.focus || "netherlands"));
   }
 
   // B4. Geografische Focus (Land/Wereld)
