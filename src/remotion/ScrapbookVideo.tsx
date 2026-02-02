@@ -145,7 +145,6 @@ export const ScrapbookVideoComponent: React.FC<TimelineVideoProps> = ({
           cardPositions={cardPositions}
           canvasWidth={canvasWidth}
           canvasHeight={canvasHeight}
-          introDurationFrames={0} // Already offset by parent Sequence
         >
           <ScrapbookLayout
             events={events}
