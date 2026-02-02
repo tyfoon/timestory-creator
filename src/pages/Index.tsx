@@ -464,37 +464,39 @@ const Index = () => {
 
             {/* Action buttons */}
             <div className="pt-4 border-t border-border space-y-3">
-              <Button
-                onClick={() => handleGenerate("/resultaat")}
-                className="w-full btn-vintage h-12 text-base font-semibold text-primary-foreground rounded-lg"
-                disabled={!isBirthDateComplete || !selectedPeriod}
-              >
-                <Sparkles className="mr-2 h-4 w-4" />
-                <span>{t("createTimelineButton") as string}</span>
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-
-              <Button
-                onClick={() => handleGenerate("/polaroid")}
-                variant="outline"
-                className="w-full h-11 text-base font-semibold rounded-lg border-2 border-accent/50 bg-gradient-to-r from-accent/10 to-primary/10 hover:from-accent/20 hover:to-primary/20 text-foreground"
-                disabled={!isBirthDateComplete || !selectedPeriod}
-              >
-                <Camera className="mr-2 h-4 w-4 text-accent" />
-                <span>{t("createPolaroidButton") as string}</span>
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-
+              {/* Primary: Timeline Story */}
               <Button
                 onClick={() => handleGenerate("/story")}
-                variant="outline"
-                className="w-full h-11 text-base font-semibold rounded-lg border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-accent/5 hover:from-primary/10 hover:to-accent/10 text-foreground"
+                className="w-full btn-vintage h-14 text-lg font-bold text-primary-foreground rounded-lg shadow-lg"
                 disabled={!isBirthDateComplete || !selectedPeriod}
               >
-                <BookOpen className="mr-2 h-4 w-4 text-primary" />
+                <BookOpen className="mr-2 h-5 w-5" />
                 <span>Timeline Story</span>
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
+
+              {/* Secondary: Polaroid & Tijdreis side by side */}
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => handleGenerate("/polaroid")}
+                  variant="outline"
+                  className="flex-1 h-11 text-sm font-semibold rounded-lg border-2 border-accent/50 bg-gradient-to-r from-accent/10 to-primary/10 hover:from-accent/20 hover:to-primary/20 text-foreground"
+                  disabled={!isBirthDateComplete || !selectedPeriod}
+                >
+                  <Camera className="mr-1.5 h-4 w-4 text-accent" />
+                  <span>{t("createPolaroidButton") as string}</span>
+                </Button>
+
+                <Button
+                  onClick={() => handleGenerate("/resultaat")}
+                  variant="outline"
+                  className="flex-1 h-11 text-sm font-semibold rounded-lg border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-accent/5 hover:from-primary/10 hover:to-accent/10 text-foreground"
+                  disabled={!isBirthDateComplete || !selectedPeriod}
+                >
+                  <Sparkles className="mr-1.5 h-4 w-4 text-primary" />
+                  <span>{t("createTimelineButton") as string}</span>
+                </Button>
+              </div>
             </div>
           </div>
 
