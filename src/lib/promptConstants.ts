@@ -42,12 +42,28 @@ export const MONTH_NAMES = [
 // =============================================================================
 // NOSTALGIE ENGINE
 // =============================================================================
-export const NOSTALGIA_INSTRUCTIONS = `
+export const GET_NOSTALGIA_INSTRUCTIONS = (geoFocus: string) => {
+  const regionMap: Record<string, string> = {
+    netherlands: "Nederland (specifiek de Nederlandse polder-cultuur)",
+    europe: "Europa (focus op lokale culturen, geen Amerikaanse dominantie)",
+    world: "Internationaal / Wereldwijd",
+  };
+  const regionName = regionMap[geoFocus] || "de regio van de gebruiker";
+
+  return `
 RICHTLIJNEN VOOR SFEER & STIJL:
-1. **Zintuiglijke Details:** Beschrijf niet alleen feiten, maar geuren, geluiden en gevoelens. (Bv. de geur van brommerbenzine, het ratelende geluid van een videoband terugspoelen, de spanning van teletekst checken).
-2. **Analoge Vertraging:** Benadruk dingen die nu weg zijn: wachten op de bus zonder mobiel, foto's laten ontwikkelen, inbellen met een modem.
-3. **Persoonlijke Toon:** Gebruik een mijmerende, verhalende stijl. Bekijk alles door de bril van de leeftijd die de gebruiker toen had.
+1. **Zintuiglijke Details:** Beschrijf geuren, geluiden en tactiele gevoelens.
+2. **Analoge Vertraging:** Benadruk het wachten, spoelen en fysieke karakter van media.
+3. **Persoonlijke Toon:** Bekijk alles door de bril van de leeftijd die de gebruiker toen had.
+
+⚠️ CRUCIAAL - CULTURELE VALIDATIE (${regionName.toUpperCase()}) ⚠️
+De AI heeft een bias naar Amerikaanse popcultuur. Corrigeer dit op basis van de gekozen regio: **${regionName}**.
+
+1. **Check de Markt:** Was dit product *echt* een icoon in **${regionName}**?
+2. **Check de Doelgroep in deze regio:** Klopt het gebruik met de lokale gewoonten?
+3. **Merk-Check:** Gebruik alleen merknamen als je 100% zeker weet dat ze in deze periode en in **${regionName}** dominant waren.
 `;
+};
 
 // =============================================================================
 // VISUAL DIRECTOR INSTRUCTIES
@@ -331,7 +347,8 @@ export const RANGE_PROMPT = (
   endYear: number,
   isShort: boolean,
   targetEvents: number,
-  contentFocus: string
+  contentFocus: string,
+  geoFocus: string = "netherlands"
 ) =>
   `ROL & CONTEXT:
 Je bent een nostalgische verhalenverteller.
@@ -342,7 +359,7 @@ Maak een gedetailleerde tijdlijn van ${startYear} tot ${endYear}.
 Genereer ${targetEvents} events.
 Let op: Verdeel de events gelijkmatig (bv. in blokken van 2 jaar) en behoud de kwaliteit en detaillering tot aan het laatste event.
 
-${NOSTALGIA_INSTRUCTIONS}`;
+${GET_NOSTALGIA_INSTRUCTIONS(geoFocus)}`;
 
 export const FAMOUS_BIRTHDAYS_ADDITION = (
   day: number,
@@ -383,8 +400,7 @@ export const GENDER_ADDITION = (gender: 'male' | 'female') => {
   return `\nDe persoon voor wie deze tijdlijn is, is een ${genderText}. Pas de beschrijvingen subtiel aan zodat ze herkenbaar zijn vanuit dit perspectief.`;
 };
 
-export const SUBCULTURE_ADDITION = (myGroup: string, otherGroupsFromEra: string[]) => {
-  // Filter de eigen groep uit de lijst van 'anderen' en maak er een leesbare string van
+export const SUBCULTURE_ADDITION = (myGroup: string, otherGroupsFromEra: string[], geoFocus: string = "netherlands") => {
   const othersList = otherGroupsFromEra
     .filter(g => g.toLowerCase() !== myGroup.toLowerCase())
     .join(", ");
@@ -401,12 +417,11 @@ Dit is de lens waardoor we naar alles kijken.
 
 2. **De 'Out-Group' (Zij - ${othersList}):**
    - De andere stromingen in die tijd waren: ${othersList}.
-   - Benadruk het contrast. Als de gebruiker een ${myGroup} was, hoe keken ze dan naar die andere groepen? (Bijv. arrogant, spottend, jaloers of onbegrijpend).
-   - *Voorbeeld:* Als de gebruiker een 'Gabber' was, beschrijf de 'Alto's' dan als traag of zweverig. Als de gebruiker een 'Kakker' was, beschrijf de rest dan als onverzorgd.
+   - Benadruk het contrast. Als de gebruiker een ${myGroup} was, hoe keken ze dan naar die andere groepen?
 
 3. **Conflicten & Kruisbestuiving:**
-   - Waren er specifieke plekken waar deze groepen botsten (schoolplein, uitgaansgebied)?
-   - Of waren er juist onverwachte momenten van overlap?
+   - Waren er specifieke plekken waar deze groepen botsten?
+   - Of waren er onverwachte momenten van overlap?
 
 `;
 };
