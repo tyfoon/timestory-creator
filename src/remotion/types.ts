@@ -3,6 +3,8 @@ import { TimelineEvent } from '@/types/timeline';
 export interface VideoEvent extends TimelineEvent {
   audioUrl?: string;
   audioDurationFrames: number;
+  // Sound effect for background audio
+  soundEffectAudioUrl?: string;
 }
 
 export interface TimelineVideoProps {

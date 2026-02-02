@@ -3,10 +3,14 @@ import { Player } from '@remotion/player';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Video, Volume2, Download, AlertCircle } from 'lucide-react';
+import { Loader2, Video, Volume2, Download, AlertCircle, Music } from 'lucide-react';
 import { TimelineEvent } from '@/types/timeline';
 import { TimelineVideoComponent, calculateTotalDuration, VideoEvent } from '@/remotion';
 import { generateSpeech, base64ToAudioUrl } from '@/remotion/lib/speechApi';
+
+// Fallback Supabase configuration for sound effects
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvZW9ib3lnc3NzeWFqcGRzdGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNTY2NjEsImV4cCI6MjA4NDgzMjY2MX0.KuFaWF4r_cxZRiOumPGMChLVmwgyhT9vR5s7L52zr5s';
 
 interface VideoDialogProps {
   open: boolean;
@@ -15,6 +19,29 @@ interface VideoDialogProps {
   storyTitle?: string;
   storyIntroduction?: string;
 }
+
+// Fetch sound effect from Freesound
+const fetchSoundEffect = async (query: string): Promise<string | null> => {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/search-freesound`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ query }),
+    });
+
+    if (!response.ok) return null;
+    
+    const data = await response.json();
+    return data.success && data.sound?.previewUrl ? data.sound.previewUrl : null;
+  } catch (error) {
+    console.error('Sound effect fetch error:', error);
+    return null;
+  }
+};
 
 const FPS = 30;
 const DEFAULT_EVENT_DURATION_SECONDS = 5;
@@ -65,30 +92,45 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
         }
       }
 
-      // Generate audio for each event
+      // Generate audio for each event + fetch sound effects in parallel
       const newVideoEvents: VideoEvent[] = [];
 
       for (const event of events) {
         let audioUrl: string | undefined;
         let audioDurationFrames = Math.round(DEFAULT_EVENT_DURATION_SECONDS * FPS);
+        let soundEffectAudioUrl: string | undefined;
 
         // Generate speech for event description
         const speechText = `${event.title}. ${event.description}`;
         
-        try {
-          const result = await generateSpeech({ text: speechText });
-          audioUrl = base64ToAudioUrl(result.audioContent);
+        // Run speech generation and sound effect fetch in parallel
+        const [speechResult, soundEffectResult] = await Promise.all([
+          generateSpeech({ text: speechText }).catch(err => {
+            console.error(`Failed to generate audio for event ${event.id}:`, err);
+            return null;
+          }),
+          // Only fetch sound effect if event has a query
+          event.soundEffectSearchQuery 
+            ? fetchSoundEffect(event.soundEffectSearchQuery)
+            : Promise.resolve(null),
+        ]);
+
+        if (speechResult) {
+          audioUrl = base64ToAudioUrl(speechResult.audioContent);
           // Tight buffer - almost no gap between events
-          audioDurationFrames = Math.round(result.estimatedDurationSeconds * FPS) + 3; // Only 3 frames (~0.1s) buffer
-        } catch (error) {
-          console.error(`Failed to generate audio for event ${event.id}:`, error);
-          // Use default duration if audio fails
+          audioDurationFrames = Math.round(speechResult.estimatedDurationSeconds * FPS) + 3;
+        }
+
+        if (soundEffectResult) {
+          soundEffectAudioUrl = soundEffectResult;
+          console.log(`Sound effect for "${event.title}": ${event.soundEffectSearchQuery}`);
         }
 
         newVideoEvents.push({
           ...event,
           audioUrl,
           audioDurationFrames,
+          soundEffectAudioUrl,
         });
 
         completed++;
@@ -114,6 +156,11 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
     }
     return calculateTotalDuration(videoEvents, introDurationFrames, FPS);
   }, [videoEvents, introDurationFrames, isReady]);
+
+  // Count sound effects found
+  const soundEffectsCount = useMemo(() => {
+    return videoEvents.filter(e => e.soundEffectAudioUrl).length;
+  }, [videoEvents]);
 
   // Reset state when dialog closes
   const handleOpenChange = useCallback((newOpen: boolean) => {
@@ -225,7 +272,15 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                 <span>
                   Duur: {Math.floor(totalDuration / FPS / 60)}:{String(Math.floor((totalDuration / FPS) % 60)).padStart(2, '0')}
                 </span>
-                <span>{videoEvents.length} scenes</span>
+                <div className="flex items-center gap-4">
+                  {soundEffectsCount > 0 && (
+                    <span className="flex items-center gap-1">
+                      <Music className="h-3 w-3" />
+                      {soundEffectsCount} geluidseffecten
+                    </span>
+                  )}
+                  <span>{videoEvents.length} scenes</span>
+                </div>
               </div>
 
               {/* Download instructions */}
