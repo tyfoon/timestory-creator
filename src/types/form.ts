@@ -44,6 +44,10 @@ export type OptionalData = {
   focus: GeographicFocus;
   periodType?: PeriodType;
   subculture?: SubcultureData;      // New: replaces attitude for prompt generation
+  // Personal music video fields
+  friends?: string;                 // Top 3 friends from back then (comma-separated)
+  school?: string;                  // High school name
+  nightlife?: string;               // Favorite clubs/bars (comma-separated)
 };
 
 export type FormData = {

@@ -18,6 +18,10 @@ export interface TimelineVideoProps {
   enableRetroEffect?: boolean;
   /** Intensity of retro effects (0-1) */
   retroIntensity?: number;
+  /** External audio URL (e.g., Suno-generated song) - overrides individual event audio */
+  externalAudioUrl?: string;
+  /** Duration of external audio in seconds - when set, events are distributed over this duration */
+  externalAudioDuration?: number;
 }
 
 export interface EventCardProps {

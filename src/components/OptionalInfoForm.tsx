@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { OptionalData, GeographicFocus, Gender } from '@/types/form';
-import { MapPin, Compass, Sparkles, User, Users } from 'lucide-react';
+import { MapPin, Compass, Sparkles, User, Users, Music, GraduationCap, PartyPopper } from 'lucide-react';
 
 interface OptionalInfoFormProps {
   value: OptionalData;
@@ -133,6 +133,56 @@ export const OptionalInfoForm = ({ value, onChange }: OptionalInfoFormProps) => 
             </Label>
           ))}
         </RadioGroup>
+      </div>
+
+      {/* Personal Music Video Section */}
+      <div className="pt-4 mt-4 border-t border-border">
+        <div className="flex items-center gap-2 mb-4">
+          <Music className="h-5 w-5 text-primary" />
+          <span className="font-medium text-foreground">Persoonlijke Details (voor Muziekvideo)</span>
+        </div>
+        
+        {/* Friends */}
+        <div className="space-y-2 mb-3">
+          <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <Users className="h-4 w-4 text-accent" />
+            Top 3 vrienden van toen
+          </Label>
+          <Input
+            placeholder="Namen gescheiden door komma's (bijv. Jan, Piet, Klaas)"
+            value={value.friends || ''}
+            onChange={(e) => onChange({ ...value, friends: e.target.value })}
+            className="bg-card h-9"
+          />
+        </div>
+
+        {/* School */}
+        <div className="space-y-2 mb-3">
+          <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <GraduationCap className="h-4 w-4 text-accent" />
+            Middelbare School
+          </Label>
+          <Input
+            placeholder="Bijv. Christelijk Lyceum Veenendaal"
+            value={value.school || ''}
+            onChange={(e) => onChange({ ...value, school: e.target.value })}
+            className="bg-card h-9"
+          />
+        </div>
+
+        {/* Nightlife */}
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <PartyPopper className="h-4 w-4 text-accent" />
+            Favoriete uitgaansplekken
+          </Label>
+          <Input
+            placeholder="Discotheken/kroegen gescheiden door komma's"
+            value={value.nightlife || ''}
+            onChange={(e) => onChange({ ...value, nightlife: e.target.value })}
+            className="bg-card h-9"
+          />
+        </div>
       </div>
     </div>
   );

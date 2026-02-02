@@ -7,7 +7,7 @@ import { generateTimelineStreaming } from '@/lib/api/timeline';
 import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents } from '@/lib/timelineCache';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ArrowLeft, ChevronDown, Loader2, AlertCircle, RefreshCw, Clock, Ban, Video } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Loader2, AlertCircle, RefreshCw, Clock, Ban, Video, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getCacheKey } from '@/lib/timelineCache';
@@ -16,6 +16,7 @@ import { PromptViewerDialog } from '@/components/PromptViewerDialog';
 import { MediaButtons } from '@/components/story/MediaButtons';
 import { addToBlacklist } from '@/hooks/useImageBlacklist';
 import { VideoDialog } from '@/components/video/VideoDialog';
+import { MusicVideoGenerator } from '@/components/MusicVideoGenerator';
 
 // Placeholder images by category
 import birthdayPlaceholder from '@/assets/placeholders/birthday.jpg';
@@ -1191,6 +1192,21 @@ const TimelineStoryPage = () => {
             </button>
             
             <div className="flex items-center gap-2">
+              {/* Music Video Generator button */}
+              {events.length > 0 && !isLoading && formData && (
+                <MusicVideoGenerator
+                  events={events}
+                  summary={storyIntroduction || ''}
+                  optionalData={formData.optionalData}
+                  startYear={formData.type === 'birthdate' && formData.birthDate 
+                    ? formData.birthDate.year 
+                    : formData.yearRange?.startYear || 1980}
+                  endYear={formData.type === 'birthdate' && formData.birthDate 
+                    ? formData.birthDate.year + 25
+                    : formData.yearRange?.endYear || 2000}
+                />
+              )}
+
               {/* Video button */}
               {events.length > 0 && !isLoading && (
                 <Button
