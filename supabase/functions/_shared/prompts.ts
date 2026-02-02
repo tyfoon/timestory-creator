@@ -83,18 +83,22 @@ NOOIT decade-referenties gebruiken! Zoekmachines begrijpen deze niet:
 - GOED: Zoek op SPECIFIEKE namen, titels, of producten
 
 🔊 GELUIDSEFFECTEN (VERPLICHT VOOR ELKE EVENT!)
-Vul ALTIJD 'soundEffectSearchQuery' in met een korte Engelse zoekterm (max 3 woorden) voor een passend geluidseffect.
-Dit wordt gebruikt om sfeervolle achtergrondgeluiden toe te voegen aan de video-versie.
+Vul ALTIJD 'soundEffectSearchQuery' in met een Engelse zoekterm (max 4 woorden) voor een passend SFEERVOL achtergrondgeluid.
+Dit wordt gebruikt voor atmosferische geluiden in de video-versie.
 
-VOORBEELDEN per categorie:
-- Muziek: "crowd cheering", "vinyl scratch", "guitar riff", "concert applause"
-- Film/TV: "movie projector", "tv static", "dramatic music", "action sound"
-- Sport: "stadium crowd", "whistle blow", "ball kick", "race engine"
-- Politiek: "parliament debate", "camera shutter", "crowd protest", "speech applause"
-- Technologie: "computer beep", "modem dial", "keyboard typing", "game coin"
-- Cultuur: "disco beat", "punk guitar", "dance music", "festival crowd"
-- Wetenschap: "rocket launch", "laboratory beep", "space ambience"
-- Geboorte/Verjaardag: "baby cry", "birthday party", "champagne pop"
+BELANGRIJK - VOEG DECADE TOE VOOR BETERE RESULTATEN:
+- Voeg het decennium toe wanneer relevant: "80s disco music", "90s rave synth", "70s funk beat"
+- Dit helpt om era-specifieke geluiden te vinden die passen bij de periode
+
+KIES LANGERE ATMOSFERISCHE GELUIDEN (geen korte effecten):
+- Muziek: "80s disco beat", "90s techno beat", "crowd cheering concert", "vinyl record playing"
+- Film/TV: "movie theater ambience", "tv show audience", "dramatic orchestral music"
+- Sport: "stadium crowd cheering", "football match ambience", "race car engine loop"
+- Politiek: "parliament session ambience", "crowd protest chanting", "press conference cameras"
+- Technologie: "80s arcade game", "90s modem connecting", "computer room ambience", "retro game music"
+- Cultuur: "80s synth pop", "90s grunge guitar", "disco dancefloor", "punk rock crowd"
+- Wetenschap: "rocket launch rumble", "space station ambience", "laboratory equipment"
+- Geboorte/Verjaardag: "birthday party crowd", "children playing", "celebration cheering"
 
 KIES HET JUISTE 'visualSubjectType':
 1. 'person': Voor artiesten, politici, sporters, beroemdheden. (Zoekt in portret-database)

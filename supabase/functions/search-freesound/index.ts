@@ -53,15 +53,15 @@ serve(async (req) => {
     console.log(`Searching Freesound for: "${query}"`);
 
     // Build the Freesound API URL with filters
-    // - duration:[0.5 TO 6] = only sounds between 0.5 and 6 seconds
+    // - duration:[3 TO 15] = sounds between 3 and 15 seconds for better atmosphere
     // - fields = only fetch what we need
     // - sort = sort by rating descending for quality
     const params = new URLSearchParams({
       query: query,
-      filter: "duration:[0.5 TO 6]",
+      filter: "duration:[3 TO 15]",
       fields: "id,name,previews,duration,avg_rating",
       sort: "rating_desc",
-      page_size: "5", // Get top 5 results
+      page_size: "10", // Get top 10 results to have more options
       token: FREESOUND_API_KEY,
     });
 
