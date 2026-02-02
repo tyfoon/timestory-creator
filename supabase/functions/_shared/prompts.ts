@@ -519,11 +519,9 @@ De gebruiker wordt elk jaar ouder. De interesses MOETEN meegroeien met de jaren.
 2. **De 'Eerste Keer' Regel:** Plaats mijlpalen pas op de leeftijd dat ze logisch zijn.
    - *12-13 jaar:* Brugklas, speelgoed wordt minder, eerste muziekidolen, schoolfeestjes.
    - *14-15 jaar:* Huiswerkstress, vriendengroepen, verliefdheid, rages, kleedgeld.
-   - *16-17 jaar:* Brommers/scooters, eerste bijbaan, uitgaan, examenstress, rijles.
-   - *18+ jaar:* Rijbewijs, studeren, zelfstandigheid.
-
-Let op: Verdeel de events gelijkmatig (bv. in blokken van 2 jaar) en behoud de kwaliteit en detaillering tot aan het laatste event.
-
+   - *16-17 jaar:* Brommers/scooters, eerste bijbaan, uitgaan (discotheken), examenstress, rijles.
+   - *18+ jaar:* Rijbewijs, studeren, zelfstandigheid, stemrecht.
+;
 ${NOSTALGIA_INSTRUCTIONS}`;
 
 export const FAMOUS_BIRTHDAYS_ADDITION = (day: number, monthName: string, startYear: number, endYear: number) =>
