@@ -17,6 +17,8 @@ export interface TimelineVideoProps {
 export interface EventCardProps {
   event: VideoEvent;
   imageUrl: string;
+  eventIndex: number;
+  periodLabel?: string; // e.g. "1980-1990" or "Kindertijd"
 }
 
 export interface AudioSegment {

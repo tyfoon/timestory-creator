@@ -39,7 +39,12 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
   // Event sequences
   let lastYear: number | null = null;
   
-  events.forEach((event) => {
+  // Calculate period label from first and last event years
+  const firstYear = events.length > 0 ? events[0].year : null;
+  const lastEventYear = events.length > 0 ? events[events.length - 1].year : null;
+  const periodLabel = firstYear && lastEventYear ? `${firstYear}–${lastEventYear}` : undefined;
+  
+  events.forEach((event, index) => {
     // Add year transition if year changed
     if (lastYear !== null && event.year !== lastYear) {
       sequences.push(
@@ -65,7 +70,7 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
         from={currentFrame}
         durationInFrames={eventDuration}
       >
-        <EventCard event={event} imageUrl={imageUrl} />
+        <EventCard event={event} imageUrl={imageUrl} eventIndex={index} periodLabel={periodLabel} />
         {event.audioUrl && (
           <Audio src={event.audioUrl} />
         )}
