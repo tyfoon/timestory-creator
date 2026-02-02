@@ -52,9 +52,9 @@ RICHTLIJNEN VOOR SFEER & STIJL:
 3. **Persoonlijke Toon:** Bekijk alles door de bril van de leeftijd die de gebruiker toen had.
 
 ⚠️ CRUCIAAL - CULTURELE VALIDATIE (${regionName.toUpperCase()}) ⚠️
-De AI heeft een bias naar Amerikaanse popcultuur. Corrigeer dit op basis van de gekozen geo regio: **${city} in ${regionName}**. Denk ook aan provenciale verschillen binnen ${regionName}
+De AI heeft een bias naar Amerikaanse popcultuur. Corrigeer dit op basis van de gekozen regio: **${regionName}**.
 
-1. **Check de Markt:** Was dit product *echt* een icoon in **${city} in ${regionName}**?
+1. **Check de Markt:** Was dit product *echt* een icoon in **${regionName}**?
    - *ALS FOCUS NEDERLAND IS:* Vermijd Amerikaanse clichés zoals "Prom Night", "Yearbook", "Twinkies" of merken die hier niet te koop waren. Gebruik lokale equivalenten (Schoolfeest, Vriendenboekje, Raider, Studio Line).
    - *ALS FOCUS EUROPA IS:* Zoek naar merken die pan-Europees waren of specifiek voor het land in de context.
    - *ALS FOCUS WERELD IS:* Dan mag je bredere, internationale (US) merken gebruiken.
