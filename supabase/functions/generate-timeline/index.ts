@@ -15,7 +15,7 @@ import {
   CITY_ADDITION,
   CHILDREN_ADDITION,
   GENDER_ADDITION,
-  ATTITUDE_ADDITION,
+  SUBCULTURE_ADDITION,
   getGenerationPerspective,
 } from "../_shared/prompts.ts";
 
@@ -34,6 +34,7 @@ interface TimelineRequest {
     city?: string;
     gender?: "male" | "female" | "none";
     attitude?: "conservative" | "neutral" | "progressive";
+    subculture?: { myGroup: string | null; otherGroupsFromEra: string; availableOptions: string[] };
     children: { name: string; birthDate?: { day: number; month: number; year: number } }[];
     partnerName?: string;
     partnerBirthDate?: { day: number; month: number; year: number };
@@ -519,10 +520,13 @@ function buildPrompt(data: TimelineRequest): string {
     promptParts.push(GENDER_ADDITION(optionalData.gender));
   }
 
-  // B3. Houding (Toon & Sfeer)
-  // Bepaalt de "vibe" (bv. rebels vs braaf, alternatief vs mainstream)
-  if (optionalData.attitude && optionalData.attitude !== "neutral") {
-    promptParts.push(ATTITUDE_ADDITION(optionalData.attitude));
+  // B3. Subcultuur (Identiteit & Perspectief)
+  // Bepaalt de "tribe" van de gebruiker en hoe ze naar andere groepen keken
+  if (optionalData.subculture?.myGroup) {
+    const otherGroups = optionalData.subculture.otherGroupsFromEra
+      ? optionalData.subculture.otherGroupsFromEra.split(", ").filter(Boolean)
+      : [];
+    promptParts.push(SUBCULTURE_ADDITION(optionalData.subculture.myGroup, otherGroups));
   }
 
   // B4. Geografische Focus (Land/Wereld)
