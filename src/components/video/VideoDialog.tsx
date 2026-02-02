@@ -3,16 +3,25 @@ import { Player } from '@remotion/player';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Video, Volume2, Download, AlertCircle, Music, Tv } from 'lucide-react';
+import { Loader2, Video, Volume2, Download, AlertCircle, Music, Tv, Camera, Layers } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { TimelineEvent } from '@/types/timeline';
-import { TimelineVideoComponent, calculateTotalDuration, VideoEvent } from '@/remotion';
+import { 
+  TimelineVideoComponent, 
+  calculateTotalDuration, 
+  ScrapbookVideoComponent,
+  calculateScrapbookDuration,
+  VideoEvent 
+} from '@/remotion';
 import { generateSpeech, base64ToAudioUrl } from '@/remotion/lib/speechApi';
 
 // Fallback Supabase configuration for sound effects
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvZW9ib3lnc3NzeWFqcGRzdGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNTY2NjEsImV4cCI6MjA4NDgzMjY2MX0.KuFaWF4r_cxZRiOumPGMChLVmwgyhT9vR5s7L52zr5s';
+
+type VideoVariant = 'slideshow' | 'scrapbook';
 
 interface VideoDialogProps {
   open: boolean;
@@ -92,6 +101,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
   const [introDurationFrames, setIntroDurationFrames] = useState(150); // Default 5 seconds
   const [isReady, setIsReady] = useState(false);
   const [enableVhsEffect, setEnableVhsEffect] = useState(false);
+  const [videoVariant, setVideoVariant] = useState<VideoVariant>('slideshow');
 
   // Generate audio for all events
   const handleGenerateAudio = useCallback(async () => {
@@ -181,13 +191,17 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
     }
   }, [events, storyIntroduction]);
 
-  // Calculate total video duration
+  // Calculate total video duration based on variant
   const totalDuration = useMemo(() => {
     if (!isReady || videoEvents.length === 0) {
       return 300; // Default 10 seconds
     }
+    // Scrapbook uses its own duration calculation (no transitions between events)
+    if (videoVariant === 'scrapbook') {
+      return calculateScrapbookDuration(videoEvents, introDurationFrames, FPS);
+    }
     return calculateTotalDuration(videoEvents, introDurationFrames, FPS);
-  }, [videoEvents, introDurationFrames, isReady]);
+  }, [videoEvents, introDurationFrames, isReady, videoVariant]);
 
   // Count sound effects found
   const soundEffectsCount = useMemo(() => {
@@ -203,6 +217,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
       setAudioProgress(0);
       setAudioError(null);
       setEnableVhsEffect(false);
+      setVideoVariant('slideshow');
     }
     onOpenChange(newOpen);
   }, [onOpenChange]);
@@ -233,6 +248,44 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                     {storyIntroduction ? ' + intro' : ''}.
                   </p>
                 </div>
+              </div>
+
+              {/* Video Variant Selector */}
+              <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Camera className="h-5 w-5 text-muted-foreground" />
+                  <Label className="font-medium">Video Stijl</Label>
+                </div>
+                <RadioGroup
+                  value={videoVariant}
+                  onValueChange={(v) => setVideoVariant(v as VideoVariant)}
+                  className="grid grid-cols-2 gap-3"
+                >
+                  <div className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-muted/30 cursor-pointer">
+                    <RadioGroupItem value="slideshow" id="slideshow" className="mt-0.5" />
+                    <div className="flex-1">
+                      <Label htmlFor="slideshow" className="font-medium cursor-pointer flex items-center gap-2">
+                        <Layers className="h-4 w-4" />
+                        Slideshow
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Klassieke presentatie met vloeiende overgangen
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-muted/30 cursor-pointer">
+                    <RadioGroupItem value="scrapbook" id="scrapbook" className="mt-0.5" />
+                    <div className="flex-1">
+                      <Label htmlFor="scrapbook" className="font-medium cursor-pointer flex items-center gap-2">
+                        <Camera className="h-4 w-4" />
+                        Scrapbook Camera
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Virtuele camera vliegt over een plakboek
+                      </p>
+                    </div>
+                  </div>
+                </RadioGroup>
               </div>
 
               {/* VHS Effect Toggle */}
@@ -299,7 +352,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
               <div className="aspect-video bg-black rounded-lg overflow-hidden">
                 <Player
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  component={TimelineVideoComponent as any}
+                  component={videoVariant === 'scrapbook' ? ScrapbookVideoComponent as any : TimelineVideoComponent as any}
                   inputProps={{
                     events: videoEvents,
                     storyTitle,
@@ -328,10 +381,17 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                   Duur: {Math.floor(totalDuration / FPS / 60)}:{String(Math.floor((totalDuration / FPS) % 60)).padStart(2, '0')}
                 </span>
                 <div className="flex items-center gap-4">
+                  <span className="flex items-center gap-1 text-primary">
+                    {videoVariant === 'scrapbook' ? (
+                      <><Camera className="h-3 w-3" /> Scrapbook</>
+                    ) : (
+                      <><Layers className="h-3 w-3" /> Slideshow</>
+                    )}
+                  </span>
                   {enableVhsEffect && (
                     <span className="flex items-center gap-1 text-primary">
                       <Tv className="h-3 w-3" />
-                      VHS Effect
+                      VHS
                     </span>
                   )}
                   {soundEffectsCount > 0 && (
