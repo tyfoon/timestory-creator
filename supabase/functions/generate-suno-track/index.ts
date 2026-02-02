@@ -69,6 +69,7 @@ async function generateTrack(apiKey: string, lyrics: string, style: string, titl
     prompt: truncatedLyrics,    // The lyrics
     style: truncatedStyle,      // Music style
     title: truncatedTitle,      // Song title
+    callBackUrl: "https://example.com/callback", // Required by API (we use polling instead)
   };
 
   console.log("Suno request body:", JSON.stringify(requestBody, null, 2));
