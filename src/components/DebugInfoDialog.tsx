@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Bug, Music, Film, Search, Database, ExternalLink, Image, Filter, Clock, Star, User, Tv, Disc, CheckCircle2, XCircle, Timer, RefreshCw } from 'lucide-react';
+import { Bug, Music, Film, Search, Database, ExternalLink, Image, Filter, Clock, Star, User, Tv, Disc, CheckCircle2, XCircle, Timer, RefreshCw, Volume2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -38,6 +38,7 @@ export function DebugInfoDialog({ events, onRefreshImages, isRefreshing }: Debug
   const stats = useMemo(() => {
     const total = events.length;
     const withImages = events.filter(e => e.imageUrl).length;
+    const withSoundEffects = events.filter(e => e.soundEffectSearchQuery).length;
     const bySource: Record<string, number> = {};
     const byCategory: Record<string, number> = {};
     const byType: Record<string, number> = {};
@@ -56,7 +57,7 @@ export function DebugInfoDialog({ events, onRefreshImages, isRefreshing }: Debug
       byType[type] = (byType[type] || 0) + 1;
     });
 
-    return { total, withImages, bySource, byCategory, byType };
+    return { total, withImages, withSoundEffects, bySource, byCategory, byType };
   }, [events]);
 
   // Determine the source type based on the source URL
@@ -149,7 +150,7 @@ export function DebugInfoDialog({ events, onRefreshImages, isRefreshing }: Debug
               <Bug className="h-4 w-4" />
               Debug Info
               <span className="text-muted-foreground font-normal">
-                — {stats.total} events, {stats.withImages} met beeld ({stats.total > 0 ? Math.round((stats.withImages / stats.total) * 100) : 0}%)
+                — {stats.total} events, {stats.withImages} beeld, {stats.withSoundEffects} geluid
               </span>
             </div>
             {onRefreshImages && (
@@ -305,6 +306,21 @@ export function DebugInfoDialog({ events, onRefreshImages, isRefreshing }: Debug
                       </div>
                     </div>
                   )}
+
+                  {/* Sound effect search query */}
+                  <div className="flex items-start gap-2">
+                    <Volume2 className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${event.soundEffectSearchQuery ? 'text-orange-500' : 'text-muted-foreground/30'}`} />
+                    <div className="min-w-0 flex-1">
+                      <span className="text-muted-foreground">Geluidseffect:</span>
+                      {event.soundEffectSearchQuery ? (
+                        <p className="font-mono bg-orange-500/10 text-orange-700 dark:text-orange-300 px-1.5 py-0.5 rounded mt-0.5 truncate">
+                          🔊 {event.soundEffectSearchQuery}
+                        </p>
+                      ) : (
+                        <p className="text-muted-foreground/50 italic mt-0.5">Geen (genereer nieuwe tijdlijn)</p>
+                      )}
+                    </div>
+                  </div>
 
                   {/* Image search query */}
                   <div className="flex items-start gap-2">
