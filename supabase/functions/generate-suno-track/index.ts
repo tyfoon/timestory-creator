@@ -5,7 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-const SUNO_API_BASE = "https://sunoapi.org";
+// Official Suno API endpoint (NOT sunoapi.org but api.sunoapi.org)
+const SUNO_API_BASE = "https://api.sunoapi.org";
 const MAX_POLL_ATTEMPTS = 60; // 5 minutes max (60 * 5 seconds)
 const POLL_INTERVAL_MS = 5000;
 
@@ -17,72 +18,103 @@ interface RequestBody {
 }
 
 interface SunoGenerateResponse {
-  id?: string;
-  ids?: string[];
-  status?: string;
-  error?: string;
+  code: number;
+  msg: string;
+  data?: {
+    taskId: string;
+  };
+}
+
+interface SunoTrack {
+  id: string;
+  status: string;
+  audioUrl?: string;
+  streamAudioUrl?: string;
+  videoUrl?: string;
+  duration?: number;
+  title?: string;
 }
 
 interface SunoStatusResponse {
-  status: string;
-  audio_url?: string;
-  stream_audio_url?: string;
-  video_url?: string;
-  duration?: number;
-  error?: string;
+  code: number;
+  msg: string;
+  data?: SunoTrack[];
 }
 
 async function generateTrack(apiKey: string, lyrics: string, style: string, title: string): Promise<string> {
   console.log(`Starting Suno track generation: "${title}" in style "${style}"`);
   
-  // Truncate lyrics if too long (Suno has a limit)
-  const maxLyricsLength = 3000;
+  // Truncate lyrics if too long (Suno V4_5ALL limit is 5000 chars)
+  const maxLyricsLength = 4500;
   const truncatedLyrics = lyrics.length > maxLyricsLength 
     ? lyrics.substring(0, maxLyricsLength) + "..."
     : lyrics;
 
-  const response = await fetch(`${SUNO_API_BASE}/api/custom_generate`, {
+  // Truncate style if too long (max 1000 chars for V4_5ALL)
+  const maxStyleLength = 200;
+  const truncatedStyle = style.length > maxStyleLength
+    ? style.substring(0, maxStyleLength)
+    : style;
+
+  // Truncate title if too long (max 80 chars for V4_5ALL)
+  const maxTitleLength = 75;
+  const truncatedTitle = title.length > maxTitleLength
+    ? title.substring(0, maxTitleLength)
+    : title;
+
+  const requestBody = {
+    customMode: true,           // We provide lyrics, style, and title
+    instrumental: false,        // We want vocals (lyrics)
+    model: "V4_5ALL",           // Best song structure, up to 8 min
+    prompt: truncatedLyrics,    // The lyrics
+    style: truncatedStyle,      // Music style
+    title: truncatedTitle,      // Song title
+  };
+
+  console.log("Suno request body:", JSON.stringify(requestBody, null, 2));
+
+  const response = await fetch(`${SUNO_API_BASE}/api/v1/generate`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      prompt: truncatedLyrics,
-      tags: style,
-      title: title,
-      make_instrumental: false,
-      wait_audio: false, // Return immediately, we'll poll for status
-    }),
+    body: JSON.stringify(requestBody),
   });
 
+  const responseText = await response.text();
+  console.log(`Suno generate response status: ${response.status}`);
+  console.log(`Suno generate response body: ${responseText}`);
+
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`Suno generate error: ${response.status}`, errorText);
-    throw new Error(`Suno API error: ${response.status} - ${errorText}`);
+    console.error(`Suno generate error: ${response.status}`, responseText);
+    throw new Error(`Suno API error: ${response.status} - ${responseText}`);
   }
 
-  const data: SunoGenerateResponse = await response.json();
-  console.log("Suno generate response:", JSON.stringify(data));
-
-  // Extract the track ID from response
-  const trackId = data.id || (data.ids && data.ids[0]);
-  if (!trackId) {
-    throw new Error("No track ID in Suno response");
+  let data: SunoGenerateResponse;
+  try {
+    data = JSON.parse(responseText);
+  } catch (e) {
+    throw new Error(`Failed to parse Suno response: ${responseText}`);
   }
 
-  console.log(`Track ID received: ${trackId}`);
-  return trackId;
+  if (data.code !== 200 || !data.data?.taskId) {
+    throw new Error(`Suno API returned error: ${data.msg || 'No taskId in response'}`);
+  }
+
+  console.log(`Task ID received: ${data.data.taskId}`);
+  return data.data.taskId;
 }
 
-async function pollForCompletion(apiKey: string, trackId: string): Promise<SunoStatusResponse> {
-  console.log(`Starting to poll for track ${trackId}`);
+async function pollForCompletion(apiKey: string, taskId: string): Promise<SunoTrack> {
+  console.log(`Starting to poll for task ${taskId}`);
   
   for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
     console.log(`Poll attempt ${attempt + 1}/${MAX_POLL_ATTEMPTS}`);
     
     try {
-      const response = await fetch(`${SUNO_API_BASE}/api/get?ids=${trackId}`, {
+      const response = await fetch(`${SUNO_API_BASE}/api/v1/generate/${taskId}`, {
+        method: "GET",
         headers: {
           "Authorization": `Bearer ${apiKey}`,
         },
@@ -94,32 +126,29 @@ async function pollForCompletion(apiKey: string, trackId: string): Promise<SunoS
         continue;
       }
 
-      const data = await response.json();
-      console.log(`Poll response:`, JSON.stringify(data).substring(0, 500));
+      const data: SunoStatusResponse = await response.json();
+      console.log(`Poll response code: ${data.code}, msg: ${data.msg}`);
 
-      // Handle array response (Suno returns array of tracks)
-      const track = Array.isArray(data) ? data[0] : data;
-      
-      if (!track) {
+      if (data.code !== 200 || !data.data || data.data.length === 0) {
+        console.log("No tracks yet, waiting...");
         await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
         continue;
       }
 
+      // Get the first track (Suno generates 2 tracks per request)
+      const track = data.data[0];
+      console.log(`Track status: ${track.status}, hasAudioUrl: ${!!track.audioUrl}`);
+      
       const status = track.status?.toLowerCase();
       
-      if (status === 'complete' || status === 'streaming' || track.audio_url) {
-        console.log(`Track completed! Audio URL: ${track.audio_url}`);
-        return {
-          status: 'complete',
-          audio_url: track.audio_url,
-          stream_audio_url: track.stream_audio_url,
-          video_url: track.video_url,
-          duration: track.duration,
-        };
+      // Check for completion - either explicit status or audioUrl present
+      if (status === 'complete' || status === 'streaming' || track.audioUrl) {
+        console.log(`Track completed! Audio URL: ${track.audioUrl}`);
+        return track;
       }
 
       if (status === 'error' || status === 'failed') {
-        throw new Error(`Track generation failed: ${track.error || 'Unknown error'}`);
+        throw new Error(`Track generation failed: ${JSON.stringify(track)}`);
       }
 
       // Still processing, wait and try again
@@ -143,7 +172,7 @@ serve(async (req) => {
   try {
     const SUNO_API_KEY = Deno.env.get("SUNO_API_KEY");
     if (!SUNO_API_KEY) {
-      throw new Error("SUNO_API_KEY is not configured");
+      throw new Error("SUNO_API_KEY is not configured. Get your key at https://sunoapi.org");
     }
 
     const body: RequestBody = await req.json();
@@ -164,24 +193,25 @@ serve(async (req) => {
     console.log(`Lyrics length: ${lyrics.length} characters`);
 
     // Step 1: Start generation
-    const trackId = await generateTrack(SUNO_API_KEY, lyrics, style, title);
+    const taskId = await generateTrack(SUNO_API_KEY, lyrics, style, title);
 
     // Step 2: Poll for completion
-    const result = await pollForCompletion(SUNO_API_KEY, trackId);
+    const track = await pollForCompletion(SUNO_API_KEY, taskId);
 
     // Check duration and warn if too long
-    if (result.duration && result.duration > maxDurationSeconds) {
-      console.warn(`Track duration (${result.duration}s) exceeds max (${maxDurationSeconds}s)`);
+    if (track.duration && track.duration > maxDurationSeconds) {
+      console.warn(`Track duration (${track.duration}s) exceeds max (${maxDurationSeconds}s)`);
     }
 
     return new Response(JSON.stringify({
       success: true,
       data: {
-        trackId,
-        audioUrl: result.audio_url,
-        streamAudioUrl: result.stream_audio_url,
-        videoUrl: result.video_url,
-        duration: result.duration,
+        taskId,
+        audioUrl: track.audioUrl,
+        streamAudioUrl: track.streamAudioUrl,
+        videoUrl: track.videoUrl,
+        duration: track.duration,
+        title: track.title,
       }
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
