@@ -2,9 +2,10 @@ import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { Music, Loader2, CheckCircle2, AlertCircle, FileText, Radio, Video, Play } from 'lucide-react';
+import { Music, Loader2, CheckCircle2, AlertCircle, FileText, Radio, Video, Play, Film } from 'lucide-react';
 import { TimelineEvent } from '@/types/timeline';
 import { OptionalData } from '@/types/form';
+import { VideoDialog } from '@/components/video/VideoDialog';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvZW9ib3lnc3NzeWFqcGRzdGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNTY2NjEsImV4cCI6MjA4NDgzMjY2MX0.KuFaWF4r_cxZRiOumPGMChLVmwgyhT9vR5s7L52zr5s';
@@ -24,6 +25,7 @@ interface GenerationResult {
   style?: string;
   title?: string;
   audioUrl?: string;
+  originalUrl?: string; // Original Suno URL before proxying
   duration?: number;
 }
 
@@ -40,6 +42,7 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<GenerationResult | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
+  const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
 
   // Check if we have enough personal data
   const hasPersonalData = optionalData.friends || optionalData.school || optionalData.nightlife;
@@ -88,7 +91,7 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
     };
   };
 
-  const generateMusic = async (lyrics: string, style: string, title: string): Promise<{ audioUrl: string; duration: number }> => {
+  const generateMusic = async (lyrics: string, style: string, title: string): Promise<{ audioUrl: string; originalUrl?: string; duration: number }> => {
     setStatusMessage('Muziek componeren... (dit kan enkele minuten duren)');
     setProgress(40);
 
@@ -126,15 +129,40 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
       }
 
       setProgress(90);
-       const playableUrl = data?.data?.audioUrl || data?.data?.streamAudioUrl;
-       if (!playableUrl) {
-         throw new Error('Suno gaf geen afspeelbare audio URL terug');
-       }
+      const playableUrl = data?.data?.audioUrl || data?.data?.streamAudioUrl;
+      if (!playableUrl) {
+        throw new Error('Suno gaf geen afspeelbare audio URL terug');
+      }
 
-       return {
-         audioUrl: playableUrl,
-         duration: data.data.duration || 180,
-       };
+      // Proxy the audio URL to avoid CORS issues
+      setStatusMessage('Audio voorbereiden...');
+      const proxyResponse = await fetch(`${SUPABASE_URL}/functions/v1/proxy-audio`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'apikey': SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ url: playableUrl }),
+      });
+
+      if (!proxyResponse.ok) {
+        console.warn('Audio proxy failed, using direct URL (may have CORS issues)');
+        return {
+          audioUrl: playableUrl,
+          duration: data.data.duration || 180,
+        };
+      }
+
+      // Convert proxied audio to blob URL for reliable playback
+      const audioBlob = await proxyResponse.blob();
+      const blobUrl = URL.createObjectURL(audioBlob);
+
+      return {
+        audioUrl: blobUrl,
+        originalUrl: playableUrl, // Keep original for Remotion if needed
+        duration: data.data.duration || 180,
+      };
     } catch (err) {
       clearInterval(progressInterval);
       throw err;
@@ -328,6 +356,19 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                     </pre>
                   </details>
                 )}
+
+                {/* Video Generation Button */}
+                <Button 
+                  onClick={() => {
+                    setIsDialogOpen(false);
+                    setIsVideoDialogOpen(true);
+                  }}
+                  className="w-full gap-2"
+                  variant="secondary"
+                >
+                  <Film className="h-4 w-4" />
+                  🎬 Maak Muziekvideo met deze track
+                </Button>
               </div>
             )}
 
@@ -356,6 +397,15 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Video Dialog - Uses Remotion with the generated audio as background music */}
+      <VideoDialog
+        open={isVideoDialogOpen}
+        onOpenChange={setIsVideoDialogOpen}
+        events={events}
+        storyTitle={result?.title || `Jouw jaren ${startYear}-${endYear}`}
+        storyIntroduction={summary}
+      />
     </>
   );
 };
