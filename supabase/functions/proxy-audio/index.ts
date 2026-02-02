@@ -5,8 +5,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Allowed audio sources for proxying
+const ALLOWED_HOSTS = [
+  "freesound.org",
+  "musicfile.removeai.ai", // Suno AI audio
+  "cdn.sunoai.ai",         // Alternative Suno CDN
+];
+
 /**
- * Proxy audio files to avoid CORS issues with Freesound preview URLs.
+ * Proxy audio files to avoid CORS issues with Freesound and Suno preview URLs.
  * Fetches the audio and returns it with proper CORS headers.
  */
 serve(async (req) => {
@@ -25,10 +32,12 @@ serve(async (req) => {
       );
     }
 
-    // Validate URL is from Freesound
-    if (!url.includes("freesound.org")) {
+    // Validate URL is from an allowed source
+    const isAllowed = ALLOWED_HOSTS.some(host => url.includes(host));
+    if (!isAllowed) {
+      console.error(`Blocked URL (not in allowed hosts): ${url}`);
       return new Response(
-        JSON.stringify({ error: "Only Freesound URLs are allowed" }),
+        JSON.stringify({ error: "Only Freesound and Suno URLs are allowed" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
