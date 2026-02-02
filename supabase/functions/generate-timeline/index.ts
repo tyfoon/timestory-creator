@@ -487,8 +487,9 @@ function buildPrompt(data: TimelineRequest): string {
     const yearSpan = endYear - startYear;
     const targetEvents = isShort ? data.maxEvents! : Math.max(50, yearSpan * 5);
 
-    // Voeg de basis range prompt toe
-    promptParts.push(RANGE_PROMPT(startYear, endYear, isShort || false, targetEvents, contentFocus));
+    // Voeg de basis range prompt toe (inclusief geoFocus voor nostalgia-instructies)
+    const geoFocus = optionalData.focus || "netherlands";
+    promptParts.push(RANGE_PROMPT(startYear, endYear, isShort || false, targetEvents, contentFocus, geoFocus));
 
     // Als het geboortejaar in deze range valt, benadruk dit dan (voor context)
     if (data.birthDate) {
