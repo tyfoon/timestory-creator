@@ -32,15 +32,40 @@ export const EVENT_CATEGORIES = [
 ] as const;
 
 // =============================================================================
-// NOSTALGIE ENGINE
+// NOSTALGIE ENGINE (DYNAMISCH PER REGIO)
 // =============================================================================
-const NOSTALGIA_INSTRUCTIONS = `
+export const GET_NOSTALGIA_INSTRUCTIONS = (geoFocus: string) => {
+  // Vertaal de technische focus naar leesbare regio-context
+  const regionMap: Record<string, string> = {
+    netherlands: "Nederland (specifiek de Nederlandse polder-cultuur)",
+    europe: "Europa (focus op lokale culturen, geen Amerikaanse dominantie)",
+    world: "Internationaal / Wereldwijd",
+    usa: "Verenigde Staten", // Voor het geval je dit later toevoegt
+  };
+
+  const regionName = regionMap[geoFocus] || "de regio van de gebruiker";
+
+  return `
 RICHTLIJNEN VOOR SFEER & STIJL:
-1. **Zintuiglijke Details:** Beschrijf niet alleen feiten, maar geuren, geluiden en gevoelens. (Bv. de geur van brommerbenzine, het ratelende geluid van een videoband terugspoelen, de spanning van teletekst checken).
-2. **Analoge Vertraging:** Benadruk dingen die nu weg zijn: wachten op de bus zonder mobiel, foto's laten ontwikkelen, inbellen met een modem.
-3. **Sociale Spanning:** Beschrijf de 'onmogelijkheid' van contact: urenlang naar de vaste telefoon staren, de zenuwen bij het vragen van een dans, en de hiërarchie in de groep.
-4. **Persoonlijke Toon:** Gebruik een mijmerende, verhalende stijl. Bekijk alles door de bril van de leeftijd die de gebruiker toen had.
+1. **Zintuiglijke Details:** Beschrijf geuren, geluiden en tactiele gevoelens.
+2. **Analoge Vertraging:** Benadruk het wachten, spoelen en fysieke karakter van media.
+3. **Persoonlijke Toon:** Bekijk alles door de bril van de leeftijd die de gebruiker toen had.
+
+⚠️ CRUCIAAL - CULTURELE VALIDATIE (${regionName.toUpperCase()}) ⚠️
+De AI heeft een bias naar Amerikaanse popcultuur. Corrigeer dit op basis van de gekozen regio: **${regionName}**.
+
+1. **Check de Markt:** Was dit product *echt* een icoon in **${regionName}**?
+   - *ALS FOCUS NEDERLAND IS:* Vermijd Amerikaanse clichés zoals "Prom Night", "Yearbook", "Twinkies" of merken die hier niet te koop waren. Gebruik lokale equivalenten (Schoolfeest, Vriendenboekje, Raider, Studio Line).
+   - *ALS FOCUS EUROPA IS:* Zoek naar merken die pan-Europees waren of specifiek voor het land in de context.
+   - *ALS FOCUS WERELD IS:* Dan mag je bredere, internationale (US) merken gebruiken.
+
+2. **Check de Doelgroep in deze regio:**
+   - Klopt het gebruik van het product met de lokale gewoonten in **${regionName}**?
+   - *Voorbeeld:* In Nederland fietst men naar school (natte haren, regenpakken). In de VS neemt men de schoolbus (gele bus). Kies het juiste beeld!
+
+3. **Merk-Check:** Gebruik alleen merknamen als je 100% zeker weet dat ze in deze periode en in **${regionName}** dominant waren. Bij twijfel: beschrijf het object ("Een pot knalgele gel").
 `;
+};
 // =============================================================================
 // HELPER: VISUAL DIRECTOR INSTRUCTIES
 // =============================================================================
@@ -532,30 +557,23 @@ export const GENDER_ADDITION = (gender: "male" | "female") => {
   return `\nDe persoon voor wie deze tijdlijn is, is een ${genderText}. Pas de beschrijvingen subtiel aan zodat ze herkenbaar zijn vanuit dit perspectief.`;
 };
 
-export const SUBCULTURE_ADDITION = (myGroup: string, otherGroupsFromEra: string[]) => {
-  // Filter de eigen groep uit de lijst van 'anderen' en maak er een leesbare string van
-  const othersList = otherGroupsFromEra
-    .filter(g => g.toLowerCase() !== myGroup.toLowerCase())
-    .join(", ");
+export const SUBCULTURE_ADDITION = (myGroup: string, otherGroupsFromEra: string[], geoFocus: string) => {
+  const othersList = otherGroupsFromEra.filter((g) => g.toLowerCase() !== myGroup.toLowerCase()).join(", ");
+
+  // Bepaal context voor merken
+  const locationContext = geoFocus === "netherlands" ? "in Nederland" : "in deze regio";
 
   return `
 SUBCULTUUR & IDENTITEIT (WIJ vs DE REST):
-De gebruiker hoorde in deze periode bij de groep: **"${myGroup}"**.
-Dit is de lens waardoor we naar alles kijken.
+De gebruiker hoorde bij: **"${myGroup}"**.
 
 1. **De 'In-Group' (Wij):**
-   - Focus sterk op de muziek, kleding, taal en hangplekken die cool waren voor **${myGroup}**.
-   - Gebruik jargon of slang dat bij deze groep past.
-   - Beschrijf het gevoel van verbondenheid met deze 'tribe'.
-
+   - Focus op de muziek, kleding en **MERKEN** die statussymbolen waren voor **${myGroup}** ${locationContext}.
+   - *Check:* Zijn deze merken logisch voor ${locationContext}? (Bijv. in NL: Australian trainingspakken voor Gabbers, kistjes voor Alto's).
+   
 2. **De 'Out-Group' (Zij - ${othersList}):**
-   - De andere stromingen in die tijd waren: ${othersList}.
-   - Benadruk het contrast. Als de gebruiker een ${myGroup} was, hoe keken ze dan naar die andere groepen? (Bijv. arrogant, spottend, jaloers of onbegrijpend).
-   - *Voorbeeld:* Als de gebruiker een 'Gabber' was, beschrijf de 'Alto's' dan als traag of zweverig. Als de gebruiker een 'Kakker' was, beschrijf de rest dan als onverzorgd.
+   - Hoe keken wij naar hen? (Arrogantie, angst, afkeer?)
 
-3. **Conflicten & Kruisbestuiving:**
-   - Waren er specifieke plekken waar deze groepen botsten (schoolplein, uitgaansgebied)?
-   - Of waren er juist onverwachte momenten van overlap?
-
+3. **Merk-Validatie:** Gebruik alleen merken die deze specifieke groep **${locationContext}** gebruikte. Vermijd generieke Amerikaanse merken als ze hier niet "cool" waren.
 `;
 };
