@@ -129,13 +129,14 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
           bottom: 40,
           right: 50,
           width: 380,
+          height: 280,
           transform: `rotate(2deg)`,
           boxShadow: '0 35px 70px -15px rgba(0, 0, 0, 0.3)',
           borderRadius: 10,
           overflow: 'hidden',
         }}>
           <KenBurns step={eventIndex} intensity={0.6}>
-            <Img src={imageUrl} style={{ width: '100%', height: 'auto' }} />
+            <Img src={imageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
           </KenBurns>
         </div>
       </AbsoluteFill>
@@ -171,14 +172,15 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
               borderRadius: 12,
               overflow: 'hidden',
               boxShadow: '0 35px 70px -15px rgba(0, 0, 0, 0.35)',
-              maxHeight: 780,
+              width: '100%',
+              height: 780,
             }}>
               <KenBurns step={eventIndex} intensity={0.7}>
                 <Img
                   src={imageUrl}
                   style={{
                     width: '100%',
-                    maxHeight: 780,
+                    height: '100%',
                     objectFit: 'cover',
                     objectPosition: 'top',
                   }}
