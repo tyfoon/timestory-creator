@@ -74,6 +74,10 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
         {event.audioUrl && (
           <Audio src={event.audioUrl} />
         )}
+        {/* Sound effect - plays at 25% volume under voiceover */}
+        {event.soundEffectAudioUrl && (
+          <Audio src={event.soundEffectAudioUrl} volume={0.25} />
+        )}
       </Sequence>
     );
     currentFrame += eventDuration;
