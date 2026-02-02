@@ -725,7 +725,7 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading }: HeroSe
 
   return (
     <motion.section 
-      className="min-h-screen flex flex-col items-center justify-center relative px-6 overflow-hidden"
+      className="min-h-screen flex flex-col items-center justify-center relative px-6 pb-24 overflow-hidden"
       style={{ opacity }}
     >
       {/* Background decorative year */}
