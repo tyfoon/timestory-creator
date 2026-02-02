@@ -25,6 +25,8 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
   fps,
   enableRetroEffect = false,
   retroIntensity = 1,
+  externalAudioUrl,
+  externalAudioDuration,
 }) => {
   let currentFrame = 0;
   const sequences: React.ReactNode[] = [];
@@ -46,8 +48,18 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
     return content;
   };
 
+  // Calculate if we're in "music video mode" (external audio drives timing)
+  const isMusicVideoMode = !!externalAudioUrl && !!externalAudioDuration;
+  
+  // In music video mode, calculate how long each event should be shown
+  const totalMusicFrames = isMusicVideoMode ? Math.round(externalAudioDuration * fps) : 0;
+  const framesPerEvent = isMusicVideoMode && events.length > 0 
+    ? Math.floor(totalMusicFrames / events.length) 
+    : 0;
+
   // Intro sequence
-  if (storyTitle) {
+  if (storyTitle && !isMusicVideoMode) {
+    // Skip intro in music video mode - the song IS the intro
     sequences.push(
       <Sequence key="intro" from={currentFrame} durationInFrames={introDurationFrames}>
         {wrapContent(<IntroCard storyTitle={storyTitle} storyIntroduction={storyIntroduction} />)}
@@ -59,6 +71,15 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
     currentFrame += introDurationFrames;
   }
 
+  // Add external audio track (full duration) for music video mode
+  if (isMusicVideoMode && externalAudioUrl) {
+    sequences.push(
+      <Sequence key="external-audio" from={0} durationInFrames={totalMusicFrames}>
+        <Audio src={externalAudioUrl} />
+      </Sequence>
+    );
+  }
+
   // Event sequences
   let lastYear: number | null = null;
   
@@ -68,24 +89,31 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
   const periodLabel = firstYear && lastEventYear ? `${firstYear}–${lastEventYear}` : undefined;
   
   events.forEach((event, index) => {
-    // Add year transition if year changed
-    if (lastYear !== null && event.year !== lastYear) {
-      sequences.push(
-        <Sequence
-          key={`transition-${event.id}`}
-          from={currentFrame}
-          durationInFrames={TRANSITION_DURATION_FRAMES}
-        >
-          {wrapContent(<TransitionSlide year={event.year} durationFrames={TRANSITION_DURATION_FRAMES} />)}
-        </Sequence>
-      );
-      currentFrame += TRANSITION_DURATION_FRAMES;
+    // In music video mode, skip year transitions for smoother flow
+    if (!isMusicVideoMode) {
+      // Add year transition if year changed
+      if (lastYear !== null && event.year !== lastYear) {
+        sequences.push(
+          <Sequence
+            key={`transition-${event.id}`}
+            from={currentFrame}
+            durationInFrames={TRANSITION_DURATION_FRAMES}
+          >
+            {wrapContent(<TransitionSlide year={event.year} durationFrames={TRANSITION_DURATION_FRAMES} />)}
+          </Sequence>
+        );
+        currentFrame += TRANSITION_DURATION_FRAMES;
+      }
     }
     lastYear = event.year;
 
     // Event card
     const imageUrl = getEventImageUrl(event);
-    const eventDuration = event.audioDurationFrames || Math.round(5 * fps); // Default 5 seconds
+    
+    // In music video mode, each event gets equal time. Otherwise use audio duration.
+    const eventDuration = isMusicVideoMode 
+      ? framesPerEvent 
+      : (event.audioDurationFrames || Math.round(5 * fps));
 
     // Main event sequence with voiceover
     // Use RetroCard when retro effect is enabled, otherwise use EventCard
@@ -101,15 +129,16 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
           <CardComponent event={event} imageUrl={imageUrl} eventIndex={index} periodLabel={periodLabel} />,
           event.date // Pass date for camcorder overlay
         )}
-        {event.audioUrl && (
+        {/* Only add individual audio in non-music-video mode */}
+        {!isMusicVideoMode && event.audioUrl && (
           <Audio src={event.audioUrl} />
         )}
       </Sequence>
     );
 
-    // Sound effect sequence - delayed start (2 seconds after voiceover begins)
-    // Only add if sound effect exists and event is long enough for the delay
-    if (event.soundEffectAudioUrl && eventDuration > SOUND_EFFECT_DELAY_FRAMES) {
+    // Sound effect sequence - only in non-music-video mode
+    // In music video mode, the song provides all audio
+    if (!isMusicVideoMode && event.soundEffectAudioUrl && eventDuration > SOUND_EFFECT_DELAY_FRAMES) {
       sequences.push(
         <Sequence
           key={`sfx-${event.id}`}
@@ -129,12 +158,19 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
 
 /**
  * Calculate total duration of the video based on events.
+ * If externalAudioDuration is provided (music video mode), that becomes the total duration.
  */
 export const calculateTotalDuration = (
   events: VideoEvent[],
   introDurationFrames: number,
-  fps: number
+  fps: number,
+  externalAudioDuration?: number
 ): number => {
+  // In music video mode, the external audio duration is the total
+  if (externalAudioDuration) {
+    return Math.round(externalAudioDuration * fps);
+  }
+
   let total = introDurationFrames;
   let lastYear: number | null = null;
 
