@@ -29,6 +29,10 @@ interface VideoDialogProps {
   events: TimelineEvent[];
   storyTitle?: string;
   storyIntroduction?: string;
+  /** Background music URL (e.g., from Suno AI) */
+  backgroundMusicUrl?: string;
+  /** Duration of background music in seconds */
+  backgroundMusicDuration?: number;
 }
 
 // Fetch sound effect from Freesound and proxy it to avoid CORS issues
@@ -92,6 +96,8 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
   events,
   storyTitle,
   storyIntroduction,
+  backgroundMusicUrl,
+  backgroundMusicDuration,
 }) => {
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [audioProgress, setAudioProgress] = useState(0);
@@ -191,8 +197,16 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
     }
   }, [events, storyIntroduction]);
 
-  // Calculate total video duration based on variant
+  // Check if we're in music video mode (background music provided)
+  const isMusicVideoMode = !!backgroundMusicUrl && !!backgroundMusicDuration;
+
+  // Calculate total video duration based on variant and music mode
   const totalDuration = useMemo(() => {
+    // In music video mode, the music duration drives the video
+    if (isMusicVideoMode) {
+      return Math.round(backgroundMusicDuration * FPS);
+    }
+    
     if (!isReady || videoEvents.length === 0) {
       return 300; // Default 10 seconds
     }
@@ -201,7 +215,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
       return calculateScrapbookDuration(videoEvents, introDurationFrames, FPS);
     }
     return calculateTotalDuration(videoEvents, introDurationFrames, FPS);
-  }, [videoEvents, introDurationFrames, isReady, videoVariant]);
+  }, [videoEvents, introDurationFrames, isReady, videoVariant, isMusicVideoMode, backgroundMusicDuration]);
 
   // Count sound effects found
   const soundEffectsCount = useMemo(() => {
@@ -236,8 +250,22 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Music Video Mode Banner */}
+          {isMusicVideoMode && (
+            <div className="flex items-center gap-3 p-4 bg-primary/10 border border-primary/30 rounded-lg">
+              <Music className="h-5 w-5 text-primary" />
+              <div className="flex-1">
+                <p className="font-medium text-primary">🎵 Muziekvideo Modus</p>
+                <p className="text-sm text-muted-foreground">
+                  Je gegenereerde song wordt als achtergrondmuziek gebruikt. 
+                  Duur: {Math.floor(backgroundMusicDuration / 60)}:{String(Math.floor(backgroundMusicDuration % 60)).padStart(2, '0')}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Step 1: Generate Audio */}
-          {!isReady && (
+          {!isReady && !isMusicVideoMode && (
             <div className="space-y-4">
               <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
                 <Volume2 className="h-5 w-5 text-muted-foreground" />
@@ -346,22 +374,27 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
             </div>
           )}
 
-          {/* Step 2: Video Preview */}
-          {isReady && (
+          {/* Step 2: Video Preview - shown when ready OR in music video mode */}
+          {(isReady || isMusicVideoMode) && (
             <div className="space-y-4">
               <div className="aspect-video bg-black rounded-lg overflow-hidden">
                 <Player
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   component={videoVariant === 'scrapbook' ? ScrapbookVideoComponent as any : TimelineVideoComponent as any}
                   inputProps={{
-                    events: videoEvents,
+                    events: isMusicVideoMode 
+                      ? events.map(e => ({ ...e, audioDurationFrames: Math.round(5 * FPS) })) as VideoEvent[]
+                      : videoEvents,
                     storyTitle,
-                    storyIntroduction,
-                    introAudioUrl,
-                    introDurationFrames,
+                    storyIntroduction: isMusicVideoMode ? undefined : storyIntroduction,
+                    introAudioUrl: isMusicVideoMode ? undefined : introAudioUrl,
+                    introDurationFrames: isMusicVideoMode ? 0 : introDurationFrames,
                     fps: FPS,
                     enableRetroEffect: enableVhsEffect,
                     retroIntensity: 0.85,
+                    // Music video mode: use external audio
+                    externalAudioUrl: isMusicVideoMode ? backgroundMusicUrl : undefined,
+                    externalAudioDuration: isMusicVideoMode ? backgroundMusicDuration : undefined,
                   }}
                   durationInFrames={totalDuration}
                   compositionWidth={1920}

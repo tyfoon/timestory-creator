@@ -46,6 +46,8 @@ export const ScrapbookVideoComponent: React.FC<TimelineVideoProps> = ({
   fps,
   enableRetroEffect = true,
   retroIntensity = 0.85,
+  externalAudioUrl,
+  externalAudioDuration,
 }) => {
   const { durationInFrames } = useVideoConfig();
 
@@ -81,56 +83,71 @@ export const ScrapbookVideoComponent: React.FC<TimelineVideoProps> = ({
     return content;
   };
 
+  // Check if we're in music video mode (external audio)
+  const isMusicVideoMode = !!externalAudioUrl && !!externalAudioDuration;
+  const totalMusicFrames = isMusicVideoMode ? Math.round(externalAudioDuration * fps) : 0;
+
   // Build audio sequences with J-cut timing
   const audioSequences: React.ReactNode[] = [];
-  let audioFrame = introDurationFrames;
+  let audioFrame = isMusicVideoMode ? 0 : introDurationFrames;
 
-  // Intro audio
-  if (introAudioUrl) {
+  // In music video mode, add the external audio as the only audio track
+  if (isMusicVideoMode && externalAudioUrl) {
     audioSequences.push(
-      <Sequence key="intro-audio" from={0} durationInFrames={introDurationFrames}>
-        <Audio src={introAudioUrl} />
+      <Sequence key="external-audio" from={0} durationInFrames={totalMusicFrames}>
+        <Audio src={externalAudioUrl} />
       </Sequence>
     );
+  } else {
+    // Regular mode: intro audio + event audio
+
+    // Intro audio
+    if (introAudioUrl) {
+      audioSequences.push(
+        <Sequence key="intro-audio" from={0} durationInFrames={introDurationFrames}>
+          <Audio src={introAudioUrl} />
+        </Sequence>
+      );
+    }
+
+    // Event audio with J-cut (starts early)
+    events.forEach((event, index) => {
+      const eventDuration = event.audioDurationFrames || Math.round(5 * fps);
+      
+      // J-cut: audio starts J_CUT_FRAMES before the visual transition
+      // But not for the first event (no previous card to cut from)
+      const audioStartFrame = index === 0 
+        ? audioFrame 
+        : Math.max(0, audioFrame - J_CUT_FRAMES);
+
+      if (event.audioUrl) {
+        audioSequences.push(
+          <Sequence
+            key={`audio-${event.id}`}
+            from={audioStartFrame}
+            durationInFrames={eventDuration + (index === 0 ? 0 : J_CUT_FRAMES)}
+          >
+            <Audio src={event.audioUrl} />
+          </Sequence>
+        );
+      }
+
+      // Sound effects with delay
+      if (event.soundEffectAudioUrl && eventDuration > SOUND_EFFECT_DELAY_FRAMES) {
+        audioSequences.push(
+          <Sequence
+            key={`sfx-${event.id}`}
+            from={audioFrame + SOUND_EFFECT_DELAY_FRAMES}
+            durationInFrames={eventDuration - SOUND_EFFECT_DELAY_FRAMES}
+          >
+            <Audio src={event.soundEffectAudioUrl} volume={0.2} />
+          </Sequence>
+        );
+      }
+
+      audioFrame += eventDuration;
+    });
   }
-
-  // Event audio with J-cut (starts early)
-  events.forEach((event, index) => {
-    const eventDuration = event.audioDurationFrames || Math.round(5 * fps);
-    
-    // J-cut: audio starts J_CUT_FRAMES before the visual transition
-    // But not for the first event (no previous card to cut from)
-    const audioStartFrame = index === 0 
-      ? audioFrame 
-      : Math.max(0, audioFrame - J_CUT_FRAMES);
-
-    if (event.audioUrl) {
-      audioSequences.push(
-        <Sequence
-          key={`audio-${event.id}`}
-          from={audioStartFrame}
-          durationInFrames={eventDuration + (index === 0 ? 0 : J_CUT_FRAMES)}
-        >
-          <Audio src={event.audioUrl} />
-        </Sequence>
-      );
-    }
-
-    // Sound effects with delay
-    if (event.soundEffectAudioUrl && eventDuration > SOUND_EFFECT_DELAY_FRAMES) {
-      audioSequences.push(
-        <Sequence
-          key={`sfx-${event.id}`}
-          from={audioFrame + SOUND_EFFECT_DELAY_FRAMES}
-          durationInFrames={eventDuration - SOUND_EFFECT_DELAY_FRAMES}
-        >
-          <Audio src={event.soundEffectAudioUrl} volume={0.2} />
-        </Sequence>
-      );
-    }
-
-    audioFrame += eventDuration;
-  });
 
   // Main visual composition
   const mainContent = (

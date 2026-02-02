@@ -398,13 +398,15 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Video Dialog - Uses Remotion with the generated audio as background music */}
+      {/* Video Dialog - Uses Remotion with the generated Suno audio as background music */}
       <VideoDialog
         open={isVideoDialogOpen}
         onOpenChange={setIsVideoDialogOpen}
         events={events}
         storyTitle={result?.title || `Jouw jaren ${startYear}-${endYear}`}
         storyIntroduction={summary}
+        backgroundMusicUrl={result?.audioUrl}
+        backgroundMusicDuration={result?.duration}
       />
     </>
   );
