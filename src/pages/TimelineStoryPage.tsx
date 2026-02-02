@@ -7,7 +7,7 @@ import { generateTimelineStreaming } from '@/lib/api/timeline';
 import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents } from '@/lib/timelineCache';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ArrowLeft, ChevronDown, Loader2, AlertCircle, RefreshCw, Clock, Ban } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Loader2, AlertCircle, RefreshCw, Clock, Ban, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getCacheKey } from '@/lib/timelineCache';
@@ -15,6 +15,7 @@ import { DebugInfoDialog } from '@/components/DebugInfoDialog';
 import { PromptViewerDialog } from '@/components/PromptViewerDialog';
 import { MediaButtons } from '@/components/story/MediaButtons';
 import { addToBlacklist } from '@/hooks/useImageBlacklist';
+import { VideoDialog } from '@/components/video/VideoDialog';
 
 // Placeholder images by category
 import birthdayPlaceholder from '@/assets/placeholders/birthday.jpg';
@@ -847,6 +848,7 @@ const TimelineStoryPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentYear, setCurrentYear] = useState<number | null>(null);
   const [currentMaxEvents, setCurrentMaxEvents] = useState<number | undefined>(undefined);
+  const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   
   const formDataRef = useRef<FormData | null>(null);
   const receivedEventsRef = useRef<TimelineEvent[]>([]);
@@ -1189,6 +1191,19 @@ const TimelineStoryPage = () => {
             </button>
             
             <div className="flex items-center gap-2">
+              {/* Video button */}
+              {events.length > 0 && !isLoading && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsVideoDialogOpen(true)}
+                  className="h-7 px-2.5 text-xs gap-1.5"
+                >
+                  <Video className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Maak Video</span>
+                </Button>
+              )}
+
               {/* Debug dialogs */}
               {events.length > 0 && !isLoading && (
                 <>
@@ -1283,6 +1298,15 @@ const TimelineStoryPage = () => {
           </Reveal>
         </footer>
       )}
+
+      {/* Video Dialog */}
+      <VideoDialog
+        open={isVideoDialogOpen}
+        onOpenChange={setIsVideoDialogOpen}
+        events={events}
+        storyTitle={storyTitle}
+        storyIntroduction={storyIntroduction}
+      />
     </div>
   );
 };
