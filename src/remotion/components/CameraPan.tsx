@@ -73,7 +73,7 @@ export const CameraPan: React.FC<CameraPanProps> = ({
 
   // Transition and animation settings
   const TRANSITION_FRAMES = 30; // 1 second swoosh at 30fps
-  const INITIAL_ZOOM_FRAMES = 45; // 1.5 seconds for initial zoom-in
+  const INITIAL_ZOOM_FRAMES = 60; // 2 seconds for initial zoom-in
 
   // Calculate camera position and scale
   const calculateCameraTransform = () => {
@@ -99,9 +99,9 @@ export const CameraPan: React.FC<CameraPanProps> = ({
         },
       });
 
-      // Start zoomed out showing overview, zoom in to first card
-      const startScale = 0.25;
-      const endScale = 0.85;
+      // Start with full canvas view, zoom in dramatically to first card
+      const startScale = 0.18; // Show more of the canvas initially
+      const endScale = 1.1; // Zoom in closer to cards
       const scale = interpolate(zoomProgress, [0, 1], [startScale, endScale]);
 
       const firstCard = cardPositions[0] || { x: canvasWidth / 2, y: canvasHeight / 2 };
@@ -143,27 +143,27 @@ export const CameraPan: React.FC<CameraPanProps> = ({
       targetX = interpolate(transitionProgress, [0, 1], [prevEvent.centerX, currentEvent.centerX]);
       targetY = interpolate(transitionProgress, [0, 1], [prevEvent.centerY, currentEvent.centerY]);
 
-      // Zoom out during mid-transition, then back in (creates swoosh feel)
+      // Zoom out during mid-transition for dramatic swoosh, staying closer overall
       scale = interpolate(
         transitionProgress,
         [0, 0.3, 0.5, 0.7, 1],
-        [0.88, 0.65, 0.55, 0.65, 0.88]
+        [1.15, 0.75, 0.6, 0.75, 1.15]
       );
     } else {
-      // KEN BURNS: Slow drift while viewing current card
+      // KEN BURNS: Slow drift while viewing current card - more dramatic zoom
       const restStartFrame = prevEvent ? TRANSITION_FRAMES : INITIAL_ZOOM_FRAMES;
       const restFrame = Math.max(0, frameInEvent - restStartFrame);
       const restDuration = Math.max(1, eventDuration - restStartFrame);
       const driftProgress = Math.min(1, restFrame / restDuration);
 
       // Subtle position drift (sine wave for smooth back-and-forth)
-      const driftAmplitude = 25;
+      const driftAmplitude = 20;
       const driftX = Math.sin(driftProgress * Math.PI * 2) * driftAmplitude;
-      const driftY = Math.cos(driftProgress * Math.PI) * (driftAmplitude * 0.6);
+      const driftY = Math.cos(driftProgress * Math.PI) * (driftAmplitude * 0.5);
 
-      // Slow zoom in during viewing
-      const zoomStart = 0.85;
-      const zoomEnd = 0.95;
+      // More dramatic zoom in during viewing (1.1 → 1.35)
+      const zoomStart = 1.1;
+      const zoomEnd = 1.4;
       scale = interpolate(driftProgress, [0, 1], [zoomStart, zoomEnd], {
         extrapolateRight: 'clamp',
       });
