@@ -37,7 +37,7 @@ export const EVENT_CATEGORIES = [
 export const GET_NOSTALGIA_INSTRUCTIONS = (geoFocus: string) => {
   // Vertaal de technische focus naar leesbare regio-context
   const regionMap: Record<string, string> = {
-    netherlands: "Nederland (specifiek de Nederlandse polder-cultuur)",
+    netherlands: "Nederland en gebruik de context van de plaats en provenciaal versus stad",
     europe: "Europa (focus op lokale culturen, geen Amerikaanse dominantie)",
     world: "Internationaal / Wereldwijd",
     usa: "Verenigde Staten", // Voor het geval je dit later toevoegt
