@@ -367,8 +367,8 @@ const LayoutShout = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPattern
         </span>
       </motion.div>
       
-      {/* Content overlay */}
-      <div className="relative z-10 text-center max-w-4xl mx-auto px-6">
+      {/* Content overlay - must be above floating image (z-20 -> z-30) */}
+      <div className="relative z-30 text-center max-w-4xl mx-auto px-6">
         <motion.span
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -576,12 +576,12 @@ const LayoutOverlap = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatte
           />
         </motion.div>
         
-        {/* Text overlapping from left */}
+        {/* Text overlapping from left - must be above image */}
         <motion.div
           initial={{ opacity: 0, x: -40 }}
           animate={isInView ? { opacity: 1, x: 0 } : {}}
           transition={{ delay: 0.4, duration: 0.8 }}
-          className="absolute left-0 top-1/2 -translate-y-1/2 w-full sm:w-2/3 lg:w-1/2 z-10"
+          className="absolute left-0 top-1/2 -translate-y-1/2 w-full sm:w-2/3 lg:w-1/2 z-20"
         >
           <div className="bg-background/95 backdrop-blur-md p-6 sm:p-10 lg:p-12 rounded-r-2xl shadow-2xl space-y-4">
             <span className={`${theme.fontMono} text-xs uppercase tracking-[0.3em] text-muted-foreground block`}>
