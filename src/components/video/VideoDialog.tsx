@@ -52,11 +52,11 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
         try {
           const introResult = await generateSpeech({ 
             text: storyIntroduction,
-            speakingRate: 0.95 // Slightly slower for storytelling
+            speakingRate: 1.0 // Normal pace for snappier intro
           });
           newIntroAudioUrl = base64ToAudioUrl(introResult.audioContent);
-          // Minimal buffer - just 0.5 seconds after intro audio
-          newIntroDurationFrames = Math.round(introResult.estimatedDurationSeconds * FPS) + 15;
+          // Tight buffer - audio ends, next starts almost immediately
+          newIntroDurationFrames = Math.round(introResult.estimatedDurationSeconds * FPS) + 5; // Only 5 frames (~0.16s) buffer
           completed++;
           setAudioProgress((completed / totalSegments) * 100);
         } catch (error) {
@@ -78,8 +78,8 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
         try {
           const result = await generateSpeech({ text: speechText });
           audioUrl = base64ToAudioUrl(result.audioContent);
-          // Minimal buffer - just 0.3 seconds after audio ends
-          audioDurationFrames = Math.round(result.estimatedDurationSeconds * FPS) + 10;
+          // Tight buffer - almost no gap between events
+          audioDurationFrames = Math.round(result.estimatedDurationSeconds * FPS) + 3; // Only 3 frames (~0.1s) buffer
         } catch (error) {
           console.error(`Failed to generate audio for event ${event.id}:`, error);
           // Use default duration if audio fails

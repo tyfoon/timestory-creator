@@ -5,61 +5,65 @@ import { EventCardProps } from '../types';
 /**
  * Playful event card for Remotion video with varied layouts.
  * Inspired by the editorial patterns from TimelineStoryPage.
+ * Features dramatic typography with extreme font size contrasts.
  */
 export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventIndex, periodLabel }) => {
   const frame = useCurrentFrame();
   
-  // Animation values
-  const fadeIn = interpolate(frame, [0, 15], [0, 1], { extrapolateRight: 'clamp' });
-  const titleY = interpolate(frame, [5, 20], [25, 0], { extrapolateRight: 'clamp' });
-  const descOpacity = interpolate(frame, [12, 25], [0, 1], { extrapolateRight: 'clamp' });
-  const imageScale = interpolate(frame, [0, 20], [1.05, 1], { extrapolateRight: 'clamp' });
+  // Animation values - snappy entrance
+  const fadeIn = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: 'clamp' });
+  const titleY = interpolate(frame, [3, 15], [30, 0], { extrapolateRight: 'clamp' });
+  const descOpacity = interpolate(frame, [8, 18], [0, 1], { extrapolateRight: 'clamp' });
+  const imageScale = interpolate(frame, [0, 15], [1.08, 1], { extrapolateRight: 'clamp' });
+  const letterSpacing = interpolate(frame, [0, 20], [20, 0], { extrapolateRight: 'clamp' });
 
   // Rotate between 3 layout patterns
   const layoutPattern = eventIndex % 3;
 
-  // Shared period badge (top-right)
+  // Shared styles - editorial typography inspired by TimelineStoryPage
+  const fontSerif = 'Georgia, "Times New Roman", serif';
+  const fontSans = 'system-ui, -apple-system, "Segoe UI", sans-serif';
+  const fontMono = 'ui-monospace, SFMono-Regular, "SF Mono", monospace';
+
+  // Period badge (top-right) - minimal, elegant
   const PeriodBadge = () => (
     <div style={{
       position: 'absolute',
       top: 40,
       right: 50,
-      fontFamily: 'ui-monospace, SFMono-Regular, monospace',
-      fontSize: 14,
+      fontFamily: fontMono,
+      fontSize: 13,
       textTransform: 'uppercase',
-      letterSpacing: '0.15em',
-      color: 'rgba(100, 100, 100, 0.8)',
-      padding: '8px 16px',
-      borderRadius: 4,
-      backgroundColor: 'rgba(245, 245, 240, 0.9)',
-      backdropFilter: 'blur(4px)',
+      letterSpacing: '0.2em',
+      color: 'rgba(80, 80, 80, 0.7)',
       zIndex: 50,
     }}>
       {periodLabel || `${event.year}`}
     </div>
   );
 
-  // Layout 0: "THE SHOUT" - Giant year background, centered text
+  // Layout 0: "THE SHOUT" - Giant year background, massive title, minimal image
   if (layoutPattern === 0) {
     return (
-      <AbsoluteFill style={{ backgroundColor: '#f5f5f0', opacity: fadeIn }}>
+      <AbsoluteFill style={{ backgroundColor: '#f8f8f5', opacity: fadeIn }}>
         <PeriodBadge />
         
-        {/* Giant background year */}
+        {/* Giant background year - extreme scale like TimelineStoryPage */}
         <div style={{
           position: 'absolute',
           inset: 0,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          opacity: 0.04,
+          opacity: 0.03,
         }}>
           <span style={{
-            fontFamily: 'ui-serif, Georgia, serif',
-            fontSize: 500,
+            fontFamily: fontSerif,
+            fontSize: 650,
             fontWeight: 900,
             color: '#1a1a1a',
-            lineHeight: 0.8,
+            lineHeight: 0.75,
+            letterSpacing: '-0.05em',
           }}>
             {event.year}
           </span>
@@ -74,41 +78,43 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: 80,
+          padding: '60px 100px',
           textAlign: 'center',
         }}>
-          {/* Date */}
+          {/* Date - tiny monospace with extreme letter-spacing */}
           <div style={{
-            fontFamily: 'ui-monospace, SFMono-Regular, monospace',
-            fontSize: 14,
+            fontFamily: fontMono,
+            fontSize: 11,
             textTransform: 'uppercase',
-            letterSpacing: '0.3em',
+            letterSpacing: `${0.3 + letterSpacing * 0.01}em`,
             color: '#888',
-            marginBottom: 24,
+            marginBottom: 30,
           }}>
             {event.date}
           </div>
           
-          {/* Title */}
+          {/* Title - MASSIVE, bold serif */}
           <h1 style={{
-            fontFamily: 'ui-serif, Georgia, serif',
-            fontSize: 72,
+            fontFamily: fontSerif,
+            fontSize: 90,
             fontWeight: 900,
             color: '#1a1a1a',
-            lineHeight: 1.0,
-            marginBottom: 32,
-            maxWidth: 900,
+            lineHeight: 0.95,
+            marginBottom: 35,
+            maxWidth: 1000,
             transform: `translateY(${titleY}px)`,
+            letterSpacing: '-0.02em',
           }}>
             {event.title}
           </h1>
           
-          {/* Description */}
+          {/* Description - light sans, generous line height */}
           <p style={{
-            fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-            fontSize: 24,
+            fontFamily: fontSans,
+            fontSize: 22,
+            fontWeight: 300,
             color: '#555',
-            lineHeight: 1.6,
+            lineHeight: 1.7,
             maxWidth: 700,
             opacity: descOpacity,
           }}>
@@ -116,15 +122,15 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
           </p>
         </div>
         
-        {/* Small floating image - bottom right */}
+        {/* Small floating image - subtle, rotated */}
         <div style={{
           position: 'absolute',
           bottom: 50,
           right: 60,
-          width: 280,
-          transform: `rotate(3deg) scale(${imageScale})`,
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          borderRadius: 12,
+          width: 260,
+          transform: `rotate(2deg) scale(${imageScale})`,
+          boxShadow: '0 30px 60px -15px rgba(0, 0, 0, 0.25)',
+          borderRadius: 8,
           overflow: 'hidden',
         }}>
           <Img src={imageUrl} style={{ width: '100%', height: 'auto' }} />
@@ -133,40 +139,43 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
     );
   }
 
-  // Layout 1: "THE MAGAZINE" - Side-by-side with drop cap
+  // Layout 1: "THE MAGAZINE" - Side-by-side with massive drop cap
   if (layoutPattern === 1) {
+    const firstLetter = event.description.charAt(0).toUpperCase();
+    const restOfDescription = event.description.slice(1);
+    
     return (
-      <AbsoluteFill style={{ backgroundColor: '#f5f5f0', opacity: fadeIn }}>
+      <AbsoluteFill style={{ backgroundColor: '#f8f8f5', opacity: fadeIn }}>
         <PeriodBadge />
         
-        {/* Two-column layout */}
+        {/* Two-column magazine layout */}
         <div style={{
           display: 'flex',
           flexDirection: 'row',
           height: '100%',
-          padding: 60,
-          gap: 60,
+          padding: 50,
+          gap: 50,
         }}>
-          {/* Left: Image */}
+          {/* Left: Image with date badge */}
           <div style={{
-            flex: '0 0 50%',
+            flex: '0 0 48%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}>
             <div style={{
               position: 'relative',
-              borderRadius: 12,
+              borderRadius: 10,
               overflow: 'hidden',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              boxShadow: '0 30px 60px -15px rgba(0, 0, 0, 0.3)',
               transform: `scale(${imageScale})`,
-              maxHeight: 650,
+              maxHeight: 680,
             }}>
               <Img
                 src={imageUrl}
                 style={{
                   width: '100%',
-                  maxHeight: 650,
+                  maxHeight: 680,
                   objectFit: 'cover',
                   objectPosition: 'top',
                 }}
@@ -176,90 +185,97 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
                 position: 'absolute',
                 bottom: 20,
                 left: 20,
-                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                backgroundColor: 'rgba(0, 0, 0, 0.75)',
                 color: 'white',
-                padding: '10px 20px',
-                borderRadius: 24,
-                fontFamily: 'ui-monospace, SFMono-Regular, monospace',
-                fontSize: 14,
-                letterSpacing: '0.1em',
+                padding: '12px 24px',
+                borderRadius: 30,
+                fontFamily: fontMono,
+                fontSize: 12,
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase',
               }}>
                 {event.date}
               </div>
             </div>
           </div>
 
-          {/* Right: Text content */}
+          {/* Right: Text content with editorial styling */}
           <div style={{
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            paddingRight: 40,
+            paddingRight: 30,
           }}>
-            {/* Category */}
+            {/* Category - tiny, tracked out */}
             <div style={{
-              fontFamily: 'ui-monospace, SFMono-Regular, monospace',
-              fontSize: 12,
+              fontFamily: fontMono,
+              fontSize: 10,
               textTransform: 'uppercase',
-              letterSpacing: '0.2em',
-              color: '#888',
-              marginBottom: 20,
+              letterSpacing: '0.25em',
+              color: '#999',
+              marginBottom: 24,
             }}>
               {event.category}
             </div>
 
-            {/* Title */}
+            {/* Title - large serif, tight leading */}
             <h1 style={{
-              fontFamily: 'ui-serif, Georgia, serif',
-              fontSize: 52,
+              fontFamily: fontSerif,
+              fontSize: 58,
               fontWeight: 700,
               color: '#1a1a1a',
-              lineHeight: 1.1,
-              marginBottom: 28,
+              lineHeight: 1.05,
+              marginBottom: 30,
               transform: `translateY(${titleY}px)`,
+              letterSpacing: '-0.01em',
             }}>
               {event.title}
             </h1>
 
-            {/* Description with drop cap */}
-            <p style={{
-              fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-              fontSize: 22,
+            {/* Description with giant drop cap - magazine style */}
+            <div style={{
+              fontFamily: fontSans,
+              fontSize: 20,
+              fontWeight: 300,
               color: '#555',
-              lineHeight: 1.65,
+              lineHeight: 1.75,
               opacity: descOpacity,
             }}>
+              {/* Drop cap - massive serif initial */}
               <span style={{
-                fontFamily: 'ui-serif, Georgia, serif',
+                fontFamily: fontSerif,
                 float: 'left',
-                fontSize: 80,
-                fontWeight: 800,
-                lineHeight: 0.75,
-                marginRight: 14,
-                marginTop: 6,
+                fontSize: 100,
+                fontWeight: 900,
+                lineHeight: 0.7,
+                marginRight: 16,
+                marginTop: 8,
                 color: '#1a1a1a',
               }}>
-                {event.description.charAt(0)}
+                {firstLetter}
               </span>
-              {event.description.slice(1)}
-            </p>
+              {restOfDescription}
+            </div>
           </div>
         </div>
       </AbsoluteFill>
     );
   }
 
-  // Layout 2: "THE WHISPER" - Large image, text overlay card
+  // Layout 2: "THE WHISPER" - Large image, floating text card with elegant type
   return (
-    <AbsoluteFill style={{ backgroundColor: '#f5f5f0', opacity: fadeIn }}>
+    <AbsoluteFill style={{ backgroundColor: '#f8f8f5', opacity: fadeIn }}>
       <PeriodBadge />
       
-      {/* Large background image */}
+      {/* Large background image - fills most of frame */}
       <div style={{
         position: 'absolute',
-        inset: 80,
-        borderRadius: 20,
+        top: 60,
+        left: 60,
+        right: 60,
+        bottom: 60,
+        borderRadius: 16,
         overflow: 'hidden',
         transform: `scale(${imageScale})`,
       }}>
@@ -274,50 +290,51 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
         />
       </div>
       
-      {/* Text overlay card - bottom left */}
+      {/* Elegant floating text card - bottom left */}
       <div style={{
         position: 'absolute',
-        bottom: 100,
-        left: 100,
-        maxWidth: 500,
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        backdropFilter: 'blur(8px)',
-        padding: 40,
-        borderRadius: 16,
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)',
+        bottom: 80,
+        left: 80,
+        maxWidth: 480,
+        backgroundColor: 'rgba(255, 255, 255, 0.97)',
+        backdropFilter: 'blur(12px)',
+        padding: '35px 40px',
+        borderRadius: 12,
+        boxShadow: '0 30px 60px -15px rgba(0, 0, 0, 0.2)',
         zIndex: 20,
       }}>
-        {/* Date */}
+        {/* Date - whisper small */}
         <div style={{
-          fontFamily: 'ui-monospace, SFMono-Regular, monospace',
-          fontSize: 11,
+          fontFamily: fontMono,
+          fontSize: 10,
           textTransform: 'uppercase',
-          letterSpacing: '0.2em',
+          letterSpacing: '0.25em',
           color: '#888',
-          marginBottom: 12,
+          marginBottom: 14,
         }}>
           {event.date}
         </div>
         
-        {/* Title */}
+        {/* Title - medium serif, weighted */}
         <h1 style={{
-          fontFamily: 'ui-serif, Georgia, serif',
-          fontSize: 32,
+          fontFamily: fontSerif,
+          fontSize: 34,
           fontWeight: 700,
           color: '#1a1a1a',
           lineHeight: 1.15,
-          marginBottom: 16,
+          marginBottom: 18,
           transform: `translateY(${titleY}px)`,
         }}>
           {event.title}
         </h1>
         
-        {/* Description */}
+        {/* Description - light, airy */}
         <p style={{
-          fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-          fontSize: 17,
+          fontFamily: fontSans,
+          fontSize: 16,
+          fontWeight: 300,
           color: '#666',
-          lineHeight: 1.6,
+          lineHeight: 1.7,
           opacity: descOpacity,
         }}>
           {event.description}

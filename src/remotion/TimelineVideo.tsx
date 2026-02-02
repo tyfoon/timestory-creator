@@ -6,7 +6,7 @@ import { IntroCard } from './components/IntroCard';
 import { TransitionSlide } from './components/TransitionSlide';
 import { getEventImageUrl } from './utils/placeholders';
 
-const TRANSITION_DURATION_FRAMES = 30; // ~1 second at 30fps
+const TRANSITION_DURATION_FRAMES = 15; // ~0.5 seconds at 30fps - snappy transitions
 
 /**
  * Main Remotion composition for the timeline video.
