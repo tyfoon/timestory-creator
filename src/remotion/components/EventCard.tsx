@@ -96,12 +96,12 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
           {/* Title - MASSIVE, bold serif */}
           <h1 style={{
             fontFamily: fontSerif,
-            fontSize: 90,
+            fontSize: 100,
             fontWeight: 900,
             color: '#1a1a1a',
             lineHeight: 0.95,
-            marginBottom: 35,
-            maxWidth: 1000,
+            marginBottom: 40,
+            maxWidth: 1100,
             transform: `translateY(${titleY}px)`,
             letterSpacing: '-0.02em',
           }}>
@@ -111,26 +111,26 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
           {/* Description - light sans, generous line height */}
           <p style={{
             fontFamily: fontSans,
-            fontSize: 22,
+            fontSize: 28,
             fontWeight: 300,
-            color: '#555',
-            lineHeight: 1.7,
-            maxWidth: 700,
+            color: '#444',
+            lineHeight: 1.65,
+            maxWidth: 800,
             opacity: descOpacity,
           }}>
             {event.description}
           </p>
         </div>
         
-        {/* Small floating image - subtle, rotated */}
+        {/* Floating image - larger, more prominent */}
         <div style={{
           position: 'absolute',
-          bottom: 50,
-          right: 60,
-          width: 260,
+          bottom: 40,
+          right: 50,
+          width: 380,
           transform: `rotate(2deg) scale(${imageScale})`,
-          boxShadow: '0 30px 60px -15px rgba(0, 0, 0, 0.25)',
-          borderRadius: 8,
+          boxShadow: '0 35px 70px -15px rgba(0, 0, 0, 0.3)',
+          borderRadius: 10,
           overflow: 'hidden',
         }}>
           <Img src={imageUrl} style={{ width: '100%', height: 'auto' }} />
@@ -158,24 +158,24 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
         }}>
           {/* Left: Image with date badge */}
           <div style={{
-            flex: '0 0 48%',
+            flex: '0 0 52%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}>
             <div style={{
               position: 'relative',
-              borderRadius: 10,
+              borderRadius: 12,
               overflow: 'hidden',
-              boxShadow: '0 30px 60px -15px rgba(0, 0, 0, 0.3)',
+              boxShadow: '0 35px 70px -15px rgba(0, 0, 0, 0.35)',
               transform: `scale(${imageScale})`,
-              maxHeight: 680,
+              maxHeight: 780,
             }}>
               <Img
                 src={imageUrl}
                 style={{
                   width: '100%',
-                  maxHeight: 680,
+                  maxHeight: 780,
                   objectFit: 'cover',
                   objectPosition: 'top',
                 }}
@@ -183,14 +183,14 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
               {/* Date badge on image */}
               <div style={{
                 position: 'absolute',
-                bottom: 20,
-                left: 20,
-                backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                bottom: 25,
+                left: 25,
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
                 color: 'white',
-                padding: '12px 24px',
+                padding: '14px 28px',
                 borderRadius: 30,
                 fontFamily: fontMono,
-                fontSize: 12,
+                fontSize: 14,
                 letterSpacing: '0.15em',
                 textTransform: 'uppercase',
               }}>
@@ -222,11 +222,11 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
             {/* Title - large serif, tight leading */}
             <h1 style={{
               fontFamily: fontSerif,
-              fontSize: 58,
+              fontSize: 68,
               fontWeight: 700,
               color: '#1a1a1a',
               lineHeight: 1.05,
-              marginBottom: 30,
+              marginBottom: 35,
               transform: `translateY(${titleY}px)`,
               letterSpacing: '-0.01em',
             }}>
@@ -236,21 +236,21 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
             {/* Description with giant drop cap - magazine style */}
             <div style={{
               fontFamily: fontSans,
-              fontSize: 20,
+              fontSize: 26,
               fontWeight: 300,
-              color: '#555',
-              lineHeight: 1.75,
+              color: '#444',
+              lineHeight: 1.7,
               opacity: descOpacity,
             }}>
               {/* Drop cap - massive serif initial */}
               <span style={{
                 fontFamily: fontSerif,
                 float: 'left',
-                fontSize: 100,
+                fontSize: 120,
                 fontWeight: 900,
                 lineHeight: 0.7,
-                marginRight: 16,
-                marginTop: 8,
+                marginRight: 18,
+                marginTop: 10,
                 color: '#1a1a1a',
               }}>
                 {firstLetter}
@@ -290,27 +290,27 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
         />
       </div>
       
-      {/* Elegant floating text card - bottom left */}
+      {/* Elegant floating text card - bottom left, larger */}
       <div style={{
         position: 'absolute',
-        bottom: 80,
-        left: 80,
-        maxWidth: 480,
+        bottom: 70,
+        left: 70,
+        maxWidth: 580,
         backgroundColor: 'rgba(255, 255, 255, 0.97)',
         backdropFilter: 'blur(12px)',
-        padding: '35px 40px',
-        borderRadius: 12,
-        boxShadow: '0 30px 60px -15px rgba(0, 0, 0, 0.2)',
+        padding: '40px 48px',
+        borderRadius: 14,
+        boxShadow: '0 35px 70px -15px rgba(0, 0, 0, 0.25)',
         zIndex: 20,
       }}>
         {/* Date - whisper small */}
         <div style={{
           fontFamily: fontMono,
-          fontSize: 10,
+          fontSize: 12,
           textTransform: 'uppercase',
           letterSpacing: '0.25em',
           color: '#888',
-          marginBottom: 14,
+          marginBottom: 16,
         }}>
           {event.date}
         </div>
@@ -318,11 +318,11 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
         {/* Title - medium serif, weighted */}
         <h1 style={{
           fontFamily: fontSerif,
-          fontSize: 34,
+          fontSize: 42,
           fontWeight: 700,
           color: '#1a1a1a',
           lineHeight: 1.15,
-          marginBottom: 18,
+          marginBottom: 22,
           transform: `translateY(${titleY}px)`,
         }}>
           {event.title}
@@ -331,9 +331,9 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
         {/* Description - light, airy */}
         <p style={{
           fontFamily: fontSans,
-          fontSize: 16,
+          fontSize: 22,
           fontWeight: 300,
-          color: '#666',
+          color: '#555',
           lineHeight: 1.7,
           opacity: descOpacity,
         }}>
