@@ -5,9 +5,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-// Official Suno API endpoint (NOT sunoapi.org but api.sunoapi.org)
+// Official Suno API endpoint
 const SUNO_API_BASE = "https://api.sunoapi.org";
-const MAX_POLL_ATTEMPTS = 60; // 5 minutes max (60 * 5 seconds)
+// Edge functions have execution time limits; stop polling as soon as we have a stream URL.
+// 25 * 5s = 125s max polling window.
+const MAX_POLL_ATTEMPTS = 25;
 const POLL_INTERVAL_MS = 5000;
 
 interface RequestBody {
@@ -35,10 +37,30 @@ interface SunoTrack {
   title?: string;
 }
 
-interface SunoStatusResponse {
+type SunoTaskStatus =
+  | 'PENDING'
+  | 'TEXT_SUCCESS'
+  | 'FIRST_SUCCESS'
+  | 'SUCCESS'
+  | 'CREATE_TASK_FAILED'
+  | 'GENERATE_AUDIO_FAILED'
+  | 'CALLBACK_EXCEPTION'
+  | 'SENSITIVE_WORD_ERROR'
+  | string;
+
+interface SunoRecordInfoResponse {
   code: number;
   msg: string;
-  data?: SunoTrack[];
+  data?: {
+    taskId: string;
+    status: SunoTaskStatus;
+    response?: {
+      taskId: string;
+      sunoData?: SunoTrack[];
+    };
+    errorCode?: string | null;
+    errorMessage?: string | null;
+  };
 }
 
 async function generateTrack(apiKey: string, lyrics: string, style: string, title: string): Promise<string> {
@@ -114,7 +136,9 @@ async function pollForCompletion(apiKey: string, taskId: string): Promise<SunoTr
     console.log(`Poll attempt ${attempt + 1}/${MAX_POLL_ATTEMPTS}`);
     
     try {
-      const response = await fetch(`${SUNO_API_BASE}/api/v1/generate/${taskId}`, {
+      // Per docs: GET /api/v1/generate/record-info?taskId=...
+      const url = `${SUNO_API_BASE}/api/v1/generate/record-info?taskId=${encodeURIComponent(taskId)}`;
+      const response = await fetch(url, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${apiKey}`,
@@ -127,30 +151,42 @@ async function pollForCompletion(apiKey: string, taskId: string): Promise<SunoTr
         continue;
       }
 
-      const data: SunoStatusResponse = await response.json();
-      console.log(`Poll response code: ${data.code}, msg: ${data.msg}`);
+       const data: SunoRecordInfoResponse = await response.json();
+       console.log(`Poll response code: ${data.code}, msg: ${data.msg}`);
 
-      if (data.code !== 200 || !data.data || data.data.length === 0) {
-        console.log("No tracks yet, waiting...");
+       if (data.code !== 200 || !data.data) {
+         console.log("No task info yet, waiting...");
         await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
         continue;
       }
 
-      // Get the first track (Suno generates 2 tracks per request)
-      const track = data.data[0];
-      console.log(`Track status: ${track.status}, hasAudioUrl: ${!!track.audioUrl}`);
-      
-      const status = track.status?.toLowerCase();
-      
-      // Check for completion - either explicit status or audioUrl present
-      if (status === 'complete' || status === 'streaming' || track.audioUrl) {
-        console.log(`Track completed! Audio URL: ${track.audioUrl}`);
-        return track;
-      }
+       const status = data.data.status;
+       const tracks = data.data.response?.sunoData ?? [];
+       const track = tracks[0]; // 2 tracks per request; we return the first
 
-      if (status === 'error' || status === 'failed') {
-        throw new Error(`Track generation failed: ${JSON.stringify(track)}`);
-      }
+       console.log(`Task status: ${status}; tracks: ${tracks.length}; hasStream: ${!!track?.streamAudioUrl}; hasAudio: ${!!track?.audioUrl}`);
+
+       // Fail fast on terminal error statuses
+       const statusLower = String(status).toLowerCase();
+       if (
+         statusLower.includes('failed') ||
+         statusLower.includes('error') ||
+         status === 'SENSITIVE_WORD_ERROR'
+       ) {
+         const details = {
+           status,
+           errorCode: data.data.errorCode,
+           errorMessage: data.data.errorMessage,
+         };
+         throw new Error(`Track generation failed: ${JSON.stringify(details)}`);
+       }
+
+       // IMPORTANT: streamAudioUrl is usually available much earlier than audioUrl.
+       // To avoid edge function timeouts, we return as soon as we have a playable URL.
+       if (track && (track.streamAudioUrl || track.audioUrl)) {
+         console.log(`Track playable! streamAudioUrl: ${track.streamAudioUrl}; audioUrl: ${track.audioUrl}`);
+         return track;
+       }
 
       // Still processing, wait and try again
       await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
@@ -161,7 +197,7 @@ async function pollForCompletion(apiKey: string, taskId: string): Promise<SunoTr
     }
   }
 
-  throw new Error("Track generation timed out after 5 minutes");
+  throw new Error("Track generation timed out while waiting for a playable URL");
 }
 
 serve(async (req) => {
@@ -208,7 +244,8 @@ serve(async (req) => {
       success: true,
       data: {
         taskId,
-        audioUrl: track.audioUrl,
+        // Backwards compatible: always provide a playable URL in audioUrl
+        audioUrl: track.audioUrl || track.streamAudioUrl,
         streamAudioUrl: track.streamAudioUrl,
         videoUrl: track.videoUrl,
         duration: track.duration,

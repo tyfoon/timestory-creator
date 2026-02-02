@@ -126,10 +126,15 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
       }
 
       setProgress(90);
-      return {
-        audioUrl: data.data.audioUrl,
-        duration: data.data.duration || 180,
-      };
+       const playableUrl = data?.data?.audioUrl || data?.data?.streamAudioUrl;
+       if (!playableUrl) {
+         throw new Error('Suno gaf geen afspeelbare audio URL terug');
+       }
+
+       return {
+         audioUrl: playableUrl,
+         duration: data.data.duration || 180,
+       };
     } catch (err) {
       clearInterval(progressInterval);
       throw err;
