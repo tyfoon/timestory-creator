@@ -8,8 +8,15 @@ const corsHeaders = {
 // Allowed audio sources for proxying
 const ALLOWED_HOSTS = [
   "freesound.org",
-  "musicfile.removeai.ai", // Suno AI audio
-  "cdn.sunoai.ai",         // Alternative Suno CDN
+  // Suno AI audio hosts - the API uses various CDN domains
+  "musicfile.removeai.ai",
+  "cdn.sunoai.ai",
+  "file.aiquickdraw.com",      // Primary Suno audio CDN
+  "cdn1.suno.ai",
+  "cdn2.suno.ai",
+  "audiopipe.suno.ai",
+  "suno.ai",
+  "sunoapi.org",
 ];
 
 /**
