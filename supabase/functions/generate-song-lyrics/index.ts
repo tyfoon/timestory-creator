@@ -21,10 +21,17 @@ interface PersonalData {
   city?: string;
 }
 
+interface SubcultureData {
+  myGroup: string | null;
+  otherGroupsFromEra: string;
+  availableOptions: string[];
+}
+
 interface RequestBody {
   events: TimelineEvent[];
   summary: string;
   personalData: PersonalData;
+  subculture?: SubcultureData;
   startYear: number;
   endYear: number;
 }
@@ -42,26 +49,138 @@ serve(async (req) => {
     }
 
     const body: RequestBody = await req.json();
-    const { events, summary, personalData, startYear, endYear } = body;
+    const { events, summary, personalData, subculture, startYear, endYear } = body;
 
     console.log(`Generating song lyrics for ${events.length} events, years ${startYear}-${endYear}`);
     console.log(`Personal data: friends=${personalData.friends}, school=${personalData.school}, nightlife=${personalData.nightlife}`);
+    console.log(`Subculture: ${subculture?.myGroup || 'none'}`);
 
-    // Determine music style based on era
-    const midYear = Math.round((startYear + endYear) / 2);
+    // Subculture to music style mapping - subculture is the PRIMARY determinant
+    const subcultureStyleMap: Record<string, string> = {
+      // 1950s
+      "Rock 'n' Roll": "1950s Rock 'n' Roll",
+      "Nozems": "Nederpop / Rock 'n' Roll",
+      "Elvis-fans": "Rockabilly",
+      "Beatniks": "Cool Jazz / Beat Poetry",
+      "Jazz-cats": "Bebop Jazz",
+      
+      // 1960s
+      "Beatlemania": "British Beat / Merseybeat",
+      "Beat-fans": "Beat muziek",
+      "Hippies": "Psychedelic Rock / Folk",
+      "Provos": "Protestlied / Folk",
+      "Mods": "British Mod / Northern Soul",
+      "Flower Power": "Psychedelic Pop",
+      
+      // 1970s
+      "Disco-fans": "Disco",
+      "Disco": "Disco / Funk",
+      "Glamrockers": "Glam Rock",
+      "Hardrockers": "Hard Rock / Heavy Metal",
+      "Punks": "Punk Rock",
+      "Soul/Funk": "Soul / Funk",
+      "Krakers": "Punk / New Wave",
+      "Northern Soulers": "Northern Soul",
+      "ABBA-fans": "Euro Disco / ABBA-style Pop",
+      "ABBA-mania": "Euro Disco Pop",
+      
+      // 1980s
+      "Doe Maar-fans": "Nederpop / Ska",
+      "Kakkers": "Synthpop / Yuppie Pop",
+      "New Wavers": "New Wave / Synthpop",
+      "New Romantics": "New Romantic / Synthpop",
+      "Metalheads": "Heavy Metal / Thrash",
+      "Breakers": "Electro / Breakbeat",
+      "B-Boys": "Old School Hip-Hop / Electro",
+      "Goths": "Gothic Rock / Darkwave",
+      "Gruftis": "Gothic Rock / Dark Wave",
+      "Yuppies": "Synthpop / Adult Contemporary",
+      "Casuals": "Madchester / Indie",
+      "Ravers": "Acid House / Rave",
+      "Preppies": "Pop / Soft Rock",
+      "Valley Girls": "Synth Pop / Teen Pop",
+      "Hair Metalers": "Glam Metal / Hair Metal",
+      "Paninari": "Italo Disco / Europop",
+      
+      // 1990s
+      "Gabbers": "Gabber / Hardcore Techno",
+      "Gabbertjes": "Happy Hardcore / Gabber",
+      "Grunge": "Grunge / Alternative Rock",
+      "Grunge-kids": "Grunge / Alternative",
+      "Techno/Rave": "Techno / Trance",
+      "Hiphoppers": "90s Hip-Hop / Boom Bap",
+      "Hip-hop heads": "East Coast Hip-Hop",
+      "Gangsta Rap": "West Coast Gangsta Rap",
+      "Britpop": "Britpop / Indie Rock",
+      "Boybands": "90s Boy Band Pop",
+      "Eurodance": "Eurodance / Happy Hardcore",
+      "Skaters": "Skate Punk / Pop Punk",
+      "Riot Grrrl": "Riot Grrrl / Punk",
+      "Love Parade": "Techno / Trance",
+      "Raver": "Rave / Trance",
+      
+      // 2000s
+      "Breezers": "R&B / Urban Pop",
+      "MSN-generatie": "Pop Punk / Emo Pop",
+      "Emo": "Emo / Post-Hardcore",
+      "Scene-kids": "Screamo / Metalcore",
+      "Jumpstyle": "Jumpstyle / Hardstyle",
+      "Indie-sleaze": "Indie Rock / Electro Clash",
+      "Hipsters": "Indie / Alternative",
+      "Urban/R&B": "R&B / Urban",
+      "Tokio Hotel fans": "Emo Rock / Pop Rock",
+      "Pop-punk": "Pop Punk",
+      "Nu-Metal": "Nu Metal",
+      
+      // 2010s
+      "Vlog-volgers": "EDM / Pop",
+      "Fandoms": "K-Pop / Stan Pop",
+      "K-pop fans": "K-Pop",
+      "K-pop": "K-Pop / Dance Pop",
+      "VSCO-girls": "Indie Pop / Chill Pop",
+      "Tumblr-kids": "Indie / Alternative",
+      "EDM-fans": "EDM / Big Room House",
+      "Hipster": "Indie / Folk",
+      "Berlin-Techno": "Minimal Techno / Deep House",
+      "Klimaat-activisten": "Indie Folk / Protest",
+      "FFF-Aktivisten": "Indie / Protest Pop",
+      
+      // 2020s
+      "TikTok-aesthetic": "Hyperpop / TikTok Pop",
+      "Gym-bros": "EDM / Hardstyle / Motivational",
+      "Gym-cultuur": "EDM / Hardstyle",
+      "Drill-rap": "UK Drill / Drill Rap",
+      "Drill": "Drill / Trap",
+      "Anime-fans": "J-Pop / Anime OST style",
+      "Crypto-traders": "Lo-fi / Synthwave",
+      "Woke/SJW": "Conscious Hip-Hop / Indie",
+      "VTubers": "J-Pop / Electronic / Vocaloid style",
+      "Gaming": "Electronic / Chiptune",
+    };
+
+    // Get style from subculture first, then fall back to era-based style
     let suggestedStyle = "Pop ballade";
-    if (midYear >= 1975 && midYear < 1985) {
-      suggestedStyle = "Synthpop/New Wave";
-    } else if (midYear >= 1985 && midYear < 1992) {
-      suggestedStyle = "Eurodance/Hi-NRG";
-    } else if (midYear >= 1992 && midYear < 2000) {
-      suggestedStyle = "Eurodance/Happy Hardcore";
-    } else if (midYear >= 2000 && midYear < 2010) {
-      suggestedStyle = "Pop/R&B";
-    } else if (midYear >= 2010) {
-      suggestedStyle = "EDM/Dance Pop";
-    } else if (midYear >= 1965 && midYear < 1975) {
-      suggestedStyle = "Rock/Nederpop";
+    
+    if (subculture?.myGroup && subcultureStyleMap[subculture.myGroup]) {
+      suggestedStyle = subcultureStyleMap[subculture.myGroup];
+      console.log(`Style determined by subculture "${subculture.myGroup}": ${suggestedStyle}`);
+    } else {
+      // Fallback: determine by era
+      const midYear = Math.round((startYear + endYear) / 2);
+      if (midYear >= 1975 && midYear < 1985) {
+        suggestedStyle = "Synthpop/New Wave";
+      } else if (midYear >= 1985 && midYear < 1992) {
+        suggestedStyle = "Eurodance/Hi-NRG";
+      } else if (midYear >= 1992 && midYear < 2000) {
+        suggestedStyle = "Eurodance/Happy Hardcore";
+      } else if (midYear >= 2000 && midYear < 2010) {
+        suggestedStyle = "Pop/R&B";
+      } else if (midYear >= 2010) {
+        suggestedStyle = "EDM/Dance Pop";
+      } else if (midYear >= 1965 && midYear < 1975) {
+        suggestedStyle = "Rock/Nederpop";
+      }
+      console.log(`Style determined by era (${midYear}): ${suggestedStyle}`);
     }
 
     // Build context from events
