@@ -181,12 +181,22 @@ async function pollForCompletion(apiKey: string, taskId: string): Promise<SunoTr
          throw new Error(`Track generation failed: ${JSON.stringify(details)}`);
        }
 
-       // IMPORTANT: streamAudioUrl is usually available much earlier than audioUrl.
-       // To avoid edge function timeouts, we return as soon as we have a playable URL.
-       if (track && (track.streamAudioUrl || track.audioUrl)) {
-         console.log(`Track playable! streamAudioUrl: ${track.streamAudioUrl}; audioUrl: ${track.audioUrl}`);
+       // IMPORTANT: Wait for SUCCESS status with a valid duration.
+       // TEXT_SUCCESS means lyrics are processed but audio is not yet rendered.
+       // FIRST_SUCCESS means partial audio is available.
+       // SUCCESS means the track is fully ready with duration.
+       if (status === 'SUCCESS' && track && track.duration && (track.audioUrl || track.streamAudioUrl)) {
+         console.log(`Track fully ready! status: ${status}; duration: ${track.duration}s; audioUrl: ${track.audioUrl}; streamAudioUrl: ${track.streamAudioUrl}`);
          return track;
        }
+       
+       // Also accept FIRST_SUCCESS with duration as a fallback (first track of 2 is ready)
+       if (status === 'FIRST_SUCCESS' && track && track.duration && (track.audioUrl || track.streamAudioUrl)) {
+         console.log(`First track ready! status: ${status}; duration: ${track.duration}s; audioUrl: ${track.audioUrl}; streamAudioUrl: ${track.streamAudioUrl}`);
+         return track;
+       }
+       
+       console.log(`Still waiting... status: ${status}; duration: ${track?.duration}`)
 
       // Still processing, wait and try again
       await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
