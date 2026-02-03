@@ -2,7 +2,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { OptionalData, GeographicFocus, Gender } from '@/types/form';
+import { OptionalData, GeographicFocus } from '@/types/form';
 import { MapPin, Compass, Sparkles, User, Users, GraduationCap, PartyPopper } from 'lucide-react';
 
 interface OptionalInfoFormProps {
@@ -51,39 +51,7 @@ export const OptionalInfoForm = ({ value, onChange }: OptionalInfoFormProps) => 
         />
       </div>
 
-      {/* Gender selection */}
-      <div className="space-y-2">
-        <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <Users className="h-4 w-4 text-accent" />
-          Geslacht
-        </Label>
-        <RadioGroup
-          value={value.gender || 'none'}
-          onValueChange={(v) => onChange({ ...value, gender: v as Gender })}
-          className="grid grid-cols-3 gap-2"
-        >
-          {([
-            { value: 'male', label: 'Man' },
-            { value: 'female', label: 'Vrouw' },
-            { value: 'none', label: 'Geen voorkeur' }
-          ] as const).map((option) => (
-            <Label
-              key={option.value}
-              className={`
-                flex items-center justify-center py-1.5 px-2 rounded-md cursor-pointer
-                border-2 transition-all duration-200
-                ${value.gender === option.value || (!value.gender && option.value === 'none')
-                  ? 'border-accent bg-accent/10 text-foreground' 
-                  : 'border-border bg-card hover:border-muted-foreground/30 text-muted-foreground'
-                }
-              `}
-            >
-              <RadioGroupItem value={option.value} className="sr-only" />
-              <span className="text-xs font-medium">{option.label}</span>
-            </Label>
-          ))}
-        </RadioGroup>
-      </div>
+      {/* Note: Gender selection has been moved to the main form */}
 
       {/* Note: Attitude selection has been moved to SubcultureSelector on the main form */}
 
