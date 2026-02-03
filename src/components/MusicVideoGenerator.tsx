@@ -18,6 +18,8 @@ type GenerationStep = 'customize' | 'idle' | 'lyrics' | 'music' | 'complete' | '
 interface MusicVideoGeneratorProps {
   events: TimelineEvent[];
   summary: string;
+  storyTitle?: string;
+  storyIntroduction?: string;
   optionalData: OptionalData;
   startYear: number;
   endYear: number;
@@ -35,6 +37,8 @@ interface GenerationResult {
 export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
   events,
   summary,
+  storyTitle,
+  storyIntroduction,
   optionalData,
   startYear,
   endYear,
@@ -555,12 +559,13 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
       </Dialog>
 
       {/* Video Dialog - Uses Remotion with the generated Suno audio as background music */}
+      {/* Use the SAME storyTitle and storyIntroduction as the regular video */}
       <VideoDialog
         open={isVideoDialogOpen}
         onOpenChange={setIsVideoDialogOpen}
         events={events}
-        storyTitle={result?.title || `Jouw jaren ${startYear}-${endYear}`}
-        storyIntroduction={summary}
+        storyTitle={storyTitle || `Jouw jaren ${startYear}-${endYear}`}
+        storyIntroduction={storyIntroduction || summary}
         backgroundMusicUrl={result?.audioUrl}
         backgroundMusicDuration={result?.duration}
       />
