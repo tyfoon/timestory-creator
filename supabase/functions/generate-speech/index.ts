@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { parseMp3Duration } from "../_shared/mp3Duration.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -187,34 +188,30 @@ serve(async (req) => {
     // Count words for logging
     const wordCount = text.split(/\s+/).length;
     
-    // Calculate actual audio duration from MP3 data
-    // Base64 encoding adds ~33% overhead, so base64_length * 0.75 = raw bytes
-    const base64Length = ttsData.audioContent.length;
-    const rawBytes = Math.round(base64Length * 0.75);
+    // Decode base64 to get raw MP3 bytes for exact duration parsing
+    const base64Content = ttsData.audioContent;
+    const binaryString = atob(base64Content);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
     
-    // MP3 duration calculation:
-    // Google TTS outputs MP3 at ~32kbps for speech (very efficient encoding)
-    // With speakingRate 0.95, actual bitrate is around 32000 bits/sec = 4000 bytes/sec
-    // However, this varies. A more reliable approach:
-    // - Google TTS at 24kHz sample rate, mono, typically ~32-48kbps for speech
-    // - Average ~5000 bytes per second of audio is a good estimate
-    const bytesPerSecond = 5000;
-    const byteBasedDuration = rawBytes / bytesPerSecond;
+    // Parse MP3 for EXACT duration
+    const exactDurationSeconds = parseMp3Duration(bytes.buffer);
     
-    // Also calculate word-based as sanity check (Dutch ~3.0 words/sec with speakingRate 0.95)
-    const wordsPerSecond = 3.0;
-    const wordBasedDuration = wordCount / wordsPerSecond;
-    
-    // Use the SHORTER of the two estimates to avoid long pauses
-    // If byte-based is significantly shorter, it's likely more accurate
-    const estimatedDurationSeconds = Math.min(byteBasedDuration, wordBasedDuration);
+    // Fallback to estimate if parsing fails
+    const rawBytes = bytes.length;
+    const estimatedDurationSeconds = exactDurationSeconds > 0 
+      ? exactDurationSeconds 
+      : Math.min(rawBytes / 5000, wordCount / 3.0);
 
-    console.log(`Speech generated. Duration: ${estimatedDurationSeconds.toFixed(2)}s (byte-based: ${byteBasedDuration.toFixed(2)}s, word-based: ${wordBasedDuration.toFixed(2)}s, ${wordCount} words, ${rawBytes} bytes)`);
+    console.log(`Speech generated. Exact duration: ${exactDurationSeconds.toFixed(3)}s, ${wordCount} words, ${rawBytes} bytes`);
 
     return new Response(
       JSON.stringify({
         audioContent: ttsData.audioContent, // Base64 encoded MP3
-        estimatedDurationSeconds,
+        estimatedDurationSeconds, // Now contains exact duration!
+        exactDurationSeconds,     // Explicit exact field
         wordCount,
         voice: voiceName,
         languageCode,
