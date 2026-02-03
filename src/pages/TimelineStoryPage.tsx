@@ -436,37 +436,37 @@ const LayoutWhisper = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatte
   const isInView = useInView(ref, { once: true, margin: '-100px' });
   
   return (
-    <div ref={ref} className="relative min-h-[50vh] max-h-[70vh] flex items-end py-16 px-6 sm:px-12 lg:px-24">
-      {/* Large image - constrained to max 50vh */}
+    <div ref={ref} className="relative min-h-[60vh] sm:min-h-[50vh] max-h-[80vh] sm:max-h-[70vh] flex items-end py-12 sm:py-16 px-4 sm:px-12 lg:px-24">
+      {/* Large image - more visible on mobile with smaller inset */}
       <motion.div
         initial={{ opacity: 0, scale: 1.05 }}
         animate={isInView ? { opacity: 1, scale: 1 } : {}}
         transition={{ duration: 1.2 }}
-        className="absolute inset-8 sm:inset-16 lg:inset-24"
+        className="absolute inset-4 sm:inset-16 lg:inset-24"
       >
         <ImageWithBlacklist 
           src={imageUrl} 
           alt={event.title}
-          className="w-full h-full object-cover object-top rounded-2xl max-h-[50vh]"
+          className="w-full h-full object-cover object-top rounded-xl sm:rounded-2xl max-h-[60vh] sm:max-h-[50vh]"
           event={event}
           onBlacklistImage={onBlacklistImage}
         />
       </motion.div>
       
-      {/* Text whispered in corner */}
+      {/* Text whispered in corner - smaller on mobile to show more image */}
       <motion.div
         initial={{ opacity: 0, x: -30 }}
         animate={isInView ? { opacity: 1, x: 0 } : {}}
         transition={{ delay: 0.6 }}
-        className="relative z-10 max-w-xs bg-background/95 backdrop-blur-sm p-6 rounded-lg shadow-lg space-y-3"
+        className="relative z-10 max-w-[200px] sm:max-w-xs bg-background/95 backdrop-blur-sm p-4 sm:p-6 rounded-lg shadow-lg space-y-2 sm:space-y-3"
       >
-        <span className={`${theme.fontMono} text-[10px] uppercase tracking-[0.2em] text-muted-foreground block`}>
+        <span className={`${theme.fontMono} text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-muted-foreground block`}>
           {event.date}
         </span>
-        <h2 className={`${theme.fontDisplay} text-lg sm:text-xl font-bold text-foreground leading-tight`}>
+        <h2 className={`${theme.fontDisplay} text-base sm:text-xl font-bold text-foreground leading-tight`}>
           {event.title}
         </h2>
-        <p className={`${theme.fontBody} text-sm text-muted-foreground leading-relaxed font-light`}>
+        <p className={`${theme.fontBody} text-xs sm:text-sm text-muted-foreground leading-relaxed font-light line-clamp-3 sm:line-clamp-none`}>
           {event.description}
         </p>
         <MediaButtons 
@@ -554,61 +554,91 @@ const LayoutMagazine = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatt
   );
 };
 
-// Pattern: "THE OVERLAP" - Text bleeding over image
+// Pattern: "THE OVERLAP" - Text bleeding over image (but NOT on mobile)
 const LayoutOverlap = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatternProps) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
   
   return (
-    <div ref={ref} className="relative py-24 sm:py-32 lg:py-40 px-6 sm:px-12 my-8 sm:my-12 lg:my-16">
+    <div ref={ref} className="relative py-12 sm:py-32 lg:py-40 px-4 sm:px-12 my-4 sm:my-12 lg:my-16">
       <div className="relative max-w-6xl mx-auto">
-        {/* Image - constrained to max 50vh */}
-        <motion.div
-          initial={{ opacity: 0, scale: 1.02 }}
-          animate={isInView ? { opacity: 1, scale: 1 } : {}}
-          transition={{ duration: 1 }}
-          className="w-full sm:w-3/4 lg:w-2/3 ml-auto"
-        >
+        {/* Mobile: Stack layout (image then text) */}
+        <div className="sm:hidden space-y-4">
           <ImageWithBlacklist 
             src={imageUrl} 
             alt={event.title}
-            className="w-full h-auto max-h-[50vh] object-cover object-top rounded-lg"
+            className="w-full h-48 object-cover object-top rounded-lg"
             event={event}
             onBlacklistImage={onBlacklistImage}
           />
-        </motion.div>
-        
-        {/* Text overlapping from left - must be above image */}
-        <motion.div
-          initial={{ opacity: 0, x: -40 }}
-          animate={isInView ? { opacity: 1, x: 0 } : {}}
-          transition={{ delay: 0.4, duration: 0.8 }}
-          className="absolute left-0 top-1/2 -translate-y-1/2 w-full sm:w-2/3 lg:w-1/2 z-20"
-        >
-          <div className="bg-background/95 backdrop-blur-md p-6 sm:p-10 lg:p-12 rounded-r-2xl shadow-2xl space-y-4">
-            <span className={`${theme.fontMono} text-xs uppercase tracking-[0.3em] text-muted-foreground block`}>
+          <div className="space-y-3">
+            <span className={`${theme.fontMono} text-xs uppercase tracking-[0.2em] text-muted-foreground block`}>
               {event.date}
             </span>
-            
-            <StaggeredText
-              text={event.title}
-              className={`${theme.fontDisplay} font-black text-foreground leading-none`}
-              style={{ fontSize: 'clamp(1.5rem, 5vw, 3rem)' }}
-              as="h2"
-              highlightWords={[0, 1]}
-            />
-            
-            <p className={`${theme.fontBody} text-sm sm:text-base lg:text-lg text-muted-foreground leading-relaxed`}>
+            <h2 className={`${theme.fontDisplay} text-2xl font-black text-foreground leading-tight`}>
+              {event.title}
+            </h2>
+            <p className={`${theme.fontBody} text-sm text-muted-foreground leading-relaxed`}>
               {event.description}
             </p>
-            
             <MediaButtons 
               spotifySearchQuery={event.spotifySearchQuery}
               movieSearchQuery={event.movieSearchQuery}
               eventTitle={event.title}
             />
           </div>
-        </motion.div>
+        </div>
+
+        {/* Desktop: Overlap layout */}
+        <div className="hidden sm:block">
+          {/* Image - constrained to max 50vh */}
+          <motion.div
+            initial={{ opacity: 0, scale: 1.02 }}
+            animate={isInView ? { opacity: 1, scale: 1 } : {}}
+            transition={{ duration: 1 }}
+            className="w-3/4 lg:w-2/3 ml-auto"
+          >
+            <ImageWithBlacklist 
+              src={imageUrl} 
+              alt={event.title}
+              className="w-full h-auto max-h-[50vh] object-cover object-top rounded-lg"
+              event={event}
+              onBlacklistImage={onBlacklistImage}
+            />
+          </motion.div>
+          
+          {/* Text overlapping from left - must be above image */}
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            animate={isInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ delay: 0.4, duration: 0.8 }}
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-2/3 lg:w-1/2 z-20"
+          >
+            <div className="bg-background/95 backdrop-blur-md p-10 lg:p-12 rounded-r-2xl shadow-2xl space-y-4">
+              <span className={`${theme.fontMono} text-xs uppercase tracking-[0.3em] text-muted-foreground block`}>
+                {event.date}
+              </span>
+              
+              <StaggeredText
+                text={event.title}
+                className={`${theme.fontDisplay} font-black text-foreground leading-none`}
+                style={{ fontSize: 'clamp(1.5rem, 5vw, 3rem)' }}
+                as="h2"
+                highlightWords={[0, 1]}
+              />
+              
+              <p className={`${theme.fontBody} text-base lg:text-lg text-muted-foreground leading-relaxed`}>
+                {event.description}
+              </p>
+              
+              <MediaButtons 
+                spotifySearchQuery={event.spotifySearchQuery}
+                movieSearchQuery={event.movieSearchQuery}
+                eventTitle={event.title}
+              />
+            </div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
@@ -791,20 +821,8 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading }: HeroSe
               </motion.div>
             )}
 
-            {/* Events loading indicator while story is shown but events still streaming */}
-            {showStoryLoading && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1.2 }}
-                className="flex items-center justify-center gap-3 pt-4"
-              >
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground/60" />
-                <span className={`${theme.fontMono} text-sm text-muted-foreground/60`}>
-                  Gebeurtenissen laden...
-                </span>
-              </motion.div>
-            )}
+            {/* Events loading indicator - ONLY show if scroll indicator is NOT showing loading */}
+            {/* Removed: showStoryLoading indicator here - it's now only shown in scroll indicator below */}
           </>
         )}
       </motion.div>
@@ -1198,19 +1216,21 @@ const TimelineStoryPage = () => {
 
   return (
     <div className={`min-h-screen bg-background ${!isHeroReady ? 'overflow-hidden max-h-screen' : ''}`}>
-      {/* Header - same style as ResultPage */}
-      <section className="pt-3 pb-1 px-4 relative z-50 bg-background/80 backdrop-blur-sm sticky top-0">
+      {/* Header - responsive with wrapping */}
+      <section className="pt-3 pb-1 px-3 sm:px-4 relative z-50 bg-background/80 backdrop-blur-sm sticky top-0">
         <div className="container mx-auto max-w-6xl">
-          <div className="flex items-center justify-between mb-2 fade-in">
+          <div className="flex items-center justify-between gap-2 mb-2 fade-in min-w-0">
+            {/* Back button - compact on mobile */}
             <button
               onClick={() => navigate('/')}
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span>{t('backToInput') as string}</span>
+              <ArrowLeft className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              <span className="hidden xs:inline">{t('backToInput') as string}</span>
             </button>
             
-            <div className="flex items-center gap-2">
+            {/* Right side - scrollable on very small screens */}
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 overflow-x-auto">
               {/* Music Video Generator button */}
               {events.length > 0 && !isLoading && formData && (
                 <MusicVideoGenerator
@@ -1226,20 +1246,20 @@ const TimelineStoryPage = () => {
                 />
               )}
 
-              {/* Video button */}
+              {/* Video button - icon only on mobile */}
               {events.length > 0 && !isLoading && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setIsVideoDialogOpen(true)}
-                  className="h-7 px-2.5 text-xs gap-1.5"
+                  className="h-7 px-2 sm:px-2.5 text-xs gap-1 sm:gap-1.5 flex-shrink-0"
                 >
                   <Video className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Maak Video</span>
                 </Button>
               )}
 
-              {/* Debug dialogs */}
+              {/* Debug dialogs - icon only */}
               {events.length > 0 && !isLoading && (
                 <>
                   <PromptViewerDialog formData={formData} language={language} maxEvents={currentMaxEvents} />
@@ -1255,14 +1275,15 @@ const TimelineStoryPage = () => {
               {events.length > 0 && !isLoading && (
                 <button
                   onClick={handleClearCache}
-                  className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+                  className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50 flex-shrink-0"
                   title={t('refreshButton') as string}
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                 </button>
               )}
               
-              <h1 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
+              {/* Title - truncate on mobile */}
+              <h1 className="font-serif text-base sm:text-xl lg:text-2xl font-bold text-foreground truncate flex-shrink min-w-0">
                 {getTitle()}
               </h1>
             </div>
