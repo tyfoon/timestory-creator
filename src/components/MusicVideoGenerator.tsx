@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Film, Loader2, CheckCircle2, AlertCircle, FileText, Radio, Video, Play, Pencil, Calendar, ArrowRight, Check, Music } from 'lucide-react';
 import { TimelineEvent } from '@/types/timeline';
-import { OptionalData } from '@/types/form';
+import { OptionalData, SubcultureData } from '@/types/form';
 import { VideoDialog } from '@/components/video/VideoDialog';
 import { OptionalInfoForm } from '@/components/OptionalInfoForm';
+import { SubcultureSelector } from '@/components/SubcultureSelector';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvZW9ib3lnc3NzeWFqcGRzdGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNTY2NjEsImV4cCI6MjA4NDgzMjY2MX0.KuFaWF4r_cxZRiOumPGMChLVmwgyhT9vR5s7L52zr5s';
@@ -307,6 +308,27 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
 
                 {/* Optional Info Form */}
                 <OptionalInfoForm value={localOptionalData} onChange={setLocalOptionalData} />
+
+                {/* Subculture Selector for Music Style */}
+                <div className="space-y-2 pt-4 border-t border-border">
+                  <div className="p-3 bg-accent/10 rounded-lg mb-3">
+                    <p className="text-sm text-muted-foreground">
+                      <Music className="h-4 w-4 inline mr-1.5 text-accent" />
+                      <strong>Muziekstijl:</strong> De subcultuur bepaalt de stijl van je persoonlijke lied. 
+                      Kies bijvoorbeeld "Gabbers" voor hardcore of "New Wave" voor synth-pop.
+                    </p>
+                  </div>
+                  <SubcultureSelector
+                    startYear={localStartYear}
+                    endYear={localEndYear}
+                    periodType={localOptionalData.periodType || 'puberty'}
+                    focus={localOptionalData.focus || 'netherlands'}
+                    value={localOptionalData.subculture}
+                    onChange={(subculture: SubcultureData) => 
+                      setLocalOptionalData(prev => ({ ...prev, subculture }))
+                    }
+                  />
+                </div>
 
                 {/* Confirm Button */}
                 <div className="flex justify-between gap-3 pt-4 border-t border-border">
