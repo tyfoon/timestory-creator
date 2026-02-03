@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { OptionalData, GeographicFocus } from '@/types/form';
-import { MapPin, Compass, Sparkles, User, Users, GraduationCap, PartyPopper } from 'lucide-react';
+import { Compass, Sparkles, User, Users, GraduationCap, PartyPopper } from 'lucide-react';
 
 interface OptionalInfoFormProps {
   value: OptionalData;
@@ -37,19 +37,7 @@ export const OptionalInfoForm = ({ value, onChange }: OptionalInfoFormProps) => 
         </div>
       </div>
 
-      {/* City - compact */}
-      <div className="space-y-2">
-        <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <MapPin className="h-4 w-4 text-accent" />
-          {t('cityLabel') as string}
-        </Label>
-        <Input
-          placeholder={t('cityPlaceholder') as string}
-          value={value.city || ''}
-          onChange={(e) => onChange({ ...value, city: e.target.value })}
-          className="bg-card h-9"
-        />
-      </div>
+      {/* Note: City has been moved to the main form */}
 
       {/* Note: Gender selection has been moved to the main form */}
 
