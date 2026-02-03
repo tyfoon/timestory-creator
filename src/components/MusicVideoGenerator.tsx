@@ -198,6 +198,7 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
       setResult(prev => ({
         ...prev,
         audioUrl: musicResult.audioUrl,
+        originalUrl: musicResult.originalUrl, // Keep original Suno URL for reference
         duration: musicResult.duration,
       }));
 
@@ -413,6 +414,20 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                         <p className="text-xs text-muted-foreground text-center">
                           Duur: {result.duration ? Math.round(result.duration / 60) : '~3'} minuten
                         </p>
+                        {/* Show original Suno URL for reference */}
+                        {result.originalUrl && (
+                          <div className="mt-2 p-2 bg-muted rounded text-xs">
+                            <span className="text-muted-foreground">Suno URL: </span>
+                            <a 
+                              href={result.originalUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline break-all"
+                            >
+                              {result.originalUrl}
+                            </a>
+                          </div>
+                        )}
                       </div>
                     )}
 
