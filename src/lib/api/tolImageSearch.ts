@@ -93,12 +93,19 @@ export async function searchSingleImageTol(
     }
 
     const imageUrl = data?.imageUrl || null;
+    // The edge function returns the actual query it used (with decade suffix)
     const actualQuery = data?.searchQuery || searchQuery;
+    const score = data?.score ?? null;
+
+    // Build a more descriptive trace label that shows it went via DDG API
+    const traceLabel = score !== null 
+      ? `🔍 DDG/Tol (score: ${score})` 
+      : '🔍 DDG/Tol';
 
     // Check if image is blacklisted
     if (imageUrl && blacklist.has(imageUrl)) {
       console.log(`[Tol Search] Image blacklisted, skipping: ${imageUrl}`);
-      addTrace('🔍 DDG/Tol', actualQuery, !!year, 'not_found');
+      addTrace(traceLabel, actualQuery, !!year, 'not_found');
       return {
         eventId,
         imageUrl: null,
@@ -108,7 +115,7 @@ export async function searchSingleImageTol(
     }
 
     if (imageUrl) {
-      addTrace('🔍 DDG/Tol', actualQuery, !!year, 'found');
+      addTrace(traceLabel, actualQuery, !!year, 'found');
       return {
         eventId,
         imageUrl,
@@ -116,7 +123,7 @@ export async function searchSingleImageTol(
         searchTrace,
       };
     } else {
-      addTrace('🔍 DDG/Tol', actualQuery, !!year, 'not_found');
+      addTrace(traceLabel, actualQuery, !!year, 'not_found');
       return {
         eventId,
         imageUrl: null,
