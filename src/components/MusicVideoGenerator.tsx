@@ -102,82 +102,117 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
     };
   };
 
-  const generateMusic = async (lyrics: string, style: string, title: string): Promise<{ audioUrl: string; originalUrl?: string; duration: number }> => {
-    setStatusMessage('Muziek componeren... (dit kan enkele minuten duren)');
-    setProgress(40);
+  const pollForSunoCompletion = async (taskId: string): Promise<{ audioUrl: string; duration: number }> => {
+    const maxAttempts = 60; // 5 minutes max (60 * 5s)
+    const pollInterval = 5000;
 
-    // Start a progress simulation for the long wait
-    const progressInterval = setInterval(() => {
-      setProgress(prev => Math.min(prev + 2, 85));
-    }, 5000);
-
-    try {
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-suno-track`, {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      setStatusMessage(`Muziek componeren... (${Math.floor(attempt * 5 / 60)}:${String((attempt * 5) % 60).padStart(2, '0')} verstreken)`);
+      
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/check-suno-status`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
           'apikey': SUPABASE_ANON_KEY,
         },
-        body: JSON.stringify({
-          lyrics,
-          style,
-          title,
-          maxDurationSeconds: 180, // 3 minutes max
-        }),
+        body: JSON.stringify({ taskId }),
       });
-
-      clearInterval(progressInterval);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Fout bij genereren muziek: ${response.status}`);
+        throw new Error(errorData.error || `Fout bij ophalen status: ${response.status}`);
       }
 
       const data = await response.json();
+      
       if (!data.success) {
-        throw new Error(data.error || 'Onbekende fout bij genereren muziek');
+        throw new Error(data.error || 'Fout bij genereren muziek');
       }
 
-      setProgress(90);
-      const playableUrl = data?.data?.audioUrl || data?.data?.streamAudioUrl;
-      if (!playableUrl) {
-        throw new Error('Suno gaf geen afspeelbare audio URL terug');
-      }
-
-      // Proxy the audio URL to avoid CORS issues
-      setStatusMessage('Audio voorbereiden...');
-      const proxyResponse = await fetch(`${SUPABASE_URL}/functions/v1/proxy-audio`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'apikey': SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({ url: playableUrl }),
-      });
-
-      if (!proxyResponse.ok) {
-        console.warn('Audio proxy failed, using direct URL (may have CORS issues)');
+      if (data.data.ready) {
         return {
-          audioUrl: playableUrl,
+          audioUrl: data.data.audioUrl || data.data.streamAudioUrl,
           duration: data.data.duration || 180,
         };
       }
 
-      // Convert proxied audio to blob URL for reliable playback
-      const audioBlob = await proxyResponse.blob();
-      const blobUrl = URL.createObjectURL(audioBlob);
+      // Update progress based on status
+      if (data.data.status === 'TEXT_SUCCESS') {
+        setProgress(50);
+      } else if (data.data.status === 'FIRST_SUCCESS') {
+        setProgress(75);
+      }
 
-      return {
-        audioUrl: blobUrl,
-        originalUrl: playableUrl, // Keep original for Remotion if needed
-        duration: data.data.duration || 180,
-      };
-    } catch (err) {
-      clearInterval(progressInterval);
-      throw err;
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
     }
+
+    throw new Error('Muziek generatie duurde te lang. Probeer het opnieuw.');
+  };
+
+  const generateMusic = async (lyrics: string, style: string, title: string): Promise<{ audioUrl: string; originalUrl?: string; duration: number }> => {
+    setStatusMessage('Muziek starten...');
+    setProgress(40);
+
+    // Step 1: Start the generation
+    const startResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-suno-track`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ lyrics, style, title }),
+    });
+
+    if (!startResponse.ok) {
+      const errorData = await startResponse.json().catch(() => ({}));
+      throw new Error(errorData.error || `Fout bij starten muziek: ${startResponse.status}`);
+    }
+
+    const startData = await startResponse.json();
+    if (!startData.success || !startData.data?.taskId) {
+      throw new Error(startData.error || 'Geen taskId ontvangen');
+    }
+
+    const taskId = startData.data.taskId;
+    console.log(`Suno task started: ${taskId}`);
+
+    // Step 2: Poll for completion (client-side)
+    const result = await pollForSunoCompletion(taskId);
+    
+    setProgress(90);
+    setStatusMessage('Audio voorbereiden...');
+
+    // Proxy the audio URL to avoid CORS issues
+    const proxyResponse = await fetch(`${SUPABASE_URL}/functions/v1/proxy-audio`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ url: result.audioUrl }),
+    });
+
+    if (!proxyResponse.ok) {
+      console.warn('Audio proxy failed, using direct URL (may have CORS issues)');
+      return {
+        audioUrl: result.audioUrl,
+        originalUrl: result.audioUrl,
+        duration: result.duration,
+      };
+    }
+
+    // Convert proxied audio to blob URL for reliable playback
+    const audioBlob = await proxyResponse.blob();
+    const blobUrl = URL.createObjectURL(audioBlob);
+
+    return {
+      audioUrl: blobUrl,
+      originalUrl: result.audioUrl,
+      duration: result.duration,
+    };
   };
 
   const handleGenerate = useCallback(async () => {
