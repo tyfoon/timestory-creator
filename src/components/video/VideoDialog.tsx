@@ -107,7 +107,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
   const [isReady, setIsReady] = useState(false);
   const [enableVhsEffect, setEnableVhsEffect] = useState(false);
   const [videoVariant, setVideoVariant] = useState<VideoVariant>('slideshow');
-  const [voiceProvider, setVoiceProvider] = useState<VoiceProvider>('elevenlabs');
+  const [voiceProvider, setVoiceProvider] = useState<VoiceProvider>('google');
 
   // Generate audio for all events
   const handleGenerateAudio = useCallback(async () => {
@@ -233,7 +233,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
       setAudioError(null);
       setEnableVhsEffect(false);
       setVideoVariant('slideshow');
-      setVoiceProvider('elevenlabs');
+      setVoiceProvider('google');
     }
     onOpenChange(newOpen);
   }, [onOpenChange]);
@@ -300,17 +300,6 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                 {/* Voice toggle buttons */}
                 <div className="flex items-center border rounded-md overflow-hidden">
                   <button
-                    onClick={() => setVoiceProvider('elevenlabs')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
-                      voiceProvider === 'elevenlabs' 
-                        ? 'bg-primary text-primary-foreground' 
-                        : 'bg-muted/50 hover:bg-muted'
-                    }`}
-                  >
-                    <Mic className="h-3 w-3" />
-                    ElevenLabs
-                  </button>
-                  <button
                     onClick={() => setVoiceProvider('google')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
                       voiceProvider === 'google' 
@@ -318,7 +307,18 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                         : 'bg-muted/50 hover:bg-muted'
                     }`}
                   >
-                    Google
+                    <Mic className="h-3 w-3" />
+                    Google TTS
+                  </button>
+                  <button
+                    onClick={() => setVoiceProvider('elevenlabs')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                      voiceProvider === 'elevenlabs' 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-muted/50 hover:bg-muted'
+                    }`}
+                  >
+                    ElevenLabs
                   </button>
                 </div>
 
