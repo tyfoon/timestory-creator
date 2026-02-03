@@ -809,7 +809,7 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading }: HeroSe
         )}
       </motion.div>
 
-      {/* Scroll indicator - show when story is loaded, events still loading OR when fully done */}
+      {/* Scroll indicator - show loading state while fetching, then scroll prompt when done */}
       {hasStoryContent && (
         <motion.div 
           className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
@@ -817,15 +817,34 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading }: HeroSe
           animate={{ opacity: 1 }}
           transition={{ delay: 1.5 }}
         >
-          <span className={`${theme.fontMono} text-xs uppercase tracking-widest text-muted-foreground`}>
-            {isLoading ? 'Begin met scrollen' : 'Scroll to begin'}
-          </span>
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            <ChevronDown className="h-6 w-6 text-muted-foreground" />
-          </motion.div>
+          {isLoading ? (
+            <>
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <span className={`${theme.fontMono} text-xs uppercase tracking-widest text-muted-foreground`}>
+                  Gebeurtenissen ophalen...
+                </span>
+              </div>
+              <motion.div
+                animate={{ y: [0, 4, 0] }}
+                transition={{ duration: 1, repeat: Infinity }}
+              >
+                <ChevronDown className="h-5 w-5 text-muted-foreground/50" />
+              </motion.div>
+            </>
+          ) : (
+            <>
+              <span className={`${theme.fontMono} text-xs uppercase tracking-widest text-muted-foreground`}>
+                Scroll to begin
+              </span>
+              <motion.div
+                animate={{ y: [0, 8, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <ChevronDown className="h-6 w-6 text-muted-foreground" />
+              </motion.div>
+            </>
+          )}
         </motion.div>
       )}
     </motion.section>
