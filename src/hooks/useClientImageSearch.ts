@@ -1,6 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { searchSingleImage, ImageResult, SearchTraceEntry } from '@/lib/api/wikiImageSearch';
+import { searchSingleImageTol } from '@/lib/api/tolImageSearch';
 import { TimelineEvent } from '@/types/timeline';
+
+// Type for the search function signature
+type SearchFunction = (
+  eventId: string,
+  query: string,
+  year: number,
+  queryEn?: string,
+  isCelebrityOrMusic?: boolean,
+  isMovie?: boolean,
+  category?: string,
+  visualSubjectType?: string,
+  isMusic?: boolean,
+  spotifySearchQuery?: string,
+  isTV?: boolean
+) => Promise<ImageResult>;
 
 interface UseClientImageSearchOptions {
   maxConcurrent?: number;
@@ -48,6 +64,12 @@ export function useClientImageSearch(options: UseClientImageSearchOptions = {}) 
     isProcessingRef.current = true;
     setIsSearching(true);
     
+    // Determine which search function to use based on sessionStorage setting
+    const imageSearchMode = sessionStorage.getItem('imageSearchMode') || 'legacy';
+    const searchFn: SearchFunction = imageSearchMode === 'tol' ? searchSingleImageTol : searchSingleImage;
+    
+    console.log(`[Image Search] Using ${imageSearchMode === 'tol' ? 'Tol/DDG' : 'Legacy'} search mode`);
+    
     while (queueRef.current.length > 0 || activeWorkersRef.current > 0) {
       // Start new workers if we have capacity and items in queue
       while (activeWorkersRef.current < maxConcurrent && queueRef.current.length > 0) {
@@ -70,7 +92,7 @@ export function useClientImageSearch(options: UseClientImageSearchOptions = {}) 
         const effectiveSearchQuery = event.movieSearchQuery || event.imageSearchQuery;
         const effectiveSearchQueryEn = event.movieSearchQuery || event.imageSearchQueryEn;
         
-        searchSingleImage(
+        searchFn(
           event.id, 
           effectiveSearchQuery, 
           event.year, 
