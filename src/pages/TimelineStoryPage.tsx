@@ -1244,6 +1244,8 @@ const TimelineStoryPage = () => {
                   <MusicVideoGenerator
                     events={events}
                     summary={storyIntroduction || ''}
+                    storyTitle={storyTitle}
+                    storyIntroduction={storyIntroduction}
                     optionalData={formData.optionalData}
                     startYear={formData.type === 'birthdate' && formData.birthDate 
                       ? formData.birthDate.year 
