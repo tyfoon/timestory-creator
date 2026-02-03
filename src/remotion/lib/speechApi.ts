@@ -67,10 +67,10 @@ const generateSpeechElevenLabs = async (params: Omit<GenerateSpeechParams, 'prov
 
 /**
  * Generate speech audio using the specified provider.
- * Defaults to ElevenLabs for higher quality narration.
+ * Defaults to Google TTS (free, no restrictions).
  */
 export const generateSpeech = async (params: GenerateSpeechParams): Promise<SpeechResult> => {
-  const provider = params.provider || 'elevenlabs'; // ElevenLabs is default
+  const provider = params.provider || 'google'; // Google TTS is default (free tier friendly)
   
   if (provider === 'elevenlabs') {
     return generateSpeechElevenLabs(params);
