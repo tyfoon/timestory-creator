@@ -4,11 +4,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Film, Loader2, CheckCircle2, AlertCircle, FileText, Radio, Video, Play, Pencil, Calendar, ArrowRight, Check, Music } from 'lucide-react';
+import { Film, Loader2, CheckCircle2, AlertCircle, FileText, Radio, Video, Play, Check, Music } from 'lucide-react';
 import { TimelineEvent } from '@/types/timeline';
 import { OptionalData, SubcultureData } from '@/types/form';
 import { VideoDialog } from '@/components/video/VideoDialog';
-import { OptionalInfoForm } from '@/components/OptionalInfoForm';
 import { SubcultureSelector } from '@/components/SubcultureSelector';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
@@ -48,11 +47,8 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
   const [statusMessage, setStatusMessage] = useState('');
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   
-  // Local state for customization (editable copies)
+  // Local state for customization (editable copy of personal details only)
   const [localOptionalData, setLocalOptionalData] = useState<OptionalData>(optionalData);
-  const [localStartYear, setLocalStartYear] = useState(startYear);
-  const [localEndYear, setLocalEndYear] = useState(endYear);
-  const currentYear = new Date().getFullYear();
 
   // Check if we have enough personal data
   const hasPersonalData = localOptionalData.friends || localOptionalData.school || localOptionalData.nightlife;
@@ -80,8 +76,8 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
         },
         subculture: localOptionalData.subculture, // Pass subculture data for music style
         gender: localOptionalData.gender, // Pass gender for voice selection
-        startYear: localStartYear,
-        endYear: localEndYear,
+        startYear: startYear,
+        endYear: endYear,
       }),
     });
 
@@ -248,13 +244,11 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
       setError(err instanceof Error ? err.message : 'Er ging iets mis');
       setStep('error');
     }
-  }, [events, summary, localOptionalData, localStartYear, localEndYear]);
+  }, [events, summary, localOptionalData, startYear, endYear]);
 
   const handleOpenDialog = () => {
-    // Reset to local copies from props
+    // Reset local optional data from props
     setLocalOptionalData(optionalData);
-    setLocalStartYear(startYear);
-    setLocalEndYear(endYear);
     setIsDialogOpen(true);
     setStep('customize'); // Start with customize step
     setError(null);
@@ -313,50 +307,63 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
             {/* Customize Step */}
             {step === 'customize' && (
               <div className="space-y-4">
-                {/* Year range */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
-                    <Calendar className="h-4 w-4 text-accent" />
-                    Periode
-                  </Label>
-                  <div className="flex gap-3 items-center">
+                {/* Personal details for song - compact */}
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Vul persoonlijke details in voor een nog unieker lied:
+                  </p>
+                  
+                  {/* Friends */}
+                  <div className="space-y-1.5">
+                    <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      Top 3 vrienden van toen
+                    </Label>
                     <Input
-                      type="number"
-                      placeholder="Van"
-                      value={localStartYear || ""}
-                      onChange={(e) => setLocalStartYear(parseInt(e.target.value) || 0)}
-                      min={1900}
-                      max={currentYear}
-                      className="bg-card text-center h-9"
+                      placeholder="Namen gescheiden door komma's (bijv. Jan, Piet, Klaas)"
+                      value={localOptionalData.friends || ''}
+                      onChange={(e) => setLocalOptionalData(prev => ({ ...prev, friends: e.target.value }))}
+                      className="bg-card h-9"
                     />
-                    <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                  </div>
+
+                  {/* School */}
+                  <div className="space-y-1.5">
+                    <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      Middelbare School
+                    </Label>
                     <Input
-                      type="number"
-                      placeholder="Tot"
-                      value={localEndYear || ""}
-                      onChange={(e) => setLocalEndYear(parseInt(e.target.value) || 0)}
-                      min={1900}
-                      max={currentYear}
-                      className="bg-card text-center h-9"
+                      placeholder="Bijv. Christelijk Lyceum Veenendaal"
+                      value={localOptionalData.school || ''}
+                      onChange={(e) => setLocalOptionalData(prev => ({ ...prev, school: e.target.value }))}
+                      className="bg-card h-9"
+                    />
+                  </div>
+
+                  {/* Nightlife */}
+                  <div className="space-y-1.5">
+                    <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      Favoriete uitgaansplekken
+                    </Label>
+                    <Input
+                      placeholder="Discotheken/kroegen gescheiden door komma's"
+                      value={localOptionalData.nightlife || ''}
+                      onChange={(e) => setLocalOptionalData(prev => ({ ...prev, nightlife: e.target.value }))}
+                      className="bg-card h-9"
                     />
                   </div>
                 </div>
 
-                {/* Optional Info Form */}
-                <OptionalInfoForm value={localOptionalData} onChange={setLocalOptionalData} />
-
                 {/* Subculture Selector for Music Style */}
-                <div className="space-y-2 pt-4 border-t border-border">
-                  <div className="p-3 bg-accent/10 rounded-lg mb-3">
+                <div className="space-y-2 pt-3 border-t border-border">
+                  <div className="p-3 bg-accent/10 rounded-lg">
                     <p className="text-sm text-muted-foreground">
                       <Music className="h-4 w-4 inline mr-1.5 text-accent" />
-                      <strong>Muziekstijl:</strong> De subcultuur bepaalt de stijl van je persoonlijke lied. 
-                      Kies bijvoorbeeld "Gabbers" voor hardcore of "New Wave" voor synth-pop.
+                      <strong>Muziekstijl:</strong> De subcultuur bepaalt de stijl van je lied.
                     </p>
                   </div>
                   <SubcultureSelector
-                    startYear={localStartYear}
-                    endYear={localEndYear}
+                    startYear={startYear}
+                    endYear={endYear}
                     periodType={localOptionalData.periodType || 'puberty'}
                     focus={localOptionalData.focus || 'netherlands'}
                     value={localOptionalData.subculture}
@@ -367,13 +374,13 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                 </div>
 
                 {/* Confirm Button */}
-                <div className="flex justify-between gap-3 pt-4 border-t border-border">
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <div className="flex justify-end gap-3 pt-3">
+                  <Button variant="ghost" size="sm" onClick={() => setIsDialogOpen(false)}>
                     Annuleren
                   </Button>
-                  <Button onClick={handleConfirmCustomize} className="gap-2">
+                  <Button onClick={handleConfirmCustomize} size="sm" className="gap-2">
                     <Check className="h-4 w-4" />
-                    Bevestigen
+                    Doorgaan
                   </Button>
                 </div>
               </div>
@@ -549,7 +556,7 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
         open={isVideoDialogOpen}
         onOpenChange={setIsVideoDialogOpen}
         events={events}
-        storyTitle={result?.title || `Jouw jaren ${localStartYear}-${localEndYear}`}
+        storyTitle={result?.title || `Jouw jaren ${startYear}-${endYear}`}
         storyIntroduction={summary}
         backgroundMusicUrl={result?.audioUrl}
         backgroundMusicDuration={result?.duration}
