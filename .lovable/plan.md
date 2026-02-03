@@ -1,206 +1,179 @@
 
-# Plan: Robuuste Audio-Video Synchronisatie
+# Plan: Dual Image Search Mode (Legacy vs Tol)
 
-## Probleemanalyse
+## Overview
+Implement an alternative image search method using the DDG Image Search API at `https://ddg-image-search-bn3h8.ondigitalocean.app/`. Users can toggle between "Legacy" (current Wikipedia/TMDB based search) and "Tol" (new DDG-powered intelligent search) via a switch on the homepage.
 
-Je hebt twee timing-problemen die allebei dezelfde oorzaak hebben: **de audio-duur wordt geschat in plaats van gemeten**.
+## Key Benefits of Tol API
+- Accepts loose search terms with built-in intelligence
+- Works better with decade info (e.g., "Levis Jeans 80s")
+- Single endpoint for all image types (no routing logic needed)
+- Ranked results using resolution, aspect ratio, domain trust, and query relevance
 
-### Huidige situatie:
-```
-TTS Edge Function:
-  → Krijgt MP3 bytes terug
-  → Schat duur: min(bytes/5000, woorden/3.0)
-  → Stuurt schatting naar frontend
-  
-Remotion:
-  → Gebruikt geschatte duur voor visuele timing
-  → Audio speelt af met WERKELIJKE duur
-  → Mismatch = te lange pauzes OF afgekapte audio
-```
-
-### Oplossing: Meet de echte audio-duur
-
----
-
-## Architectuur Verbeteringen
-
-### 1. Exacte Audio Duur Meting (Server-side)
-
-In de edge functions de échte MP3-duur berekenen door de MP3 header te parsen.
-
-**Hoe werkt MP3 duration parsing?**
-- MP3 heeft frame headers met bitrate info
-- Door frames te tellen + bitrate = exacte duur
-- Dit is betrouwbaar, geen schatting meer
+## Architecture
 
 ```
-[generate-speech] & [generate-speech-elevenlabs]
-  → Ontvang MP3 buffer
-  → Parse MP3 frames voor exacte duur
-  → Return { audioContent, exactDurationSeconds }
+┌─────────────────────────────────────────────────────────────────┐
+│                        Homepage (Index.tsx)                      │
+│                                                                  │
+│   ┌──────────────────────────────────────────────────────────┐  │
+│   │  Toggle: [Legacy] ←→ [Tol]                                │  │
+│   └──────────────────────────────────────────────────────────┘  │
+│                              │                                   │
+│               Stored in sessionStorage                           │
+│               Key: "imageSearchMode"                             │
+└─────────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              useClientImageSearch Hook                           │
+│                                                                  │
+│   reads sessionStorage.getItem("imageSearchMode")                │
+│                                                                  │
+│   if mode === "legacy"    →  searchSingleImage() (existing)      │
+│   if mode === "tol"       →  searchSingleImageTol() (new)        │
+└─────────────────────────────────────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Edge Function (new)                           │
+│              supabase/functions/search-images-tol                │
+│                                                                  │
+│   - Receives: query, year, category                              │
+│   - Builds search query with decade if year provided             │
+│   - Calls DDG API with API key                                   │
+│   - Returns: { imageUrl, source, score }                         │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### 2. Parallelle Audio Generatie (Client-side)
+## Implementation Steps
 
-Momenteel worden events sequentieel verwerkt. Dit kan parallel:
+### Step 1: Add DDG API Key Secret
+- Use the secrets tool to request the `DDG_IMAGE_SEARCH_API_KEY` from the user
+- This key authenticates requests to the DDG Image Search API
 
-```
-Huidig (traag):
-  Event 1 → wacht → Event 2 → wacht → Event 3...
-  
-Nieuw (snel):
-  Event 1 ─┐
-  Event 2 ─┼→ Promise.all() → klaar!
-  Event 3 ─┘
-```
+### Step 2: Create Edge Function `search-images-tol`
+**File**: `supabase/functions/search-images-tol/index.ts`
 
-### 3. Strakke Buffers
-
-Met exacte duurs kunnen we minimale buffers gebruiken:
-- Intro → Event 1: 3 frames (0.1s)
-- Event → Event: 0 frames (naadloos)
-
----
-
-## Technische Implementatie
-
-### Stap 1: MP3 Duration Parser (Edge Functions)
-
-Maak een gedeelde utility die MP3 frames parset:
+The edge function will:
+- Accept `query`, `year`, and `category` in the request body
+- Build an optimized search query:
+  - For years 1970-1979: append "70s"
+  - For years 1980-1989: append "80s"
+  - For years 1990-1999: append "90s"
+  - For years 2000-2009: append "2000s"
+  - etc.
+- Call `GET /search?q={query}&key={apiKey}` on the DDG API
+- Return the result or null if 404
 
 ```typescript
-// supabase/functions/_shared/mp3Duration.ts
+// Pseudocode
+const decadeMap = {
+  197: "70s", 198: "80s", 199: "90s", 
+  200: "2000s", 201: "2010s", 202: "2020s"
+};
 
-// MP3 frame header parsing voor exacte duur
-function parseMp3Duration(buffer: ArrayBuffer): number {
-  const view = new DataView(buffer);
-  let offset = 0;
-  let duration = 0;
-  
-  // Skip ID3 tag if present
-  if (view.getUint8(0) === 0x49 && 
-      view.getUint8(1) === 0x44 && 
-      view.getUint8(2) === 0x33) {
-    const size = (view.getUint8(6) << 21) | 
-                 (view.getUint8(7) << 14) | 
-                 (view.getUint8(8) << 7) | 
-                 view.getUint8(9);
-    offset = 10 + size;
-  }
-  
-  // Parse MP3 frames
-  while (offset < buffer.byteLength - 4) {
-    const header = view.getUint32(offset);
-    if ((header & 0xFFE00000) === 0xFFE00000) {
-      // Valid frame sync
-      const bitrate = getBitrate(header);
-      const sampleRate = getSampleRate(header);
-      const frameSize = calculateFrameSize(header);
-      
-      duration += 1152 / sampleRate; // samples per frame
-      offset += frameSize;
-    } else {
-      offset++;
-    }
-  }
-  
-  return duration;
+const decade = year ? decadeMap[Math.floor(year / 10)] : null;
+const searchQuery = decade ? `${query} ${decade}` : query;
+
+const response = await fetch(
+  `https://ddg-image-search-bn3h8.ondigitalocean.app/search?q=${encodeURIComponent(searchQuery)}&key=${apiKey}`
+);
+```
+
+### Step 3: Create Client-Side Tol Search Function
+**File**: `src/lib/api/tolImageSearch.ts`
+
+New file that exports `searchSingleImageTol()`:
+- Simplified logic compared to legacy (no routing, no TMDB, no Spotify)
+- Calls the edge function
+- Returns same `ImageResult` interface for compatibility
+- Adds search trace entry for debugging
+
+### Step 4: Update useClientImageSearch Hook
+**File**: `src/hooks/useClientImageSearch.ts`
+
+Modify the hook to:
+- Read `imageSearchMode` from sessionStorage
+- Import both `searchSingleImage` (legacy) and `searchSingleImageTol` (new)
+- Route to the appropriate search function based on mode
+- Keep all other logic (queue, concurrency, callbacks) the same
+
+```typescript
+const mode = sessionStorage.getItem('imageSearchMode') || 'legacy';
+const searchFn = mode === 'tol' ? searchSingleImageTol : searchSingleImage;
+```
+
+### Step 5: Add Toggle Switch to Homepage
+**File**: `src/pages/Index.tsx`
+
+Add a simple toggle switch at the bottom of the form card:
+- Uses the existing Switch component from shadcn/ui
+- Labeled "Legacy" and "Tol"
+- Persisted in sessionStorage
+- Small, subtle styling (not prominent - this is for testing)
+
+```tsx
+<div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-3">
+  <span>Image Search Mode</span>
+  <div className="flex items-center gap-2">
+    <span>Legacy</span>
+    <Switch checked={imageSearchMode === 'tol'} onCheckedChange={...} />
+    <span>Tol</span>
+  </div>
+</div>
+```
+
+### Step 6: Update supabase/config.toml
+Add the new edge function configuration:
+```toml
+[functions.search-images-tol]
+verify_jwt = false
+```
+
+## Files to Create/Modify
+
+| File | Action |
+|------|--------|
+| `supabase/functions/search-images-tol/index.ts` | Create |
+| `src/lib/api/tolImageSearch.ts` | Create |
+| `src/hooks/useClientImageSearch.ts` | Modify |
+| `src/pages/Index.tsx` | Modify |
+| `supabase/config.toml` | Modify |
+
+## Technical Details
+
+### Query Building for Tol
+The Tol API works best with decade information included. The edge function will:
+1. Take the raw `imageSearchQuery` from the event
+2. Append the decade suffix based on the event year
+3. Keep the query loose (no special normalization needed - Tol handles this)
+
+Example transformations:
+- "Levis Jeans", year=1985 → "Levis Jeans 80s"
+- "Walkman Sony", year=1982 → "Walkman Sony 80s"
+- "iPhone", year=2007 → "iPhone 2000s"
+
+### Backwards Compatibility
+- Default mode is "legacy" (unchanged behavior)
+- Both modes use the same `ImageResult` interface
+- Cache system remains unchanged
+- Blacklist system still works (DDG URLs can be blacklisted too)
+
+### Search Trace Integration
+The Tol search will add entries to the search trace for debugging:
+```typescript
+{ 
+  source: '🔍 DDG/Tol', 
+  query: 'Levis Jeans 80s', 
+  withYear: true,
+  result: 'found' | 'not_found' | 'error'
 }
 ```
 
-### Stap 2: Update Edge Functions
-
-Beide TTS functions updaten om exacte duur te gebruiken:
-
-```typescript
-// generate-speech/index.ts
-
-import { parseMp3Duration } from '../_shared/mp3Duration.ts';
-
-// ... na ontvangen audioBuffer ...
-
-const exactDurationSeconds = parseMp3Duration(audioBuffer);
-
-return {
-  audioContent: base64Encoded,
-  exactDurationSeconds,  // ← Exacte waarde!
-  estimatedDurationSeconds: exactDurationSeconds, // backward compat
-  wordCount,
-  voice: voiceName,
-};
-```
-
-### Stap 3: Parallelle Audio Generatie
-
-VideoDialog updaten voor parallel processing:
-
-```typescript
-// VideoDialog.tsx - handleGenerateAudio
-
-// NIEUW: Parallel intro + alle events
-const [introResult, ...eventResults] = await Promise.all([
-  // Intro
-  storyIntroduction 
-    ? generateSpeech({ text: storyIntroduction, provider: voiceProvider })
-    : Promise.resolve(null),
-  
-  // Alle events parallel
-  ...events.map(async (event) => {
-    const speechText = `${event.title}. ${event.description}`;
-    
-    const [speech, sfx] = await Promise.all([
-      generateSpeech({ text: speechText, provider: voiceProvider }),
-      event.soundEffectSearchQuery 
-        ? fetchSoundEffect(event.soundEffectSearchQuery) 
-        : null,
-    ]);
-    
-    return { event, speech, sfx };
-  }),
-]);
-```
-
-### Stap 4: Strakke Timing in Remotion
-
-Met exacte duurs kunnen we buffers minimaliseren:
-
-```typescript
-// VideoDialog.tsx
-
-// Intro: exact duration, minimal buffer
-newIntroDurationFrames = Math.round(introResult.exactDurationSeconds * FPS) + 2;
-
-// Events: exact duration, NO buffer
-audioDurationFrames = Math.round(speechResult.exactDurationSeconds * FPS);
-```
-
----
-
-## Samenvatting van Wijzigingen
-
-| Bestand | Wijziging |
-|---------|-----------|
-| `supabase/functions/_shared/mp3Duration.ts` | Nieuw: MP3 parser utility |
-| `supabase/functions/generate-speech/index.ts` | Exacte duur ipv schatting |
-| `supabase/functions/generate-speech-elevenlabs/index.ts` | Exacte duur ipv schatting |
-| `src/components/video/VideoDialog.tsx` | Parallelle generatie + strakke buffers |
-
----
-
-## Verwachte Resultaten
-
-- **Geen lange pauzes meer**: Exacte audio duur = visuele duur matcht perfect
-- **Geen afgekapte audio**: Audio eindigt precies wanneer visual wisselt
-- **Snellere generatie**: Parallel = 3-5x sneller dan sequentieel
-- **Naadloze transitions**: Minimale buffers door betrouwbare timing
-
----
-
-## Alternatief (Simpeler maar minder precies)
-
-Als MP3 parsing te complex blijkt, kunnen we ook:
-1. De audio client-side decoderen met Web Audio API
-2. De `AudioBuffer.duration` property uitlezen
-3. Dit toevoegen vóór video generatie start
-
-Dit is minder efficiënt (audio 2x verwerken) maar werkt ook.
+## Testing Approach
+After implementation:
+1. Set toggle to "Legacy" - verify existing behavior works
+2. Set toggle to "Tol" - generate a new timeline
+3. Compare image quality between the two modes
+4. Check DebugInfoDialog to see search traces for both modes
