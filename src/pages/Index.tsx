@@ -467,34 +467,34 @@ const Index = () => {
               {/* Primary: Timeline Story */}
               <Button
                 onClick={() => handleGenerate("/story")}
-                className="w-full btn-vintage h-14 text-lg font-bold text-primary-foreground rounded-lg shadow-lg"
+                className="w-full btn-vintage h-12 sm:h-14 text-base sm:text-lg font-bold text-primary-foreground rounded-lg shadow-lg"
                 disabled={!isBirthDateComplete || !selectedPeriod}
               >
-                <BookOpen className="mr-2 h-5 w-5" />
+                <BookOpen className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                 <span>Timeline Story</span>
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
 
-              {/* Secondary: Polaroid & Tijdreis side by side */}
-              <div className="flex gap-2">
+              {/* Secondary: Polaroid & Tijdreis - always side by side, smaller on mobile */}
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   onClick={() => handleGenerate("/polaroid")}
                   variant="outline"
-                  className="flex-1 h-11 text-sm font-semibold rounded-lg border-2 border-accent/50 bg-gradient-to-r from-accent/10 to-primary/10 hover:from-accent/20 hover:to-primary/20 text-foreground"
+                  className="h-10 sm:h-11 text-[11px] xs:text-xs sm:text-sm font-semibold rounded-lg border-2 border-accent/50 bg-gradient-to-r from-accent/10 to-primary/10 hover:from-accent/20 hover:to-primary/20 text-foreground px-2 sm:px-3"
                   disabled={!isBirthDateComplete || !selectedPeriod}
                 >
-                  <Camera className="mr-1.5 h-4 w-4 text-accent" />
-                  <span>{t("createPolaroidButton") as string}</span>
+                  <Camera className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent flex-shrink-0" />
+                  <span className="truncate">{t("createPolaroidButton") as string}</span>
                 </Button>
 
                 <Button
                   onClick={() => handleGenerate("/resultaat")}
                   variant="outline"
-                  className="flex-1 h-11 text-sm font-semibold rounded-lg border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-accent/5 hover:from-primary/10 hover:to-accent/10 text-foreground"
+                  className="h-10 sm:h-11 text-[11px] xs:text-xs sm:text-sm font-semibold rounded-lg border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-accent/5 hover:from-primary/10 hover:to-accent/10 text-foreground px-2 sm:px-3"
                   disabled={!isBirthDateComplete || !selectedPeriod}
                 >
-                  <Sparkles className="mr-1.5 h-4 w-4 text-primary" />
-                  <span>{t("createTimelineButton") as string}</span>
+                  <Sparkles className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                  <span className="truncate">{t("createTimelineButton") as string}</span>
                 </Button>
               </div>
             </div>
