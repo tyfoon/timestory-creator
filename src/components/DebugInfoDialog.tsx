@@ -438,6 +438,18 @@ export function DebugInfoDialog({ events, onRefreshImages, isRefreshing }: Debug
                                 <p className="font-mono text-[10px] text-muted-foreground truncate mt-0.5">
                                   "{trace.query}"
                                 </p>
+                                {/* Show found image URL for DDG/Tol results */}
+                                {trace.result === 'found' && trace.imageUrl && (
+                                  <a 
+                                    href={trace.imageUrl} 
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1 font-mono text-[9px] text-emerald-600 dark:text-emerald-400 hover:underline truncate mt-0.5"
+                                  >
+                                    <ExternalLink className="h-2.5 w-2.5 shrink-0" />
+                                    <span className="truncate">{trace.imageUrl}</span>
+                                  </a>
+                                )}
                               </div>
                             </div>
                           ))}

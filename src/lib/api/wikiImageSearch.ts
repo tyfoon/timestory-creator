@@ -21,6 +21,7 @@ export interface SearchTraceEntry {
   withYear: boolean;        // Whether year was included
   result: 'found' | 'not_found' | 'error';
   timestamp: number;        // ms since start
+  imageUrl?: string;        // The found image URL (when result is 'found')
 }
 
 export interface ImageResult {
