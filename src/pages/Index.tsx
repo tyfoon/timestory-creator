@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { FormData, BirthDateData, OptionalData, PeriodType, Gender, SubcultureData } from "@/types/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 import {
   ArrowRight,
   Sparkles,
@@ -125,6 +126,16 @@ const Index = () => {
   }>({});
   const currentYear = new Date().getFullYear();
   const [bgLoaded, setBgLoaded] = useState(false);
+  
+  // Image search mode toggle (Legacy vs Tol)
+  const [imageSearchMode, setImageSearchMode] = useState<'legacy' | 'tol'>(() => {
+    return (sessionStorage.getItem('imageSearchMode') as 'legacy' | 'tol') || 'legacy';
+  });
+  
+  // Persist image search mode to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('imageSearchMode', imageSearchMode);
+  }, [imageSearchMode]);
 
   // Persist form state to sessionStorage whenever it changes
   useEffect(() => {
@@ -496,6 +507,19 @@ const Index = () => {
                   <Sparkles className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                   <span className="truncate">{t("createTimelineButton") as string}</span>
                 </Button>
+              </div>
+            </div>
+            {/* Image Search Mode Toggle - for testing */}
+            <div className="flex items-center justify-between text-xs text-muted-foreground border-t border-border pt-3 mt-2">
+              <span>Image Search Mode</span>
+              <div className="flex items-center gap-2">
+                <span className={imageSearchMode === 'legacy' ? 'text-foreground font-medium' : ''}>Legacy</span>
+                <Switch
+                  checked={imageSearchMode === 'tol'}
+                  onCheckedChange={(checked) => setImageSearchMode(checked ? 'tol' : 'legacy')}
+                  className="data-[state=checked]:bg-accent"
+                />
+                <span className={imageSearchMode === 'tol' ? 'text-foreground font-medium' : ''}>Tol</span>
               </div>
             </div>
           </div>
