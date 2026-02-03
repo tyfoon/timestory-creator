@@ -268,9 +268,9 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader className="pb-2">
-          <DialogTitle className="flex items-center gap-2 text-base">
+          <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
             <Video className="h-4 w-4" />
             Video Preview
           </DialogTitle>
@@ -297,50 +297,50 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                 <span>Audio genereren voor {events.length} gebeurtenissen{storyIntroduction ? ' + intro' : ''}</span>
               </div>
 
-              {/* Options row - all in one line */}
-              <div className="flex flex-wrap gap-2">
-                {/* Video Style toggle buttons */}
-                <div className="flex items-center border rounded-md overflow-hidden">
+              {/* Options - stacked on mobile, row on desktop */}
+              <div className="flex flex-col sm:flex-row gap-2">
+                {/* Video Style toggle buttons - full width on mobile */}
+                <div className="flex items-center border rounded-md overflow-hidden flex-1 sm:flex-none">
                   <button
                     onClick={() => setVideoVariant('slideshow')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                    className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-1.5 text-sm sm:text-xs font-medium transition-colors ${
                       videoVariant === 'slideshow' 
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-muted/50 hover:bg-muted'
                     }`}
                   >
-                    <Layers className="h-3 w-3" />
+                    <Layers className="h-4 w-4 sm:h-3 sm:w-3" />
                     Slideshow
                   </button>
                   <button
                     onClick={() => setVideoVariant('scrapbook')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                    className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-1.5 text-sm sm:text-xs font-medium transition-colors ${
                       videoVariant === 'scrapbook' 
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-muted/50 hover:bg-muted'
                     }`}
                   >
-                    <Camera className="h-3 w-3" />
+                    <Camera className="h-4 w-4 sm:h-3 sm:w-3" />
                     Scrapbook
                   </button>
                 </div>
 
-                {/* Voice toggle buttons */}
-                <div className="flex items-center border rounded-md overflow-hidden">
+                {/* Voice toggle buttons - full width on mobile */}
+                <div className="flex items-center border rounded-md overflow-hidden flex-1 sm:flex-none">
                   <button
                     onClick={() => setVoiceProvider('google')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                    className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-1.5 text-sm sm:text-xs font-medium transition-colors ${
                       voiceProvider === 'google' 
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-muted/50 hover:bg-muted'
                     }`}
                   >
-                    <Mic className="h-3 w-3" />
-                    Google TTS
+                    <Mic className="h-4 w-4 sm:h-3 sm:w-3" />
+                    Google
                   </button>
                   <button
                     onClick={() => setVoiceProvider('elevenlabs')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                    className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-1.5 text-sm sm:text-xs font-medium transition-colors ${
                       voiceProvider === 'elevenlabs' 
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-muted/50 hover:bg-muted'
@@ -351,14 +351,14 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                 </div>
 
                 {/* VHS toggle */}
-                <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-muted/50">
-                  <Tv className="h-3 w-3 text-muted-foreground" />
-                  <Label htmlFor="vhs-toggle" className="text-xs cursor-pointer">VHS</Label>
+                <div className="flex items-center justify-center gap-2 px-3 py-2.5 sm:py-1.5 border rounded-md bg-muted/50">
+                  <Tv className="h-4 w-4 sm:h-3 sm:w-3 text-muted-foreground" />
+                  <Label htmlFor="vhs-toggle" className="text-sm sm:text-xs cursor-pointer">VHS Effect</Label>
                   <Switch
                     id="vhs-toggle"
                     checked={enableVhsEffect}
                     onCheckedChange={setEnableVhsEffect}
-                    className="scale-75"
+                    className="scale-90 sm:scale-75"
                   />
                 </div>
               </div>
@@ -399,7 +399,8 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
           {/* Step 2: Video Preview */}
           {(isReady || isMusicVideoMode) && (
             <div className="space-y-2">
-              <div className="aspect-video bg-black rounded-lg overflow-hidden">
+              {/* Video player - larger on mobile for better touch controls */}
+              <div className="aspect-video bg-black rounded-lg overflow-hidden min-h-[200px] sm:min-h-0">
                 <Player
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   component={videoVariant === 'scrapbook' ? ScrapbookVideoComponent as any : TimelineVideoComponent as any}
@@ -427,12 +428,12 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                 />
               </div>
 
-              {/* Compact info bar */}
-              <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
-                <span>
+              {/* Info bar - stacked on mobile */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-xs text-muted-foreground px-1">
+                <span className="text-center sm:text-left">
                   {Math.floor(totalDuration / FPS / 60)}:{String(Math.floor((totalDuration / FPS) % 60)).padStart(2, '0')} • {videoEvents.length || events.length} scenes
                 </span>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center sm:justify-end gap-2">
                   {videoVariant === 'scrapbook' && <span className="flex items-center gap-1"><Camera className="h-3 w-3" />Scrapbook</span>}
                   {enableVhsEffect && <span className="flex items-center gap-1"><Tv className="h-3 w-3" />VHS</span>}
                   {soundEffectsCount > 0 && <span>{soundEffectsCount} SFX</span>}

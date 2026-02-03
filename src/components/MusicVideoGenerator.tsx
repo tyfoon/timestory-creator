@@ -290,75 +290,75 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
       </Button>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Film className="h-5 w-5 text-primary" />
-              {step === 'customize' ? 'Aanpassen' : 'Persoonlijke Video Clip Generator'}
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
+              <Film className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              {step === 'customize' ? 'Aanpassen' : 'Persoonlijke Video Clip'}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               {step === 'customize' 
-                ? 'Pas je gegevens aan voor een nog persoonlijker resultaat.'
-                : 'Genereer een unieke video clip met muziek gebaseerd op jouw herinneringen.'}
+                ? 'Pas je gegevens aan voor een persoonlijker resultaat.'
+                : 'Genereer een unieke video clip met muziek.'}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
+          <div className="space-y-4 sm:space-y-6 py-2 sm:py-4">
             {/* Customize Step */}
             {step === 'customize' && (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {/* Personal details for song - compact */}
                 <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    Vul persoonlijke details in voor een nog unieker lied:
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Vul persoonlijke details in voor een unieker lied:
                   </p>
                   
                   {/* Friends */}
-                  <div className="space-y-1.5">
-                    <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <div className="space-y-1">
+                    <Label className="text-xs sm:text-sm font-medium text-foreground">
                       Top 3 vrienden van toen
                     </Label>
                     <Input
-                      placeholder="Namen gescheiden door komma's (bijv. Jan, Piet, Klaas)"
+                      placeholder="Namen gescheiden door komma's"
                       value={localOptionalData.friends || ''}
                       onChange={(e) => setLocalOptionalData(prev => ({ ...prev, friends: e.target.value }))}
-                      className="bg-card h-9"
+                      className="bg-card h-10 sm:h-9 text-sm"
                     />
                   </div>
 
                   {/* School */}
-                  <div className="space-y-1.5">
-                    <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <div className="space-y-1">
+                    <Label className="text-xs sm:text-sm font-medium text-foreground">
                       Middelbare School
                     </Label>
                     <Input
-                      placeholder="Bijv. Christelijk Lyceum Veenendaal"
+                      placeholder="Bijv. Christelijk Lyceum"
                       value={localOptionalData.school || ''}
                       onChange={(e) => setLocalOptionalData(prev => ({ ...prev, school: e.target.value }))}
-                      className="bg-card h-9"
+                      className="bg-card h-10 sm:h-9 text-sm"
                     />
                   </div>
 
                   {/* Nightlife */}
-                  <div className="space-y-1.5">
-                    <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <div className="space-y-1">
+                    <Label className="text-xs sm:text-sm font-medium text-foreground">
                       Favoriete uitgaansplekken
                     </Label>
                     <Input
-                      placeholder="Discotheken/kroegen gescheiden door komma's"
+                      placeholder="Discotheken/kroegen"
                       value={localOptionalData.nightlife || ''}
                       onChange={(e) => setLocalOptionalData(prev => ({ ...prev, nightlife: e.target.value }))}
-                      className="bg-card h-9"
+                      className="bg-card h-10 sm:h-9 text-sm"
                     />
                   </div>
                 </div>
 
                 {/* Subculture Selector for Music Style */}
                 <div className="space-y-2 pt-3 border-t border-border">
-                  <div className="p-3 bg-accent/10 rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      <Music className="h-4 w-4 inline mr-1.5 text-accent" />
-                      <strong>Muziekstijl:</strong> De subcultuur bepaalt de stijl van je lied.
+                  <div className="p-2 sm:p-3 bg-accent/10 rounded-lg">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      <Music className="h-3 w-3 sm:h-4 sm:w-4 inline mr-1 text-accent" />
+                      <strong>Muziekstijl:</strong> Subcultuur bepaalt de stijl.
                     </p>
                   </div>
                   <SubcultureSelector
@@ -373,12 +373,12 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                   />
                 </div>
 
-                {/* Confirm Button */}
-                <div className="flex justify-end gap-3 pt-3">
-                  <Button variant="ghost" size="sm" onClick={() => setIsDialogOpen(false)}>
+                {/* Confirm Button - larger touch target on mobile */}
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3">
+                  <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="h-11 sm:h-9">
                     Annuleren
                   </Button>
-                  <Button onClick={handleConfirmCustomize} size="sm" className="gap-2">
+                  <Button onClick={handleConfirmCustomize} className="h-11 sm:h-9 gap-2">
                     <Check className="h-4 w-4" />
                     Doorgaan
                   </Button>
@@ -389,54 +389,54 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
             {/* Generation Steps (shown after customize) */}
             {step !== 'customize' && (
               <>
-                {/* Tip if no personal data */}
+                {/* Tip if no personal data - compact on mobile */}
                 {!hasPersonalData && step === 'idle' && (
-                  <div className="p-4 bg-muted border border-border rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Tip:</strong> Vul je persoonlijke details in (vrienden, school, uitgaan) voor een nog persoonlijker lied!
+                  <div className="p-3 sm:p-4 bg-muted border border-border rounded-lg">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      <strong>Tip:</strong> Vul je details in voor een persoonlijker lied!
                     </p>
                   </div>
                 )}
 
-                {/* Progress Steps */}
-                <div className="space-y-4">
+                {/* Progress Steps - more compact on mobile */}
+                <div className="space-y-3 sm:space-y-4">
                   {/* Step 1: Lyrics */}
-                  <div className="flex items-center gap-3">
-                    {getStepIcon('lyrics', step)}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">Songtekst schrijven</span>
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <div className="flex-shrink-0 mt-0.5">{getStepIcon('lyrics', step)}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="font-medium text-sm sm:text-base">Songtekst schrijven</span>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        AI schrijft een nostalgisch lied met jouw herinneringen
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                        AI schrijft een nostalgisch lied
                       </p>
                     </div>
                   </div>
 
                   {/* Step 2: Music */}
-                  <div className="flex items-center gap-3">
-                    {getStepIcon('music', step)}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <Radio className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">Muziek componeren</span>
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <div className="flex-shrink-0 mt-0.5">{getStepIcon('music', step)}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <Radio className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="font-medium text-sm sm:text-base">Muziek componeren</span>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        Suno AI maakt een unieke track in de stijl van jouw tijdperk
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                        Suno AI maakt een unieke track
                       </p>
                     </div>
                   </div>
 
                   {/* Step 3: Complete */}
-                  <div className="flex items-center gap-3">
-                    {getStepIcon('complete', step)}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <Video className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">Klaar!</span>
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <div className="flex-shrink-0 mt-0.5">{getStepIcon('complete', step)}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <Video className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="font-medium text-sm sm:text-base">Klaar!</span>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                         Beluister je persoonlijke hit
                       </p>
                     </div>
@@ -453,45 +453,49 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
 
                 {/* Error Display */}
                 {step === 'error' && error && (
-                  <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
-                    <p className="text-sm text-destructive flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4" />
-                      {error}
+                  <div className="p-3 sm:p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
+                    <p className="text-xs sm:text-sm text-destructive flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                      <span className="break-words">{error}</span>
                     </p>
                   </div>
                 )}
 
                 {/* Result Display */}
                 {step === 'complete' && result && (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {/* Song Title & Style */}
-                    <div className="p-4 bg-primary/10 rounded-lg">
-                      <h3 className="font-bold text-lg">{result.title}</h3>
-                      <p className="text-sm text-muted-foreground">{result.style}</p>
+                    <div className="p-3 sm:p-4 bg-primary/10 rounded-lg">
+                      <h3 className="font-bold text-base sm:text-lg break-words">{result.title}</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground">{result.style}</p>
                     </div>
 
-                    {/* Audio Player */}
+                    {/* Audio Player - native controls are already touch-friendly */}
                     {result.audioUrl && (
                       <div className="space-y-2">
-                        <audio controls className="w-full" src={result.audioUrl}>
+                        <audio controls className="w-full h-12" src={result.audioUrl}>
                           Je browser ondersteunt geen audio.
                         </audio>
                         <p className="text-xs text-muted-foreground text-center">
                           Duur: {result.duration ? Math.round(result.duration / 60) : '~3'} minuten
                         </p>
-                        {/* Show original Suno URL for reference */}
+                        {/* Show original Suno URL for reference - collapsible on mobile */}
                         {result.originalUrl && (
-                          <div className="mt-2 p-2 bg-muted rounded text-xs">
-                            <span className="text-muted-foreground">Suno URL: </span>
-                            <a 
-                              href={result.originalUrl} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline break-all"
-                            >
-                              {result.originalUrl}
-                            </a>
-                          </div>
+                          <details className="mt-2">
+                            <summary className="text-xs text-muted-foreground cursor-pointer">
+                              Toon Suno URL
+                            </summary>
+                            <div className="mt-1 p-2 bg-muted rounded text-xs">
+                              <a 
+                                href={result.originalUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline break-all"
+                              >
+                                {result.originalUrl}
+                              </a>
+                            </div>
+                          </details>
                         )}
                       </div>
                     )}
@@ -499,38 +503,37 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                     {/* Lyrics Preview */}
                     {result.lyrics && (
                       <details className="group">
-                        <summary className="cursor-pointer text-sm font-medium text-primary hover:underline">
+                        <summary className="cursor-pointer text-xs sm:text-sm font-medium text-primary hover:underline">
                           Bekijk songtekst
                         </summary>
-                        <pre className="mt-2 p-4 bg-muted rounded-lg text-sm whitespace-pre-wrap font-sans max-h-60 overflow-y-auto">
+                        <pre className="mt-2 p-3 sm:p-4 bg-muted rounded-lg text-xs sm:text-sm whitespace-pre-wrap font-sans max-h-48 sm:max-h-60 overflow-y-auto">
                           {result.lyrics}
                         </pre>
                       </details>
                     )}
 
-                    {/* Video Generation Button */}
+                    {/* Video Generation Button - larger touch target */}
                     <Button 
                       onClick={() => {
                         setIsDialogOpen(false);
                         setIsVideoDialogOpen(true);
                       }}
-                      className="w-full gap-2"
+                      className="w-full h-11 sm:h-10 gap-2"
                       variant="secondary"
                     >
                       <Film className="h-4 w-4" />
-                      🎬 Maak Muziekvideo met deze track
+                      🎬 Maak Muziekvideo
                     </Button>
                   </div>
                 )}
 
-                {/* Action Button */}
+                {/* Action Button - larger touch targets */}
                 {step === 'idle' && (
                   <Button 
                     onClick={handleGenerate} 
-                    className="w-full gap-2"
-                    size="lg"
+                    className="w-full h-12 sm:h-11 gap-2 text-sm sm:text-base"
                   >
-                    <Play className="h-4 w-4" />
+                    <Play className="h-4 w-4 sm:h-5 sm:w-5" />
                     Start Generatie
                   </Button>
                 )}
@@ -539,7 +542,7 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                   <Button 
                     onClick={handleGenerate} 
                     variant="outline"
-                    className="w-full gap-2"
+                    className="w-full h-11 sm:h-10 gap-2"
                   >
                     <Loader2 className="h-4 w-4" />
                     Probeer opnieuw
