@@ -352,7 +352,14 @@ export async function searchSingleImageTol(
   const actualQuery = ddgResult.actualQuery || searchQuery;
   
   if (ddgResult.imageUrl) {
-    addTrace(traceLabel, actualQuery, !!year, 'found');
+    searchTrace.push({
+      source: traceLabel,
+      query: actualQuery,
+      withYear: !!year,
+      result: 'found',
+      timestamp: Date.now() - startTime,
+      imageUrl: ddgResult.imageUrl,
+    });
     return {
       eventId,
       imageUrl: ddgResult.imageUrl,
@@ -360,7 +367,13 @@ export async function searchSingleImageTol(
       searchTrace,
     };
   } else {
-    addTrace(traceLabel, actualQuery, !!year, 'not_found');
+    searchTrace.push({
+      source: traceLabel,
+      query: actualQuery,
+      withYear: !!year,
+      result: 'not_found',
+      timestamp: Date.now() - startTime,
+    });
     return {
       eventId,
       imageUrl: null,
