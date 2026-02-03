@@ -3,10 +3,9 @@ import { Player } from '@remotion/player';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Video, Volume2, Download, AlertCircle, Music, Tv, Camera, Layers, Mic } from 'lucide-react';
+import { Loader2, Video, Volume2, AlertCircle, Music, Tv, Camera, Layers, Mic } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { TimelineEvent } from '@/types/timeline';
 import { 
   TimelineVideoComponent, 
@@ -241,181 +240,137 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Video className="h-5 w-5" />
+      <DialogContent className="max-w-4xl">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <Video className="h-4 w-4" />
             Video Preview
           </DialogTitle>
-          <DialogDescription>
-            Genereer een video van je tijdlijn met voiceover.
-          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Music Video Mode Banner */}
+        <div className="space-y-3">
+          {/* Music Video Mode Banner - compact */}
           {isMusicVideoMode && (
-            <div className="flex items-center gap-3 p-4 bg-primary/10 border border-primary/30 rounded-lg">
-              <Music className="h-5 w-5 text-primary" />
-              <div className="flex-1">
-                <p className="font-medium text-primary">🎵 Muziekvideo Modus</p>
-                <p className="text-sm text-muted-foreground">
-                  Je gegenereerde song wordt als achtergrondmuziek gebruikt. 
-                  Duur: {Math.floor(backgroundMusicDuration / 60)}:{String(Math.floor(backgroundMusicDuration % 60)).padStart(2, '0')}
-                </p>
-              </div>
+            <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/30 rounded-md text-sm">
+              <Music className="h-4 w-4 text-primary flex-shrink-0" />
+              <span className="text-primary font-medium">🎵 Muziekvideo</span>
+              <span className="text-muted-foreground">
+                ({Math.floor(backgroundMusicDuration / 60)}:{String(Math.floor(backgroundMusicDuration % 60)).padStart(2, '0')})
+              </span>
             </div>
           )}
 
-          {/* Step 1: Generate Audio */}
+          {/* Step 1: Generate Audio - compact layout */}
           {!isReady && !isMusicVideoMode && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
-                <Volume2 className="h-5 w-5 text-muted-foreground" />
-                <div className="flex-1">
-                  <p className="font-medium">Stap 1: Genereer Voiceover</p>
-                  <p className="text-sm text-muted-foreground">
-                    We genereren audio voor {events.length} gebeurtenissen
-                    {storyIntroduction ? ' + intro' : ''}.
-                  </p>
+            <div className="space-y-3">
+              {/* Info line */}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Volume2 className="h-4 w-4" />
+                <span>Audio genereren voor {events.length} gebeurtenissen{storyIntroduction ? ' + intro' : ''}</span>
+              </div>
+
+              {/* Options row - all in one line */}
+              <div className="flex flex-wrap gap-2">
+                {/* Video Style toggle buttons */}
+                <div className="flex items-center border rounded-md overflow-hidden">
+                  <button
+                    onClick={() => setVideoVariant('slideshow')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                      videoVariant === 'slideshow' 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-muted/50 hover:bg-muted'
+                    }`}
+                  >
+                    <Layers className="h-3 w-3" />
+                    Slideshow
+                  </button>
+                  <button
+                    onClick={() => setVideoVariant('scrapbook')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                      videoVariant === 'scrapbook' 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-muted/50 hover:bg-muted'
+                    }`}
+                  >
+                    <Camera className="h-3 w-3" />
+                    Scrapbook
+                  </button>
+                </div>
+
+                {/* Voice toggle buttons */}
+                <div className="flex items-center border rounded-md overflow-hidden">
+                  <button
+                    onClick={() => setVoiceProvider('elevenlabs')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                      voiceProvider === 'elevenlabs' 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-muted/50 hover:bg-muted'
+                    }`}
+                  >
+                    <Mic className="h-3 w-3" />
+                    ElevenLabs
+                  </button>
+                  <button
+                    onClick={() => setVoiceProvider('google')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+                      voiceProvider === 'google' 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-muted/50 hover:bg-muted'
+                    }`}
+                  >
+                    Google
+                  </button>
+                </div>
+
+                {/* VHS toggle */}
+                <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-muted/50">
+                  <Tv className="h-3 w-3 text-muted-foreground" />
+                  <Label htmlFor="vhs-toggle" className="text-xs cursor-pointer">VHS</Label>
+                  <Switch
+                    id="vhs-toggle"
+                    checked={enableVhsEffect}
+                    onCheckedChange={setEnableVhsEffect}
+                    className="scale-75"
+                  />
                 </div>
               </div>
 
-              {/* Video Variant Selector */}
-              <div className="p-4 bg-muted/50 rounded-lg space-y-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <Camera className="h-5 w-5 text-muted-foreground" />
-                  <Label className="font-medium">Video Stijl</Label>
+              {/* Progress or error */}
+              {isGeneratingAudio && (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <span>Audio genereren... {Math.round(audioProgress)}%</span>
+                  </div>
+                  <Progress value={audioProgress} className="h-1.5" />
                 </div>
-                <RadioGroup
-                  value={videoVariant}
-                  onValueChange={(v) => setVideoVariant(v as VideoVariant)}
-                  className="grid grid-cols-2 gap-3"
-                >
-                  <div className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-muted/30 cursor-pointer">
-                    <RadioGroupItem value="slideshow" id="slideshow" className="mt-0.5" />
-                    <div className="flex-1">
-                      <Label htmlFor="slideshow" className="font-medium cursor-pointer flex items-center gap-2">
-                        <Layers className="h-4 w-4" />
-                        Slideshow
-                      </Label>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Klassieke presentatie met vloeiende overgangen
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-muted/30 cursor-pointer">
-                    <RadioGroupItem value="scrapbook" id="scrapbook" className="mt-0.5" />
-                    <div className="flex-1">
-                      <Label htmlFor="scrapbook" className="font-medium cursor-pointer flex items-center gap-2">
-                        <Camera className="h-4 w-4" />
-                        Scrapbook Camera
-                      </Label>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Virtuele camera vliegt over een plakboek
-                      </p>
-                    </div>
-                  </div>
-                </RadioGroup>
-              </div>
+              )}
 
-              {/* Voice Provider Selector */}
-              <div className="p-4 bg-muted/50 rounded-lg space-y-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <Mic className="h-5 w-5 text-muted-foreground" />
-                  <Label className="font-medium">Stem Provider</Label>
-                </div>
-                <RadioGroup
-                  value={voiceProvider}
-                  onValueChange={(v) => setVoiceProvider(v as VoiceProvider)}
-                  className="grid grid-cols-2 gap-3"
-                >
-                  <div className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-muted/30 cursor-pointer">
-                    <RadioGroupItem value="elevenlabs" id="elevenlabs" className="mt-0.5" />
-                    <div className="flex-1">
-                      <Label htmlFor="elevenlabs" className="font-medium cursor-pointer">
-                        ElevenLabs
-                      </Label>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Hoogste kwaliteit, meest natuurlijk
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-muted/30 cursor-pointer">
-                    <RadioGroupItem value="google" id="google" className="mt-0.5" />
-                    <div className="flex-1">
-                      <Label htmlFor="google" className="font-medium cursor-pointer">
-                        Google TTS
-                      </Label>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Betrouwbaar, meerdere talen
-                      </p>
-                    </div>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              {/* VHS Effect Toggle */}
-              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Tv className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <Label htmlFor="vhs-toggle" className="font-medium cursor-pointer">
-                      VHS / Retro Effect
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Geef de video een authentieke jaren '80 CRT-look
-                    </p>
-                  </div>
-                </div>
-                <Switch
-                  id="vhs-toggle"
-                  checked={enableVhsEffect}
-                  onCheckedChange={setEnableVhsEffect}
-                />
-              </div>
-
-              {isGeneratingAudio ? (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm">Audio genereren...</span>
-                  </div>
-                  <Progress value={audioProgress} className="h-2" />
-                  <p className="text-xs text-muted-foreground text-right">
-                    {Math.round(audioProgress)}%
-                  </p>
-                </div>
-              ) : audioError ? (
-                <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-lg">
+              {audioError && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-destructive/10 text-destructive rounded-md text-sm">
                   <AlertCircle className="h-4 w-4" />
-                  <span className="text-sm">{audioError}</span>
+                  <span>{audioError}</span>
                 </div>
-              ) : null}
+              )}
 
               <Button
                 onClick={handleGenerateAudio}
                 disabled={isGeneratingAudio || events.length === 0}
+                size="sm"
                 className="w-full"
               >
                 {isGeneratingAudio ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Genereren...
-                  </>
+                  <><Loader2 className="mr-2 h-3 w-3 animate-spin" />Genereren...</>
                 ) : (
-                  <>
-                    <Volume2 className="mr-2 h-4 w-4" />
-                    Genereer Audio
-                  </>
+                  <><Volume2 className="mr-2 h-3 w-3" />Genereer Audio</>
                 )}
               </Button>
             </div>
           )}
 
-          {/* Step 2: Video Preview - shown when ready OR in music video mode */}
+          {/* Step 2: Video Preview */}
           {(isReady || isMusicVideoMode) && (
-            <div className="space-y-4">
+            <div className="space-y-2">
               <div className="aspect-video bg-black rounded-lg overflow-hidden">
                 <Player
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -431,7 +386,6 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                     fps: FPS,
                     enableRetroEffect: enableVhsEffect,
                     retroIntensity: 0.85,
-                    // Music video mode: use external audio
                     externalAudioUrl: isMusicVideoMode ? backgroundMusicUrl : undefined,
                     externalAudioDuration: isMusicVideoMode ? backgroundMusicDuration : undefined,
                   }}
@@ -439,58 +393,22 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                   compositionWidth={1920}
                   compositionHeight={1080}
                   fps={FPS}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                  }}
+                  style={{ width: '100%', height: '100%' }}
                   controls
                   autoPlay={false}
                 />
               </div>
 
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
+              {/* Compact info bar */}
+              <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
                 <span>
-                  Duur: {Math.floor(totalDuration / FPS / 60)}:{String(Math.floor((totalDuration / FPS) % 60)).padStart(2, '0')}
+                  {Math.floor(totalDuration / FPS / 60)}:{String(Math.floor((totalDuration / FPS) % 60)).padStart(2, '0')} • {videoEvents.length || events.length} scenes
                 </span>
-                <div className="flex items-center gap-4">
-                  <span className="flex items-center gap-1 text-primary">
-                    {videoVariant === 'scrapbook' ? (
-                      <><Camera className="h-3 w-3" /> Scrapbook</>
-                    ) : (
-                      <><Layers className="h-3 w-3" /> Slideshow</>
-                    )}
-                  </span>
-                  {enableVhsEffect && (
-                    <span className="flex items-center gap-1 text-primary">
-                      <Tv className="h-3 w-3" />
-                      VHS
-                    </span>
-                  )}
-                  {soundEffectsCount > 0 && (
-                    <span className="flex items-center gap-1">
-                      <Music className="h-3 w-3" />
-                      {soundEffectsCount} geluidseffecten
-                    </span>
-                  )}
-                  <span>{videoEvents.length} scenes</span>
-                </div>
-              </div>
-
-              {/* Download instructions */}
-              <div className="p-4 bg-muted/50 rounded-lg space-y-3">
                 <div className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
-                  <span className="font-medium">Video exporteren</span>
+                  {videoVariant === 'scrapbook' && <span className="flex items-center gap-1"><Camera className="h-3 w-3" />Scrapbook</span>}
+                  {enableVhsEffect && <span className="flex items-center gap-1"><Tv className="h-3 w-3" />VHS</span>}
+                  {soundEffectsCount > 0 && <span>{soundEffectsCount} SFX</span>}
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Om de video als MP4 te downloaden, gebruik je Remotion CLI lokaal:
-                </p>
-                <code className="block p-2 bg-background rounded text-xs font-mono">
-                  npx remotion render TimelineVideo out/video.mp4
-                </code>
-                <p className="text-xs text-muted-foreground">
-                  Tip: De preview hierboven toont exact hoe je video eruit zal zien.
-                </p>
               </div>
             </div>
           )}
