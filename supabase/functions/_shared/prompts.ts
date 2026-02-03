@@ -574,6 +574,34 @@ Dit is het decor. Omdat exacte namen van toen soms vervaagd zijn, gebruik je **a
 
 export const CHILDREN_ADDITION = (childrenInfo: string[]) => `\nKinderen: ${childrenInfo.join(", ")}`;
 
+// =============================================================================
+// PERSOONLIJKE HERINNERINGEN (vrienden, school, uitgaan)
+// =============================================================================
+export const PERSONAL_MEMORIES_ADDITION = (friends?: string, school?: string, nightlife?: string) => {
+  const parts: string[] = [];
+  
+  if (friends) {
+    parts.push(`**Beste vrienden:** ${friends}. Verwijs in verhalen naar deze namen als je sociale context nodig hebt.`);
+  }
+  
+  if (school) {
+    parts.push(`**Middelbare school:** ${school}. Gebruik deze schoolnaam voor schoolgerelateerde herinneringen.`);
+  }
+  
+  if (nightlife) {
+    parts.push(`**Favoriete uitgaansplekken:** ${nightlife}. Dit zijn de plekken waar de avonden doorgebracht werden - noem ze bij naam!`);
+  }
+  
+  if (parts.length === 0) return '';
+  
+  return `
+PERSOONLIJKE HERINNERINGEN (VERWERK DIT SUBTIEL):
+${parts.join('\n')}
+
+Weef deze specifieke details door de verhalen heen. Als je bijvoorbeeld schrijft over uitgaan of muziek, noem dan de daadwerkelijke club/disco naam. Bij schoolherinneringen, noem de echte school.
+Dit maakt de tijdlijn persoonlijk en herkenbaar!`;
+};
+
 export const GENDER_ADDITION = (gender: "male" | "female") => {
   const genderText = gender === "male" ? "man" : "vrouw";
   return `\nDe persoon voor wie deze tijdlijn is, is een ${genderText}. Pas de beschrijvingen subtiel aan zodat ze herkenbaar zijn vanuit dit perspectief.`;

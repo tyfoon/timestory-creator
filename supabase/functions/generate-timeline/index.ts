@@ -16,6 +16,7 @@ import {
   CHILDREN_ADDITION,
   GENDER_ADDITION,
   SUBCULTURE_ADDITION,
+  PERSONAL_MEMORIES_ADDITION,
   getGenerationPerspective,
 } from "../_shared/prompts.ts";
 
@@ -41,6 +42,10 @@ interface TimelineRequest {
     interests?: string;
     focus: "netherlands" | "europe" | "world";
     periodType?: "birthyear" | "childhood" | "puberty" | "young-adult" | "custom";
+    // Personal memories for music video & story personalization
+    friends?: string;     // Top 3 friends from back then
+    school?: string;      // High school name
+    nightlife?: string;   // Favorite clubs/bars
   };
   language: string;
   stream?: boolean;
@@ -552,7 +557,20 @@ function buildPrompt(data: TimelineRequest): string {
     promptParts.push(PERSONAL_NAME_ADDITION(fullName));
   }
 
-  // C2. Interesses (Specifieke hobby's toevoegen)
+  // C2. Persoonlijke herinneringen (vrienden, school, uitgaan)
+  // Dit zijn zeer waardevolle details die de verhalen persoonlijk maken!
+  if (optionalData.friends || optionalData.school || optionalData.nightlife) {
+    const memoriesAddition = PERSONAL_MEMORIES_ADDITION(
+      optionalData.friends,
+      optionalData.school,
+      optionalData.nightlife
+    );
+    if (memoriesAddition) {
+      promptParts.push(memoriesAddition);
+    }
+  }
+
+  // C3. Interesses (Specifieke hobby's toevoegen)
   if (optionalData.interests) {
     promptParts.push(INTERESTS_ADDITION(optionalData.interests));
   }
