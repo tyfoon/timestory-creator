@@ -27,11 +27,14 @@ interface SubcultureData {
   availableOptions: string[];
 }
 
+type Gender = 'male' | 'female' | 'none';
+
 interface RequestBody {
   events: TimelineEvent[];
   summary: string;
   personalData: PersonalData;
   subculture?: SubcultureData;
+  gender?: Gender;
   startYear: number;
   endYear: number;
 }
@@ -49,11 +52,19 @@ serve(async (req) => {
     }
 
     const body: RequestBody = await req.json();
-    const { events, summary, personalData, subculture, startYear, endYear } = body;
+    const { events, summary, personalData, subculture, gender, startYear, endYear } = body;
 
     console.log(`Generating song lyrics for ${events.length} events, years ${startYear}-${endYear}`);
     console.log(`Personal data: friends=${personalData.friends}, school=${personalData.school}, nightlife=${personalData.nightlife}`);
-    console.log(`Subculture: ${subculture?.myGroup || 'none'}`);
+    console.log(`Subculture: ${subculture?.myGroup || 'none'}, Gender: ${gender || 'none'}`);
+
+    // Determine vocal type based on gender
+    let vocalType = "";
+    if (gender === 'male') {
+      vocalType = "male vocals";
+    } else if (gender === 'female') {
+      vocalType = "female vocals";
+    }
 
     // Subculture to music style mapping - subculture is the PRIMARY determinant
     const subcultureStyleMap: Record<string, string> = {
@@ -306,13 +317,19 @@ Format je output als JSON:
       };
     }
 
-    console.log(`Generated song: "${parsedContent.title}" in style "${parsedContent.style}"`);
+    // Combine style with vocal type for Suno
+    let finalStyle = parsedContent.style;
+    if (vocalType) {
+      finalStyle = `${parsedContent.style}, ${vocalType}`;
+    }
+
+    console.log(`Generated song: "${parsedContent.title}" in style "${finalStyle}"`);
 
     return new Response(JSON.stringify({
       success: true,
       data: {
         lyrics: parsedContent.lyrics,
-        style: parsedContent.style,
+        style: finalStyle,
         title: parsedContent.title,
         suggestedGenre: suggestedStyle,
       }
