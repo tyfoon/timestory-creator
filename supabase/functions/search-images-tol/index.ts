@@ -13,6 +13,9 @@ const RETRIES = 1;
 function getDecadeSuffix(year: number): string | null {
   const prefix = Math.floor(year / 10);
   const decadeMap: Record<number, string> = {
+    194: '40s',
+    195: '50s',
+    196: '60s',
     197: '70s',
     198: '80s',
     199: '90s',
