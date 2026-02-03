@@ -1,10 +1,13 @@
 import { supabase } from '@/integrations/supabase/client';
 
+export type VoiceProvider = 'google' | 'elevenlabs';
+
 interface GenerateSpeechParams {
   text: string;
   voice?: string;
   languageCode?: string;
   speakingRate?: number;
+  provider?: VoiceProvider;
 }
 
 interface SpeechResult {
@@ -12,27 +15,68 @@ interface SpeechResult {
   estimatedDurationSeconds: number;
   wordCount: number;
   voice: string;
-  languageCode: string;
+  languageCode?: string;
+  provider: VoiceProvider;
 }
+
+// Default ElevenLabs voice ID (user specified)
+const DEFAULT_ELEVENLABS_VOICE_ID = 'FpLGR2n1CcG1v7SHJFsa';
 
 /**
  * Generate speech audio using Google Cloud TTS via Edge Function.
  */
-export const generateSpeech = async (params: GenerateSpeechParams): Promise<SpeechResult> => {
+const generateSpeechGoogle = async (params: Omit<GenerateSpeechParams, 'provider'>): Promise<SpeechResult> => {
   const { data, error } = await supabase.functions.invoke<SpeechResult>('generate-speech', {
     body: params,
   });
 
   if (error) {
-    console.error('Speech generation error:', error);
-    throw new Error(error.message || 'Failed to generate speech');
+    console.error('Google TTS generation error:', error);
+    throw new Error(error.message || 'Failed to generate speech with Google TTS');
   }
 
   if (!data) {
-    throw new Error('No data returned from speech generation');
+    throw new Error('No data returned from Google TTS');
   }
 
-  return data;
+  return { ...data, provider: 'google' };
+};
+
+/**
+ * Generate speech audio using ElevenLabs TTS via Edge Function.
+ */
+const generateSpeechElevenLabs = async (params: Omit<GenerateSpeechParams, 'provider'>): Promise<SpeechResult> => {
+  const { data, error } = await supabase.functions.invoke<SpeechResult>('generate-speech-elevenlabs', {
+    body: {
+      text: params.text,
+      voiceId: params.voice || DEFAULT_ELEVENLABS_VOICE_ID,
+    },
+  });
+
+  if (error) {
+    console.error('ElevenLabs TTS generation error:', error);
+    throw new Error(error.message || 'Failed to generate speech with ElevenLabs');
+  }
+
+  if (!data) {
+    throw new Error('No data returned from ElevenLabs TTS');
+  }
+
+  return { ...data, provider: 'elevenlabs' };
+};
+
+/**
+ * Generate speech audio using the specified provider.
+ * Defaults to ElevenLabs for higher quality narration.
+ */
+export const generateSpeech = async (params: GenerateSpeechParams): Promise<SpeechResult> => {
+  const provider = params.provider || 'elevenlabs'; // ElevenLabs is default
+  
+  if (provider === 'elevenlabs') {
+    return generateSpeechElevenLabs(params);
+  }
+  
+  return generateSpeechGoogle(params);
 };
 
 /**
@@ -47,14 +91,15 @@ export const base64ToAudioUrl = (base64: string): string => {
  */
 export const generateSpeechBatch = async (
   segments: { id: string; text: string }[],
-  onProgress?: (completed: number, total: number) => void
+  onProgress?: (completed: number, total: number) => void,
+  provider?: VoiceProvider
 ): Promise<Map<string, SpeechResult>> => {
   const results = new Map<string, SpeechResult>();
   
   for (let i = 0; i < segments.length; i++) {
     const segment = segments[i];
     try {
-      const result = await generateSpeech({ text: segment.text });
+      const result = await generateSpeech({ text: segment.text, provider });
       results.set(segment.id, result);
       onProgress?.(i + 1, segments.length);
     } catch (error) {
