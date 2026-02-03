@@ -51,24 +51,33 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
   // Calculate if we're in "music video mode" (external audio drives timing)
   const isMusicVideoMode = !!externalAudioUrl && !!externalAudioDuration;
   
+  // Music video intro duration: 15-20 seconds (we use 18 seconds = 540 frames at 30fps)
+  const MUSIC_VIDEO_INTRO_SECONDS = 18;
+  const musicVideoIntroFrames = Math.round(MUSIC_VIDEO_INTRO_SECONDS * fps);
+  
   // In music video mode, calculate how long each event should be shown
+  // Subtract intro time from total, then distribute remaining time across events
   const totalMusicFrames = isMusicVideoMode ? Math.round(externalAudioDuration * fps) : 0;
+  const remainingMusicFrames = isMusicVideoMode ? totalMusicFrames - musicVideoIntroFrames : 0;
   const framesPerEvent = isMusicVideoMode && events.length > 0 
-    ? Math.floor(totalMusicFrames / events.length) 
+    ? Math.floor(remainingMusicFrames / events.length) 
     : 0;
 
-  // Intro sequence
-  if (storyTitle && !isMusicVideoMode) {
-    // Skip intro in music video mode - the song IS the intro
+  // Intro sequence - now also shown in music video mode
+  if (storyTitle) {
+    // In music video mode, use the fixed intro duration. Otherwise use voiceover duration.
+    const effectiveIntroDuration = isMusicVideoMode ? musicVideoIntroFrames : introDurationFrames;
+    
     sequences.push(
-      <Sequence key="intro" from={currentFrame} durationInFrames={introDurationFrames}>
+      <Sequence key="intro" from={currentFrame} durationInFrames={effectiveIntroDuration}>
         {wrapContent(<IntroCard storyTitle={storyTitle} storyIntroduction={storyIntroduction} />)}
-        {introAudioUrl && (
+        {/* Only add intro audio in non-music-video mode (music plays separately) */}
+        {!isMusicVideoMode && introAudioUrl && (
           <Audio src={introAudioUrl} />
         )}
       </Sequence>
     );
-    currentFrame += introDurationFrames;
+    currentFrame += effectiveIntroDuration;
   }
 
   // Add external audio track (full duration) for music video mode
