@@ -77,6 +77,7 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
           firstName: localOptionalData.firstName,
           city: localOptionalData.city,
         },
+        subculture: localOptionalData.subculture, // Pass subculture data for music style
         startYear: localStartYear,
         endYear: localEndYear,
       }),
