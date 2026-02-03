@@ -3,7 +3,7 @@ import { Player } from '@remotion/player';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Video, Volume2, Download, AlertCircle, Music, Tv, Camera, Layers } from 'lucide-react';
+import { Loader2, Video, Volume2, Download, AlertCircle, Music, Tv, Camera, Layers, Mic } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -15,7 +15,7 @@ import {
   calculateScrapbookDuration,
   VideoEvent 
 } from '@/remotion';
-import { generateSpeech, base64ToAudioUrl } from '@/remotion/lib/speechApi';
+import { generateSpeech, base64ToAudioUrl, VoiceProvider } from '@/remotion/lib/speechApi';
 
 // Fallback Supabase configuration for sound effects
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
@@ -108,6 +108,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
   const [isReady, setIsReady] = useState(false);
   const [enableVhsEffect, setEnableVhsEffect] = useState(false);
   const [videoVariant, setVideoVariant] = useState<VideoVariant>('slideshow');
+  const [voiceProvider, setVoiceProvider] = useState<VoiceProvider>('elevenlabs');
 
   // Generate audio for all events
   const handleGenerateAudio = useCallback(async () => {
@@ -127,7 +128,8 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
         try {
           const introResult = await generateSpeech({ 
             text: storyIntroduction,
-            speakingRate: 1.0 // Normal pace for snappier intro
+            speakingRate: 1.0, // Normal pace for snappier intro
+            provider: voiceProvider
           });
           newIntroAudioUrl = base64ToAudioUrl(introResult.audioContent);
           // Tight buffer - audio ends, next starts almost immediately
@@ -153,7 +155,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
         
         // Run speech generation and sound effect fetch in parallel
         const [speechResult, soundEffectResult] = await Promise.all([
-          generateSpeech({ text: speechText }).catch(err => {
+          generateSpeech({ text: speechText, provider: voiceProvider }).catch(err => {
             console.error(`Failed to generate audio for event ${event.id}:`, err);
             return null;
           }),
@@ -195,7 +197,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
     } finally {
       setIsGeneratingAudio(false);
     }
-  }, [events, storyIntroduction]);
+  }, [events, storyIntroduction, voiceProvider]);
 
   // Check if we're in music video mode (background music provided)
   const isMusicVideoMode = !!backgroundMusicUrl && !!backgroundMusicDuration;
@@ -232,6 +234,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
       setAudioError(null);
       setEnableVhsEffect(false);
       setVideoVariant('slideshow');
+      setVoiceProvider('elevenlabs');
     }
     onOpenChange(newOpen);
   }, [onOpenChange]);
@@ -310,6 +313,42 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                       </Label>
                       <p className="text-xs text-muted-foreground mt-1">
                         Virtuele camera vliegt over een plakboek
+                      </p>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Voice Provider Selector */}
+              <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Mic className="h-5 w-5 text-muted-foreground" />
+                  <Label className="font-medium">Stem Provider</Label>
+                </div>
+                <RadioGroup
+                  value={voiceProvider}
+                  onValueChange={(v) => setVoiceProvider(v as VoiceProvider)}
+                  className="grid grid-cols-2 gap-3"
+                >
+                  <div className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-muted/30 cursor-pointer">
+                    <RadioGroupItem value="elevenlabs" id="elevenlabs" className="mt-0.5" />
+                    <div className="flex-1">
+                      <Label htmlFor="elevenlabs" className="font-medium cursor-pointer">
+                        ElevenLabs
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Hoogste kwaliteit, meest natuurlijk
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-muted/30 cursor-pointer">
+                    <RadioGroupItem value="google" id="google" className="mt-0.5" />
+                    <div className="flex-1">
+                      <Label htmlFor="google" className="font-medium cursor-pointer">
+                        Google TTS
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Betrouwbaar, meerdere talen
                       </p>
                     </div>
                   </div>
