@@ -23,6 +23,23 @@ function getDecadeSuffix(year: number): string | null {
   return decadeMap[prefix] || null;
 }
 
+// Build optimized search query based on category
+function buildSearchQuery(query: string, year: number, category?: string): string {
+  // Sports events: use exact year (more precise for matches, tournaments, etc.)
+  if (category === 'sports') {
+    return `${query} ${year}`;
+  }
+  
+  // All other categories: use decade suffix for better era-matching
+  const decadeSuffix = getDecadeSuffix(year);
+  if (decadeSuffix) {
+    return `${query} ${decadeSuffix}`;
+  }
+  
+  // Fallback: use year if no decade mapping exists
+  return `${query} ${year}`;
+}
+
 type AnyRecord = Record<string, unknown>;
 
 function isRecord(v: unknown): v is AnyRecord {
@@ -116,14 +133,8 @@ serve(async (req) => {
       );
     }
 
-    // Build optimized search query with decade suffix
-    let searchQuery = query;
-    if (year) {
-      const decadeSuffix = getDecadeSuffix(year);
-      if (decadeSuffix) {
-        searchQuery = `${query} ${decadeSuffix}`;
-      }
-    }
+    // Build optimized search query (decade for most, exact year for sports)
+    const searchQuery = year ? buildSearchQuery(query, year, category) : query;
 
     console.log(`[Tol Search] Query: "${searchQuery}" (original: "${query}", year: ${year}, category: ${category})`);
 
