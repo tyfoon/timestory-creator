@@ -19,8 +19,8 @@ interface SpeechResult {
   provider: VoiceProvider;
 }
 
-// Default ElevenLabs voice ID (user specified)
-const DEFAULT_ELEVENLABS_VOICE_ID = 'FpLGR2n1CcG1v7SHJFsa';
+// Default ElevenLabs voice ID - George (warm male, works with free tier)
+const DEFAULT_ELEVENLABS_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb';
 
 /**
  * Generate speech audio using Google Cloud TTS via Edge Function.
