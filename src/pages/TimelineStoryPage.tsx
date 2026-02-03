@@ -1275,7 +1275,7 @@ const TimelineStoryPage = () => {
         storyTitle={storyTitle}
         storyIntroduction={storyIntroduction}
         theme={theme}
-        isLoading={isLoading && !storyTitle && !storyIntroduction}
+        isLoading={isLoading}
       />
 
       {/* Image loading indicator - minimal */}
