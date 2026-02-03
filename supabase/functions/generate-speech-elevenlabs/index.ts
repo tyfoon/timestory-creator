@@ -16,8 +16,8 @@ interface SpeechRequest {
   speakingRate?: number;
 }
 
-// Default voice: FpLGR2n1CcG1v7SHJFsa (user specified)
-const DEFAULT_VOICE_ID = 'FpLGR2n1CcG1v7SHJFsa';
+// Default voice: George (warm male, works with free tier)
+const DEFAULT_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb';
 const DEFAULT_MODEL_ID = 'eleven_multilingual_v2';
 
 serve(async (req) => {
