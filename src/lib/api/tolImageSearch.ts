@@ -125,6 +125,75 @@ async function searchTMDB(
   } catch (err) {
     console.error('[Tol/TMDB] Error:', err);
     addTrace(type === 'tv' ? '📺 TMDB TV' : '🎬 TMDB Movie', query, !!year, 'error');
+  return { eventId, imageUrl: null, source: null, searchTrace };
+  }
+}
+
+/**
+ * Search Spotify for album artwork - mirrors the Legacy implementation
+ */
+async function searchSpotifyAlbumArt(
+  eventId: string,
+  spotifyQuery: string,
+): Promise<ImageResult & { searchTrace?: SearchTraceEntry[] }> {
+  const searchTrace: SearchTraceEntry[] = [];
+  const startTime = Date.now();
+  
+  const addTrace = (result: 'found' | 'not_found' | 'error') => {
+    searchTrace.push({
+      source: '🎵 Spotify',
+      query: spotifyQuery,
+      withYear: false,
+      result,
+      timestamp: Date.now() - startTime,
+    });
+  };
+
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    if (!supabaseUrl || !supabaseKey) {
+      addTrace('error');
+      return { eventId, imageUrl: null, source: null, searchTrace };
+    }
+
+    console.log(`[Tol/Spotify] Searching album art for: "${spotifyQuery}"`);
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/search-spotify`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json", 
+        Authorization: `Bearer ${supabaseKey}`, 
+        apikey: supabaseKey 
+      },
+      body: JSON.stringify({ query: spotifyQuery }),
+    });
+
+    if (!response.ok) {
+      console.log(`[Tol/Spotify] Search failed: ${response.status}`);
+      addTrace('error');
+      return { eventId, imageUrl: null, source: null, searchTrace };
+    }
+
+    const data = await response.json();
+
+    if (data.albumImage && data.trackId) {
+      console.log(`[Tol/Spotify] ✓ Found album art for "${data.trackName}" by ${data.artistName}`);
+      addTrace('found');
+      return {
+        eventId,
+        imageUrl: data.albumImage,
+        source: data.spotifyUrl || `https://open.spotify.com/track/${data.trackId}`,
+        searchTrace,
+      };
+    }
+
+    console.log(`[Tol/Spotify] No album art found for: "${spotifyQuery}"`);
+    addTrace('not_found');
+    return { eventId, imageUrl: null, source: null, searchTrace };
+  } catch (err) {
+    console.error("[Tol/Spotify] Error:", err);
+    addTrace('error');
     return { eventId, imageUrl: null, source: null, searchTrace };
   }
 }
@@ -219,6 +288,24 @@ export async function searchSingleImageTol(
 
   // Use English query if available (works better with DDG and TMDB)
   const searchQuery = queryEn || query;
+
+  // ========== MUSIC: SPOTIFY ALBUM ART FIRST ==========
+  if (isMusic || category === 'music' || spotifySearchQuery) {
+    const spotifyQuery = spotifySearchQuery || searchQuery;
+    console.log(`[Tol Search] Music event detected, trying Spotify first for: "${spotifyQuery}"`);
+    const spotifyResult = await searchSpotifyAlbumArt(eventId, spotifyQuery);
+    
+    // Merge Spotify trace
+    if (spotifyResult.searchTrace) {
+      searchTrace.push(...spotifyResult.searchTrace);
+    }
+    
+    if (spotifyResult.imageUrl) {
+      return { eventId, imageUrl: spotifyResult.imageUrl, source: spotifyResult.source, searchTrace };
+    }
+    
+    console.log(`[Tol Search] Spotify failed, falling back to DDG...`);
+  }
 
   // ========== TV SHOWS: TMDB TV API FIRST ==========
   if (isTV || visualSubjectType === 'tv') {
