@@ -109,7 +109,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
   const [videoVariant, setVideoVariant] = useState<VideoVariant>('slideshow');
   const [voiceProvider, setVoiceProvider] = useState<VoiceProvider>('google');
 
-  // Generate audio for all events
+  // Generate audio for all events - PARALLEL for speed, EXACT durations for sync
   const handleGenerateAudio = useCallback(async () => {
     setIsGeneratingAudio(true);
     setAudioError(null);
@@ -119,55 +119,72 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
       const totalSegments = events.length + (storyIntroduction ? 1 : 0);
       let completed = 0;
 
-      // Generate intro audio if we have story introduction
-      let newIntroAudioUrl: string | undefined;
-      let newIntroDurationFrames = 150;
-
-      if (storyIntroduction) {
-        try {
-          const introResult = await generateSpeech({ 
+      // PARALLEL: Generate intro + all event audio simultaneously
+      const introPromise = storyIntroduction
+        ? generateSpeech({ 
             text: storyIntroduction,
-            speakingRate: 1.0, // Normal pace for snappier intro
+            speakingRate: 1.0,
             provider: voiceProvider
-          });
-          newIntroAudioUrl = base64ToAudioUrl(introResult.audioContent);
-          // Tight buffer - audio ends, next starts almost immediately
-          newIntroDurationFrames = Math.round(introResult.estimatedDurationSeconds * FPS) + 5; // Only 5 frames (~0.16s) buffer
-          completed++;
-          setAudioProgress((completed / totalSegments) * 100);
-        } catch (error) {
-          console.error('Failed to generate intro audio:', error);
-          // Continue without intro audio
-        }
-      }
+          }).catch(err => {
+            console.error('Failed to generate intro audio:', err);
+            return null;
+          })
+        : Promise.resolve(null);
 
-      // Generate audio for each event + fetch sound effects in parallel
-      const newVideoEvents: VideoEvent[] = [];
-
-      for (const event of events) {
-        let audioUrl: string | undefined;
-        let audioDurationFrames = Math.round(DEFAULT_EVENT_DURATION_SECONDS * FPS);
-        let soundEffectAudioUrl: string | undefined;
-
-        // Generate speech for event description
+      // All events in parallel (speech + sound effects)
+      const eventPromises = events.map(async (event) => {
         const speechText = `${event.title}. ${event.description}`;
         
-        // Run speech generation and sound effect fetch in parallel
         const [speechResult, soundEffectResult] = await Promise.all([
           generateSpeech({ text: speechText, provider: voiceProvider }).catch(err => {
             console.error(`Failed to generate audio for event ${event.id}:`, err);
             return null;
           }),
-          // Only fetch sound effect if event has a query
           event.soundEffectSearchQuery 
             ? fetchSoundEffect(event.soundEffectSearchQuery)
             : Promise.resolve(null),
         ]);
 
+        // Update progress as each completes
+        completed++;
+        setAudioProgress((completed / totalSegments) * 100);
+
+        return { event, speechResult, soundEffectResult };
+      });
+
+      // Wait for intro and all events to complete
+      const [introResult, ...eventResults] = await Promise.all([
+        introPromise.then(result => {
+          if (storyIntroduction) {
+            completed++;
+            setAudioProgress((completed / totalSegments) * 100);
+          }
+          return result;
+        }),
+        ...eventPromises,
+      ]);
+
+      // Process intro result
+      let newIntroAudioUrl: string | undefined;
+      let newIntroDurationFrames = 150;
+
+      if (introResult) {
+        newIntroAudioUrl = base64ToAudioUrl(introResult.audioContent);
+        // EXACT duration + minimal 3-frame buffer (~0.1s)
+        newIntroDurationFrames = Math.round(introResult.estimatedDurationSeconds * FPS) + 3;
+      }
+
+      // Process event results
+      const newVideoEvents: VideoEvent[] = eventResults.map(({ event, speechResult, soundEffectResult }) => {
+        let audioUrl: string | undefined;
+        // EXACT duration - NO buffer between events for tight sync
+        let audioDurationFrames = Math.round(DEFAULT_EVENT_DURATION_SECONDS * FPS);
+        let soundEffectAudioUrl: string | undefined;
+
         if (speechResult) {
           audioUrl = base64ToAudioUrl(speechResult.audioContent);
-          // Tight buffer - almost no gap between events
-          audioDurationFrames = Math.round(speechResult.estimatedDurationSeconds * FPS) + 3;
+          // Use exact duration, add only 2 frames for safety
+          audioDurationFrames = Math.round(speechResult.estimatedDurationSeconds * FPS) + 2;
         }
 
         if (soundEffectResult) {
@@ -175,16 +192,13 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
           console.log(`Sound effect for "${event.title}": ${event.soundEffectSearchQuery}`);
         }
 
-        newVideoEvents.push({
+        return {
           ...event,
           audioUrl,
           audioDurationFrames,
           soundEffectAudioUrl,
-        });
-
-        completed++;
-        setAudioProgress((completed / totalSegments) * 100);
-      }
+        };
+      });
 
       setVideoEvents(newVideoEvents);
       setIntroAudioUrl(newIntroAudioUrl);

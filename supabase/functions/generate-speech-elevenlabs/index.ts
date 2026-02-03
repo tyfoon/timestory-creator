@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+import { parseMp3Duration } from "../_shared/mp3Duration.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -96,26 +97,24 @@ serve(async (req) => {
     // Convert to base64 for consistent API with Google TTS
     const audioContent = base64Encode(audioBuffer);
 
-    // Count words for duration estimation
+    // Count words for logging
     const wordCount = text.split(/\s+/).length;
     
-    // ElevenLabs MP3 at 44.1kHz 128kbps = ~16000 bytes per second
-    const bytesPerSecond = 16000;
-    const byteBasedDuration = audioBuffer.byteLength / bytesPerSecond;
+    // Parse MP3 for EXACT duration
+    const exactDurationSeconds = parseMp3Duration(audioBuffer);
     
-    // Word-based estimate: ~3.0 words/sec for narration
-    const wordsPerSecond = 3.0;
-    const wordBasedDuration = wordCount / wordsPerSecond;
-    
-    // Use the shorter estimate to avoid long pauses
-    const estimatedDurationSeconds = Math.min(byteBasedDuration, wordBasedDuration);
+    // Fallback to estimate if parsing fails
+    const estimatedDurationSeconds = exactDurationSeconds > 0 
+      ? exactDurationSeconds 
+      : Math.min(audioBuffer.byteLength / 16000, wordCount / 3.0);
 
-    console.log(`ElevenLabs speech generated. Duration: ${estimatedDurationSeconds.toFixed(2)}s (${wordCount} words, ${audioBuffer.byteLength} bytes)`);
+    console.log(`ElevenLabs speech generated. Exact duration: ${exactDurationSeconds.toFixed(3)}s (${wordCount} words, ${audioBuffer.byteLength} bytes)`);
 
     return new Response(
       JSON.stringify({
         audioContent, // Base64 encoded MP3
-        estimatedDurationSeconds,
+        estimatedDurationSeconds, // Now contains exact duration!
+        exactDurationSeconds,     // Explicit exact field
         wordCount,
         voice: voiceId,
         provider: 'elevenlabs',
