@@ -409,7 +409,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                       ? events.map(e => ({ ...e, audioDurationFrames: Math.round(5 * FPS) })) as VideoEvent[]
                       : videoEvents,
                     storyTitle,
-                    storyIntroduction: isMusicVideoMode ? undefined : storyIntroduction,
+                    storyIntroduction, // Always pass intro text - same as regular video
                     introAudioUrl: isMusicVideoMode ? undefined : introAudioUrl,
                     introDurationFrames: isMusicVideoMode ? 0 : introDurationFrames,
                     fps: FPS,
