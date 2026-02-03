@@ -1216,77 +1216,73 @@ const TimelineStoryPage = () => {
 
   return (
     <div className={`min-h-screen bg-background ${!isHeroReady ? 'overflow-hidden max-h-screen' : ''}`}>
-      {/* Header - responsive with wrapping */}
+      {/* Header - responsive without horizontal scroll */}
       <section className="pt-3 pb-1 px-3 sm:px-4 relative z-50 bg-background/80 backdrop-blur-sm sticky top-0">
         <div className="container mx-auto max-w-6xl">
-          <div className="flex items-center justify-between gap-2 mb-2 fade-in min-w-0">
-            {/* Back button - compact on mobile */}
-            <button
-              onClick={() => navigate('/')}
-              className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
-            >
-              <ArrowLeft className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-              <span className="hidden xs:inline">{t('backToInput') as string}</span>
-            </button>
+          {/* Mobile: stacked layout, Desktop: single row */}
+          <div className="flex flex-col gap-2 mb-2 fade-in">
+            {/* Top row: Back button + Title */}
+            <div className="flex items-center justify-between gap-2">
+              <button
+                onClick={() => navigate('/')}
+                className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{t('backToInput') as string}</span>
+              </button>
+              
+              <h1 className="font-serif text-sm sm:text-xl lg:text-2xl font-bold text-foreground truncate">
+                {getTitle()}
+              </h1>
+            </div>
             
-            {/* Right side - scrollable on very small screens */}
-            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 overflow-x-auto">
-              {/* Music Video Generator button */}
-              {events.length > 0 && !isLoading && formData && (
-                <MusicVideoGenerator
-                  events={events}
-                  summary={storyIntroduction || ''}
-                  optionalData={formData.optionalData}
-                  startYear={formData.type === 'birthdate' && formData.birthDate 
-                    ? formData.birthDate.year 
-                    : formData.yearRange?.startYear || 1980}
-                  endYear={formData.type === 'birthdate' && formData.birthDate 
-                    ? formData.birthDate.year + 25
-                    : formData.yearRange?.endYear || 2000}
-                />
-              )}
+            {/* Bottom row: Action buttons - wrap on mobile */}
+            {events.length > 0 && !isLoading && (
+              <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                {/* Music Video Generator button */}
+                {formData && (
+                  <MusicVideoGenerator
+                    events={events}
+                    summary={storyIntroduction || ''}
+                    optionalData={formData.optionalData}
+                    startYear={formData.type === 'birthdate' && formData.birthDate 
+                      ? formData.birthDate.year 
+                      : formData.yearRange?.startYear || 1980}
+                    endYear={formData.type === 'birthdate' && formData.birthDate 
+                      ? formData.birthDate.year + 25
+                      : formData.yearRange?.endYear || 2000}
+                  />
+                )}
 
-              {/* Video button - icon only on mobile */}
-              {events.length > 0 && !isLoading && (
+                {/* Video button */}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setIsVideoDialogOpen(true)}
-                  className="h-7 px-2 sm:px-2.5 text-xs gap-1 sm:gap-1.5 flex-shrink-0"
+                  className="h-7 px-2 text-xs gap-1"
                 >
                   <Video className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Maak Video</span>
+                  <span className="hidden xs:inline">Video</span>
                 </Button>
-              )}
 
-              {/* Debug dialogs - icon only */}
-              {events.length > 0 && !isLoading && (
-                <>
-                  <PromptViewerDialog formData={formData} language={language} maxEvents={currentMaxEvents} />
-                  <DebugInfoDialog 
-                    events={events} 
-                    onRefreshImages={handleRefreshAllImages}
-                    isRefreshing={isLoadingImages}
-                  />
-                </>
-              )}
-              
-              {/* Refresh button */}
-              {events.length > 0 && !isLoading && (
+                {/* Debug dialogs */}
+                <PromptViewerDialog formData={formData} language={language} maxEvents={currentMaxEvents} />
+                <DebugInfoDialog 
+                  events={events} 
+                  onRefreshImages={handleRefreshAllImages}
+                  isRefreshing={isLoadingImages}
+                />
+                
+                {/* Refresh button */}
                 <button
                   onClick={handleClearCache}
-                  className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50 flex-shrink-0"
+                  className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
                   title={t('refreshButton') as string}
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                 </button>
-              )}
-              
-              {/* Title - truncate on mobile */}
-              <h1 className="font-serif text-base sm:text-xl lg:text-2xl font-bold text-foreground truncate flex-shrink min-w-0">
-                {getTitle()}
-              </h1>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
