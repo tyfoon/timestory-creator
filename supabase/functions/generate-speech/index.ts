@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { parseMp3Duration } from "../_shared/mp3Duration.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -188,30 +187,22 @@ serve(async (req) => {
     // Count words for logging
     const wordCount = text.split(/\s+/).length;
     
-    // Decode base64 to get raw MP3 bytes for exact duration parsing
-    const base64Content = ttsData.audioContent;
-    const binaryString = atob(base64Content);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
+    // Calculate raw bytes from base64
+    const base64Length = ttsData.audioContent.length;
+    const rawBytes = Math.round(base64Length * 0.75);
     
-    // Parse MP3 for EXACT duration
-    const exactDurationSeconds = parseMp3Duration(bytes.buffer);
-    
-    // Fallback to estimate if parsing fails
-    const rawBytes = bytes.length;
-    const estimatedDurationSeconds = exactDurationSeconds > 0 
-      ? exactDurationSeconds 
-      : Math.min(rawBytes / 5000, wordCount / 3.0);
+    // Use word-based estimate since byte-based is unreliable for Google TTS
+    // Google TTS speaks at approximately 2.8-3.2 words/sec for Dutch at 0.95 rate
+    // Using 2.8 words/sec to slightly overestimate duration (better than underestimate)
+    const wordsPerSecond = 2.8;
+    const estimatedDurationSeconds = wordCount / wordsPerSecond;
 
-    console.log(`Speech generated. Exact duration: ${exactDurationSeconds.toFixed(3)}s, ${wordCount} words, ${rawBytes} bytes`);
+    console.log(`Speech generated. Estimated duration: ${estimatedDurationSeconds.toFixed(2)}s, ${wordCount} words, ${rawBytes} bytes`);
 
     return new Response(
       JSON.stringify({
         audioContent: ttsData.audioContent, // Base64 encoded MP3
-        estimatedDurationSeconds, // Now contains exact duration!
-        exactDurationSeconds,     // Explicit exact field
+        estimatedDurationSeconds,
         wordCount,
         voice: voiceName,
         languageCode,

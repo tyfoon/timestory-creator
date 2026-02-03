@@ -15,6 +15,7 @@ import {
   VideoEvent 
 } from '@/remotion';
 import { generateSpeech, base64ToAudioUrl, VoiceProvider } from '@/remotion/lib/speechApi';
+import { measureAudioDuration } from '@/remotion/lib/audioUtils';
 
 // Fallback Supabase configuration for sound effects
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
@@ -109,7 +110,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
   const [videoVariant, setVideoVariant] = useState<VideoVariant>('slideshow');
   const [voiceProvider, setVoiceProvider] = useState<VoiceProvider>('google');
 
-  // Generate audio for all events - PARALLEL for speed, EXACT durations for sync
+  // Generate audio for all events - PARALLEL for speed, EXACT durations via Web Audio API
   const handleGenerateAudio = useCallback(async () => {
     setIsGeneratingAudio(true);
     setAudioError(null);
@@ -125,6 +126,10 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
             text: storyIntroduction,
             speakingRate: 1.0,
             provider: voiceProvider
+          }).then(async (result) => {
+            // Measure EXACT duration using Web Audio API
+            const exactDuration = await measureAudioDuration(result.audioContent);
+            return { ...result, exactDuration };
           }).catch(err => {
             console.error('Failed to generate intro audio:', err);
             return null;
@@ -136,10 +141,16 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
         const speechText = `${event.title}. ${event.description}`;
         
         const [speechResult, soundEffectResult] = await Promise.all([
-          generateSpeech({ text: speechText, provider: voiceProvider }).catch(err => {
-            console.error(`Failed to generate audio for event ${event.id}:`, err);
-            return null;
-          }),
+          generateSpeech({ text: speechText, provider: voiceProvider })
+            .then(async (result) => {
+              // Measure EXACT duration using Web Audio API
+              const exactDuration = await measureAudioDuration(result.audioContent);
+              return { ...result, exactDuration };
+            })
+            .catch(err => {
+              console.error(`Failed to generate audio for event ${event.id}:`, err);
+              return null;
+            }),
           event.soundEffectSearchQuery 
             ? fetchSoundEffect(event.soundEffectSearchQuery)
             : Promise.resolve(null),
@@ -170,21 +181,24 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
 
       if (introResult) {
         newIntroAudioUrl = base64ToAudioUrl(introResult.audioContent);
-        // EXACT duration + minimal 3-frame buffer (~0.1s)
-        newIntroDurationFrames = Math.round(introResult.estimatedDurationSeconds * FPS) + 3;
+        // Use EXACT duration from Web Audio API + minimal 2-frame buffer
+        const exactDuration = introResult.exactDuration || introResult.estimatedDurationSeconds;
+        newIntroDurationFrames = Math.round(exactDuration * FPS) + 2;
+        console.log(`Intro: exact=${introResult.exactDuration?.toFixed(2)}s, estimated=${introResult.estimatedDurationSeconds.toFixed(2)}s, frames=${newIntroDurationFrames}`);
       }
 
       // Process event results
       const newVideoEvents: VideoEvent[] = eventResults.map(({ event, speechResult, soundEffectResult }) => {
         let audioUrl: string | undefined;
-        // EXACT duration - NO buffer between events for tight sync
         let audioDurationFrames = Math.round(DEFAULT_EVENT_DURATION_SECONDS * FPS);
         let soundEffectAudioUrl: string | undefined;
 
         if (speechResult) {
           audioUrl = base64ToAudioUrl(speechResult.audioContent);
-          // Use exact duration, add only 2 frames for safety
-          audioDurationFrames = Math.round(speechResult.estimatedDurationSeconds * FPS) + 2;
+          // Use EXACT duration from Web Audio API + minimal 2-frame buffer
+          const exactDuration = speechResult.exactDuration || speechResult.estimatedDurationSeconds;
+          audioDurationFrames = Math.round(exactDuration * FPS) + 2;
+          console.log(`Event "${event.title}": exact=${speechResult.exactDuration?.toFixed(2)}s, estimated=${speechResult.estimatedDurationSeconds.toFixed(2)}s, frames=${audioDurationFrames}`);
         }
 
         if (soundEffectResult) {

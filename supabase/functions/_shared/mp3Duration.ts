@@ -6,44 +6,28 @@
 
 // Bitrate lookup tables (kbps) for MPEG Audio Layer 3
 // Index: [version][layer][bitrate_index]
-const BITRATES: Record<number, Record<number, number[]>> = {
-  // MPEG Version 1
-  1: {
-    1: [0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448, 0], // Layer 1
-    2: [0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384, 0],    // Layer 2
-    3: [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0],     // Layer 3
-  },
-  // MPEG Version 2 & 2.5
-  2: {
-    1: [0, 32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256, 0],    // Layer 1
-    2: [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 0],         // Layer 2
-    3: [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 0],         // Layer 3
-  },
-};
+const BITRATES_V1_L1 = [0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448, 0];
+const BITRATES_V1_L2 = [0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384, 0];
+const BITRATES_V1_L3 = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0];
+const BITRATES_V2_L1 = [0, 32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256, 0];
+const BITRATES_V2_L23 = [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 0];
 
 // Sample rate lookup (Hz)
-// Index: [version][sample_rate_index]
-const SAMPLE_RATES: Record<number, number[]> = {
-  1: [44100, 48000, 32000, 0],    // MPEG Version 1
-  2: [22050, 24000, 16000, 0],    // MPEG Version 2
-  3: [11025, 12000, 8000, 0],     // MPEG Version 2.5
-};
-
-// Samples per frame
-// Index: [version][layer]
-const SAMPLES_PER_FRAME: Record<number, Record<number, number>> = {
-  1: { 1: 384, 2: 1152, 3: 1152 },  // MPEG Version 1
-  2: { 1: 384, 2: 1152, 3: 576 },   // MPEG Version 2 & 2.5
-};
+const SAMPLE_RATES_V1 = [44100, 48000, 32000, 0];
+const SAMPLE_RATES_V2 = [22050, 24000, 16000, 0];
+const SAMPLE_RATES_V25 = [11025, 12000, 8000, 0];
 
 interface FrameInfo {
-  version: number;       // 1 = MPEG1, 2 = MPEG2, 3 = MPEG2.5
-  layer: number;         // 1, 2, or 3
-  bitrate: number;       // kbps
-  sampleRate: number;    // Hz
-  padding: boolean;
-  frameSize: number;     // bytes
+  frameSize: number;
   samplesPerFrame: number;
+  sampleRate: number;
+}
+
+/**
+ * Read a 32-bit big-endian integer from a Uint8Array
+ */
+function readUint32BE(data: Uint8Array, offset: number): number {
+  return (data[offset] << 24) | (data[offset + 1] << 16) | (data[offset + 2] << 8) | data[offset + 3];
 }
 
 /**
@@ -58,11 +42,12 @@ function parseFrameHeader(header: number): FrameInfo | null {
   // Version: bits 19-20
   const versionBits = (header >> 19) & 0x03;
   let version: number;
+  let sampleRates: number[];
   switch (versionBits) {
-    case 0: version = 3; break;  // MPEG Version 2.5
-    case 2: version = 2; break;  // MPEG Version 2
-    case 3: version = 1; break;  // MPEG Version 1
-    default: return null;        // Reserved
+    case 0: version = 25; sampleRates = SAMPLE_RATES_V25; break;  // MPEG Version 2.5
+    case 2: version = 2; sampleRates = SAMPLE_RATES_V2; break;     // MPEG Version 2
+    case 3: version = 1; sampleRates = SAMPLE_RATES_V1; break;     // MPEG Version 1
+    default: return null;  // Reserved
   }
 
   // Layer: bits 17-18
@@ -77,61 +62,71 @@ function parseFrameHeader(header: number): FrameInfo | null {
 
   // Bitrate: bits 12-15
   const bitrateIndex = (header >> 12) & 0x0F;
-  const bitrateTable = version === 1 ? BITRATES[1] : BITRATES[2];
-  const bitrate = bitrateTable[layer]?.[bitrateIndex];
+  if (bitrateIndex === 0 || bitrateIndex === 15) return null; // Free or bad
+  
+  let bitrate: number;
+  if (version === 1) {
+    // MPEG Version 1
+    if (layer === 1) bitrate = BITRATES_V1_L1[bitrateIndex];
+    else if (layer === 2) bitrate = BITRATES_V1_L2[bitrateIndex];
+    else bitrate = BITRATES_V1_L3[bitrateIndex];
+  } else {
+    // MPEG Version 2 & 2.5
+    if (layer === 1) bitrate = BITRATES_V2_L1[bitrateIndex];
+    else bitrate = BITRATES_V2_L23[bitrateIndex];
+  }
   if (!bitrate) return null;
 
   // Sample rate: bits 10-11
   const sampleRateIndex = (header >> 10) & 0x03;
-  const sampleRateTable = SAMPLE_RATES[version];
-  const sampleRate = sampleRateTable?.[sampleRateIndex];
+  const sampleRate = sampleRates[sampleRateIndex];
   if (!sampleRate) return null;
 
   // Padding: bit 9
   const padding = ((header >> 9) & 0x01) === 1;
 
   // Samples per frame
-  const versionKey = version === 1 ? 1 : 2;
-  const samplesPerFrame = SAMPLES_PER_FRAME[versionKey][layer];
+  let samplesPerFrame: number;
+  if (layer === 1) {
+    samplesPerFrame = 384;
+  } else if (layer === 2) {
+    samplesPerFrame = 1152;
+  } else {
+    // Layer 3
+    samplesPerFrame = version === 1 ? 1152 : 576;
+  }
 
   // Calculate frame size
   let frameSize: number;
   if (layer === 1) {
-    // Layer 1: frameSize = (12 * bitrate * 1000 / sampleRate + padding) * 4
     frameSize = Math.floor((12 * bitrate * 1000 / sampleRate + (padding ? 1 : 0)) * 4);
   } else {
-    // Layer 2 & 3: frameSize = 144 * bitrate * 1000 / sampleRate + padding
-    // For MPEG2/2.5 Layer 3, use 72 instead of 144
     const coefficient = (version !== 1 && layer === 3) ? 72 : 144;
     frameSize = Math.floor(coefficient * bitrate * 1000 / sampleRate + (padding ? 1 : 0));
   }
 
-  return {
-    version,
-    layer,
-    bitrate,
-    sampleRate,
-    padding,
-    frameSize,
-    samplesPerFrame,
-  };
+  // Sanity check: frame size should be reasonable
+  if (frameSize < 21 || frameSize > 4609) return null;
+
+  return { frameSize, samplesPerFrame, sampleRate };
 }
 
 /**
  * Skip ID3v2 tag at the beginning of the file
  */
 function skipId3v2(data: Uint8Array): number {
+  if (data.length < 10) return 0;
+  
   // ID3v2 header: "ID3" + version (2 bytes) + flags (1 byte) + size (4 bytes syncsafe)
-  if (data.length >= 10 &&
-      data[0] === 0x49 &&  // 'I'
-      data[1] === 0x44 &&  // 'D'
-      data[2] === 0x33) {  // '3'
+  if (data[0] === 0x49 && data[1] === 0x44 && data[2] === 0x33) {
     // Size is stored as syncsafe integer (7 bits per byte)
     const size = ((data[6] & 0x7F) << 21) |
                  ((data[7] & 0x7F) << 14) |
                  ((data[8] & 0x7F) << 7) |
                  (data[9] & 0x7F);
-    return 10 + size;
+    const offset = 10 + size;
+    console.log(`MP3 parser: skipped ID3v2 tag of ${size} bytes`);
+    return offset;
   }
   return 0;
 }
@@ -139,27 +134,33 @@ function skipId3v2(data: Uint8Array): number {
 /**
  * Parse MP3 buffer and calculate exact duration in seconds.
  * 
- * @param buffer - MP3 audio data as ArrayBuffer
+ * @param buffer - MP3 audio data as ArrayBuffer or Uint8Array
  * @returns Duration in seconds
  */
-export function parseMp3Duration(buffer: ArrayBuffer): number {
-  const data = new Uint8Array(buffer);
-  const view = new DataView(buffer);
+export function parseMp3Duration(buffer: ArrayBuffer | Uint8Array): number {
+  // Handle both ArrayBuffer and Uint8Array inputs
+  const data = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
   
   if (data.length < 10) {
     console.warn('MP3 buffer too small for parsing');
     return 0;
   }
 
+  // Log first few bytes for debugging
+  const firstBytes = Array.from(data.slice(0, 20)).map(b => b.toString(16).padStart(2, '0')).join(' ');
+  console.log(`MP3 parser: buffer size ${data.length}, first bytes: ${firstBytes}`);
+
   let offset = skipId3v2(data);
   let totalSamples = 0;
   let sampleRate = 0;
   let frameCount = 0;
+  let searchCount = 0;
+  const maxSearch = Math.min(data.length - 4, 50000); // Search up to 50KB for first frame
 
-  // Parse all MP3 frames
+  // Find and parse all MP3 frames
   while (offset < data.length - 4) {
-    // Read potential frame header (big-endian 32-bit)
-    const header = view.getUint32(offset);
+    // Read potential frame header using manual byte reading
+    const header = readUint32BE(data, offset);
     
     const frameInfo = parseFrameHeader(header);
     
@@ -168,13 +169,27 @@ export function parseMp3Duration(buffer: ArrayBuffer): number {
       totalSamples += frameInfo.samplesPerFrame;
       sampleRate = frameInfo.sampleRate;
       frameCount++;
+      
+      // Log first frame details
+      if (frameCount === 1) {
+        console.log(`MP3 parser: first frame at offset ${offset}, sampleRate=${frameInfo.sampleRate}, frameSize=${frameInfo.frameSize}`);
+      }
+      
       offset += frameInfo.frameSize;
+      searchCount = 0; // Reset search counter after finding a frame
     } else {
       // Not a valid frame, skip one byte
       offset++;
+      searchCount++;
+      
+      // If we've searched too far without finding any frames, give up
+      if (frameCount === 0 && searchCount > maxSearch) {
+        console.warn(`MP3 parser: no frames found in first ${maxSearch} bytes, giving up`);
+        break;
+      }
     }
 
-    // Safety: prevent infinite loop on corrupted files
+    // Safety: prevent infinite loop
     if (frameCount > 100000) {
       console.warn('MP3 parsing: exceeded max frame count, stopping');
       break;
@@ -182,7 +197,7 @@ export function parseMp3Duration(buffer: ArrayBuffer): number {
   }
 
   if (sampleRate === 0 || frameCount === 0) {
-    console.warn('MP3 parsing: no valid frames found');
+    console.warn(`MP3 parsing: no valid frames found (searched ${offset} bytes)`);
     return 0;
   }
 
