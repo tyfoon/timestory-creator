@@ -26,3 +26,9 @@ verify_jwt = false
 
 [functions.generate-suno-track]
 verify_jwt = false
+
+[functions.check-suno-status]
+verify_jwt = false
+
+[functions.proxy-audio]
+verify_jwt = false
