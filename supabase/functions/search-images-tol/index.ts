@@ -6,11 +6,11 @@ const corsHeaders = {
 };
 
 const DDG_API_URL = 'https://ddg-image-search-bn3h8.ondigitalocean.app/search';
-const REQUEST_TIMEOUT_MS = 12_000;
-const RETRIES = 1;
+const REQUEST_TIMEOUT_MS = 20_000; // Increased timeout for slow upstream
+const RETRIES = 2; // One extra retry for flaky connections
 
 // Bump this when deploying to verify the latest code is running
-const VERSION = 'search-images-tol@2026-02-04.1';
+const VERSION = 'search-images-tol@2026-02-04.2';
 const DEPLOYED_AT = new Date().toISOString();
 
 // Map year prefix to decade suffix
