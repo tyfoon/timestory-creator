@@ -2,14 +2,14 @@ import { motion } from "framer-motion";
 
 interface ChapterIndicatorProps {
   currentChapter: 1 | 2 | 3;
-  onChapterClick: (chapter: 1 | 2 | 3) => void;
-  completedChapters: [boolean, boolean, boolean];
+  onChapterClick: (chapter: number) => void;
+  completedChapters: boolean[];
 }
 
 const chapters = [
-  { number: 1, label: "Het Jaar" },
-  { number: 2, label: "Voor Wie" },
-  { number: 3, label: "Waarom" },
+  { number: 1, label: "Geboortedatum" },
+  { number: 2, label: "Bestemming" },
+  { number: 3, label: "Identiteit" },
 ] as const;
 
 export const ChapterIndicator = ({ 
