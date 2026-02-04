@@ -60,7 +60,7 @@ export function DebugInfoDialog({ events, onRefreshImages, isRefreshing }: Debug
     return { total, withImages, withSoundEffects, bySource, byCategory, byType };
   }, [events]);
 
-  // Determine the source type based on the source URL
+  // Determine the source type based on the source URL or label
   function getSourceType(source?: string, imageUrl?: string): string {
     if (!source) return 'Geen';
     
@@ -68,9 +68,12 @@ export function DebugInfoDialog({ events, onRefreshImages, isRefreshing }: Debug
     const isSvg = imageUrl?.toLowerCase().includes('.svg');
     const svgSuffix = isSvg ? ' (SVG)' : '';
     
+    // DDG/Tol source (label, not URL)
+    if (source === 'DDG/Tol' || source.includes('DDG')) return '🔍 DDG/Tol';
+    
     // Spotify album art
     if (source.includes('spotify.com') || source.includes('open.spotify')) return '🎵 Spotify';
-    if (source.includes('themoviedb.org') || source.includes('tmdb')) return 'TMDB';
+    if (source.includes('themoviedb.org') || source.includes('tmdb') || source === 'TMDB') return '🎬 TMDB';
     if (source.includes('commons.wikimedia')) return `Wikimedia Commons${svgSuffix}`;
     if (source.includes('wikipedia.org')) {
       if (source.includes('nl.wikipedia')) return `Wikipedia NL${svgSuffix}`;
@@ -82,13 +85,40 @@ export function DebugInfoDialog({ events, onRefreshImages, isRefreshing }: Debug
     return 'Onbekend';
   }
 
-  // Determine which sources were searched based on visualSubjectType
+  // Determine which sources were searched based on visualSubjectType and search mode
   const getSearchedSources = (event: TimelineEvent): string[] => {
     const type = event.visualSubjectType;
     const sources: string[] = [];
     const isMusic = event.category === 'music' || !!event.spotifySearchQuery;
+    
+    // Check which search mode was used (stored in sessionStorage)
+    const imageSearchMode = typeof window !== 'undefined' 
+      ? sessionStorage.getItem('imageSearchMode') || 'legacy' 
+      : 'legacy';
+    
+    // Tol mode: different routing
+    if (imageSearchMode === 'tol') {
+      if (isMusic && event.spotifySearchQuery) {
+        sources.push('1. 🎵 Spotify Album Art');
+        sources.push('→ Fallback: 🔍 DDG/Tol');
+        return sources;
+      }
+      if (event.isTV || type === 'tv') {
+        sources.push('1. 🎬 TMDB TV');
+        sources.push('→ Fallback: 🔍 DDG/Tol');
+        return sources;
+      }
+      if (event.isMovie || type === 'movie') {
+        sources.push('1. 🎬 TMDB Movie');
+        sources.push('→ Fallback: 🔍 DDG/Tol');
+        return sources;
+      }
+      // Default: DDG only (with decade suffix)
+      sources.push('🔍 DDG/Tol (+decade)');
+      return sources;
+    }
 
-    // Muziek-events: Spotify eerst!
+    // Legacy mode: original routing
     if (isMusic && event.spotifySearchQuery) {
       sources.push('1. 🎵 Spotify Album Art');
       sources.push('→ Fallback: Wiki/Commons');
