@@ -74,14 +74,6 @@ ROL: BEELDREDACTEUR (CRUCIAAL)
 Jij bepaalt NIET ALLEEN de zoekterm, maar ook het TYPE afbeelding ('visualSubjectType').
 Dit helpt de zoekmachine om de juiste database te kiezen (Film database, Product database, etc).
 
-⚠️ ABSOLUUT VERBODEN IN ZOEKOPDRACHTEN ⚠️
-NOOIT decade-referenties gebruiken! Zoekmachines begrijpen deze niet:
-- FOUT: "1980s", "1990s", "2000s", "1970s"
-- FOUT: "80s", "90s", "70s", "00s" 
-- FOUT: "jaren 80", "jaren 90", "jaren 70"
-- FOUT: "eighties", "nineties", "seventies"
-- GOED: Zoek op SPECIFIEKE namen, titels, of producten
-
 🔊 GELUIDSEFFECTEN (VERPLICHT VOOR ELKE EVENT!)
 Vul ALTIJD 'soundEffectSearchQuery' in met een Engelse zoekterm (max 4 woorden) voor een passend SFEERVOL achtergrondgeluid.
 Dit wordt gebruikt voor atmosferische geluiden in de video-versie.
@@ -173,8 +165,6 @@ UITZONDERING: Merknamen en eigennamen blijven hetzelfde in beide talen:
 ⚠️ REGELS VOOR BEIDE TALEN (NL én EN) - GEEN JAARTALLEN/DECENNIA! ⚠️
 
 REGELS VOOR 'imageSearchQuery' (NEDERLANDS):
-- NOOIT jaartallen: "1980", "1990", "2000"
-- NOOIT decennia: "jaren 80", "jaren 90", "jaren 70", "80s", "90s"
 - NOOIT extra context: fabrikanten, merknamen die niet in de titel staan
 - NOOIT type-woorden: "film", "serie", "show", "programma", "album", "single", "boek"
 - type 'person': ALLEEN de naam. "David Bowie" (NIET "David Bowie zanger")
@@ -187,8 +177,6 @@ REGELS VOOR 'imageSearchQuery' (NEDERLANDS):
 - type 'culture': SPECIFIEK object/stijl. "Breakdance", "Disco bal"
 
 REGELS VOOR 'imageSearchQueryEn' (ENGELS):
-- NOOIT jaartallen: "1980", "1990", "2000"  
-- NOOIT decennia: "80s", "90s", "1980s", "eighties", "nineties"
 - NOOIT extra context: fabrikanten, merknamen die niet in de titel staan
 - NOOIT type-woorden: "film", "movie", "series", "show", "program", "album", "single", "book"
 - type 'person': ALLEEN de naam. "David Bowie" (NIET "David Bowie singer")
@@ -359,7 +347,8 @@ export function getTimelineTool() {
                 movieSearchQuery: { type: "string" },
                 soundEffectSearchQuery: {
                   type: "string",
-                  description: "A short, specific English search query for a sound effect that matches this event (e.g. 'camera shutter', 'applause', '8-bit game sound', 'techno beat loop', 'printing press'). Keep it under 3 words.",
+                  description:
+                    "A short, specific English search query for a sound effect that matches this event (e.g. 'camera shutter', 'applause', '8-bit game sound', 'techno beat loop', 'printing press'). Keep it under 3 words.",
                 },
               },
               required: [
@@ -579,24 +568,28 @@ export const CHILDREN_ADDITION = (childrenInfo: string[]) => `\nKinderen: ${chil
 // =============================================================================
 export const PERSONAL_MEMORIES_ADDITION = (friends?: string, school?: string, nightlife?: string) => {
   const parts: string[] = [];
-  
+
   if (friends) {
-    parts.push(`**Beste vrienden:** ${friends}. Verwijs in verhalen naar deze namen als je sociale context nodig hebt.`);
+    parts.push(
+      `**Beste vrienden:** ${friends}. Verwijs in verhalen naar deze namen als je sociale context nodig hebt.`,
+    );
   }
-  
+
   if (school) {
     parts.push(`**Middelbare school:** ${school}. Gebruik deze schoolnaam voor schoolgerelateerde herinneringen.`);
   }
-  
+
   if (nightlife) {
-    parts.push(`**Favoriete uitgaansplekken:** ${nightlife}. Dit zijn de plekken waar de avonden doorgebracht werden - noem ze bij naam!`);
+    parts.push(
+      `**Favoriete uitgaansplekken:** ${nightlife}. Dit zijn de plekken waar de avonden doorgebracht werden - noem ze bij naam!`,
+    );
   }
-  
-  if (parts.length === 0) return '';
-  
+
+  if (parts.length === 0) return "";
+
   return `
 PERSOONLIJKE HERINNERINGEN (VERWERK DIT SUBTIEL):
-${parts.join('\n')}
+${parts.join("\n")}
 
 Weef deze specifieke details door de verhalen heen. Als je bijvoorbeeld schrijft over uitgaan of muziek, noem dan de daadwerkelijke club/disco naam. Bij schoolherinneringen, noem de echte school.
 Dit maakt de tijdlijn persoonlijk en herkenbaar!`;
