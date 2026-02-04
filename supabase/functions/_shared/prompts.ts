@@ -517,25 +517,46 @@ export const RANGE_PROMPT = (
   targetEvents: number,
   contentFocus: string,
   geoFocus: string = "netherlands",
-) =>
-  `ROL & CONTEXT:
+  birthYear?: number,
+) => {
+  // Calculate actual ages for the period if birthYear is provided
+  let ageContext = "";
+  if (birthYear) {
+    const ageAtStart = startYear - birthYear;
+    const ageAtEnd = endYear - birthYear;
+    ageContext = `
+⚠️ CRUCIALE LEEFTIJDSBEREKENING ⚠️
+Geboortejaar: ${birthYear}
+Leeftijd aan het BEGIN van deze periode (${startYear}): **${ageAtStart} jaar**
+Leeftijd aan het EINDE van deze periode (${endYear}): **${ageAtEnd} jaar**
+
+GEBRUIK DEZE EXACTE LEEFTIJDEN! Bereken voor elk event: leeftijd = eventyear - ${birthYear}
+Voorbeeld: In ${startYear} is de gebruiker ${ageAtStart} jaar oud. In ${endYear} is de gebruiker ${ageAtEnd} jaar oud.
+`;
+  }
+
+  return `ROL & CONTEXT:
 Je bent een nostalgische verhalenverteller.
 ${contentFocus}
 
 DE OPDRACHT:
 Maak een gedetailleerde tijdlijn van ${startYear} tot ${endYear}.
 Genereer ${targetEvents} events.
-
-CRUCIAAL - LEEFTIJDS-PROGRESSIE (GROEIPROCES):
+${ageContext}
+LEEFTIJDS-PROGRESSIE (GROEIPROCES):
 De gebruiker wordt elk jaar ouder. De interesses MOETEN meegroeien met de jaren.
-1. **Rekenwerk:** Bepaal voor elk event eerst hoe oud de gebruiker in dat jaar ongeveer is.
+1. **Rekenwerk:** Bereken voor elk event de EXACTE leeftijd: eventyear - geboortejaar${birthYear ? ` (${birthYear})` : ""}.
 2. **De 'Eerste Keer' Regel:** Plaats mijlpalen pas op de leeftijd dat ze logisch zijn.
+   - *0-3 jaar:* Baby/peuter. Alleen grote wereldgebeurtenissen, geen persoonlijke herinneringen.
+   - *4-6 jaar:* Kleuter. Sesamstraat, kleuterschool, eerste speelgoed.
+   - *7-11 jaar:* Basisschool. Speelgoed, tekenfilms, snoep, schoolplein-spelletjes.
    - *12-13 jaar:* Brugklas, speelgoed wordt minder, eerste muziekidolen, schoolfeestjes.
    - *14-15 jaar:* Huiswerkstress, vriendengroepen, verliefdheid, rages, kleedgeld.
    - *16-17 jaar:* Brommers/scooters, eerste bijbaan, uitgaan (discotheken), examenstress, rijles.
    - *18+ jaar:* Rijbewijs, studeren, zelfstandigheid, stemrecht.
 
-${GET_NOSTALGIA_INSTRUCTIONS(geoFocus)}`;
+${GET_NOSTALGIA_INSTRUCTIONS(geoFocus)}`
+};
 
 export const FAMOUS_BIRTHDAYS_ADDITION = (day: number, monthName: string, startYear: number, endYear: number) =>
   `\n\n--- EXTRA TAAK: VERJAARDAGEN ---\nZoek 3 bekende personen die op ${day} ${monthName} jarig zijn (dit staat los van de tijdlijn).`;
