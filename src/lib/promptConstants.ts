@@ -348,18 +348,47 @@ export const RANGE_PROMPT = (
   isShort: boolean,
   targetEvents: number,
   contentFocus: string,
-  geoFocus: string = "netherlands"
-) =>
-  `ROL & CONTEXT:
+  geoFocus: string = "netherlands",
+  birthYear?: number
+) => {
+  // Calculate actual ages for the period if birthYear is provided
+  let ageContext = "";
+  if (birthYear) {
+    const ageAtStart = startYear - birthYear;
+    const ageAtEnd = endYear - birthYear;
+    ageContext = `
+⚠️ CRUCIALE LEEFTIJDSBEREKENING ⚠️
+Geboortejaar: ${birthYear}
+Leeftijd aan het BEGIN van deze periode (${startYear}): **${ageAtStart} jaar**
+Leeftijd aan het EINDE van deze periode (${endYear}): **${ageAtEnd} jaar**
+
+GEBRUIK DEZE EXACTE LEEFTIJDEN! Bereken voor elk event: leeftijd = eventyear - ${birthYear}
+Voorbeeld: In ${startYear} is de gebruiker ${ageAtStart} jaar oud. In ${endYear} is de gebruiker ${ageAtEnd} jaar oud.
+`;
+  }
+
+  return `ROL & CONTEXT:
 Je bent een nostalgische verhalenverteller.
 ${contentFocus}
 
 DE OPDRACHT:
 Maak een gedetailleerde tijdlijn van ${startYear} tot ${endYear}.
 Genereer ${targetEvents} events.
-Let op: Verdeel de events gelijkmatig (bv. in blokken van 2 jaar) en behoud de kwaliteit en detaillering tot aan het laatste event.
+${ageContext}
+LEEFTIJDS-PROGRESSIE (GROEIPROCES):
+De gebruiker wordt elk jaar ouder. De interesses MOETEN meegroeien met de jaren.
+1. **Rekenwerk:** Bereken voor elk event de EXACTE leeftijd: eventyear - geboortejaar${birthYear ? ` (${birthYear})` : ""}.
+2. **De 'Eerste Keer' Regel:** Plaats mijlpalen pas op de leeftijd dat ze logisch zijn.
+   - *0-3 jaar:* Baby/peuter. Alleen grote wereldgebeurtenissen, geen persoonlijke herinneringen.
+   - *4-6 jaar:* Kleuter. Sesamstraat, kleuterschool, eerste speelgoed.
+   - *7-11 jaar:* Basisschool. Speelgoed, tekenfilms, snoep, schoolplein-spelletjes.
+   - *12-13 jaar:* Brugklas, speelgoed wordt minder, eerste muziekidolen, schoolfeestjes.
+   - *14-15 jaar:* Huiswerkstress, vriendengroepen, verliefdheid, rages, kleedgeld.
+   - *16-17 jaar:* Brommers/scooters, eerste bijbaan, uitgaan (discotheken), examenstress, rijles.
+   - *18+ jaar:* Rijbewijs, studeren, zelfstandigheid, stemrecht.
 
-${GET_NOSTALGIA_INSTRUCTIONS(geoFocus)}`;
+${GET_NOSTALGIA_INSTRUCTIONS(geoFocus)}`
+};
 
 export const FAMOUS_BIRTHDAYS_ADDITION = (
   day: number,

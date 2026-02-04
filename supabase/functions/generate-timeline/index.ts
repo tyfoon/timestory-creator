@@ -498,8 +498,10 @@ function buildPrompt(data: TimelineRequest): string {
     const targetEvents = isShort ? data.maxEvents! : Math.max(50, yearSpan * 5);
 
     // Voeg de basis range prompt toe (inclusief geoFocus voor nostalgia-instructies)
+    // BELANGRIJK: Geef het geboortejaar door zodat de AI de exacte leeftijd kan berekenen!
     const geoFocus = optionalData.focus || "netherlands";
-    promptParts.push(RANGE_PROMPT(startYear, endYear, isShort || false, targetEvents, contentFocus, geoFocus));
+    const birthYear = data.birthDate?.year;
+    promptParts.push(RANGE_PROMPT(startYear, endYear, isShort || false, targetEvents, contentFocus, geoFocus, birthYear));
 
     // Als het geboortejaar in deze range valt, benadruk dit dan (voor context)
     if (data.birthDate) {
