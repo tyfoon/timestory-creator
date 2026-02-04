@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,8 +11,104 @@ const REQUEST_TIMEOUT_MS = 20_000; // Increased timeout for slow upstream
 const RETRIES = 2; // One extra retry for flaky connections
 
 // Bump this when deploying to verify the latest code is running
-const VERSION = 'search-images-tol@2026-02-04.2';
+const VERSION = 'search-images-tol@2026-02-04.3';
 const DEPLOYED_AT = new Date().toISOString();
+
+// ============== CACHE HELPERS ==============
+
+interface CacheEntry {
+  image_url: string;
+  source: string | null;
+}
+
+/**
+ * Normalize query for cache lookup: lowercase, trimmed, collapsed whitespace
+ */
+function normalizeQueryForCache(query: string): string {
+  return query.toLowerCase().trim().replace(/\s+/g, " ");
+}
+
+/**
+ * Check cache for a previously found image
+ */
+async function checkCache(
+  supabase: ReturnType<typeof createClient>,
+  query: string,
+): Promise<{ imageUrl: string; source: string | null } | null> {
+  const normalizedQuery = normalizeQueryForCache(query);
+  
+  try {
+    const { data: cacheHit, error: cacheError } = await supabase
+      .from("image_search_cache")
+      .select("image_url, source")
+      .eq("query", normalizedQuery)
+      .maybeSingle();
+    
+    if (cacheError) {
+      console.log(`[Cache] Error: ${cacheError.message}`);
+      return null;
+    }
+    
+    if (!cacheHit) return null;
+    
+    const cacheData = cacheHit as unknown as CacheEntry;
+    
+    // Check blacklist
+    const { data: blacklisted } = await supabase
+      .from("image_blacklist")
+      .select("id")
+      .eq("image_url", cacheData.image_url)
+      .maybeSingle();
+    
+    if (blacklisted) {
+      console.log(`[Cache] URL blacklisted, removing: ${normalizedQuery}`);
+      await (supabase.from("image_search_cache") as any).delete().eq("query", normalizedQuery);
+      return null;
+    }
+    
+    // Update last_accessed (fire-and-forget)
+    (supabase.from("image_search_cache") as any)
+      .update({ last_accessed: new Date().toISOString() })
+      .eq("query", normalizedQuery)
+      .then(() => {});
+    
+    console.log(`[Cache] HIT for "${normalizedQuery}"`);
+    return { imageUrl: cacheData.image_url, source: cacheData.source };
+  } catch (e) {
+    console.log(`[Cache] Exception: ${e}`);
+    return null;
+  }
+}
+
+/**
+ * Save to cache
+ */
+async function saveToCache(
+  supabase: ReturnType<typeof createClient>,
+  query: string,
+  imageUrl: string,
+  source: string | null,
+): Promise<void> {
+  const normalizedQuery = normalizeQueryForCache(query);
+  
+  try {
+    const { error } = await (supabase.from("image_search_cache") as any)
+      .upsert({
+        query: normalizedQuery,
+        image_url: imageUrl,
+        source: source,
+        last_accessed: new Date().toISOString(),
+      }, { onConflict: "query" });
+    
+    if (error) {
+      console.log(`[Cache] Save error: ${error.message}`);
+    } else {
+      console.log(`[Cache] Saved "${normalizedQuery}"`);
+    }
+  } catch (e) {
+    console.log(`[Cache] Save exception: ${e}`);
+  }
+}
 
 // Map year prefix to decade suffix
 function getDecadeSuffix(year: number): string | null {
@@ -152,6 +249,15 @@ serve(async (req) => {
       );
     }
 
+    // Initialize Supabase client for cache operations
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    let supabase: ReturnType<typeof createClient> | null = null;
+    if (supabaseUrl && supabaseServiceKey) {
+      supabase = createClient(supabaseUrl, supabaseServiceKey);
+    }
+
     const body = await req.json();
     const { query, year, category } = body;
 
@@ -165,9 +271,27 @@ serve(async (req) => {
     // Build optimized search query (decade for most, exact year for sports)
     const searchQuery = year ? buildSearchQuery(query, year, category) : query;
 
+    // STEP 1: Check cache first
+    if (supabase) {
+      const cached = await checkCache(supabase, searchQuery);
+      if (cached) {
+        return new Response(
+          JSON.stringify({
+            imageUrl: cached.imageUrl,
+            source: cached.source || 'DDG/Tol',
+            score: 100, // Cache hits get high score
+            searchQuery,
+            cached: true,
+            _version: VERSION,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     console.log(`[Tol Search] Query: "${searchQuery}" (original: "${query}", year: ${year}, category: ${category})`);
 
-    // Call the DDG Image Search API (with timeout + retry)
+    // STEP 2: Call the DDG Image Search API (with timeout + retry)
     const url = `${DDG_API_URL}?q=${encodeURIComponent(searchQuery)}&key=${apiKey}`;
 
     let response: Response | null = null;
@@ -234,6 +358,11 @@ serve(async (req) => {
     const { imageUrl, score } = extractBestImage(data);
 
     console.log(`[Tol Search] Found image for "${searchQuery}": ${imageUrl ? 'YES' : 'NO'} (score: ${score})`);
+
+    // STEP 3: Save successful result to cache
+    if (supabase && imageUrl) {
+      saveToCache(supabase, searchQuery, imageUrl, 'DDG/Tol').catch(() => {});
+    }
 
     return new Response(
       JSON.stringify({

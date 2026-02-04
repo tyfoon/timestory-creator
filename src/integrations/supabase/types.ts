@@ -38,6 +38,33 @@ export type Database = {
         }
         Relationships: []
       }
+      image_search_cache: {
+        Row: {
+          created_at: string
+          image_url: string
+          last_accessed: string
+          metadata: Json | null
+          query: string
+          source: string | null
+        }
+        Insert: {
+          created_at?: string
+          image_url: string
+          last_accessed?: string
+          metadata?: Json | null
+          query: string
+          source?: string | null
+        }
+        Update: {
+          created_at?: string
+          image_url?: string
+          last_accessed?: string
+          metadata?: Json | null
+          query?: string
+          source?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

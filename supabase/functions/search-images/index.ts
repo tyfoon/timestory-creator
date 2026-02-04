@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,6 +24,121 @@ interface ImageResult {
   eventId: string;
   imageUrl: string | null;
   source: string | null;
+}
+
+// ============== CACHE HELPERS ==============
+
+interface CacheEntry {
+  image_url: string;
+  source: string | null;
+}
+
+interface BlacklistEntry {
+  id: string;
+}
+
+/**
+ * Normalize query for cache lookup: lowercase, trimmed, collapsed whitespace
+ */
+function normalizeQueryForCache(query: string): string {
+  return query.toLowerCase().trim().replace(/\s+/g, " ");
+}
+
+/**
+ * Check cache for a previously found image
+ * Returns the cached result if found and not blacklisted
+ */
+async function checkCache(
+  supabase: ReturnType<typeof createClient>,
+  query: string,
+): Promise<{ imageUrl: string; source: string | null } | null> {
+  const normalizedQuery = normalizeQueryForCache(query);
+  
+  try {
+    // Check if we have a cached result
+    const { data: cacheHit, error: cacheError } = await supabase
+      .from("image_search_cache")
+      .select("image_url, source")
+      .eq("query", normalizedQuery)
+      .maybeSingle();
+    
+    if (cacheError) {
+      console.log(`[Cache] Error checking cache: ${cacheError.message}`);
+      return null;
+    }
+    
+    if (!cacheHit) {
+      return null;
+    }
+    
+    const cacheData = cacheHit as unknown as CacheEntry;
+    
+    // Check if this URL is now blacklisted
+    const { data: blacklisted, error: blacklistError } = await supabase
+      .from("image_blacklist")
+      .select("id")
+      .eq("image_url", cacheData.image_url)
+      .maybeSingle();
+    
+    if (blacklistError) {
+      console.log(`[Cache] Error checking blacklist: ${blacklistError.message}`);
+      // Continue anyway - cache hit is still valid
+    }
+    
+    if (blacklisted) {
+      // URL is blacklisted - remove from cache
+      console.log(`[Cache] Cached URL is blacklisted, removing: ${normalizedQuery}`);
+      await supabase
+        .from("image_search_cache")
+        .delete()
+        .eq("query", normalizedQuery);
+      return null;
+    }
+    
+    // Update last_accessed timestamp (fire-and-forget)
+    (supabase.from("image_search_cache") as any)
+      .update({ last_accessed: new Date().toISOString() })
+      .eq("query", normalizedQuery)
+      .then(() => {});
+    
+    console.log(`[Cache] HIT for "${normalizedQuery}"`);
+    return { imageUrl: cacheData.image_url, source: cacheData.source };
+  } catch (e) {
+    console.log(`[Cache] Exception checking cache: ${e}`);
+    return null;
+  }
+}
+
+/**
+ * Save a successful search result to the cache
+ */
+async function saveToCache(
+  supabase: ReturnType<typeof createClient>,
+  query: string,
+  imageUrl: string,
+  source: string | null,
+  metadata?: Record<string, unknown>,
+): Promise<void> {
+  const normalizedQuery = normalizeQueryForCache(query);
+  
+  try {
+    const { error } = await (supabase.from("image_search_cache") as any)
+      .upsert({
+        query: normalizedQuery,
+        image_url: imageUrl,
+        source: source,
+        metadata: metadata || null,
+        last_accessed: new Date().toISOString(),
+      }, { onConflict: "query" });
+    
+    if (error) {
+      console.log(`[Cache] Error saving to cache: ${error.message}`);
+    } else {
+      console.log(`[Cache] Saved "${normalizedQuery}" -> ${imageUrl.substring(0, 60)}...`);
+    }
+  } catch (e) {
+    console.log(`[Cache] Exception saving to cache: ${e}`);
+  }
 }
 
 const THUMB_WIDTH = 960;
@@ -1015,19 +1131,71 @@ serve(async (req) => {
 
   try {
     const { queries }: ImageSearchRequest = await req.json();
-    console.log(`Searching images for ${queries.length} events (Wikipedia/Commons only)`);
+    console.log(`Searching images for ${queries.length} events (with cache)`);
 
     const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+    
+    // Initialize Supabase client for cache operations
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    let supabase: ReturnType<typeof createClient> | null = null;
+    if (supabaseUrl && supabaseServiceKey) {
+      supabase = createClient(supabaseUrl, supabaseServiceKey);
+    } else {
+      console.log("[Cache] Supabase credentials not available, cache disabled");
+    }
 
     // Limit to prevent abuse
     const limitedQueries = queries.slice(0, 20);
+    
+    // Track cache hits vs misses for logging
+    let cacheHits = 0;
+    let cacheMisses = 0;
 
-    // Process all queries in parallel
+    // Process all queries with cache-first strategy
     const results = await Promise.all(
-      limitedQueries.map(({ eventId, query, year, isCelebrity, isMovie, isTV, isMusic, spotifySearchQuery }) =>
-        searchAllSources(eventId, query, year, FIRECRAWL_API_KEY, isCelebrity, isMovie, isTV || false, isMusic, spotifySearchQuery),
-      ),
+      limitedQueries.map(async ({ eventId, query, year, isCelebrity, isMovie, isTV, isMusic, spotifySearchQuery }) => {
+        // STEP 1: Check cache first
+        if (supabase) {
+          const cached = await checkCache(supabase, query);
+          if (cached) {
+            cacheHits++;
+            return { eventId, imageUrl: cached.imageUrl, source: cached.source };
+          }
+        }
+        cacheMisses++;
+        
+        // STEP 2: Search external sources
+        const result = await searchAllSources(
+          eventId, 
+          query, 
+          year, 
+          FIRECRAWL_API_KEY, 
+          isCelebrity, 
+          isMovie, 
+          isTV || false, 
+          isMusic, 
+          spotifySearchQuery
+        );
+        
+        // STEP 3: Save successful result to cache
+        if (supabase && result.imageUrl) {
+          // Fire-and-forget: don't wait for cache save
+          saveToCache(supabase, query, result.imageUrl, result.source, {
+            year,
+            isCelebrity,
+            isMovie,
+            isTV,
+            isMusic,
+          }).catch(() => {});
+        }
+        
+        return result;
+      }),
     );
+    
+    console.log(`[Cache] Stats: ${cacheHits} hits, ${cacheMisses} misses`);
 
     // Fill in any missing eventIds
     const finalResults = queries.map((q) => {
