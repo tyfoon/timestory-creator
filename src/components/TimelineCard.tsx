@@ -289,6 +289,7 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
                   loading={isActive ? "eager" : "lazy"}
                   decoding="async"
                   fetchPriority={isActive ? "high" : "low"}
+                  referrerPolicy="no-referrer"
                 />
                 {/* Overlay for placeholders to make them more subtle */}
                 {isPlaceholder && (
