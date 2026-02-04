@@ -227,9 +227,10 @@ export const useSaveStory = (): UseSaveStoryReturn => {
       setProgress(100);
       setProgressMessage('Klaar!');
 
-      // Generate share URL
+      // Generate share URL - use published URL for branded links
       const storyId = insertData.id;
-      const shareUrl = `${window.location.origin}/s/${storyId}`;
+      const publishedUrl = 'https://timestory-creator.lovable.app';
+      const shareUrl = `${publishedUrl}/s/${storyId}`;
 
       return {
         success: true,
