@@ -11,7 +11,7 @@ const REQUEST_TIMEOUT_MS = 20_000; // Increased timeout for slow upstream
 const RETRIES = 2; // One extra retry for flaky connections
 
 // Bump this when deploying to verify the latest code is running
-const VERSION = 'search-images-tol@2026-02-04.3';
+const VERSION = 'search-images-tol@2026-02-04.4';
 const DEPLOYED_AT = new Date().toISOString();
 
 // ============== CACHE HELPERS ==============
@@ -30,6 +30,7 @@ function normalizeQueryForCache(query: string): string {
 
 /**
  * Check cache for a previously found image
+ * Returns null if not cached, or if cached URL is blacklisted
  */
 async function checkCache(
   supabase: ReturnType<typeof createClient>,
@@ -77,6 +78,27 @@ async function checkCache(
   } catch (e) {
     console.log(`[Cache] Exception: ${e}`);
     return null;
+  }
+}
+
+/**
+ * Get all blacklisted image URLs
+ */
+async function getBlacklistedUrls(supabase: ReturnType<typeof createClient>): Promise<Set<string>> {
+  try {
+    const { data, error } = await supabase
+      .from("image_blacklist")
+      .select("image_url");
+    
+    if (error) {
+      console.log(`[Blacklist] Error fetching: ${error.message}`);
+      return new Set();
+    }
+    
+    return new Set((data || []).map((row: { image_url: string }) => row.image_url));
+  } catch (e) {
+    console.log(`[Blacklist] Exception: ${e}`);
+    return new Set();
   }
 }
 
@@ -187,7 +209,13 @@ function firstArrayCandidate(obj: AnyRecord): unknown[] | null {
   return null;
 }
 
-function extractBestImage(payload: unknown): { imageUrl: string | null; score: number } {
+/**
+ * Extract the best non-blacklisted image from the API response
+ * Iterates through all results to find the first one not in the blacklist
+ */
+function extractBestImage(payload: unknown, blacklist: Set<string>): { imageUrl: string | null; score: number; skippedCount: number } {
+  let skippedCount = 0;
+  
   // Common flat shapes
   if (isRecord(payload)) {
     const flatUrl =
@@ -198,27 +226,49 @@ function extractBestImage(payload: unknown): { imageUrl: string | null; score: n
       null;
 
     const flatScore = typeof payload.score === 'number' ? payload.score : 0;
-    if (flatUrl) return { imageUrl: flatUrl, score: flatScore };
+    
+    // Check flat URL against blacklist
+    if (flatUrl) {
+      if (blacklist.has(flatUrl)) {
+        console.log(`[Tol Search] Skipping blacklisted image: ${flatUrl.slice(0, 80)}...`);
+        skippedCount++;
+      } else {
+        return { imageUrl: flatUrl, score: flatScore, skippedCount };
+      }
+    }
 
+    // Check array results - iterate through all to find first non-blacklisted
     const arr = firstArrayCandidate(payload);
     if (arr && arr.length > 0) {
-      const first = arr[0];
-      if (isRecord(first)) {
+      for (const item of arr) {
+        if (!isRecord(item)) continue;
+        
         const url =
-          (typeof first.url === 'string' && first.url) ||
-          (typeof first.imageUrl === 'string' && first.imageUrl) ||
-          (typeof first.image === 'string' && first.image) ||
-          (typeof first.src === 'string' && first.src) ||
-          (typeof first.original === 'string' && first.original) ||
-          (typeof first.link === 'string' && first.link) ||
+          (typeof item.url === 'string' && item.url) ||
+          (typeof item.imageUrl === 'string' && item.imageUrl) ||
+          (typeof item.image === 'string' && item.image) ||
+          (typeof item.src === 'string' && item.src) ||
+          (typeof item.original === 'string' && item.original) ||
+          (typeof item.link === 'string' && item.link) ||
           null;
+        
+        if (!url) continue;
+        
+        // Check against blacklist
+        if (blacklist.has(url)) {
+          console.log(`[Tol Search] Skipping blacklisted image: ${url.slice(0, 80)}...`);
+          skippedCount++;
+          continue;
+        }
+        
         const score =
-          (typeof first.score === 'number' && first.score) ||
-          (typeof first.rank === 'number' && first.rank) ||
-          (typeof first.relevance === 'number' && first.relevance) ||
+          (typeof item.score === 'number' && item.score) ||
+          (typeof item.rank === 'number' && item.rank) ||
+          (typeof item.relevance === 'number' && item.relevance) ||
           flatScore ||
           0;
-        return { imageUrl: url, score };
+        
+        return { imageUrl: url, score, skippedCount };
       }
     }
 
@@ -228,7 +278,7 @@ function extractBestImage(payload: unknown): { imageUrl: string | null; score: n
     );
   }
 
-  return { imageUrl: null, score: 0 };
+  return { imageUrl: null, score: 0, skippedCount };
 }
 
 serve(async (req) => {
@@ -355,9 +405,17 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const { imageUrl, score } = extractBestImage(data);
+    
+    // Fetch blacklist to filter results
+    const blacklist = supabase ? await getBlacklistedUrls(supabase) : new Set<string>();
+    const { imageUrl, score, skippedCount } = extractBestImage(data, blacklist);
+    
+    if (skippedCount > 0) {
+      console.log(`[Tol Search] Skipped ${skippedCount} blacklisted images`);
+    }
 
     console.log(`[Tol Search] Found image for "${searchQuery}": ${imageUrl ? 'YES' : 'NO'} (score: ${score})`);
+
 
     // STEP 3: Save successful result to cache
     if (supabase && imageUrl) {
