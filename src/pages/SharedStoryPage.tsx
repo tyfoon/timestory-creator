@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Player } from '@remotion/player';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Loader2, Home, AlertCircle, Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { Loader2, Home, AlertCircle } from 'lucide-react';
 import { 
   TimelineVideoComponent, 
   ScrapbookVideoComponent,
@@ -28,9 +28,6 @@ export default function SharedStoryPage() {
   const [story, setStory] = useState<SavedStory | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const playerRef = React.useRef<any>(null);
 
   useEffect(() => {
     const fetchStory = async () => {
@@ -111,23 +108,6 @@ export default function SharedStoryPage() {
     );
   };
 
-  const handlePlayPause = () => {
-    if (playerRef.current) {
-      if (isPlaying) {
-        playerRef.current.pause();
-      } else {
-        playerRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  const handleMuteToggle = () => {
-    if (playerRef.current) {
-      playerRef.current.setVolume(isMuted ? 1 : 0);
-      setIsMuted(!isMuted);
-    }
-  };
 
   // Loading state
   if (isLoading) {
@@ -182,9 +162,8 @@ export default function SharedStoryPage() {
     <div className="min-h-screen bg-black flex flex-col">
       {/* Video Player - Full width, maintains aspect ratio */}
       <div className="flex-1 flex items-center justify-center p-0 sm:p-4">
-        <div className="w-full max-w-6xl aspect-video bg-black rounded-none sm:rounded-lg overflow-hidden shadow-2xl relative group">
+        <div className="w-full max-w-6xl aspect-video bg-black rounded-none sm:rounded-lg overflow-hidden shadow-2xl">
           <Player
-            ref={playerRef}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             component={VideoComponent as any}
             inputProps={videoProps}
@@ -198,32 +177,6 @@ export default function SharedStoryPage() {
             clickToPlay
             doubleClickToFullscreen
           />
-          
-          {/* Custom overlay controls - shown on hover */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-            <div className="flex items-center gap-3 pointer-events-auto">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handlePlayPause}
-                className="h-10 w-10 rounded-full bg-white/20 hover:bg-white/30 text-white"
-              >
-                {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleMuteToggle}
-                className="h-10 w-10 rounded-full bg-white/20 hover:bg-white/30 text-white"
-              >
-                {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-              </Button>
-              <div className="flex-1" />
-              <span className="text-white/70 text-sm">
-                {Math.floor(totalDuration / FPS / 60)}:{String(Math.floor((totalDuration / FPS) % 60)).padStart(2, '0')}
-              </span>
-            </div>
-          </div>
         </div>
       </div>
 
