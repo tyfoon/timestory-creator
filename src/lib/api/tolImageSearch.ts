@@ -207,7 +207,7 @@ async function searchDDG(
   year: number,
   category?: string,
   blacklist?: Set<string>,
-): Promise<ImageResult & { score?: number; actualQuery?: string }> {
+): Promise<ImageResult & { score?: number; actualQuery?: string; cached?: boolean }> {
   try {
     const { data, error } = await supabase.functions.invoke('search-images-tol', {
       body: { query, year, category },
@@ -221,11 +221,12 @@ async function searchDDG(
     const imageUrl = data?.imageUrl || null;
     const actualQuery = data?.searchQuery || query;
     const score = data?.score ?? null;
+    const cached = data?.cached === true;
 
     // Check if image is blacklisted
     if (imageUrl && blacklist?.has(imageUrl)) {
       console.log(`[Tol/DDG] Image blacklisted, skipping: ${imageUrl}`);
-      return { eventId, imageUrl: null, source: null, score, actualQuery };
+      return { eventId, imageUrl: null, source: null, score, actualQuery, cached };
     }
 
     return { 
@@ -234,6 +235,7 @@ async function searchDDG(
       source: imageUrl ? 'DDG/Tol' : null,
       score,
       actualQuery,
+      cached,
     };
   } catch (error) {
     console.error('[Tol/DDG] Error:', error);
@@ -344,10 +346,11 @@ export async function searchSingleImageTol(
   // ========== DDG SEARCH (default or fallback) ==========
   const ddgResult = await searchDDG(eventId, searchQuery, year, category, blacklist);
   
-  // Build trace label with score if available
-  const traceLabel = ddgResult.score !== null && ddgResult.score !== undefined
-    ? `🔍 DDG/Tol (score: ${ddgResult.score})` 
-    : '🔍 DDG/Tol';
+  // Build trace label with cache indicator and score if available
+  let traceLabel = ddgResult.cached ? '💾 DDG/Tol (CACHE)' : '🔍 DDG/Tol';
+  if (ddgResult.score !== null && ddgResult.score !== undefined && !ddgResult.cached) {
+    traceLabel = `🔍 DDG/Tol (score: ${ddgResult.score})`;
+  }
   
   const actualQuery = ddgResult.actualQuery || searchQuery;
   
@@ -363,7 +366,7 @@ export async function searchSingleImageTol(
     return {
       eventId,
       imageUrl: ddgResult.imageUrl,
-      source: 'DDG/Tol',
+      source: ddgResult.cached ? 'DDG/Tol (cache)' : 'DDG/Tol',
       searchTrace,
     };
   } else {
