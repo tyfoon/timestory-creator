@@ -1273,6 +1273,7 @@ const TimelineStoryPage = () => {
                   events={events} 
                   onRefreshImages={handleRefreshAllImages}
                   isRefreshing={isLoadingImages}
+                  onBlacklistImage={handleBlacklistImage}
                 />
                 
                 {/* Refresh button */}
