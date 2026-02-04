@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,41 +19,88 @@ export const DateInput = ({ label, value, onChange, error }: DateInputProps) => 
   const monthRef = useRef<HTMLInputElement>(null);
   const yearRef = useRef<HTMLInputElement>(null);
 
+  // Track raw input values separately to allow typing multi-digit numbers
+  const [dayInput, setDayInput] = useState(value.day ? String(value.day).padStart(2, '0') : '');
+  const [monthInput, setMonthInput] = useState(value.month ? String(value.month).padStart(2, '0') : '');
+  const [yearInput, setYearInput] = useState(value.year ? String(value.year) : '');
+
+  // Sync external value changes (e.g., form reset)
+  useEffect(() => {
+    if (value.day && String(value.day) !== dayInput.replace(/^0+/, '')) {
+      setDayInput(String(value.day).padStart(2, '0'));
+    }
+    if (!value.day && dayInput !== '') {
+      setDayInput('');
+    }
+  }, [value.day]);
+
+  useEffect(() => {
+    if (value.month && String(value.month) !== monthInput.replace(/^0+/, '')) {
+      setMonthInput(String(value.month).padStart(2, '0'));
+    }
+    if (!value.month && monthInput !== '') {
+      setMonthInput('');
+    }
+  }, [value.month]);
+
+  useEffect(() => {
+    if (value.year && String(value.year) !== yearInput) {
+      setYearInput(String(value.year));
+    }
+    if (!value.year && yearInput !== '') {
+      setYearInput('');
+    }
+  }, [value.year]);
+
   const handleDayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawVal = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    const rawVal = e.target.value.replace(/\D/g, '').slice(0, 2);
+    setDayInput(rawVal);
+    
     const val = parseInt(rawVal) || 0;
     const day = Math.min(31, Math.max(0, val));
-    onChange({ ...value, day });
+    onChange({ ...value, day: day || 0 });
     
-    // Auto-advance to month if we have 2 digits and valid day
-    if (rawVal.length >= 2 && day >= 1 && day <= 31) {
+    // Auto-advance: if first digit is 4-9, can only be 04-09, advance immediately
+    // If first digit is 0-3, wait for second digit
+    const shouldAdvance = 
+      (rawVal.length === 1 && val >= 4 && val <= 9) || // Single digit 4-9
+      (rawVal.length >= 2); // Two digits entered
+    
+    if (shouldAdvance && day >= 1 && day <= 31) {
+      setDayInput(String(day).padStart(2, '0'));
       monthRef.current?.focus();
       monthRef.current?.select();
     }
   };
 
   const handleMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawVal = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    const rawVal = e.target.value.replace(/\D/g, '').slice(0, 2);
+    setMonthInput(rawVal);
+    
     const val = parseInt(rawVal) || 0;
     const month = Math.min(12, Math.max(0, val));
-    onChange({ ...value, month });
+    onChange({ ...value, month: month || 0 });
     
     // Auto-advance logic:
-    // - Single digit 3-9: immediately advance (can only be months 03-09)
-    // - "1" or "2" alone: wait for potential second digit (10-12 or 01-02)
-    // - Two digits (01, 02, 10-12, etc.): advance immediately
+    // - Single digit 2-9: immediately advance (can only be months 02-09, as 1 could be 10-12)
+    // - "1" alone: wait for potential second digit (10, 11, 12)
+    // - "0" alone: wait for second digit (01-09)
+    // - Two digits: advance immediately
     const shouldAdvance = 
-      (rawVal.length === 1 && val >= 3 && val <= 9) || // Single digit 3-9
-      (rawVal.length >= 2 && month >= 1 && month <= 12); // Two digits valid month
+      (rawVal.length === 1 && val >= 2 && val <= 9) || // Single digit 2-9
+      (rawVal.length >= 2); // Two digits entered
     
-    if (shouldAdvance) {
+    if (shouldAdvance && month >= 1 && month <= 12) {
+      setMonthInput(String(month).padStart(2, '0'));
       yearRef.current?.focus();
       yearRef.current?.select();
     }
   };
 
   const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawVal = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    const rawVal = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setYearInput(rawVal);
+    
     const val = parseInt(rawVal) || 0;
     onChange({ ...value, year: val });
     
@@ -63,11 +110,25 @@ export const DateInput = ({ label, value, onChange, error }: DateInputProps) => 
     }
   };
 
+  const handleDayBlur = () => {
+    // Format with leading zero on blur
+    if (dayInput && value.day) {
+      setDayInput(String(value.day).padStart(2, '0'));
+    }
+  };
+
+  const handleMonthBlur = () => {
+    // Format with leading zero on blur
+    if (monthInput && value.month) {
+      setMonthInput(String(value.month).padStart(2, '0'));
+    }
+  };
+
   return (
     <div className="space-y-2">
       <Label className="text-sm font-medium text-foreground">{label}</Label>
       <div className="grid grid-cols-3 gap-2">
-        {/* Day input - use text type to preserve leading zeros for length check */}
+        {/* Day input */}
         <div>
           <Input
             ref={dayRef}
@@ -76,13 +137,14 @@ export const DateInput = ({ label, value, onChange, error }: DateInputProps) => 
             pattern="[0-9]*"
             maxLength={2}
             placeholder={t('dayLabel') as string}
-            value={value.day ? String(value.day).padStart(2, '0') : ''}
+            value={dayInput}
             onChange={handleDayChange}
+            onBlur={handleDayBlur}
             className="bg-card text-center text-lg font-medium"
           />
         </div>
 
-        {/* Month input - use text type to preserve leading zeros for length check */}
+        {/* Month input */}
         <div>
           <Input
             ref={monthRef}
@@ -91,8 +153,9 @@ export const DateInput = ({ label, value, onChange, error }: DateInputProps) => 
             pattern="[0-9]*"
             maxLength={2}
             placeholder={t('monthLabel') as string}
-            value={value.month ? String(value.month).padStart(2, '0') : ''}
+            value={monthInput}
             onChange={handleMonthChange}
+            onBlur={handleMonthBlur}
             className="bg-card text-center text-lg font-medium"
           />
         </div>
@@ -106,7 +169,7 @@ export const DateInput = ({ label, value, onChange, error }: DateInputProps) => 
             pattern="[0-9]*"
             maxLength={4}
             placeholder={t('yearLabel') as string}
-            value={value.year || ''}
+            value={yearInput}
             onChange={handleYearChange}
             className="bg-card text-center text-lg font-medium"
           />
