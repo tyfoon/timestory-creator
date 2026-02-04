@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Bug, Music, Film, Search, Database, ExternalLink, Image, Filter, Clock, Star, User, Tv, Disc, CheckCircle2, XCircle, Timer, RefreshCw, Volume2 } from 'lucide-react';
+import { Bug, Music, Film, Search, Database, ExternalLink, Image, Filter, Clock, Star, User, Tv, Disc, CheckCircle2, XCircle, Timer, RefreshCw, Volume2, Ban } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -10,14 +10,17 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { TimelineEvent, SearchTraceEntry } from '@/types/timeline';
+import { addToBlacklist } from '@/hooks/useImageBlacklist';
+import { toast } from 'sonner';
 
 interface DebugInfoDialogProps {
   events: TimelineEvent[];
   onRefreshImages?: () => void;
   isRefreshing?: boolean;
+  onBlacklistImage?: (eventId: string) => void;
 }
 
-export function DebugInfoDialog({ events, onRefreshImages, isRefreshing }: DebugInfoDialogProps) {
+export function DebugInfoDialog({ events, onRefreshImages, isRefreshing, onBlacklistImage }: DebugInfoDialogProps) {
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('');
 
@@ -250,15 +253,30 @@ export function DebugInfoDialog({ events, onRefreshImages, isRefreshing }: Debug
               >
                 {/* Event header with thumbnail */}
                 <div className="flex gap-3">
-                  {/* Thumbnail */}
+                  {/* Thumbnail with blacklist button */}
                   {event.imageUrl && (
-                    <div className="shrink-0">
+                    <div className="shrink-0 relative group">
                       <img 
                         src={event.imageUrl} 
                         alt="" 
                         className="w-16 h-16 object-cover rounded-md bg-muted"
                         loading="lazy"
                       />
+                      {/* Blacklist button overlay */}
+                      {onBlacklistImage && (
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            await addToBlacklist(event.imageUrl!, event.title, event.imageSearchQuery);
+                            toast.success('Afbeelding geblacklist', { description: 'Nieuwe zoekopdracht gestart...' });
+                            onBlacklistImage(event.id);
+                          }}
+                          className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-black/60 hover:bg-destructive/90 text-white/70 hover:text-white flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100"
+                          title="Blacklist deze afbeelding"
+                        >
+                          <Ban className="h-2.5 w-2.5" />
+                        </button>
+                      )}
                     </div>
                   )}
                   

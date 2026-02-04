@@ -743,6 +743,7 @@ const ResultPage = () => {
                         events={events} 
                         onRefreshImages={handleRefreshAllImages}
                         isRefreshing={isLoadingImages}
+                        onBlacklistImage={handleBlacklistImage}
                       />
                     </>
                   )}
