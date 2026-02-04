@@ -26,21 +26,30 @@ function getDecadeSuffix(year: number): string | null {
   return decadeMap[prefix] || null;
 }
 
+// Remove full decade references like "1980s", "1990s" from query (AI sometimes includes these)
+function stripFullDecadeReference(query: string): string {
+  // Match patterns like "1980s", "1990s", "2000s", "2010s" etc.
+  return query.replace(/\b(19[4-9]0s|20[0-2]0s)\b/gi, '').replace(/\s{2,}/g, ' ').trim();
+}
+
 // Build optimized search query based on category
 function buildSearchQuery(query: string, year: number, category?: string): string {
+  // First, strip any existing full decade reference from the query
+  const cleanedQuery = stripFullDecadeReference(query);
+  
   // Sports events: use exact year (more precise for matches, tournaments, etc.)
   if (category === 'sports') {
-    return `${query} ${year}`;
+    return `${cleanedQuery} ${year}`;
   }
   
   // All other categories: use decade suffix for better era-matching
   const decadeSuffix = getDecadeSuffix(year);
   if (decadeSuffix) {
-    return `${query} ${decadeSuffix}`;
+    return `${cleanedQuery} ${decadeSuffix}`;
   }
   
   // Fallback: use year if no decade mapping exists
-  return `${query} ${year}`;
+  return `${cleanedQuery} ${year}`;
 }
 
 type AnyRecord = Record<string, unknown>;
