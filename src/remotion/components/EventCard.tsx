@@ -70,7 +70,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
           </span>
         </div>
         
-        {/* Center content */}
+        {/* Center content - positioned higher to avoid photo overlap */}
         <div style={{
           position: 'relative',
           zIndex: 10,
@@ -78,8 +78,8 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
-          padding: '60px 100px',
+          justifyContent: 'flex-start',
+          padding: '120px 100px 60px 100px',
           textAlign: 'center',
         }}>
           {/* Date - tiny monospace with extreme letter-spacing */}
