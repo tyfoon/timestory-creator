@@ -198,7 +198,8 @@ export async function downloadPolaroidCollage(
     if (urlMatch && urlMatch[1] && !urlMatch[1].includes('placeholder')) {
       return new Promise<void>((resolve) => {
         const testImg = new Image();
-        testImg.crossOrigin = 'anonymous';
+        // Don't use crossOrigin for external images - it can cause CORS failures
+        // Instead rely on no-referrer and allowTaint in html2canvas
         testImg.onload = () => resolve();
         testImg.onerror = () => resolve(); // Continue even if image fails
         testImg.src = urlMatch[1];

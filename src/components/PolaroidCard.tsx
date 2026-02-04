@@ -272,6 +272,7 @@ export const PolaroidCard = ({
                     src={displayImage} 
                     alt={event.title}
                     className={`w-full h-full object-cover object-top ${isPlaceholder ? 'opacity-80' : ''}`}
+                    referrerPolicy="no-referrer"
                   />
                   {/* Subtle overlay for placeholders to indicate it's not the real image */}
                   {isPlaceholder && (
