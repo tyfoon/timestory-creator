@@ -273,10 +273,24 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader className="pb-2">
-          <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
-            <Video className="h-4 w-4" />
-            Video Preview
-          </DialogTitle>
+          <div className="flex items-center justify-between gap-4">
+            <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
+              <Video className="h-4 w-4" />
+              Video Preview
+            </DialogTitle>
+            
+            {/* Share button - visible when video is ready */}
+            {(isReady || isMusicVideoMode) && (
+              <Button
+                onClick={() => setIsShareDialogOpen(true)}
+                size="sm"
+                className="gap-2"
+              >
+                <Share2 className="h-4 w-4" />
+                Delen
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
         <div className="space-y-3">
@@ -443,15 +457,6 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                 </div>
               </div>
 
-              {/* Share button */}
-              <Button
-                onClick={() => setIsShareDialogOpen(true)}
-                className="w-full gap-2"
-                variant="default"
-              >
-                <Share2 className="h-4 w-4" />
-                Deel via Link
-              </Button>
             </div>
           )}
         </div>
