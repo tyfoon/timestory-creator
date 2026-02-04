@@ -1,24 +1,22 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Header } from "@/components/Header";
-import { TimeDial } from "@/components/v2/TimeDial";
-import { SubjectSelector } from "@/components/v2/SubjectSelector";
-import { OccasionSelector } from "@/components/v2/OccasionSelector";
+import { RetroDateInput } from "@/components/v2/RetroDateInput";
+import { PhaseSelector } from "@/components/v2/PhaseSelector";
+import { IdentityForm } from "@/components/v2/IdentityForm";
 import { ChapterIndicator } from "@/components/v2/ChapterIndicator";
 import { NostalgicLoading } from "@/components/v2/NostalgicLoading";
 import { PaperTexture } from "@/components/v2/PaperTexture";
 import { getEraTheme } from "@/lib/eraThemes";
-import { FormData, BirthDateData, OptionalData } from "@/types/form";
-import { ArrowRight, BookOpen, Camera, Sparkles } from "lucide-react";
+import { FormData, BirthDateData, OptionalData, PeriodType, Gender } from "@/types/form";
+import { ArrowRight, ArrowLeft, Rocket, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Chapter = 1 | 2 | 3;
-type Subject = "me" | "loved-one" | "friend";
-type Occasion = "birthday" | "anniversary" | "fun";
 
-// Simple click sound using Web Audio API
+// Simple click sound
 const createClickSound = () => {
   try {
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -36,26 +34,28 @@ const createClickSound = () => {
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.05);
   } catch (e) {
-    // Audio not supported, fail silently
+    // Audio not supported
   }
 };
 
 const HomeV2 = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const currentYear = new Date().getFullYear();
   
   // Chapter state
   const [currentChapter, setCurrentChapter] = useState<Chapter>(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
   
   // Form state
-  const [selectedYear, setSelectedYear] = useState<number>(1985);
-  const [subject, setSubject] = useState<Subject | null>(null);
-  const [occasion, setOccasion] = useState<Occasion | null>(null);
+  const [birthDate, setBirthDate] = useState<BirthDateData>({ day: 0, month: 0, year: 0 });
+  const [selectedPhase, setSelectedPhase] = useState<PeriodType | null>(null);
+  const [name, setName] = useState<string>('');
+  const [gender, setGender] = useState<Gender>('none');
   const [isLoading, setIsLoading] = useState(false);
   
-  // Era theme based on selected year
-  const eraTheme = getEraTheme(selectedYear);
+  // Era theme based on birth year
+  const eraTheme = getEraTheme(birthDate.year || 1985);
   
   // Sound toggle
   const [soundEnabled, setSoundEnabled] = useState(() => {
@@ -66,15 +66,35 @@ const HomeV2 = () => {
     localStorage.setItem('homeV2SoundEnabled', String(soundEnabled));
   }, [soundEnabled]);
   
-  const handleYearChange = useCallback((year: number) => {
-    setSelectedYear(year);
-    if (soundEnabled) {
-      createClickSound();
+  // Calculate year range based on phase
+  const calculateYearRange = (): { startYear: number; endYear: number } => {
+    if (!birthDate.year || !selectedPhase) {
+      return { startYear: birthDate.year || 1985, endYear: birthDate.year || 1985 };
     }
-  }, [soundEnabled]);
+    
+    const ageRanges: Record<PeriodType, [number, number] | null> = {
+      'birthyear': null,
+      'childhood': [6, 10],
+      'puberty': [11, 17],
+      'young-adult': [18, 25],
+      'custom': null,
+    };
+    
+    const range = ageRanges[selectedPhase];
+    if (!range) {
+      return { startYear: birthDate.year, endYear: birthDate.year };
+    }
+    
+    return {
+      startYear: birthDate.year + range[0],
+      endYear: Math.min(birthDate.year + range[1], currentYear),
+    };
+  };
   
   const goToChapter = (chapter: Chapter) => {
     if (chapter === currentChapter) return;
+    if (soundEnabled) createClickSound();
+    
     setIsTransitioning(true);
     setTimeout(() => {
       setCurrentChapter(chapter);
@@ -82,53 +102,57 @@ const HomeV2 = () => {
     }, 300);
   };
   
-  const handleSubjectSelect = (s: Subject) => {
-    setSubject(s);
-    setTimeout(() => goToChapter(3), 400);
-  };
+  const handleDateComplete = useCallback(() => {
+    setTimeout(() => goToChapter(2), 800);
+  }, []);
   
-  const handleOccasionSelect = (o: Occasion) => {
-    setOccasion(o);
+  const handlePhaseSelect = (phase: PeriodType) => {
+    setSelectedPhase(phase);
+    if (soundEnabled) createClickSound();
+    setTimeout(() => goToChapter(3), 400);
   };
   
   const handleGenerate = (targetRoute: string) => {
     setIsLoading(true);
     
-    // Build form data compatible with existing backend
-    const birthDate: BirthDateData = {
-      day: 1,
-      month: 1,
-      year: selectedYear,
-    };
+    const yearRange = calculateYearRange();
     
     const optionalData: OptionalData = {
+      firstName: name || undefined,
       children: [],
       focus: "netherlands",
-      gender: "none",
+      gender: gender,
       attitude: "neutral",
+      periodType: selectedPhase || undefined,
     };
     
     const formData: FormData = {
-      type: "birthdate",
-      birthDate,
-      yearRange: {
-        startYear: selectedYear,
-        endYear: selectedYear,
-      },
+      type: selectedPhase === "birthyear" ? "birthdate" : "range",
+      birthDate: birthDate,
+      yearRange: yearRange,
       optionalData,
     };
     
     sessionStorage.setItem("timelineFormData", JSON.stringify(formData));
     sessionStorage.setItem("timelineLength", "short");
     
-    // Simulate nostalgic loading
     setTimeout(() => {
       navigate(targetRoute);
     }, 2500);
   };
   
-  const canProceedToChapter2 = selectedYear >= 1920 && selectedYear <= new Date().getFullYear();
-  const canGenerate = subject !== null && occasion !== null;
+  // Validation checks
+  const isBirthDateValid = birthDate.day > 0 && birthDate.month > 0 && birthDate.year >= 1900 && birthDate.year <= currentYear;
+  const canProceedToChapter2 = isBirthDateValid;
+  const canProceedToChapter3 = selectedPhase !== null;
+  const canGenerate = isBirthDateValid && selectedPhase !== null;
+  
+  // Completed chapters for indicator
+  const completedChapters: [boolean, boolean, boolean] = [
+    isBirthDateValid,
+    selectedPhase !== null,
+    name.length > 0 || gender !== 'none',
+  ];
   
   return (
     <div 
@@ -149,14 +173,12 @@ const HomeV2 = () => {
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-20 left-10 w-32 h-32 border-4 border-[var(--era-accent)] rotate-45" />
             <div className="absolute bottom-40 right-20 w-24 h-24 border-4 border-[var(--era-secondary)] -rotate-12" />
-            <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-[var(--era-accent)] opacity-30" />
           </div>
         )}
         {eraTheme.era === '90s' && (
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-32 right-16 w-20 h-20 rounded-full bg-[var(--era-primary)]" />
             <div className="absolute bottom-32 left-16 w-16 h-16 bg-[var(--era-secondary)] rotate-45" />
-            <div className="absolute top-1/3 right-1/3 w-12 h-12 rounded-full border-4 border-[var(--era-accent)]" />
           </div>
         )}
       </div>
@@ -166,27 +188,29 @@ const HomeV2 = () => {
       {/* Loading overlay */}
       <AnimatePresence>
         {isLoading && (
-          <NostalgicLoading year={selectedYear} />
+          <NostalgicLoading year={birthDate.year || 1985} />
         )}
       </AnimatePresence>
       
       {/* Main content */}
       <main className="flex-1 relative z-10 pt-16 sm:pt-20 pb-8 px-4">
-        <div className="container mx-auto max-w-2xl">
+        <div className="container mx-auto max-w-lg">
           
           {/* Chapter indicator */}
           <ChapterIndicator 
             currentChapter={currentChapter} 
-            onChapterClick={goToChapter}
-            completedChapters={[
-              true,
-              currentChapter >= 2 || subject !== null,
-              currentChapter >= 3 || occasion !== null,
-            ]}
+            onChapterClick={(c) => {
+              // Only allow going back to completed chapters
+              if (c < currentChapter || (c === 2 && canProceedToChapter2) || (c === 3 && canProceedToChapter3)) {
+                goToChapter(c as Chapter);
+              }
+            }}
+            completedChapters={completedChapters}
           />
           
           {/* Chapter content with transitions */}
           <AnimatePresence mode="wait">
+            {/* Chapter 1: Birth Date */}
             {currentChapter === 1 && !isTransitioning && (
               <motion.div
                 key="chapter1"
@@ -194,46 +218,39 @@ const HomeV2 = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -50 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
-                className="space-y-8"
+                className="space-y-6"
               >
-                {/* Hero headline */}
-                <div className="text-center space-y-3">
-                  <h1 
-                    className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold leading-tight"
-                    style={{ color: 'var(--era-primary)' }}
-                  >
-                    Waar nemen we je mee naartoe?
-                  </h1>
-                  <p className="text-muted-foreground text-lg">
-                    Draai aan de tijd en ontdek je herinneringen
-                  </p>
-                </div>
-                
-                {/* Time Dial */}
-                <TimeDial 
-                  selectedYear={selectedYear}
-                  onYearChange={handleYearChange}
+                <RetroDateInput
+                  value={birthDate}
+                  onChange={setBirthDate}
                   eraTheme={eraTheme}
+                  onComplete={handleDateComplete}
                 />
                 
-                {/* Next button */}
-                <div className="flex justify-center pt-4">
-                  <Button
-                    onClick={() => goToChapter(2)}
-                    disabled={!canProceedToChapter2}
-                    className="group px-8 py-6 text-lg font-semibold rounded-xl shadow-lg transition-all duration-300 hover:scale-105"
-                    style={{
-                      background: `linear-gradient(135deg, var(--era-primary), var(--era-secondary))`,
-                      color: eraTheme.era === 'pre70s' ? '#fff' : '#000',
-                    }}
+                {/* Manual next button (in case auto-advance didn't trigger) */}
+                {canProceedToChapter2 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex justify-center pt-2"
                   >
-                    <span>Neem me mee naar {selectedYear}</span>
-                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </div>
+                    <Button
+                      onClick={() => goToChapter(2)}
+                      className="group px-6 py-5 text-base font-semibold rounded-xl shadow-lg transition-all duration-300 hover:scale-105"
+                      style={{
+                        background: `linear-gradient(135deg, var(--era-primary), var(--era-secondary))`,
+                        color: eraTheme.era === 'pre70s' || eraTheme.era === '80s' ? '#fff' : '#000',
+                      }}
+                    >
+                      <span>Kies je bestemming</span>
+                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </motion.div>
+                )}
               </motion.div>
             )}
             
+            {/* Chapter 2: Phase Selection */}
             {currentChapter === 2 && !isTransitioning && (
               <motion.div
                 key="chapter2"
@@ -241,28 +258,30 @@ const HomeV2 = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -50 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
-                className="space-y-8"
+                className="space-y-6"
               >
-                <div className="text-center space-y-3">
-                  <h2 
-                    className="font-serif text-2xl sm:text-3xl font-bold"
-                    style={{ color: 'var(--era-primary)' }}
-                  >
-                    Voor wie is deze tijdreis?
-                  </h2>
-                  <p className="text-muted-foreground">
-                    Kies wie we terug in de tijd brengen
-                  </p>
-                </div>
-                
-                <SubjectSelector 
-                  selected={subject}
-                  onSelect={handleSubjectSelect}
+                <PhaseSelector
+                  birthYear={birthDate.year}
+                  selected={selectedPhase}
+                  onSelect={handlePhaseSelect}
                   eraTheme={eraTheme}
                 />
+                
+                {/* Back button */}
+                <div className="flex justify-center">
+                  <Button
+                    variant="ghost"
+                    onClick={() => goToChapter(1)}
+                    className="text-muted-foreground"
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Terug naar geboortedatum
+                  </Button>
+                </div>
               </motion.div>
             )}
             
+            {/* Chapter 3: Identity */}
             {currentChapter === 3 && !isTransitioning && (
               <motion.div
                 key="chapter3"
@@ -270,77 +289,56 @@ const HomeV2 = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -50 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
-                className="space-y-8"
+                className="space-y-6"
               >
-                <div className="text-center space-y-3">
-                  <h2 
-                    className="font-serif text-2xl sm:text-3xl font-bold"
-                    style={{ color: 'var(--era-primary)' }}
-                  >
-                    Wat is de gelegenheid?
-                  </h2>
-                  <p className="text-muted-foreground">
-                    Vertel ons waarom we teruggaan
-                  </p>
-                </div>
-                
-                <OccasionSelector 
-                  selected={occasion}
-                  onSelect={handleOccasionSelect}
+                <IdentityForm
+                  name={name}
+                  gender={gender}
+                  onNameChange={setName}
+                  onGenderChange={setGender}
                   eraTheme={eraTheme}
                 />
                 
-                {/* Generate buttons */}
-                {canGenerate && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="pt-6 space-y-3"
+                {/* Generate button */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="pt-4"
+                >
+                  <Button
+                    onClick={() => handleGenerate("/story")}
+                    disabled={!canGenerate}
+                    className="w-full h-14 text-lg font-bold rounded-xl shadow-lg transition-all duration-300 hover:scale-[1.02] disabled:opacity-50"
+                    style={{
+                      background: `linear-gradient(135deg, var(--era-primary), var(--era-secondary))`,
+                      color: eraTheme.era === 'pre70s' || eraTheme.era === '80s' ? '#fff' : '#000',
+                    }}
                   >
-                    {/* Primary: Timeline Story */}
-                    <Button
-                      onClick={() => handleGenerate("/story")}
-                      className="w-full h-14 text-lg font-bold rounded-xl shadow-lg transition-all duration-300 hover:scale-[1.02]"
-                      style={{
-                        background: `linear-gradient(135deg, var(--era-primary), var(--era-secondary))`,
-                        color: eraTheme.era === 'pre70s' ? '#fff' : '#000',
-                      }}
-                    >
-                      <BookOpen className="mr-2 h-5 w-5" />
-                      <span>Maak mijn tijdreis</span>
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
-                    
-                    {/* Secondary options */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <Button
-                        onClick={() => handleGenerate("/polaroid")}
-                        variant="outline"
-                        className="h-12 font-semibold rounded-xl border-2 transition-all hover:scale-[1.02]"
-                        style={{
-                          borderColor: 'var(--era-accent)',
-                          color: 'var(--era-primary)',
-                        }}
-                      >
-                        <Camera className="mr-2 h-4 w-4" />
-                        Polaroid
-                      </Button>
-                      
-                      <Button
-                        onClick={() => handleGenerate("/resultaat")}
-                        variant="outline"
-                        className="h-12 font-semibold rounded-xl border-2 transition-all hover:scale-[1.02]"
-                        style={{
-                          borderColor: 'var(--era-secondary)',
-                          color: 'var(--era-primary)',
-                        }}
-                      >
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Tijdreis
-                      </Button>
-                    </div>
-                  </motion.div>
-                )}
+                    <Rocket className="mr-2 h-5 w-5" />
+                    <span>Start mijn Tijdreis</span>
+                    <Sparkles className="ml-2 h-5 w-5" />
+                  </Button>
+                  
+                  <p className="text-center text-xs text-muted-foreground mt-3">
+                    Je gaat terug naar {calculateYearRange().startYear}
+                    {calculateYearRange().startYear !== calculateYearRange().endYear && 
+                      ` - ${calculateYearRange().endYear}`
+                    }
+                  </p>
+                </motion.div>
+                
+                {/* Back button */}
+                <div className="flex justify-center">
+                  <Button
+                    variant="ghost"
+                    onClick={() => goToChapter(2)}
+                    className="text-muted-foreground"
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Kies andere bestemming
+                  </Button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
