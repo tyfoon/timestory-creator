@@ -227,10 +227,10 @@ export const useSaveStory = (): UseSaveStoryReturn => {
       setProgress(100);
       setProgressMessage('Klaar!');
 
-      // Generate share URL - use published URL for branded links
+      // Generate share URL - use custom domain for branded links
       const storyId = insertData.id;
-      const publishedUrl = 'https://timestory-creator.lovable.app';
-      const shareUrl = `${publishedUrl}/s/${storyId}`;
+      const brandedUrl = 'https://hetjaarvan.nl';
+      const shareUrl = `${brandedUrl}/s/${storyId}`;
 
       return {
         success: true,
