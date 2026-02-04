@@ -46,8 +46,48 @@ export function getBlacklistedImages(): string[] {
 }
 
 /**
+ * Call the DDG Image Search API's blacklist endpoint to permanently blacklist
+ * the URL on their server and flush their cache.
+ */
+async function syncToDDGBlacklist(imageUrl: string): Promise<boolean> {
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn('[DDG Blacklist] Missing Supabase config');
+      return false;
+    }
+
+    // Call our edge function to proxy the DDG blacklist request
+    const response = await fetch(`${supabaseUrl}/functions/v1/blacklist-image-ddg`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseKey}`,
+        'apikey': supabaseKey,
+      },
+      body: JSON.stringify({ url: imageUrl }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.warn('[DDG Blacklist] Failed:', response.status, errorText);
+      return false;
+    }
+
+    const result = await response.json();
+    console.log('[DDG Blacklist] ✓ Synced to DDG API:', result);
+    return true;
+  } catch (e) {
+    console.warn('[DDG Blacklist] Error syncing:', e);
+    return false;
+  }
+}
+
+/**
  * Add an image URL to the blacklist (both DB and local cache)
- * Also purges matching entries from the image_search_cache immediately
+ * Also syncs to DDG API and purges matching entries from image_search_cache
  */
 export async function addToBlacklist(
   imageUrl: string, 
@@ -55,7 +95,13 @@ export async function addToBlacklist(
   searchQuery?: string
 ): Promise<boolean> {
   try {
-    // 1. Add to database blacklist
+    // 1. Sync to DDG API (this also flushes their cache)
+    const ddgSynced = await syncToDDGBlacklist(imageUrl);
+    if (ddgSynced) {
+      console.log('[Blacklist] ✓ Synced to DDG API');
+    }
+
+    // 2. Add to our database blacklist
     const { error } = await supabase
       .from('image_blacklist')
       .insert({ 
@@ -71,7 +117,7 @@ export async function addToBlacklist(
       }
     }
     
-    // 2. Immediately purge from image_search_cache (direct purge)
+    // 3. Purge from our image_search_cache
     const { error: cacheError } = await supabase
       .from('image_search_cache')
       .delete()
@@ -80,15 +126,15 @@ export async function addToBlacklist(
     if (cacheError) {
       console.warn('Failed to purge from cache:', cacheError);
     } else {
-      console.log('[Blacklist] Purged from cache:', imageUrl.slice(0, 60) + '...');
+      console.log('[Blacklist] Purged from local cache:', imageUrl.slice(0, 60) + '...');
     }
     
-    // 3. Add to local cache
+    // 4. Add to local in-memory cache
     if (!globalBlacklistCache.includes(imageUrl)) {
       globalBlacklistCache.push(imageUrl);
     }
     
-    // 4. Also add to localStorage as backup
+    // 5. Also add to localStorage as backup
     try {
       const current = getBlacklistedImages();
       if (!current.includes(imageUrl)) {
