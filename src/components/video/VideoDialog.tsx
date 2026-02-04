@@ -3,7 +3,7 @@ import { Player } from '@remotion/player';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Video, Volume2, AlertCircle, Music, Tv, Camera, Layers, Mic } from 'lucide-react';
+import { Loader2, Video, Volume2, AlertCircle, Music, Tv, Camera, Layers, Mic, Share2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { TimelineEvent } from '@/types/timeline';
@@ -16,6 +16,8 @@ import {
 } from '@/remotion';
 import { generateSpeech, base64ToAudioUrl, VoiceProvider } from '@/remotion/lib/speechApi';
 import { measureAudioDuration } from '@/remotion/lib/audioUtils';
+import { ShareDialog } from '@/components/video/ShareDialog';
+import { StoryContent, StorySettings } from '@/hooks/useSaveStory';
 
 // Fallback Supabase configuration for sound effects
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
@@ -109,6 +111,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
   const [enableVhsEffect, setEnableVhsEffect] = useState(false);
   const [videoVariant, setVideoVariant] = useState<VideoVariant>('slideshow');
   const [voiceProvider, setVoiceProvider] = useState<VoiceProvider>('google');
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
 
   // Generate audio for all events - PARALLEL for speed, EXACT durations via Web Audio API
   const handleGenerateAudio = useCallback(async () => {
@@ -439,10 +442,45 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                   {soundEffectsCount > 0 && <span>{soundEffectsCount} SFX</span>}
                 </div>
               </div>
+
+              {/* Share button */}
+              <Button
+                onClick={() => setIsShareDialogOpen(true)}
+                className="w-full gap-2"
+                variant="default"
+              >
+                <Share2 className="h-4 w-4" />
+                Deel via Link
+              </Button>
             </div>
           )}
         </div>
       </DialogContent>
+
+      {/* Share Dialog */}
+      <ShareDialog
+        open={isShareDialogOpen}
+        onOpenChange={setIsShareDialogOpen}
+        content={{
+          events: isMusicVideoMode 
+            ? events.map(e => ({ ...e, audioDurationFrames: Math.round(5 * FPS) })) as VideoEvent[]
+            : videoEvents,
+          storyTitle,
+          storyIntroduction,
+        }}
+        settings={{
+          variant: videoVariant,
+          fps: FPS,
+          enableVhsEffect,
+          retroIntensity: 0.85,
+          voiceProvider,
+          isMusicVideo: isMusicVideoMode,
+          backgroundMusicUrl: isMusicVideoMode ? backgroundMusicUrl : undefined,
+          backgroundMusicDuration: isMusicVideoMode ? backgroundMusicDuration : undefined,
+          introAudioUrl: isMusicVideoMode ? undefined : introAudioUrl,
+          introDurationFrames: isMusicVideoMode ? 0 : introDurationFrames,
+        }}
+      />
     </Dialog>
   );
 };
