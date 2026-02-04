@@ -9,6 +9,10 @@ const DDG_API_URL = 'https://ddg-image-search-bn3h8.ondigitalocean.app/search';
 const REQUEST_TIMEOUT_MS = 12_000;
 const RETRIES = 1;
 
+// Bump this when deploying to verify the latest code is running
+const VERSION = 'search-images-tol@2026-02-04.1';
+const DEPLOYED_AT = new Date().toISOString();
+
 // Map year prefix to decade suffix
 function getDecadeSuffix(year: number): string | null {
   const prefix = Math.floor(year / 10);
@@ -26,16 +30,27 @@ function getDecadeSuffix(year: number): string | null {
   return decadeMap[prefix] || null;
 }
 
-// Remove full decade references like "1980s", "1990s" from query (AI sometimes includes these)
-function stripFullDecadeReference(query: string): string {
-  // Match patterns like "1980s", "1990s", "2000s", "2010s" etc.
-  return query.replace(/\b(19[4-9]0s|20[0-2]0s)\b/gi, '').replace(/\s{2,}/g, ' ').trim();
+// Remove any decade hints already present (prevents e.g. "80s 80s" or "1980s 80s")
+function stripDecadeHints(query: string): string {
+  // Order matters: remove "jaren 80" first so we don't leave a dangling "jaren"
+  let q = query;
+
+  // Dutch-style: "jaren 80", "jaren '80s", "jaren ’80s"
+  q = q.replace(/\bjaren\s+['’]?(?:[4-9]0s|[0-2]0s)\b/gi, '');
+
+  // Full decades: "1940s".."1990s", "2000s".."2020s"
+  q = q.replace(/\b(19[4-9]0s|20[0-2]0s)\b/gi, '');
+
+  // Short decades: "40s".."90s", "00s".."20s" (optionally prefixed with apostrophe)
+  q = q.replace(/\b['’]?(?:[4-9]0s|[0-2]0s)\b/gi, '');
+
+  return q.replace(/\s{2,}/g, ' ').trim();
 }
 
 // Build optimized search query based on category
 function buildSearchQuery(query: string, year: number, category?: string): string {
-  // First, strip any existing full decade reference from the query
-  const cleanedQuery = stripFullDecadeReference(query);
+  // First, strip any existing decade hints from the query (AI sometimes includes these)
+  const cleanedQuery = stripDecadeHints(query);
   
   // Sports events: use exact year (more precise for matches, tournaments, etc.)
   if (category === 'sports') {
@@ -126,11 +141,13 @@ serve(async (req) => {
   }
 
   try {
+    console.log(`[${VERSION}] Request received`, { deployedAt: DEPLOYED_AT });
+
     const apiKey = Deno.env.get('DDG_IMAGE_SEARCH_API_KEY');
     if (!apiKey) {
       console.error('[Tol Search] DDG_IMAGE_SEARCH_API_KEY not configured');
       return new Response(
-        JSON.stringify({ error: 'API key not configured' }),
+        JSON.stringify({ error: 'API key not configured', _version: VERSION }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -140,7 +157,7 @@ serve(async (req) => {
 
     if (!query) {
       return new Response(
-        JSON.stringify({ error: 'Query is required' }),
+        JSON.stringify({ error: 'Query is required', _version: VERSION }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -181,7 +198,7 @@ serve(async (req) => {
       console.error('[Tol Search] Upstream fetch failed after retries', lastErr);
       // Soft-fail: do not break the UI if upstream is flaky
       return new Response(
-        JSON.stringify({ imageUrl: null, source: 'DDG/Tol', score: 0, searchQuery }),
+        JSON.stringify({ imageUrl: null, source: 'DDG/Tol', score: 0, searchQuery, _version: VERSION }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -189,7 +206,7 @@ serve(async (req) => {
     if (response.status === 404) {
       console.log(`[Tol Search] No result found for: "${searchQuery}"`);
       return new Response(
-        JSON.stringify({ imageUrl: null, source: 'DDG/Tol', score: 0 }),
+        JSON.stringify({ imageUrl: null, source: 'DDG/Tol', score: 0, _version: VERSION }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -199,7 +216,7 @@ serve(async (req) => {
       const errorText = await response.text().catch(() => '');
       console.warn(`[Tol Search] Upstream unavailable (${response.status}) for "${searchQuery}"`, errorText.slice(0, 200));
       return new Response(
-        JSON.stringify({ imageUrl: null, source: 'DDG/Tol', score: 0, searchQuery }),
+        JSON.stringify({ imageUrl: null, source: 'DDG/Tol', score: 0, searchQuery, _version: VERSION }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -208,7 +225,7 @@ serve(async (req) => {
       const errorText = await response.text();
       console.error(`[Tol Search] API error: ${response.status} - ${errorText}`);
       return new Response(
-        JSON.stringify({ error: `DDG API error: ${response.status}` }),
+        JSON.stringify({ error: `DDG API error: ${response.status}`, _version: VERSION }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -224,6 +241,7 @@ serve(async (req) => {
         source: 'DDG/Tol',
         score,
         searchQuery, // Include the actual query used for debugging
+        _version: VERSION,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -231,7 +249,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('[Tol Search] Error:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error', _version: VERSION }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
