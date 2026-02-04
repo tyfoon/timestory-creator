@@ -38,8 +38,15 @@ export const DateInput = ({ label, value, onChange, error }: DateInputProps) => 
     const month = Math.min(12, Math.max(0, val));
     onChange({ ...value, month });
     
-    // Auto-advance to year if we have 2 digits and valid month
-    if (rawVal.length >= 2 && month >= 1 && month <= 12) {
+    // Auto-advance logic:
+    // - Single digit 3-9: immediately advance (can only be months 03-09)
+    // - "1" or "2" alone: wait for potential second digit (10-12 or 01-02)
+    // - Two digits (01, 02, 10-12, etc.): advance immediately
+    const shouldAdvance = 
+      (rawVal.length === 1 && val >= 3 && val <= 9) || // Single digit 3-9
+      (rawVal.length >= 2 && month >= 1 && month <= 12); // Two digits valid month
+    
+    if (shouldAdvance) {
       yearRef.current?.focus();
       yearRef.current?.select();
     }
@@ -69,7 +76,7 @@ export const DateInput = ({ label, value, onChange, error }: DateInputProps) => 
             pattern="[0-9]*"
             maxLength={2}
             placeholder={t('dayLabel') as string}
-            value={value.day || ''}
+            value={value.day ? String(value.day).padStart(2, '0') : ''}
             onChange={handleDayChange}
             className="bg-card text-center text-lg font-medium"
           />
@@ -84,7 +91,7 @@ export const DateInput = ({ label, value, onChange, error }: DateInputProps) => 
             pattern="[0-9]*"
             maxLength={2}
             placeholder={t('monthLabel') as string}
-            value={value.month || ''}
+            value={value.month ? String(value.month).padStart(2, '0') : ''}
             onChange={handleMonthChange}
             className="bg-card text-center text-lg font-medium"
           />
