@@ -4,11 +4,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Film, Loader2, CheckCircle2, AlertCircle, FileText, Radio, Video, Play, Check, Music } from 'lucide-react';
+import { Film, Loader2, CheckCircle2, AlertCircle, FileText, Radio, Video, Play, Check, Music, Share2 } from 'lucide-react';
 import { TimelineEvent } from '@/types/timeline';
 import { OptionalData, SubcultureData } from '@/types/form';
 import { VideoDialog } from '@/components/video/VideoDialog';
+import { ShareDialog } from '@/components/video/ShareDialog';
 import { SubcultureSelector } from '@/components/SubcultureSelector';
+import { VideoEvent } from '@/remotion/types';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvZW9ib3lnc3NzeWFqcGRzdGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNTY2NjEsImV4cCI6MjA4NDgzMjY2MX0.KuFaWF4r_cxZRiOumPGMChLVmwgyhT9vR5s7L52zr5s';
@@ -50,6 +52,7 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
   const [result, setResult] = useState<GenerationResult | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   
   // Local state for customization (editable copy of personal details only)
   const [localOptionalData, setLocalOptionalData] = useState<OptionalData>(optionalData);
@@ -516,18 +519,31 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                       </details>
                     )}
 
-                    {/* Video Generation Button - larger touch target */}
-                    <Button 
-                      onClick={() => {
-                        setIsDialogOpen(false);
-                        setIsVideoDialogOpen(true);
-                      }}
-                      className="w-full h-11 sm:h-10 gap-2"
-                      variant="secondary"
-                    >
-                      <Film className="h-4 w-4" />
-                      🎬 Maak Muziekvideo
-                    </Button>
+                    {/* Action buttons - larger touch targets */}
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button 
+                        onClick={() => {
+                          setIsDialogOpen(false);
+                          setIsVideoDialogOpen(true);
+                        }}
+                        className="flex-1 h-11 sm:h-10 gap-2"
+                        variant="secondary"
+                      >
+                        <Film className="h-4 w-4" />
+                        🎬 Bekijk Video
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          setIsDialogOpen(false);
+                          setIsShareDialogOpen(true);
+                        }}
+                        className="flex-1 h-11 sm:h-10 gap-2"
+                        variant="default"
+                      >
+                        <Share2 className="h-4 w-4" />
+                        Delen
+                      </Button>
+                    </div>
                   </div>
                 )}
 
@@ -568,6 +584,29 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
         storyIntroduction={storyIntroduction || summary}
         backgroundMusicUrl={result?.audioUrl}
         backgroundMusicDuration={result?.duration}
+      />
+
+      {/* Direct Share Dialog for music video */}
+      <ShareDialog
+        open={isShareDialogOpen}
+        onOpenChange={setIsShareDialogOpen}
+        content={{
+          events: events.map(e => ({ ...e, audioDurationFrames: 150 })) as VideoEvent[],
+          storyTitle: storyTitle || `Jouw jaren ${startYear}-${endYear}`,
+          storyIntroduction: storyIntroduction || summary,
+        }}
+        settings={{
+          variant: 'slideshow',
+          fps: 30,
+          enableVhsEffect: false,
+          retroIntensity: 0.85,
+          voiceProvider: 'google',
+          isMusicVideo: true,
+          backgroundMusicUrl: result?.audioUrl,
+          backgroundMusicDuration: result?.duration,
+          introAudioUrl: undefined,
+          introDurationFrames: 0,
+        }}
       />
     </>
   );
