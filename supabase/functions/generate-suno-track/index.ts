@@ -68,6 +68,10 @@ serve(async (req) => {
       ? title.substring(0, maxTitleLength)
       : title;
 
+    // Use the Supabase edge function as callback URL
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "https://koeoboygsssyajpdstel.supabase.co";
+    const callbackUrl = `${supabaseUrl}/functions/v1/suno-callback`;
+    
     const requestBody = {
       customMode: true,
       instrumental: false,
@@ -75,7 +79,7 @@ serve(async (req) => {
       prompt: truncatedLyrics,
       style: truncatedStyle,
       title: truncatedTitle,
-      callBackUrl: "https://example.com/callback",
+      callBackUrl: callbackUrl,
     };
 
     console.log("Suno request body:", JSON.stringify(requestBody, null, 2));
