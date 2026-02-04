@@ -123,13 +123,13 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
           </p>
         </div>
         
-        {/* Floating image with Ken Burns effect */}
+        {/* Floating image with Ken Burns effect - larger size */}
         <div style={{
           position: 'absolute',
           bottom: 40,
           right: 50,
-          width: 380,
-          height: 280,
+          width: 550,
+          height: 420,
           transform: `rotate(2deg)`,
           boxShadow: '0 35px 70px -15px rgba(0, 0, 0, 0.3)',
           borderRadius: 10,
