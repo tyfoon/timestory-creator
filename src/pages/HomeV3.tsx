@@ -234,7 +234,7 @@ const HomeV3 = () => {
   }, [birthDate.year, selectedPeriod, currentYear, mainPeriodOptions]);
 
   // Computed states
-  const isBirthDateComplete = birthDate.day > 0 && birthDate.month > 0 && birthDate.year > 0;
+  const isBirthDateComplete = birthDate.day > 0 && birthDate.month > 0 && birthDate.year >= 1900 && birthDate.year <= currentYear;
   const isStep2Complete = isBirthDateComplete && selectedPeriod !== null;
   const isStep3Complete = isStep2Complete && (!!optionalData.city || optionalData.gender !== 'none');
 
@@ -245,24 +245,47 @@ const HomeV3 = () => {
     false, // Step 4 is the action step
   ];
 
-  // Auto-advance step when data is complete
-  useEffect(() => {
-    if (isBirthDateComplete && currentStep === 1) {
-      setTimeout(() => setCurrentStep(2), 300);
-    }
-  }, [isBirthDateComplete, currentStep]);
+  // Manual advance triggers - Step 1 advances only when year field completes on blur/enter
+  const [step1ManualAdvance, setStep1ManualAdvance] = useState(false);
+  // Step 3 advances only on explicit Enter in text fields
+  const [step3ManualAdvance, setStep3ManualAdvance] = useState(false);
 
+  // Auto-advance step 1 only after year field blur/enter and data is complete
+  useEffect(() => {
+    if (step1ManualAdvance && isBirthDateComplete && currentStep === 1) {
+      setTimeout(() => setCurrentStep(2), 300);
+      setStep1ManualAdvance(false);
+    }
+  }, [step1ManualAdvance, isBirthDateComplete, currentStep]);
+
+  // Auto-advance step 2 immediately when period is selected (it's a click, not text input)
   useEffect(() => {
     if (isStep2Complete && currentStep === 2) {
       setTimeout(() => setCurrentStep(3), 300);
     }
   }, [isStep2Complete, currentStep]);
 
+  // Auto-advance step 3 only after explicit Enter in text fields
   useEffect(() => {
-    if (isStep3Complete && currentStep === 3) {
+    if (step3ManualAdvance && isStep3Complete && currentStep === 3) {
       setTimeout(() => setCurrentStep(4), 300);
+      setStep3ManualAdvance(false);
     }
-  }, [isStep3Complete, currentStep]);
+  }, [step3ManualAdvance, isStep3Complete, currentStep]);
+
+  // Handle Enter key on Step 1 year field
+  const handleStep1KeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && isBirthDateComplete) {
+      setStep1ManualAdvance(true);
+    }
+  };
+
+  // Handle Enter key on Step 3 city field
+  const handleStep3KeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && isStep3Complete) {
+      setStep3ManualAdvance(true);
+    }
+  };
 
   const calculateYearRange = (): { startYear: number; endYear: number } | null => {
     if (!birthDate.year) return null;
@@ -376,6 +399,21 @@ const HomeV3 = () => {
       <section className="relative flex-1 pt-20 pb-4 px-4 overflow-hidden">
         <div className="container mx-auto max-w-xl relative z-10">
           
+          {/* Hero Header */}
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-6"
+          >
+            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-2">
+              {t("heroTitle") as string}
+            </h1>
+            <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto">
+              {t("heroSubtitle") as string}
+            </p>
+          </motion.div>
+
           {/* Step Indicator */}
           <StepIndicator 
             currentStep={currentStep} 
@@ -423,6 +461,7 @@ const HomeV3 = () => {
                       animate="visible"
                       exit="exit"
                       className="mt-4"
+                      onKeyDown={handleStep1KeyDown}
                     >
                       <DateInput
                         label={t("birthDateQuestion") as string}
@@ -430,6 +469,11 @@ const HomeV3 = () => {
                         onChange={setBirthDate}
                         error={errors.birthDate}
                       />
+                      {isBirthDateComplete && (
+                        <p className="text-xs text-muted-foreground mt-2 text-center">
+                          Druk op Enter om verder te gaan
+                        </p>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -569,6 +613,7 @@ const HomeV3 = () => {
                             placeholder={t("cityPlaceholder") as string}
                             value={optionalData.city || ""}
                             onChange={(e) => setOptionalData({ ...optionalData, city: e.target.value })}
+                            onKeyDown={handleStep3KeyDown}
                             className="bg-card h-10"
                           />
                         </div>
