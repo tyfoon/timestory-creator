@@ -235,9 +235,11 @@ const HomeV3 = () => {
 
   // Computed states
   const isBirthDateComplete = birthDate.day > 0 && birthDate.month > 0 && birthDate.year >= 1900 && birthDate.year <= currentYear;
-  const isStep2Complete = isBirthDateComplete && selectedPeriod !== null;
-  const isStep3Complete = isStep2Complete && (!!optionalData.city || optionalData.gender !== 'none');
-
+  // Step 1 includes birth date + city (city is optional but needs Enter to advance)
+  const isStep1Complete = isBirthDateComplete;
+  const isStep2Complete = isStep1Complete && selectedPeriod !== null;
+  // Step 3 is gender + subculture (gender selection or subculture completes it)
+  const isStep3Complete = isStep2Complete && (optionalData.gender !== 'none' || !!optionalData.subculture);
   const completedSteps: boolean[] = [
     isBirthDateComplete,
     isStep2Complete,
@@ -439,10 +441,11 @@ const HomeV3 = () => {
                       <Baby className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-foreground">Geboortedatum</h3>
+                      <h3 className="font-semibold text-foreground">Geboortedatum & Woonplaats</h3>
                       {isBirthDateComplete && currentStep !== 1 && (
                         <p className="text-sm text-muted-foreground">
                           {String(birthDate.day).padStart(2, '0')}-{String(birthDate.month).padStart(2, '0')}-{birthDate.year}
+                          {optionalData.city && ` • ${optionalData.city}`}
                         </p>
                       )}
                     </div>
@@ -469,8 +472,24 @@ const HomeV3 = () => {
                         onChange={setBirthDate}
                         error={errors.birthDate}
                       />
+                      
+                      {/* City - in Step 1 */}
+                      <div className="mt-4 space-y-2">
+                        <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                          <MapPin className="h-4 w-4 text-accent" />
+                          {t("cityLabel") as string}
+                        </Label>
+                        <Input
+                          placeholder={t("cityPlaceholder") as string}
+                          value={optionalData.city || ""}
+                          onChange={(e) => setOptionalData({ ...optionalData, city: e.target.value })}
+                          onKeyDown={handleStep1KeyDown}
+                          className="bg-card h-10"
+                        />
+                      </div>
+                      
                       {isBirthDateComplete && (
-                        <p className="text-xs text-muted-foreground mt-2 text-center">
+                        <p className="text-xs text-muted-foreground mt-3 text-center">
                           Druk op Enter om verder te gaan
                         </p>
                       )}
@@ -576,13 +595,13 @@ const HomeV3 = () => {
                         <Users className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground">Personalisatie</h3>
+                        <h3 className="font-semibold text-foreground">Stijl & Subcultuur</h3>
                         {isStep3Complete && currentStep !== 3 && (
                           <p className="text-sm text-muted-foreground">
-                            {optionalData.city && `${optionalData.city}`}
-                            {optionalData.city && optionalData.gender !== 'none' && ' • '}
                             {optionalData.gender === 'male' && 'Man'}
                             {optionalData.gender === 'female' && 'Vrouw'}
+                            {optionalData.gender !== 'none' && optionalData.subculture?.myGroup && ' • '}
+                            {optionalData.subculture?.myGroup}
                           </p>
                         )}
                       </div>
@@ -603,20 +622,6 @@ const HomeV3 = () => {
                         className="mt-4 space-y-4"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {/* City */}
-                        <div className="space-y-2">
-                          <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
-                            <MapPin className="h-4 w-4 text-accent" />
-                            {t("cityLabel") as string}
-                          </Label>
-                          <Input
-                            placeholder={t("cityPlaceholder") as string}
-                            value={optionalData.city || ""}
-                            onChange={(e) => setOptionalData({ ...optionalData, city: e.target.value })}
-                            onKeyDown={handleStep3KeyDown}
-                            className="bg-card h-10"
-                          />
-                        </div>
 
                         {/* Gender */}
                         <div className="space-y-2">
