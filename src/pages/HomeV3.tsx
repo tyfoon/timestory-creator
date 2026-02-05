@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Header } from "@/components/Header";
@@ -183,6 +183,9 @@ const HomeV3 = () => {
   const currentYear = new Date().getFullYear();
   const [bgLoaded, setBgLoaded] = useState(false);
 
+  // Ref for city input to focus after year is complete
+  const cityInputRef = useRef<HTMLInputElement>(null);
+
   // Current step in progressive disclosure
   const [currentStep, setCurrentStep] = useState(1);
 
@@ -252,7 +255,17 @@ const HomeV3 = () => {
   // Step 3 advances only on explicit Enter in text fields
   const [step3ManualAdvance, setStep3ManualAdvance] = useState(false);
 
-  // Auto-advance step 1 only after year field blur/enter and data is complete
+  // Focus city input when birth date becomes complete
+  useEffect(() => {
+    if (isBirthDateComplete && currentStep === 1) {
+      // Small delay to ensure the year field has finished processing
+      setTimeout(() => {
+        cityInputRef.current?.focus();
+      }, 50);
+    }
+  }, [isBirthDateComplete, currentStep]);
+
+  // Auto-advance step 1 only after Enter is pressed in city field
   useEffect(() => {
     if (step1ManualAdvance && isBirthDateComplete && currentStep === 1) {
       setTimeout(() => setCurrentStep(2), 300);
@@ -275,9 +288,10 @@ const HomeV3 = () => {
     }
   }, [step3ManualAdvance, isStep3Complete, currentStep]);
 
-  // Handle Enter key on Step 1 year field
-  const handleStep1KeyDown = (e: React.KeyboardEvent) => {
+  // Handle Enter key on Step 1 city field - this is the only way to advance to step 2
+  const handleCityKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && isBirthDateComplete) {
+      e.preventDefault();
       setStep1ManualAdvance(true);
     }
   };
@@ -464,7 +478,6 @@ const HomeV3 = () => {
                       animate="visible"
                       exit="exit"
                       className="mt-4"
-                      onKeyDown={handleStep1KeyDown}
                     >
                       <DateInput
                         label={t("birthDateQuestion") as string}
@@ -480,17 +493,18 @@ const HomeV3 = () => {
                           {t("cityLabel") as string}
                         </Label>
                         <Input
+                          ref={cityInputRef}
                           placeholder={t("cityPlaceholder") as string}
                           value={optionalData.city || ""}
                           onChange={(e) => setOptionalData({ ...optionalData, city: e.target.value })}
-                          onKeyDown={handleStep1KeyDown}
+                          onKeyDown={handleCityKeyDown}
                           className="bg-card h-10"
                         />
                       </div>
                       
                       {isBirthDateComplete && (
                         <p className="text-xs text-muted-foreground mt-3 text-center">
-                          Druk op Enter om verder te gaan
+                          Druk op Enter bij woonplaats om verder te gaan
                         </p>
                       )}
                     </motion.div>
