@@ -11,10 +11,11 @@ import { generateTimelineStreaming } from '@/lib/api/timeline';
 import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { generateTimelinePdf } from '@/lib/pdfGenerator';
 import { generatePolaroidPdf } from '@/lib/pdfGeneratorPolaroid';
+import { generateStoryBookPdf } from '@/lib/pdfStoryBookGenerator';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents, getCacheKey } from '@/lib/timelineCache';
 import { generateTikTokSlides, shareGeneratedFiles, canShareToTikTok } from '@/lib/tiktokGenerator';
 import { downloadPolaroidCollage } from '@/lib/collageGenerator';
-import { ArrowLeft, Clock, Loader2, AlertCircle, RefreshCw, Cake, Star, Download, Camera, Share2, Check, Image, X, Bug } from 'lucide-react';
+import { ArrowLeft, Clock, Loader2, AlertCircle, RefreshCw, Cake, Star, Download, Camera, Share2, Check, Image, X, Bug, BookOpen } from 'lucide-react';
 import { DebugInfoDialog } from '@/components/DebugInfoDialog';
 import { PromptViewerDialog } from '@/components/PromptViewerDialog';
 import { useToast } from '@/hooks/use-toast';
@@ -52,8 +53,10 @@ const ResultPage = () => {
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isGeneratingPolaroidPdf, setIsGeneratingPolaroidPdf] = useState(false);
+  const [isGeneratingStoryBookPdf, setIsGeneratingStoryBookPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState(0);
   const [polaroidPdfProgress, setPolaroidPdfProgress] = useState(0);
+  const [storyBookPdfProgress, setStoryBookPdfProgress] = useState(0);
   const [streamingProgress, setStreamingProgress] = useState(0);
   const [canShare, setCanShare] = useState(false);
   const [isGeneratingTikTok, setIsGeneratingTikTok] = useState(false);
@@ -442,6 +445,45 @@ const ResultPage = () => {
     }
   };
 
+  // Download StoryBook-style PDF (uses EventCard designs)
+  const handleDownloadStoryBookPdf = async () => {
+    if (!formData || events.length === 0) return;
+    
+    setIsGeneratingStoryBookPdf(true);
+    setStoryBookPdfProgress(0);
+    
+    // Get story metadata from cache
+    const cached = getCachedTimeline(formData, language);
+    
+    try {
+      await generateStoryBookPdf({
+        events,
+        famousBirthdays,
+        formData,
+        summary,
+        storyTitle: cached?.storyTitle,
+        storyIntroduction: cached?.storyIntroduction,
+      }, (progress) => {
+        setStoryBookPdfProgress(progress);
+      });
+      
+      toast({
+        title: t('albumDownloaded') as string || 'Album gedownload!',
+        description: t('albumReady') as string || 'Je TimeStory Album is klaar',
+      });
+    } catch (err) {
+      console.error('Error generating StoryBook PDF:', err);
+      toast({
+        variant: "destructive",
+        title: t('pdfError') as string,
+        description: t('pdfTryAgain') as string,
+      });
+    } finally {
+      setIsGeneratingStoryBookPdf(false);
+      setStoryBookPdfProgress(0);
+    }
+  };
+
   // Step 1: Generate TikTok slides (async, can take time)
   const handlePrepareTikTok = async () => {
     if (!formData || events.length === 0) return;
@@ -692,6 +734,22 @@ const ResultPage = () => {
                 </>
               ) : (
                 <>
+                  {/* Album PDF download button */}
+                  {events.length > 0 && !isLoading && (
+                    <button
+                      onClick={handleDownloadStoryBookPdf}
+                      disabled={isGeneratingStoryBookPdf}
+                      className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50 disabled:opacity-50"
+                      title={t('downloadAlbum') as string}
+                    >
+                      {isGeneratingStoryBookPdf ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <BookOpen className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  )}
+                  
                   {/* Collage button - only show when we have enough images */}
                   {eventsWithImages >= 6 && events.length > 0 && !isLoading && (
                     <button

@@ -129,6 +129,9 @@ export const translations = {
     pdfMagazineReady: "Je tijdreis magazine is klaar",
     polaroidPdfDownloaded: "Polaroid PDF gedownload!",
     polaroidReady: "Je jaren 80 polaroid editie is klaar",
+    albumDownloaded: "Album gedownload!",
+    albumReady: "Je TimeStory Album is klaar",
+    downloadAlbum: "Download Album (PDF)",
     pdfError: "Fout bij PDF genereren",
     pdfTryAgain: "Probeer het opnieuw",
 
@@ -300,6 +303,9 @@ export const translations = {
     pdfMagazineReady: "Your time journey magazine is ready",
     polaroidPdfDownloaded: "Polaroid PDF downloaded!",
     polaroidReady: "Your 80s polaroid edition is ready",
+    albumDownloaded: "Album downloaded!",
+    albumReady: "Your TimeStory Album is ready",
+    downloadAlbum: "Download Album (PDF)",
     pdfError: "Error generating PDF",
     pdfTryAgain: "Please try again",
 
@@ -461,6 +467,9 @@ export const translations = {
     pdfMagazineReady: "Dein Zeitreise-Magazin ist fertig",
     polaroidPdfDownloaded: "Polaroid PDF heruntergeladen!",
     polaroidReady: "Deine 80er Polaroid-Edition ist fertig",
+    albumDownloaded: "Album heruntergeladen!",
+    albumReady: "Dein TimeStory Album ist fertig",
+    downloadAlbum: "Album herunterladen (PDF)",
     pdfError: "Fehler beim PDF-Generieren",
     pdfTryAgain: "Bitte versuche es erneut",
 
@@ -621,6 +630,9 @@ export const translations = {
     pdfMagazineReady: "Votre magazine de voyage dans le temps est prêt",
     polaroidPdfDownloaded: "Polaroid PDF téléchargé!",
     polaroidReady: "Votre édition polaroid des années 80 est prête",
+    albumDownloaded: "Album téléchargé!",
+    albumReady: "Votre Album TimeStory est prêt",
+    downloadAlbum: "Télécharger l'album (PDF)",
     pdfError: "Erreur lors de la génération du PDF",
     pdfTryAgain: "Veuillez réessayer",
 
