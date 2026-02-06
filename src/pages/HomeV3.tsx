@@ -418,32 +418,19 @@ const HomeV3 = () => {
       <section className="relative flex-1 pt-20 pb-4 px-4 overflow-hidden">
         <div className="container mx-auto max-w-xl relative z-10">
           
-          {/* Hero Header */}
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-6"
-          >
-            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-2">
-              {t("heroTitle") as string}
-            </h1>
-            <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto">
-              {t("heroSubtitle") as string}
-            </p>
-          </motion.div>
-
-          {/* Step Indicator */}
-          <StepIndicator 
-            currentStep={currentStep} 
-            totalSteps={4} 
-            completedSteps={completedSteps} 
-          />
+          {/* Step Indicator - Above the main card */}
+          <div className="mb-4">
+            <StepIndicator 
+              currentStep={currentStep} 
+              totalSteps={4} 
+              completedSteps={completedSteps} 
+            />
+          </div>
 
           {/* Progressive Disclosure Cards */}
           <div className="space-y-4">
             
-            {/* Step 1: Geboortedatum */}
+            {/* Step 1: Geboortedatum - With Hero inside */}
             <motion.div
               layout
               className={`bg-card rounded-xl shadow-elevated border border-border overflow-hidden ${
@@ -451,26 +438,47 @@ const HomeV3 = () => {
               }`}
               onClick={() => currentStep !== 1 && setCurrentStep(1)}
             >
-              <div className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-full ${isBirthDateComplete ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                      <Baby className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground">Geboortedatum & Woonplaats</h3>
-                      {isBirthDateComplete && currentStep !== 1 && (
-                        <p className="text-sm text-muted-foreground">
-                          {String(birthDate.day).padStart(2, '0')}-{String(birthDate.month).padStart(2, '0')}-{birthDate.year}
-                          {optionalData.city && ` • ${optionalData.city}`}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  {currentStep !== 1 && (
-                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              <div className="p-6">
+                {/* Hero Header - Inside the card when Step 1 is active */}
+                <AnimatePresence mode="wait">
+                  {currentStep === 1 && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.3 }}
+                      className="text-center mb-6"
+                    >
+                      <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground mb-2">
+                        {t("heroTitle") as string}
+                      </h1>
+                      <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto">
+                        {t("heroSubtitle") as string}
+                      </p>
+                    </motion.div>
                   )}
-                </div>
+                </AnimatePresence>
+
+                {/* Collapsed header when not on step 1 */}
+                {currentStep !== 1 && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full ${isBirthDateComplete ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                        <Baby className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground">Geboortedatum & Woonplaats</h3>
+                        {isBirthDateComplete && (
+                          <p className="text-sm text-muted-foreground">
+                            {String(birthDate.day).padStart(2, '0')}-{String(birthDate.month).padStart(2, '0')}-{birthDate.year}
+                            {optionalData.city && ` • ${optionalData.city}`}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                )}
                 
                 <AnimatePresence mode="wait">
                   {currentStep === 1 && (
@@ -480,7 +488,6 @@ const HomeV3 = () => {
                       initial="hidden"
                       animate="visible"
                       exit="exit"
-                      className="mt-4"
                     >
                       <DateInput
                         label={t("birthDateQuestion") as string}
@@ -506,7 +513,7 @@ const HomeV3 = () => {
                       </div>
                       
                       {isBirthDateComplete && (
-                        <p className="text-xs text-muted-foreground mt-3 text-center">
+                        <p className="text-xs text-muted-foreground mt-4 text-center">
                           Druk op Enter bij woonplaats om verder te gaan
                         </p>
                       )}
