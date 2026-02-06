@@ -238,19 +238,21 @@ const HomeV3 = () => {
 
   // Computed states
   const isBirthDateComplete = birthDate.day > 0 && birthDate.month > 0 && birthDate.year >= 1900 && birthDate.year <= currentYear;
-  // Step 1 includes birth date + city (city is optional but needs Enter to advance)
-  const isStep1Complete = isBirthDateComplete;
-  const isStep2Complete = isStep1Complete && selectedPeriod !== null;
+  
+  // Step 1 is only complete after user presses Enter in city field
+  const [step1Completed, setStep1Completed] = useState(false);
+  
+  const isStep2Complete = step1Completed && selectedPeriod !== null;
   // Step 3 is gender + subculture (gender selection or subculture completes it)
   const isStep3Complete = isStep2Complete && (optionalData.gender !== 'none' || !!optionalData.subculture);
   const completedSteps: boolean[] = [
-    isBirthDateComplete,
+    step1Completed,
     isStep2Complete,
     isStep3Complete,
     false, // Step 4 is the action step
   ];
 
-  // Manual advance triggers - Step 1 advances only when year field completes on blur/enter
+  // Manual advance triggers - Step 1 advances only when Enter is pressed in city field
   const [step1ManualAdvance, setStep1ManualAdvance] = useState(false);
   // Step 3 advances only on explicit Enter in text fields
   const [step3ManualAdvance, setStep3ManualAdvance] = useState(false);
@@ -292,6 +294,7 @@ const HomeV3 = () => {
   const handleCityKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && isBirthDateComplete) {
       e.preventDefault();
+      setStep1Completed(true);
       setStep1ManualAdvance(true);
     }
   };
@@ -514,7 +517,7 @@ const HomeV3 = () => {
             </motion.div>
 
             {/* Step 2: Periode selectie */}
-            {isBirthDateComplete && (
+            {step1Completed && (
               <motion.div
                 layout
                 initial={{ opacity: 0, y: 20 }}
@@ -522,7 +525,7 @@ const HomeV3 = () => {
                 className={`bg-card rounded-xl shadow-elevated border border-border overflow-hidden ${
                   currentStep === 2 ? '' : 'cursor-pointer hover:border-primary/30'
                 }`}
-                onClick={() => currentStep !== 2 && isBirthDateComplete && setCurrentStep(2)}
+                onClick={() => currentStep !== 2 && step1Completed && setCurrentStep(2)}
               >
                 <div className="p-4">
                   <div className="flex items-center justify-between">
