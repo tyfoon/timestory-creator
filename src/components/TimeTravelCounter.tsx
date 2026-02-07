@@ -16,59 +16,6 @@ export function TimeTravelCounter({ targetYear, onComplete }: TimeTravelCounterP
   const tickRef = useRef<ReturnType<typeof Tick.DOM.create> | null>(null);
   const [currentDisplayYear, setCurrentDisplayYear] = useState(2026);
   const [isComplete, setIsComplete] = useState(false);
-  const audioContextRef = useRef<AudioContext | null>(null);
-
-  // Play a tick sound
-  const playTickSound = () => {
-    try {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-      }
-      const ctx = audioContextRef.current;
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      
-      oscillator.frequency.value = 800;
-      oscillator.type = 'square';
-      
-      gainNode.gain.setValueAtTime(0.05, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
-      
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.05);
-    } catch {
-      // Audio not supported, continue silently
-    }
-  };
-
-  // Play a "ding" sound on completion
-  const playDingSound = () => {
-    try {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-      }
-      const ctx = audioContextRef.current;
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      
-      oscillator.frequency.value = 523.25; // C5
-      oscillator.type = 'sine';
-      
-      gainNode.gain.setValueAtTime(0.15, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-      
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.5);
-    } catch {
-      // Audio not supported, continue silently
-    }
-  };
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -111,11 +58,6 @@ export function TimeTravelCounter({ targetYear, onComplete }: TimeTravelCounterP
         if (tickRef.current) {
           tickRef.current.value = currentYear;
         }
-        
-        // Play tick sound when year changes (throttled for fast sections)
-        if (progress > 0.7 || Math.random() < 0.3) {
-          playTickSound();
-        }
       }
 
       if (progress < 1) {
@@ -127,7 +69,6 @@ export function TimeTravelCounter({ targetYear, onComplete }: TimeTravelCounterP
         }
         setCurrentDisplayYear(targetYear);
         setIsComplete(true);
-        playDingSound();
         
         // Delay onComplete slightly for visual effect
         setTimeout(() => {
