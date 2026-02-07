@@ -644,3 +644,11 @@ De gebruiker hoorde bij: **"${myGroup}"**.
 3. **Merk-Validatie:** Gebruik alleen merken die deze specifieke groep **${locationContext}** gebruikte. Vermijd generieke Amerikaanse merken als ze hier niet "cool" waren.
 `;
 };
+export const GET_MUSIC_INSTRUCTIONS = (gender: "male" | "female" | "none") => {
+  if (gender === "male") {
+    return `MUZIEK SELECTIE (MAN): Focus op de "Rebellious Years" (rond 16 jaar). Kies nummers die identiteit en onafhankelijkheid uitstralen (Rock, Hip-hop, ruwere genres).`;
+  } else if (gender === "female") {
+    return `MUZIEK SELECTIE (VROUW): Focus op de "Social Bonding Years" (rond 19 jaar en ouder). Kies nummers die je samen met vriendinnen zong, emotionele ballads en 'anthems'.`;
+  }
+  return `MUZIEK SELECTIE: Focus op de absolute tophits uit de leeftijd 16-20 jaar.`;
+};
