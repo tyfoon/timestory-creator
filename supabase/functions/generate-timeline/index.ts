@@ -551,9 +551,16 @@ function buildPrompt(data: TimelineRequest): string {
 
   // B2. Geslacht (Perspectief)
   // Bepaalt de keuze van onderwerpen (bv. mode, idolen, speelgoed, tijdschriften)
+
   if (optionalData.gender && optionalData.gender !== "none") {
     promptParts.push(GENDER_ADDITION(optionalData.gender));
   }
+
+  // === NIEUW: MUZIEK MEMORY BUMP TOEVOEGEN ===
+  // Dit zorgt voor de juiste muziekkeuze op basis van geslacht en leeftijd
+  const genderForMusic = optionalData.gender || "none";
+  promptParts.push(GET_MUSIC_INSTRUCTIONS(genderForMusic));
+  // ============================================
 
   // B3. Subcultuur (Identiteit & Perspectief)
   // Bepaalt de "tribe" van de gebruiker en hoe ze naar andere groepen keken
