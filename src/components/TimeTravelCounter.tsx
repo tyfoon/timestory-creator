@@ -10,12 +10,14 @@ interface TimeTravelCounterProps {
 /**
  * Split-flap display that counts down from current year to target year.
  * Uses easeOutQuart for a dramatic "braking" effect near the destination.
+ * After arriving, waits 2 seconds then fades out before calling onComplete.
  */
 export function TimeTravelCounter({ targetYear, onComplete }: TimeTravelCounterProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const tickRef = useRef<ReturnType<typeof Tick.DOM.create> | null>(null);
   const [currentDisplayYear, setCurrentDisplayYear] = useState(2026);
   const [isComplete, setIsComplete] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -63,11 +65,18 @@ export function TimeTravelCounter({ targetYear, onComplete }: TimeTravelCounterP
           const delay = getDelayForStep(currentIndex, years.length);
           timeoutId = setTimeout(animateStep, delay);
         } else {
-          // Animation complete
+          // Animation complete - show arrival message
           setIsComplete(true);
+          
+          // Wait 2 seconds, then start fade out
           setTimeout(() => {
-            onComplete();
-          }, 800);
+            setIsFadingOut(true);
+            
+            // After fade out animation (600ms), call onComplete
+            setTimeout(() => {
+              onComplete();
+            }, 600);
+          }, 2000);
         }
       }
     };
@@ -88,7 +97,11 @@ export function TimeTravelCounter({ targetYear, onComplete }: TimeTravelCounterP
   }, [targetYear, onComplete]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-sm">
+    <div 
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-sm transition-opacity duration-500 ${
+        isFadingOut ? 'opacity-0' : 'opacity-100'
+      }`}
+    >
       {/* Destination label */}
       <div className="mb-8 text-center">
         <p className="text-xs uppercase tracking-[0.3em] text-white/60 font-mono mb-2">
