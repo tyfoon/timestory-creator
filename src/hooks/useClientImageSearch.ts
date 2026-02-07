@@ -65,7 +65,7 @@ export function useClientImageSearch(options: UseClientImageSearchOptions = {}) 
     setIsSearching(true);
     
     // Determine which search function to use based on sessionStorage setting
-    const imageSearchMode = sessionStorage.getItem('imageSearchMode') || 'legacy';
+    const imageSearchMode = sessionStorage.getItem('imageSearchMode') || 'tol';
     const searchFn: SearchFunction = imageSearchMode === 'tol' ? searchSingleImageTol : searchSingleImage;
     
     console.log(`[Image Search] Using ${imageSearchMode === 'tol' ? 'Tol/DDG' : 'Legacy'} search mode`);

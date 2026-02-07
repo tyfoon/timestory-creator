@@ -96,8 +96,8 @@ export function DebugInfoDialog({ events, onRefreshImages, isRefreshing, onBlack
     
     // Check which search mode was used (stored in sessionStorage)
     const imageSearchMode = typeof window !== 'undefined' 
-      ? sessionStorage.getItem('imageSearchMode') || 'legacy' 
-      : 'legacy';
+      ? sessionStorage.getItem('imageSearchMode') || 'tol' 
+      : 'tol';
     
     // Tol mode: different routing
     if (imageSearchMode === 'tol') {
