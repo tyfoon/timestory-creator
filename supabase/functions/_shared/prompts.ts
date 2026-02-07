@@ -620,8 +620,32 @@ Dit maakt de tijdlijn persoonlijk en herkenbaar!`;
 };
 
 export const GENDER_ADDITION = (gender: "male" | "female") => {
-  const genderText = gender === "male" ? "man" : "vrouw";
-  return `\nDe persoon voor wie deze tijdlijn is, is een ${genderText}. Pas de beschrijvingen subtiel aan zodat ze herkenbaar zijn vanuit dit perspectief.`;
+  if (gender === "male") {
+    return `
+GENDER LENS (MAN):
+Bekijk de events vanuit het perspectief van een jongen/man die opgroeit in deze tijd.
+1. **Kindertijd (4-12):** Focus op **actie, constructie en competitie**.
+   - *Speelgoed:* Lego, technisch speelgoed, auto's (Matchbox/Hot Wheels), soldaatjes, actiefiguren (He-Man, Transformers, G.I. Joe) en de eerste spelcomputers (Gameboy).
+   - *Spel:* Buitenspelen was vaak fysiek en risicovoller (klimmen, crossen op de fiets, fikkie stoken).
+2. **Puberteit (13-18):** Focus op **onafhankelijkheid, status en rebellie**.
+   - *Interesses:* Brommers/scooters, technische gadgets, de eerste computer, "cool" zijn in de groep, en muziek als identiteitsstatement (Hiphop, Rock, Gabber - "ergens tegenaan schoppen").
+   - *Sfeer:* Minder praten over gevoelens, meer "dingen doen" met vrienden.`;
+  }
+
+  if (gender === "female") {
+    return `
+GENDER LENS (VROUW):
+Bekijk de events vanuit het perspectief van een meisje/vrouw die opgroeit in deze tijd.
+1. **Kindertijd (4-12):** Focus op **sociale connectie, verzamelen en verbeelding**.
+   - *Speelgoed:* Poppen (Barbie, Cindy), verzamelrages (Stickers, Diddl, Flippo's), My Little Pony, Care Bears, en creatief speelgoed.
+   - *Spel:* Rollenspellen (vadertje en moedertje), elastieken, dagboeken bijhouden en vriendenboekjes.
+2. **Puberteit (13-18):** Focus op **sociale binding, 'bedroom culture' en emotie**.
+   - *Interesses:* Magazines (Tina, Fancy, Hitkrant), urenlang aan de telefoon hangen (of MSN'en), logeerpartijtjes.
+   - *Muziek:* Muziek als sociale "lijm" (samen meezingen, boybands, emotionele ballads). De "Music Memory Bump" ligt hier iets later (rond 19 jaar) en is socialer van aard.
+   - *Sfeer:* "Bedroom culture": samen op de kamer muziek luisteren, make-uppen en praten over verliefdheid.`;
+  }
+
+  return "";
 };
 
 export const SUBCULTURE_ADDITION = (myGroup: string, otherGroupsFromEra: string[], geoFocus: string) => {
