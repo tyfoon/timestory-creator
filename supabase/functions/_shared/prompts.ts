@@ -422,23 +422,26 @@ REGELS:
 // NIEUW: GENERATIE PERSPECTIEF (Wie is de klant NU?)
 // =============================================================================
 export function getGenerationPerspective(birthYear: number): string {
-  // Bepaal de generatie en de bijbehorende vertelstijl
   if (birthYear <= 1964) {
-    return `GENERATIE PERSPECTIEF (Baby Boomer):
-    De klant is nu een 60-plusser. Kijk terug met een gevoel van rijkdom en verandering.
-    Toon waardering voor de wederopbouw en de enorme welvaartsgroei die ze hebben meegemaakt.`;
+    return `GENERATIE PERSPECTIEF (Baby Boomer - De Bouwers):
+    Focus: Optimisme, wederopbouw, en collectieve vooruitgang.
+    Toon: Respectvol en waarderend voor de stijgende welvaart.
+    Memory Bump: De landing op de maan, de introductie van kleuren-TV.`;
   } else if (birthYear <= 1980) {
-    return `GENERATIE PERSPECTIEF (Generatie X):
-    De klant is nu tussen de 45 en 60. Gebruik een nuchtere, no-nonsense toon.
-    Dit is de 'verloren generatie' die alles zelf moest oplossen. Ze houden van authenticiteit en hebben een hekel aan opsmuk.`;
+    return `GENERATIE PERSPECTIEF (Gen X - De Onafhankelijken):
+    Psychologie: "Unplugged" jeugd, sleutelkind-generatie.
+    Focus: AUTONOMIE, RISICO & VRIJHEID. Benadruk de vrijheid van fietsen zonder mobiel, 'buiten spelen tot de lantaarnpalen aan gaan', en de eerste bijbaan.
+    Nostalgie: Het "rauwe" randje, imperfectie, en fysieke media (cassettes opnemen).`;
   } else if (birthYear <= 1996) {
-    return `GENERATIE PERSPECTIEF (Millennial):
-    De klant is nu dertiger of veertiger. Focus op de overgang van analoog naar digitaal.
-    Er is veel nostalgie naar de 'onschuldige' tijd vóór sociale media en smartphones. Gebruik een toon van 'weet je nog?'.`;
+    return `GENERATIE PERSPECTIEF (Millennial - De Overbruggers):
+    Psychologie: Opgegroeid analoog, volwassen geworden digitaal.
+    Focus: DE TRANSITIE. De magie van de eerste trage internetverbinding, MSN, Limewire, maar ook Harry Potter en Pokémon.
+    Nostalgie: "Escapisme" naar een veiligere tijd vóór 9/11 en de crisis.`;
   } else {
-    return `GENERATIE PERSPECTIEF (Gen Z):
-    De klant is een twintiger. Ze zijn 'digital natives'.
-    Hun nostalgie is esthetisch (Y2K mode, oude digitale camera's). Ze kijken met ironie en verwondering naar de 'oude' wereld.`;
+    return `GENERATIE PERSPECTIEF (Gen Z - De Digital Natives):
+    Psychologie: "Slow Life" strategie & Identiteit.
+    Focus: ESTHETIEK & VEILIGHEID. Ze hebben nostalgie voor tijdperken die ze zelf niet hebben meegemaakt (de "vibe" van de 90s).
+    Belangrijk: Focus minder op fysieke mijlpalen (rijbewijs, bijbaan) en meer op digitale cultuur, fandoms, en "aesthetic".`;
   }
 }
 
@@ -555,7 +558,7 @@ De gebruiker wordt elk jaar ouder. De interesses MOETEN meegroeien met de jaren.
    - *16-17 jaar:* Brommers/scooters, eerste bijbaan, uitgaan (discotheken), examenstress, rijles.
    - *18+ jaar:* Rijbewijs, studeren, zelfstandigheid, stemrecht.
 
-${GET_NOSTALGIA_INSTRUCTIONS(geoFocus)}`
+${GET_NOSTALGIA_INSTRUCTIONS(geoFocus)}`;
 };
 
 export const FAMOUS_BIRTHDAYS_ADDITION = (day: number, monthName: string, startYear: number, endYear: number) =>
