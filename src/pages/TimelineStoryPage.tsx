@@ -1223,7 +1223,7 @@ const TimelineStoryPage = () => {
         <div className="container mx-auto max-w-6xl">
           {/* Mobile: stacked layout, Desktop: single row */}
           <div className="flex flex-col gap-2 mb-2 fade-in">
-            {/* Top row: Back button + Title */}
+            {/* Top row: Back button + small icons + Title */}
             <div className="flex items-center justify-between gap-2">
               <button
                 onClick={() => navigate('/')}
@@ -1233,9 +1233,32 @@ const TimelineStoryPage = () => {
                 <span className="hidden sm:inline">{t('backToInput') as string}</span>
               </button>
               
-              <h1 className="font-serif text-sm sm:text-xl lg:text-2xl font-bold text-foreground truncate">
-                {getTitle()}
-              </h1>
+              {/* Small utility icons + Year range title */}
+              <div className="flex items-center gap-1.5">
+                {/* Debug dialogs - small icons before year range */}
+                {events.length > 0 && !isLoading && (
+                  <>
+                    <PromptViewerDialog formData={formData} language={language} maxEvents={currentMaxEvents} />
+                    <DebugInfoDialog 
+                      events={events} 
+                      onRefreshImages={handleRefreshAllImages}
+                      isRefreshing={isLoadingImages}
+                      onBlacklistImage={handleBlacklistImage}
+                    />
+                    <button
+                      onClick={handleClearCache}
+                      className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+                      title={t('refreshButton') as string}
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    </button>
+                  </>
+                )}
+                
+                <h1 className="font-serif text-sm sm:text-xl lg:text-2xl font-bold text-foreground truncate">
+                  {getTitle()}
+                </h1>
+              </div>
             </div>
             
             {/* Bottom row: Action buttons - wrap on mobile */}
@@ -1268,24 +1291,6 @@ const TimelineStoryPage = () => {
                   <Video className="h-3.5 w-3.5" />
                   <span className="hidden xs:inline">Video</span>
                 </Button>
-
-                {/* Debug dialogs */}
-                <PromptViewerDialog formData={formData} language={language} maxEvents={currentMaxEvents} />
-                <DebugInfoDialog 
-                  events={events} 
-                  onRefreshImages={handleRefreshAllImages}
-                  isRefreshing={isLoadingImages}
-                  onBlacklistImage={handleBlacklistImage}
-                />
-                
-                {/* Refresh button */}
-                <button
-                  onClick={handleClearCache}
-                  className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
-                  title={t('refreshButton') as string}
-                >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                </button>
               </div>
             )}
           </div>
