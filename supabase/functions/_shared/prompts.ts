@@ -455,12 +455,12 @@ export function getContentFocusForPeriod(periodType?: string): string {
 
     case "childhood":
       return `FOCUS: Kindertijd (4-12 jaar). De wereld is klein en magisch.
-      WEL: Speelgoed, tekenfilms, snoep, schoolplein-spelletjes, kinderprogramma's, sneeuwpret, Sinterklaas.
+      WEL: Speelgoed, tekenfilms, snoep, schoolplein-spelletjes, kinderprogramma's, sneeuwpret, Sinterklaas, je ouders.
       NIET: Politiek, oorlogen, economische crises (tenzij ouders erover fluisterden), saaie 'grote mensen' zaken.`;
 
     case "puberty":
       return `FOCUS: Puberteit (11-17 jaar). De 'bubbel' van de tiener met nadruk op het sociale leven.
-      WEL: De 'uitgaans-economie' (sparen voor entree, muntjes), discotheken (de hiërarchie, de portier, de 'slow'), versierpogingen, trends in uitgaanskleding (merkjes, haardracht), geuren (parfum/aftershave zoals Kouros/Bac), schoolfeesten en brommers.
+      WEL: De 'uitgaans-economie' (sparen voor entree, muntjes), discotheken (de hiërarchie, de portier, de 'slow'), versierpogingen, trends in uitgaanskleding (merkjes, haardracht), geuren (parfum/aftershave van die periode), schoolfeesten en brommers.
       NIET: Amerikaanse politiek, verdragen, beursnieuws. Voor een puber bestaat Washington niet, de discotheek wel.`;
 
     case "young-adult":
