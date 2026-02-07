@@ -4,9 +4,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Film, Loader2, CheckCircle2, AlertCircle, FileText, Radio, Video, Play, Check, Music, Share2 } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Film, Loader2, CheckCircle2, AlertCircle, FileText, Radio as RadioIcon, Video, Play, Check, Music, Share2, User, Users, MapPin, Sparkles, GraduationCap, PartyPopper, Compass } from 'lucide-react';
 import { TimelineEvent } from '@/types/timeline';
-import { OptionalData, SubcultureData } from '@/types/form';
+import { OptionalData, SubcultureData, Gender, GeographicFocus } from '@/types/form';
 import { VideoDialog } from '@/components/video/VideoDialog';
 import { ShareDialog } from '@/components/video/ShareDialog';
 import { SubcultureSelector } from '@/components/SubcultureSelector';
@@ -314,15 +315,100 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
             {/* Customize Step */}
             {step === 'customize' && (
               <div className="space-y-3 sm:space-y-4">
-                {/* Personal details for song - compact */}
-                <div className="space-y-3">
+                {/* Name fields */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
+                    <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
+                    Naam
+                  </Label>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Input
+                      placeholder="Voornaam"
+                      value={localOptionalData.firstName || ''}
+                      onChange={(e) => setLocalOptionalData(prev => ({ ...prev, firstName: e.target.value }))}
+                      className="bg-card h-10 sm:h-9 text-sm"
+                    />
+                    <Input
+                      placeholder="Achternaam"
+                      value={localOptionalData.lastName || ''}
+                      onChange={(e) => setLocalOptionalData(prev => ({ ...prev, lastName: e.target.value }))}
+                      className="bg-card h-10 sm:h-9 text-sm"
+                    />
+                  </div>
+                </div>
+
+                {/* City */}
+                <div className="space-y-1">
+                  <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
+                    <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
+                    Woonplaats
+                  </Label>
+                  <Input
+                    placeholder="Bijv. Amsterdam"
+                    value={localOptionalData.city || ''}
+                    onChange={(e) => setLocalOptionalData(prev => ({ ...prev, city: e.target.value }))}
+                    className="bg-card h-10 sm:h-9 text-sm"
+                  />
+                </div>
+
+                {/* Gender */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
+                    <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
+                    Geslacht
+                  </Label>
+                  <RadioGroup
+                    value={localOptionalData.gender || 'none'}
+                    onValueChange={(v) => setLocalOptionalData(prev => ({ ...prev, gender: v as Gender }))}
+                    className="grid grid-cols-3 gap-2"
+                  >
+                    {([
+                      { value: 'male', label: 'Man' },
+                      { value: 'female', label: 'Vrouw' },
+                      { value: 'none', label: 'Geen voorkeur' }
+                    ] as const).map((option) => (
+                      <Label
+                        key={option.value}
+                        className={`
+                          flex items-center justify-center py-1.5 px-2 rounded-md cursor-pointer
+                          border-2 transition-all duration-200 text-xs font-medium
+                          ${localOptionalData.gender === option.value || (!localOptionalData.gender && option.value === 'none')
+                            ? 'border-accent bg-accent/10 text-foreground' 
+                            : 'border-border bg-card hover:border-muted-foreground/30 text-muted-foreground'
+                          }
+                        `}
+                      >
+                        <RadioGroupItem value={option.value} className="sr-only" />
+                        <span>{option.label}</span>
+                      </Label>
+                    ))}
+                  </RadioGroup>
+                </div>
+
+                {/* Interests */}
+                <div className="space-y-1">
+                  <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
+                    <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
+                    Interesses
+                  </Label>
+                  <Input
+                    placeholder="Bijv. voetbal, muziek, reizen"
+                    value={localOptionalData.interests || ''}
+                    onChange={(e) => setLocalOptionalData(prev => ({ ...prev, interests: e.target.value }))}
+                    className="bg-card h-10 sm:h-9 text-sm"
+                  />
+                </div>
+
+                {/* Personal details section */}
+                <div className="space-y-3 pt-2 border-t border-border">
                   <p className="text-xs sm:text-sm text-muted-foreground">
-                    Vul persoonlijke details in voor een unieker lied:
+                    Persoonlijke herinneringen voor een unieker lied:
                   </p>
                   
                   {/* Friends */}
                   <div className="space-y-1">
-                    <Label className="text-xs sm:text-sm font-medium text-foreground">
+                    <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
+                      <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
                       Top 3 vrienden van toen
                     </Label>
                     <Input
@@ -335,7 +421,8 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
 
                   {/* School */}
                   <div className="space-y-1">
-                    <Label className="text-xs sm:text-sm font-medium text-foreground">
+                    <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
+                      <GraduationCap className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
                       Middelbare School
                     </Label>
                     <Input
@@ -348,7 +435,8 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
 
                   {/* Nightlife */}
                   <div className="space-y-1">
-                    <Label className="text-xs sm:text-sm font-medium text-foreground">
+                    <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
+                      <PartyPopper className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
                       Favoriete uitgaansplekken
                     </Label>
                     <Input
@@ -358,6 +446,40 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                       className="bg-card h-10 sm:h-9 text-sm"
                     />
                   </div>
+                </div>
+
+                {/* Geographic Focus */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
+                    <Compass className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
+                    Geografische focus
+                  </Label>
+                  <RadioGroup
+                    value={localOptionalData.focus || 'netherlands'}
+                    onValueChange={(v) => setLocalOptionalData(prev => ({ ...prev, focus: v as GeographicFocus }))}
+                    className="grid grid-cols-3 gap-2"
+                  >
+                    {([
+                      { value: 'netherlands', label: 'Nederland' },
+                      { value: 'europe', label: 'Europa' },
+                      { value: 'world', label: 'Wereld' }
+                    ] as const).map((option) => (
+                      <Label
+                        key={option.value}
+                        className={`
+                          flex items-center justify-center py-1.5 px-2 rounded-md cursor-pointer
+                          border-2 transition-all duration-200 text-xs font-medium
+                          ${localOptionalData.focus === option.value
+                            ? 'border-accent bg-accent/10 text-foreground' 
+                            : 'border-border bg-card hover:border-muted-foreground/30 text-muted-foreground'
+                          }
+                        `}
+                      >
+                        <RadioGroupItem value={option.value} className="sr-only" />
+                        <span>{option.label}</span>
+                      </Label>
+                    ))}
+                  </RadioGroup>
                 </div>
 
                 {/* Subculture Selector for Music Style */}
@@ -426,7 +548,7 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                     <div className="flex-shrink-0 mt-0.5">{getStepIcon('music', step)}</div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 sm:gap-2">
-                        <Radio className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                        <RadioIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                         <span className="font-medium text-sm sm:text-base">Muziek componeren</span>
                       </div>
                       <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
