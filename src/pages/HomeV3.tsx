@@ -245,9 +245,8 @@ const HomeV3 = () => {
   const [step1Completed, setStep1Completed] = useState(false);
   
   const isStep2Complete = step1Completed && selectedPeriod !== null;
-  // Step 3 is manually completed when user clicks the confirm button
-  const [step3ManuallyCompleted, setStep3ManuallyCompleted] = useState(false);
-  const isStep3Complete = isStep2Complete && step3ManuallyCompleted;
+  // Step 3 is complete when BOTH gender and subculture are selected
+  const isStep3Complete = isStep2Complete && optionalData.gender !== 'none' && !!optionalData.subculture;
   const completedSteps: boolean[] = [
     step1Completed,
     isStep2Complete,
@@ -287,12 +286,13 @@ const HomeV3 = () => {
     }
   }, [isStep2Complete, currentStep, step2HasAdvanced]);
 
-  // Handle Step 3 confirmation - collapses and shows Start button
-  const handleStep3Confirm = () => {
-    setStep3ManuallyCompleted(true);
-    setStep3HasAdvanced(true);
-    setTimeout(() => setCurrentStep(0), 300); // Collapse all and show Start button
-  };
+  // Auto-collapse step 3 only the FIRST time both gender and subculture are selected
+  useEffect(() => {
+    if (isStep3Complete && currentStep === 3 && !step3HasAdvanced) {
+      setStep3HasAdvanced(true);
+      setTimeout(() => setCurrentStep(0), 300); // Collapse all and show Start button
+    }
+  }, [isStep3Complete, currentStep, step3HasAdvanced]);
 
   // Handle Enter key on Step 1 city field - this is the only way to advance to step 2
   const handleCityKeyDown = (e: React.KeyboardEvent) => {
@@ -697,15 +697,6 @@ const HomeV3 = () => {
                             onChange={(subculture: SubcultureData) => setOptionalData({ ...optionalData, subculture })}
                           />
                         )}
-
-                        {/* Confirm Button */}
-                        <Button
-                          onClick={handleStep3Confirm}
-                          className="w-full mt-4 btn-vintage h-12 text-base font-semibold text-primary-foreground rounded-lg"
-                        >
-                          <Check className="mr-2 h-5 w-5" />
-                          Bevestig keuze
-                        </Button>
                       </motion.div>
                     )}
                   </AnimatePresence>
