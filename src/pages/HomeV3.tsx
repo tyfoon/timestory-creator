@@ -687,20 +687,28 @@ const HomeV3 = () => {
                             onChange={(subculture: SubcultureData) => setOptionalData({ ...optionalData, subculture })}
                           />
                         )}
-
-                        {/* Start button */}
-                        <Button
-                          onClick={() => handleGenerate("/story")}
-                          className="w-full btn-vintage h-12 text-base font-bold text-primary-foreground rounded-lg shadow-lg mt-4"
-                        >
-                          <BookOpen className="mr-2 h-5 w-5" />
-                          <span>Start mijn Tijdreis</span>
-                          <ArrowRight className="ml-2 h-5 w-5" />
-                        </Button>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
+              </motion.div>
+            )}
+
+            {/* Start Button - Separate reveal after Step 3 */}
+            {isStep3Complete && (
+              <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+              >
+                <Button
+                  onClick={() => handleGenerate("/story")}
+                  className="w-full btn-vintage h-14 text-lg font-bold text-primary-foreground rounded-xl shadow-xl"
+                >
+                  <BookOpen className="mr-2 h-6 w-6" />
+                  <span>Start mijn Tijdreis</span>
+                  <ArrowRight className="ml-2 h-6 w-6" />
+                </Button>
               </motion.div>
             )}
 
