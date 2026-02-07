@@ -257,6 +257,8 @@ const HomeV3 = () => {
   const [step1ManualAdvance, setStep1ManualAdvance] = useState(false);
   // Track if step 2 has already auto-advanced once (to prevent re-advancing when user goes back to edit)
   const [step2HasAdvanced, setStep2HasAdvanced] = useState(false);
+  // Track if step 3 has already auto-collapsed once
+  const [step3HasAdvanced, setStep3HasAdvanced] = useState(false);
 
   // Focus city input when birth date becomes complete
   useEffect(() => {
@@ -283,6 +285,14 @@ const HomeV3 = () => {
       setTimeout(() => setCurrentStep(3), 300);
     }
   }, [isStep2Complete, currentStep, step2HasAdvanced]);
+
+  // Auto-collapse step 3 only the FIRST time it's completed (to show the Start button)
+  useEffect(() => {
+    if (isStep3Complete && currentStep === 3 && !step3HasAdvanced) {
+      setStep3HasAdvanced(true);
+      setTimeout(() => setCurrentStep(0), 300); // Set to 0 to collapse all and show Start button
+    }
+  }, [isStep3Complete, currentStep, step3HasAdvanced]);
 
   // Handle Enter key on Step 1 city field - this is the only way to advance to step 2
   const handleCityKeyDown = (e: React.KeyboardEvent) => {
