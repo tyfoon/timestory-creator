@@ -52,13 +52,13 @@ const getMainPeriodOptions = (
     id: "childhood",
     label: t("periodChildhood") as string,
     icon: <GraduationCap className="h-5 w-5" />,
-    ageRange: [6, 10],
+    ageRange: [6, 12],
   },
   {
     id: "puberty",
     label: t("periodPuberty") as string,
     icon: <Heart className="h-5 w-5" />,
-    ageRange: [11, 17],
+    ageRange: [12, 17],
   },
   {
     id: "young-adult",

@@ -74,8 +74,8 @@ const HomeV2 = () => {
     
     const ageRanges: Record<PeriodType, [number, number] | null> = {
       'birthyear': null,
-      'childhood': [6, 10],
-      'puberty': [11, 17],
+      'childhood': [6, 12],
+      'puberty': [12, 17],
       'young-adult': [18, 25],
       'custom': null,
     };
