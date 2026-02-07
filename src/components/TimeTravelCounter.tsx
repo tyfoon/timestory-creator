@@ -68,15 +68,15 @@ export function TimeTravelCounter({ targetYear, onComplete }: TimeTravelCounterP
           // Animation complete - show arrival message
           setIsComplete(true);
           
-          // Wait 2 seconds, then start fade out
+          // Wait 4 seconds to let user appreciate arrival, then start fade out
           setTimeout(() => {
             setIsFadingOut(true);
             
-            // After fade out animation (600ms), call onComplete
+            // After fade out animation (800ms), call onComplete
             setTimeout(() => {
               onComplete();
-            }, 600);
-          }, 2000);
+            }, 800);
+          }, 4000);
         }
       }
     };
@@ -98,7 +98,7 @@ export function TimeTravelCounter({ targetYear, onComplete }: TimeTravelCounterP
 
   return (
     <div 
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-sm transition-opacity duration-500 ${
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-sm transition-opacity duration-700 ease-out ${
         isFadingOut ? 'opacity-0' : 'opacity-100'
       }`}
     >
