@@ -22,9 +22,10 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<HomeV3 />} />
             <Route path="/home-v2" element={<HomeV2 />} />
             <Route path="/home-v3" element={<HomeV3 />} />
+            <Route path="/home-v4" element={<Index />} />
             <Route path="/resultaat" element={<ResultPage />} />
             <Route path="/polaroid" element={<PolaroidCollagePage />} />
             <Route path="/story" element={<TimelineStoryPage />} />
