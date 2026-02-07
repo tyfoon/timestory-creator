@@ -754,17 +754,17 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading, targetYe
   const y = useTransform(scrollY, [0, 400], [0, 100]);
   const scale = useTransform(scrollY, [0, 400], [1, 0.95]);
 
-  // Show hero content as soon as storyTitle arrives, even if still loading events
+  // Show hero content as soon as storyTitle arrives
   const hasStoryContent = !!storyTitle;
-  // Show time travel counter only before it completes and while loading with no story yet
-  const showTimeTravelCounter = !timeTravelComplete && isLoading && !hasStoryContent && targetYear;
+  // Show time travel counter until story content is ready (not just until animation completes)
+  const showTimeTravelCounter = !hasStoryContent && targetYear;
 
   return (
     <motion.section 
       className="min-h-screen flex flex-col items-center justify-center relative px-6 pb-24 overflow-hidden"
       style={{ opacity }}
     >
-      {/* Time Travel Counter - fullscreen overlay */}
+      {/* Time Travel Counter - fullscreen overlay until story content is ready */}
       {showTimeTravelCounter && (
         <TimeTravelCounter
           targetYear={targetYear}
@@ -793,20 +793,8 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading, targetYe
         className="text-center max-w-5xl mx-auto space-y-10 relative z-10"
         style={{ y, scale }}
       >
-        {/* Loading fallback - only if time travel is done but still no story content */}
-        {timeTravelComplete && isLoading && !hasStoryContent ? (
-          <div className="flex flex-col items-center gap-6">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            >
-              <Clock className="h-16 w-16 text-muted-foreground/50" />
-            </motion.div>
-            <p className={`${theme.fontBody} text-xl text-muted-foreground font-light tracking-wide`}>
-              Je verhaal wordt geschreven...
-            </p>
-          </div>
-        ) : timeTravelComplete ? (
+        {/* Show story content when available (counter handles the loading state) */}
+        {hasStoryContent && (
           <>
             {storyTitle && (
               <StaggeredText
@@ -837,7 +825,7 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading, targetYe
             {/* Events loading indicator - ONLY show if scroll indicator is NOT showing loading */}
             {/* Removed: showStoryLoading indicator here - it's now only shown in scroll indicator below */}
           </>
-        ) : null}
+        )}
       </motion.div>
 
       {/* Scroll indicator - show loading state while fetching, then scroll prompt when done */}
@@ -1054,7 +1042,7 @@ const TimelineStoryPage = () => {
         return;
       }
 
-      const maxEvents = storedLength === 'short' ? 20 : undefined;
+      const maxEvents = storedLength === 'short' ? 20 : 20; // Always default to 20 events
       setCurrentMaxEvents(maxEvents);
       loadTimelineStreaming(data, maxEvents);
     } else {
