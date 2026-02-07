@@ -433,13 +433,18 @@ const HomeV3 = () => {
             
             {/* Step 1: Geboortedatum - With Hero inside */}
             <motion.div
-              layout
+              initial={{ opacity: 1 }}
+              animate={{ opacity: 1 }}
               className={`bg-card rounded-xl shadow-elevated border border-border overflow-hidden ${
                 currentStep === 1 ? '' : 'cursor-pointer hover:border-primary/30'
               }`}
-              onClick={() => currentStep !== 1 && setCurrentStep(1)}
+              onClick={() => {
+                if (currentStep !== 1) {
+                  setCurrentStep(1);
+                }
+              }}
             >
-              <div className="p-6">
+              <div className="p-6" onClick={(e) => currentStep === 1 && e.stopPropagation()}>
                 {/* Hero Header - Inside the card when Step 1 is active */}
                 <AnimatePresence mode="wait">
                   {currentStep === 1 && (
@@ -527,15 +532,18 @@ const HomeV3 = () => {
             {/* Step 2: Periode selectie */}
             {step1Completed && (
               <motion.div
-                layout
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={`bg-card rounded-xl shadow-elevated border border-border overflow-hidden ${
                   currentStep === 2 ? '' : 'cursor-pointer hover:border-primary/30'
                 }`}
-                onClick={() => currentStep !== 2 && step1Completed && setCurrentStep(2)}
+                onClick={() => {
+                  if (currentStep !== 2 && step1Completed) {
+                    setCurrentStep(2);
+                  }
+                }}
               >
-                <div className="p-4">
+                <div className="p-4" onClick={(e) => currentStep === 2 && e.stopPropagation()}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className={`p-2 rounded-full ${selectedPeriod ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
@@ -602,15 +610,18 @@ const HomeV3 = () => {
             {/* Step 3: Personalisatie */}
             {isStep2Complete && (
               <motion.div
-                layout
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={`bg-card rounded-xl shadow-elevated border border-border overflow-hidden ${
                   currentStep === 3 ? '' : 'cursor-pointer hover:border-primary/30'
                 }`}
-                onClick={() => currentStep !== 3 && isStep2Complete && setCurrentStep(3)}
+                onClick={() => {
+                  if (currentStep !== 3 && isStep2Complete) {
+                    setCurrentStep(3);
+                  }
+                }}
               >
-                <div className="p-4">
+                <div className="p-4" onClick={(e) => currentStep === 3 && e.stopPropagation()}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className={`p-2 rounded-full ${isStep3Complete ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
