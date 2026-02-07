@@ -255,8 +255,8 @@ const HomeV3 = () => {
 
   // Manual advance triggers - Step 1 advances only when Enter is pressed in city field
   const [step1ManualAdvance, setStep1ManualAdvance] = useState(false);
-  // Step 3 advances only on explicit Enter in text fields
-  const [step3ManualAdvance, setStep3ManualAdvance] = useState(false);
+  // Track if step 2 has already auto-advanced once (to prevent re-advancing when user goes back to edit)
+  const [step2HasAdvanced, setStep2HasAdvanced] = useState(false);
 
   // Focus city input when birth date becomes complete
   useEffect(() => {
@@ -276,20 +276,13 @@ const HomeV3 = () => {
     }
   }, [step1ManualAdvance, isBirthDateComplete, currentStep]);
 
-  // Auto-advance step 2 immediately when period is selected (it's a click, not text input)
+  // Auto-advance step 2 only the FIRST time a period is selected
   useEffect(() => {
-    if (isStep2Complete && currentStep === 2) {
+    if (isStep2Complete && currentStep === 2 && !step2HasAdvanced) {
+      setStep2HasAdvanced(true);
       setTimeout(() => setCurrentStep(3), 300);
     }
-  }, [isStep2Complete, currentStep]);
-
-  // Auto-advance step 3 only after explicit Enter in text fields
-  useEffect(() => {
-    if (step3ManualAdvance && isStep3Complete && currentStep === 3) {
-      setTimeout(() => setCurrentStep(4), 300);
-      setStep3ManualAdvance(false);
-    }
-  }, [step3ManualAdvance, isStep3Complete, currentStep]);
+  }, [isStep2Complete, currentStep, step2HasAdvanced]);
 
   // Handle Enter key on Step 1 city field - this is the only way to advance to step 2
   const handleCityKeyDown = (e: React.KeyboardEvent) => {
@@ -297,13 +290,6 @@ const HomeV3 = () => {
       e.preventDefault();
       setStep1Completed(true);
       setStep1ManualAdvance(true);
-    }
-  };
-
-  // Handle Enter key on Step 3 city field
-  const handleStep3KeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && isStep3Complete) {
-      setStep3ManualAdvance(true);
     }
   };
 
