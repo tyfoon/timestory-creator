@@ -129,7 +129,7 @@ const Index = () => {
   
   // Image search mode toggle (Legacy vs Tol)
   const [imageSearchMode, setImageSearchMode] = useState<'legacy' | 'tol'>(() => {
-    return (sessionStorage.getItem('imageSearchMode') as 'legacy' | 'tol') || 'legacy';
+    return (sessionStorage.getItem('imageSearchMode') as 'legacy' | 'tol') || 'tol';
   });
   
   // Persist image search mode to sessionStorage
