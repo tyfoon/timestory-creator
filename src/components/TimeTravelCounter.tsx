@@ -22,8 +22,7 @@ export function TimeTravelCounter({ targetYear, onComplete }: TimeTravelCounterP
 
     const startYear = 2026;
     const totalYears = startYear - targetYear;
-    const animationDuration = Math.min(4000, Math.max(2000, totalYears * 50)); // 2-4 seconds
-
+    
     // Create the Tick instance
     tickRef.current = Tick.DOM.create(containerRef.current, {
       value: startYear,
@@ -32,59 +31,55 @@ export function TimeTravelCounter({ targetYear, onComplete }: TimeTravelCounterP
       }
     });
 
-    let startTime: number | null = null;
-    let animationFrame: number;
+    // Create array of years to count through
+    const years = Array.from({ length: totalYears + 1 }, (_, i) => startYear - i);
+    
+    let currentIndex = 0;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
-    // easeOutQuart: dramatic slowdown near the end
-    const easeOutQuart = (t: number): number => {
-      return 1 - Math.pow(1 - t, 4);
+    // Calculate delay for each step - SHORT at start (fast), LONG at end (slow)
+    const getDelayForStep = (step: number, totalSteps: number): number => {
+      const progress = step / Math.max(totalSteps - 1, 1);
+      // Use cubic easing for delay: starts short, ends long
+      // progress^2 gives us: 0, 0.01, 0.04, 0.09... 0.81, 1
+      const easeIn = Math.pow(progress, 2.5);
+      const minDelay = 15;  // ms between fastest flips (at start)
+      const maxDelay = 250; // ms between slowest flips (at end)
+      return minDelay + (easeIn * (maxDelay - minDelay));
     };
 
-    const animate = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const elapsed = timestamp - startTime;
-      const progress = Math.min(elapsed / animationDuration, 1);
-      
-      // Apply easing - slow down dramatically near the end
-      const easedProgress = easeOutQuart(progress);
-      
-      // Calculate current year
-      const currentYear = Math.round(startYear - (easedProgress * totalYears));
-      
-      // Update display if changed
-      if (currentYear !== currentDisplayYear) {
-        setCurrentDisplayYear(currentYear);
+    const animateStep = () => {
+      if (currentIndex < years.length) {
+        const year = years[currentIndex];
         
         if (tickRef.current) {
-          tickRef.current.value = currentYear;
+          tickRef.current.value = year;
         }
-      }
-
-      if (progress < 1) {
-        animationFrame = requestAnimationFrame(animate);
-      } else {
-        // Ensure we land exactly on target
-        if (tickRef.current) {
-          tickRef.current.value = targetYear;
-        }
-        setCurrentDisplayYear(targetYear);
-        setIsComplete(true);
+        setCurrentDisplayYear(year);
         
-        // Delay onComplete slightly for visual effect
-        setTimeout(() => {
-          onComplete();
-        }, 800);
+        currentIndex++;
+        
+        if (currentIndex < years.length) {
+          const delay = getDelayForStep(currentIndex, years.length);
+          timeoutId = setTimeout(animateStep, delay);
+        } else {
+          // Animation complete
+          setIsComplete(true);
+          setTimeout(() => {
+            onComplete();
+          }, 800);
+        }
       }
     };
 
     // Start animation after a short delay
-    const timeout = setTimeout(() => {
-      animationFrame = requestAnimationFrame(animate);
+    const initialTimeout = setTimeout(() => {
+      animateStep();
     }, 500);
 
     return () => {
-      clearTimeout(timeout);
-      if (animationFrame) cancelAnimationFrame(animationFrame);
+      clearTimeout(initialTimeout);
+      clearTimeout(timeoutId);
       if (tickRef.current && containerRef.current) {
         Tick.DOM.destroy(containerRef.current);
       }
