@@ -565,7 +565,7 @@ const HomeV3 = () => {
                         exit="exit"
                         className="mt-4 space-y-3"
                       >
-                        <div className="grid grid-cols-1 gap-3">
+                        <div className="grid grid-cols-4 gap-2">
                           {mainPeriodOptions.map((option) => (
                             <button
                               key={option.id}
@@ -573,23 +573,20 @@ const HomeV3 = () => {
                                 e.stopPropagation();
                                 handlePeriodSelect(option.id);
                               }}
-                              className={`flex items-center gap-4 p-4 rounded-lg border-2 text-left transition-all ${
+                              className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 text-center transition-all ${
                                 selectedPeriod === option.id 
                                   ? "border-primary bg-primary/10" 
                                   : "border-border bg-secondary/30 hover:border-primary/50"
                               }`}
                             >
-                              <div className={`p-3 rounded-full ${
+                              <div className={`p-2 rounded-full ${
                                 selectedPeriod === option.id ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
                               }`}>
                                 {option.icon}
                               </div>
-                              <div>
-                                <span className="font-semibold text-foreground block">{option.label}</span>
-                                <span className="text-sm text-muted-foreground">{option.description}</span>
-                              </div>
+                              <span className="font-semibold text-foreground text-xs leading-tight">{option.label}</span>
                               {selectedPeriod === option.id && (
-                                <Check className="ml-auto h-5 w-5 text-primary" />
+                                <Check className="h-4 w-4 text-primary" />
                               )}
                             </button>
                           ))}
@@ -693,14 +690,15 @@ const HomeV3 = () => {
                           />
                         )}
 
-                        {/* More options button */}
-                        <button
-                          onClick={() => setShowCustomDialog(true)}
-                          className="w-full flex items-center justify-center gap-2 p-2.5 rounded-lg border border-dashed border-border bg-secondary/20 text-muted-foreground hover:border-primary/50 hover:bg-secondary/40 transition-all text-sm"
+                        {/* Start button */}
+                        <Button
+                          onClick={() => handleGenerate("/story")}
+                          className="w-full btn-vintage h-12 text-base font-bold text-primary-foreground rounded-lg shadow-lg mt-4"
                         >
-                          <Pencil className="h-4 w-4" />
-                          <span>{t("adjustButton") as string}</span>
-                        </button>
+                          <BookOpen className="mr-2 h-5 w-5" />
+                          <span>Start mijn Tijdreis</span>
+                          <ArrowRight className="ml-2 h-5 w-5" />
+                        </Button>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -708,91 +706,6 @@ const HomeV3 = () => {
               </motion.div>
             )}
 
-            {/* Step 4: Timeline & Actions */}
-            {isStep3Complete && (
-              <motion.div
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-card rounded-xl shadow-elevated border border-border overflow-hidden"
-              >
-                <div className="p-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 rounded-full bg-primary/20 text-primary">
-                      <Sparkles className="h-5 w-5" />
-                    </div>
-                    <h3 className="font-semibold text-foreground">Kies je tijdreis</h3>
-                  </div>
-
-                  {/* Timeline length */}
-                  <div className="space-y-3 mb-4">
-                    <Label className="text-sm font-medium text-foreground">{t("timelineLengthQuestion") as string}</Label>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setTimelineLength("short")}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-lg border-2 transition-all ${
-                          timelineLength === "short" 
-                            ? "border-primary bg-primary/10 text-foreground" 
-                            : "border-border bg-secondary/30 text-muted-foreground hover:border-primary/50"
-                        }`}
-                      >
-                        <Zap className="h-5 w-5" />
-                        <div className="text-left">
-                          <span className="text-sm font-medium block">{t("timelineShort") as string}</span>
-                          <span className="text-xs opacity-70">{t("timelineShortDesc") as string}</span>
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => setTimelineLength("long")}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-lg border-2 transition-all ${
-                          timelineLength === "long" 
-                            ? "border-primary bg-primary/10 text-foreground" 
-                            : "border-border bg-secondary/30 text-muted-foreground hover:border-primary/50"
-                        }`}
-                      >
-                        <Crown className="h-5 w-5" />
-                        <div className="text-left">
-                          <span className="text-sm font-medium block">{t("timelineLong") as string}</span>
-                          <span className="text-xs opacity-70">{t("timelineLongDesc") as string}</span>
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Action buttons */}
-                  <div className="pt-4 border-t border-border space-y-3">
-                    <Button
-                      onClick={() => handleGenerate("/story")}
-                      className="w-full btn-vintage h-12 sm:h-14 text-base sm:text-lg font-bold text-primary-foreground rounded-lg shadow-lg"
-                    >
-                      <BookOpen className="mr-2 h-5 w-5" />
-                      <span>Start mijn Tijdreis</span>
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        onClick={() => handleGenerate("/polaroid")}
-                        variant="outline"
-                        className="h-10 sm:h-11 text-xs sm:text-sm font-semibold rounded-lg border-2 border-accent/50 bg-gradient-to-r from-accent/10 to-primary/10 hover:from-accent/20 hover:to-primary/20 text-foreground"
-                      >
-                        <Camera className="mr-1 h-4 w-4 text-accent" />
-                        <span>{t("createPolaroidButton") as string}</span>
-                      </Button>
-
-                      <Button
-                        onClick={() => handleGenerate("/resultaat")}
-                        variant="outline"
-                        className="h-10 sm:h-11 text-xs sm:text-sm font-semibold rounded-lg border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-accent/5 hover:from-primary/10 hover:to-accent/10 text-foreground"
-                      >
-                        <Sparkles className="mr-1 h-4 w-4 text-primary" />
-                        <span>{t("createTimelineButton") as string}</span>
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
           </div>
         </div>
       </section>
