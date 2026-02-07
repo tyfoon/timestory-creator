@@ -8,6 +8,7 @@ import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents } from '@/lib/timelineCache';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ArrowLeft, ChevronDown, Loader2, AlertCircle, RefreshCw, Clock, Ban, Video, Music } from 'lucide-react';
+import { TimeTravelCounter } from '@/components/TimeTravelCounter';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getCacheKey } from '@/lib/timelineCache';
@@ -742,9 +743,12 @@ interface HeroSectionProps {
   storyIntroduction?: string;
   theme: EditorialTheme;
   isLoading: boolean;
+  targetYear?: number;
+  onTimeTravelComplete: () => void;
+  timeTravelComplete: boolean;
 }
 
-const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading }: HeroSectionProps) => {
+const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading, targetYear, onTimeTravelComplete, timeTravelComplete }: HeroSectionProps) => {
   const { scrollY } = useScroll();
   const opacity = useTransform(scrollY, [0, 400], [1, 0]);
   const y = useTransform(scrollY, [0, 400], [0, 100]);
@@ -752,16 +756,24 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading }: HeroSe
 
   // Show hero content as soon as storyTitle arrives, even if still loading events
   const hasStoryContent = !!storyTitle;
-  const showLoadingSpinner = isLoading && !hasStoryContent;
-  const showStoryLoading = isLoading && hasStoryContent;
+  // Show time travel counter only before it completes and while loading with no story yet
+  const showTimeTravelCounter = !timeTravelComplete && isLoading && !hasStoryContent && targetYear;
 
   return (
     <motion.section 
       className="min-h-screen flex flex-col items-center justify-center relative px-6 pb-24 overflow-hidden"
       style={{ opacity }}
     >
+      {/* Time Travel Counter - fullscreen overlay */}
+      {showTimeTravelCounter && (
+        <TimeTravelCounter
+          targetYear={targetYear}
+          onComplete={onTimeTravelComplete}
+        />
+      )}
+
       {/* Background decorative year */}
-      {storyTitle && (
+      {storyTitle && timeTravelComplete && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.03 }}
@@ -781,7 +793,8 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading }: HeroSe
         className="text-center max-w-5xl mx-auto space-y-10 relative z-10"
         style={{ y, scale }}
       >
-        {showLoadingSpinner ? (
+        {/* Loading fallback - only if time travel is done but still no story content */}
+        {timeTravelComplete && isLoading && !hasStoryContent ? (
           <div className="flex flex-col items-center gap-6">
             <motion.div
               animate={{ rotate: 360 }}
@@ -793,7 +806,7 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading }: HeroSe
               Je verhaal wordt geschreven...
             </p>
           </div>
-        ) : (
+        ) : timeTravelComplete ? (
           <>
             {storyTitle && (
               <StaggeredText
@@ -824,7 +837,7 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading }: HeroSe
             {/* Events loading indicator - ONLY show if scroll indicator is NOT showing loading */}
             {/* Removed: showStoryLoading indicator here - it's now only shown in scroll indicator below */}
           </>
-        )}
+        ) : null}
       </motion.div>
 
       {/* Scroll indicator - show loading state while fetching, then scroll prompt when done */}
@@ -883,6 +896,7 @@ const TimelineStoryPage = () => {
   const [storyTitle, setStoryTitle] = useState<string>('');
   const [storyIntroduction, setStoryIntroduction] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const [timeTravelComplete, setTimeTravelComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentYear, setCurrentYear] = useState<number | null>(null);
   const [currentMaxEvents, setCurrentMaxEvents] = useState<number | undefined>(undefined);
@@ -1296,6 +1310,13 @@ const TimelineStoryPage = () => {
         storyIntroduction={storyIntroduction}
         theme={theme}
         isLoading={isLoading}
+        targetYear={
+          formData?.type === 'birthdate' && formData.birthDate
+            ? formData.birthDate.year
+            : formData?.yearRange?.startYear
+        }
+        onTimeTravelComplete={() => setTimeTravelComplete(true)}
+        timeTravelComplete={timeTravelComplete}
       />
 
       {/* Image loading indicator - minimal */}
