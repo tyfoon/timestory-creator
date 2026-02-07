@@ -83,7 +83,7 @@ const StepIndicator = ({
   totalSteps: number; 
   completedSteps: boolean[];
 }) => (
-  <div className="flex items-center justify-center gap-2 mb-6">
+  <div className="flex items-center justify-center gap-3 py-3 px-4 bg-card/80 backdrop-blur-sm rounded-full shadow-lg border border-border/50">
     {Array.from({ length: totalSteps }, (_, i) => {
       const stepNum = i + 1;
       const isActive = currentStep === stepNum;
@@ -94,16 +94,18 @@ const StepIndicator = ({
           <motion.div
             initial={false}
             animate={{
-              scale: isActive ? 1.1 : 1,
+              scale: isActive ? 1.15 : 1,
               backgroundColor: isActive 
                 ? 'hsl(var(--primary))' 
                 : isCompleted 
-                  ? 'hsl(var(--primary) / 0.5)' 
+                  ? 'hsl(var(--primary))' 
                   : 'hsl(var(--muted))',
             }}
             className={`
-              w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
-              ${isActive ? 'text-primary-foreground shadow-lg' : 'text-muted-foreground'}
+              w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold
+              ${isActive ? 'text-primary-foreground shadow-lg ring-2 ring-primary/30 ring-offset-2 ring-offset-card' : ''}
+              ${isCompleted && !isActive ? 'text-primary-foreground' : ''}
+              ${!isActive && !isCompleted ? 'text-muted-foreground' : ''}
             `}
           >
             {isCompleted && !isActive ? (
@@ -114,8 +116,8 @@ const StepIndicator = ({
           </motion.div>
           {i < totalSteps - 1 && (
             <div 
-              className={`w-8 h-0.5 mx-1 transition-colors duration-300 ${
-                isCompleted ? 'bg-primary/50' : 'bg-muted'
+              className={`w-10 h-1 mx-2 rounded-full transition-colors duration-300 ${
+                isCompleted ? 'bg-primary' : 'bg-muted'
               }`}
             />
           )}
@@ -249,7 +251,6 @@ const HomeV3 = () => {
     step1Completed,
     isStep2Complete,
     isStep3Complete,
-    false, // Step 4 is the action step
   ];
 
   // Manual advance triggers - Step 1 advances only when Enter is pressed in city field
@@ -419,10 +420,10 @@ const HomeV3 = () => {
         <div className="container mx-auto max-w-xl relative z-10">
           
           {/* Step Indicator - Above the main card */}
-          <div className="mb-4">
+          <div className="mb-6 flex justify-center">
             <StepIndicator 
               currentStep={currentStep} 
-              totalSteps={4} 
+              totalSteps={3} 
               completedSteps={completedSteps} 
             />
           </div>
