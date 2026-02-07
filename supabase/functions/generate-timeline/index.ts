@@ -18,6 +18,7 @@ import {
   SUBCULTURE_ADDITION,
   PERSONAL_MEMORIES_ADDITION,
   getGenerationPerspective,
+  GET_MUSIC_INSTRUCTIONS,
 } from "../_shared/prompts.ts";
 
 const corsHeaders = {
@@ -43,9 +44,9 @@ interface TimelineRequest {
     focus: "netherlands" | "europe" | "world";
     periodType?: "birthyear" | "childhood" | "puberty" | "young-adult" | "custom";
     // Personal memories for music video & story personalization
-    friends?: string;     // Top 3 friends from back then
-    school?: string;      // High school name
-    nightlife?: string;   // Favorite clubs/bars
+    friends?: string; // Top 3 friends from back then
+    school?: string; // High school name
+    nightlife?: string; // Favorite clubs/bars
   };
   language: string;
   stream?: boolean;
@@ -216,12 +217,18 @@ async function handleNDJSONStreaming(requestData: TimelineRequest, prompt: strin
                       console.log(`Streamed event ${eventCount}: ${obj.data.title?.substring(0, 40)}`);
                     } else if (obj.type === "storyTitle" && obj.data && !sentStoryTitle) {
                       storyTitle = obj.data;
-                      safeEnqueue(controller, `data: ${JSON.stringify({ type: "storyTitle", storyTitle: obj.data })}\n\n`);
+                      safeEnqueue(
+                        controller,
+                        `data: ${JSON.stringify({ type: "storyTitle", storyTitle: obj.data })}\n\n`,
+                      );
                       sentStoryTitle = true;
                       console.log(`Streamed storyTitle: ${obj.data.substring(0, 50)}`);
                     } else if (obj.type === "storyIntroduction" && obj.data && !sentStoryIntroduction) {
                       storyIntroduction = obj.data;
-                      safeEnqueue(controller, `data: ${JSON.stringify({ type: "storyIntroduction", storyIntroduction: obj.data })}\n\n`);
+                      safeEnqueue(
+                        controller,
+                        `data: ${JSON.stringify({ type: "storyIntroduction", storyIntroduction: obj.data })}\n\n`,
+                      );
                       sentStoryIntroduction = true;
                       console.log(`Streamed storyIntroduction: ${obj.data.substring(0, 50)}...`);
                     } else if (obj.type === "summary" && obj.data && !sentSummary) {
@@ -267,7 +274,10 @@ async function handleNDJSONStreaming(requestData: TimelineRequest, prompt: strin
                 sentStoryTitle = true;
               } else if (obj.type === "storyIntroduction" && obj.data && !sentStoryIntroduction) {
                 storyIntroduction = obj.data;
-                safeEnqueue(controller, `data: ${JSON.stringify({ type: "storyIntroduction", storyIntroduction: obj.data })}\n\n`);
+                safeEnqueue(
+                  controller,
+                  `data: ${JSON.stringify({ type: "storyIntroduction", storyIntroduction: obj.data })}\n\n`,
+                );
                 sentStoryIntroduction = true;
               } else if (obj.type === "summary" && obj.data && !sentSummary) {
                 summary = obj.data;
@@ -431,7 +441,17 @@ function getTimelineTool() {
                     "A short, specific English search query for a sound effect that matches this event (e.g. 'camera shutter', 'applause', '8-bit game sound', 'techno beat loop', 'printing press'). Keep it under 3 words.",
                 },
               },
-              required: ["id", "date", "year", "title", "description", "category", "importance", "eventScope", "soundEffectSearchQuery"],
+              required: [
+                "id",
+                "date",
+                "year",
+                "title",
+                "description",
+                "category",
+                "importance",
+                "eventScope",
+                "soundEffectSearchQuery",
+              ],
             },
           },
           summary: {
@@ -501,7 +521,9 @@ function buildPrompt(data: TimelineRequest): string {
     // BELANGRIJK: Geef het geboortejaar door zodat de AI de exacte leeftijd kan berekenen!
     const geoFocus = optionalData.focus || "netherlands";
     const birthYear = data.birthDate?.year;
-    promptParts.push(RANGE_PROMPT(startYear, endYear, isShort || false, targetEvents, contentFocus, geoFocus, birthYear));
+    promptParts.push(
+      RANGE_PROMPT(startYear, endYear, isShort || false, targetEvents, contentFocus, geoFocus, birthYear),
+    );
 
     // Als het geboortejaar in deze range valt, benadruk dit dan (voor context)
     if (data.birthDate) {
@@ -539,7 +561,9 @@ function buildPrompt(data: TimelineRequest): string {
     const otherGroups = optionalData.subculture.otherGroupsFromEra
       ? optionalData.subculture.otherGroupsFromEra.split(", ").filter(Boolean)
       : [];
-    promptParts.push(SUBCULTURE_ADDITION(optionalData.subculture.myGroup, otherGroups, optionalData.focus || "netherlands"));
+    promptParts.push(
+      SUBCULTURE_ADDITION(optionalData.subculture.myGroup, otherGroups, optionalData.focus || "netherlands"),
+    );
   }
 
   // B4. Geografische Focus (Land/Wereld)
@@ -565,7 +589,7 @@ function buildPrompt(data: TimelineRequest): string {
     const memoriesAddition = PERSONAL_MEMORIES_ADDITION(
       optionalData.friends,
       optionalData.school,
-      optionalData.nightlife
+      optionalData.nightlife,
     );
     if (memoriesAddition) {
       promptParts.push(memoriesAddition);
