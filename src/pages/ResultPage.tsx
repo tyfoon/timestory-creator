@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { TimelineCarousel } from '@/components/TimelineCarousel';
 import { TimelineScrubberBottom } from '@/components/TimelineScrubberBottom';
+import { TimeTravelCounter } from '@/components/TimeTravelCounter';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { FormData } from '@/types/form';
@@ -68,6 +69,9 @@ const ResultPage = () => {
   const [selectedForCollage, setSelectedForCollage] = useState<string[]>([]);
   const [isGeneratingCollage, setIsGeneratingCollage] = useState(false);
   const [collageProgress, setCollageProgress] = useState(0);
+  
+  // Time Travel Counter state - ensures animation completes before showing content
+  const [timeTravelComplete, setTimeTravelComplete] = useState(false);
   
   // Track maxEvents for prompt viewer
   const [currentMaxEvents, setCurrentMaxEvents] = useState<number | undefined>(undefined);
@@ -827,8 +831,20 @@ const ResultPage = () => {
         </div>
       </section>
 
-      {/* Loading state - now shows events as they stream in */}
-      {isLoading && (
+      {/* Time Travel Counter - shows while loading OR until animation completes */}
+      {(isLoading || !timeTravelComplete) && events.length === 0 && formData && (
+        <TimeTravelCounter
+          targetYear={
+            formData.type === 'birthdate' && formData.birthDate
+              ? formData.birthDate.year
+              : formData.yearRange?.startYear || 1980
+          }
+          onComplete={() => setTimeTravelComplete(true)}
+        />
+      )}
+
+      {/* Loading state - shows events as they stream in (only after time travel animation) */}
+      {isLoading && timeTravelComplete && (
         <div className="flex-1 flex flex-col relative z-10">
           {events.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center py-12 fade-in">
@@ -898,8 +914,8 @@ const ResultPage = () => {
         </div>
       )}
 
-      {/* Timeline content - takes remaining space */}
-      {!isLoading && !error && events.length > 0 && (
+      {/* Timeline content - takes remaining space (only show after time travel complete) */}
+      {!isLoading && !error && events.length > 0 && timeTravelComplete && (
         <div className="flex-1 flex flex-col min-h-0 pb-16 relative z-10">
           {/* Famous birthdays - compact inline */}
           {famousBirthdays.length > 0 && (

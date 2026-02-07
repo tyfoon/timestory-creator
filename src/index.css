@@ -428,4 +428,33 @@
     .polaroid-collage > *:nth-child(7n+4) { margin-bottom: -0.75rem; }
     .polaroid-collage > *:nth-child(7n+6) { margin-bottom: 0.5rem; }
   }
+
+  /* Time Travel Counter - Split-Flap Display */
+  .tick {
+    font-weight: bold;
+    letter-spacing: 0.05em;
+  }
+
+  .tick-flip {
+    font-family: 'Courier Prime', 'VT323', monospace;
+  }
+
+  .tick .tick-flip-panel {
+    background-color: hsl(25 20% 12%);
+    color: hsl(43 70% 50%);
+    border-radius: 0.25rem;
+  }
+
+  .tick .tick-flip-panel-text-wrapper {
+    padding: 0 0.15em;
+  }
+
+  .tick .tick-flip-shadow {
+    box-shadow: 0 0.125em 0.3125em rgba(0, 0, 0, 0.4),
+                0 0.02125em 0.06em rgba(0, 0, 0, 0.3);
+  }
+
+  .tick .tick-flip-panel::after {
+    background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.3) 100%);
+  }
 }
