@@ -7,8 +7,8 @@ const corsHeaders = {
 };
 
 const DDG_API_URL = 'https://ddg-image-search-bn3h8.ondigitalocean.app/search';
-const REQUEST_TIMEOUT_MS = 20_000; // Increased timeout for slow upstream
-const RETRIES = 2; // One extra retry for flaky connections
+const REQUEST_TIMEOUT_MS = 45_000; // Long timeout for very slow upstream
+const RETRIES = 3; // More retries for flaky connections
 
 // Bump this when deploying to verify the latest code is running
 const VERSION = 'search-images-tol@2026-02-04.4';
