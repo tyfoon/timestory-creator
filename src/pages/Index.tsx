@@ -34,7 +34,7 @@ import heroBg90s from "@/assets/hero-bg-90s.png";
 import heroBg00s from "@/assets/hero-bg-00s.png";
 import heroBg10s from "@/assets/hero-bg-10s.png";
 
-// Main period options (2x2 grid) - without custom
+// Main period options (2x2 grid) - without custom - defined as function to receive t()
 const getMainPeriodOptions = (
   t: (key: any) => any,
 ): {
