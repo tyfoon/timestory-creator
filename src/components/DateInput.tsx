@@ -9,9 +9,10 @@ interface DateInputProps {
   value: BirthDateData;
   onChange: (value: BirthDateData) => void;
   error?: string;
+  onComplete?: () => void;
 }
 
-export const DateInput = ({ label, value, onChange, error }: DateInputProps) => {
+export const DateInput = ({ label, value, onChange, error, onComplete }: DateInputProps) => {
   const { t } = useLanguage();
   const currentYear = new Date().getFullYear();
   
@@ -104,9 +105,13 @@ export const DateInput = ({ label, value, onChange, error }: DateInputProps) => 
     const val = parseInt(rawVal) || 0;
     onChange({ ...value, year: val });
     
-    // Blur when year is complete (4 digits and valid year)
+    // When year is complete (4 digits and valid), blur and trigger onComplete
     if (rawVal.length >= 4 && val >= 1900 && val <= currentYear) {
       yearRef.current?.blur();
+      // Only call onComplete if day and month are also filled
+      if (value.day > 0 && value.month > 0) {
+        onComplete?.();
+      }
     }
   };
 
