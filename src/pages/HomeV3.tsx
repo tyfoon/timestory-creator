@@ -603,24 +603,19 @@ const HomeV3 = () => {
                               placeholder={t("cityPlaceholder") as string}
                               value={optionalData.city || ""}
                               onChange={(e) => setOptionalData({ ...optionalData, city: e.target.value })}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  setStep2HasAdvanced(true);
+                                  setCurrentStep(3);
+                                }
+                              }}
                               className="bg-card h-10"
                             />
+                            <p className="text-xs text-muted-foreground text-center">
+                              Druk op Enter om verder te gaan
+                            </p>
                           </div>
-                        )}
-                        
-                        {/* Next button */}
-                        {selectedPeriod && (
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setStep2HasAdvanced(true);
-                              setCurrentStep(3);
-                            }}
-                            className="w-full mt-4 gap-2"
-                          >
-                            Volgende
-                            <ArrowRight className="h-4 w-4" />
-                          </Button>
                         )}
                       </motion.div>
                     )}
