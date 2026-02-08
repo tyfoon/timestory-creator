@@ -73,6 +73,9 @@ export const SoundtrackSection = ({
       case 'generating_music':
         return 'Muziek wordt gestart...';
       case 'polling':
+        if (soundtrack.isStreaming) {
+          return 'Jouw persoonlijke soundtrack speelt af (nog aan het afmaken)...';
+        }
         return 'Jouw persoonlijke soundtrack wordt gecomponeerd...';
       case 'completed':
         return soundtrack.title || 'Je muziekvideo is klaar!';
@@ -90,6 +93,15 @@ export const SoundtrackSection = ({
       case 'generating_music':
         return 35;
       case 'polling':
+        // If streaming, progress is faster since playback already started
+        if (soundtrack.isStreaming) {
+          if (soundtrack.startedAt) {
+            const elapsed = Date.now() - soundtrack.startedAt;
+            const estimatedTotal = 120000; // 2 minutes for full generation after stream
+            return Math.min(60 + (elapsed / estimatedTotal) * 35, 95);
+          }
+          return 70;
+        }
         if (soundtrack.startedAt) {
           const elapsed = Date.now() - soundtrack.startedAt;
           const estimatedTotal = 180000; // 3 minutes
@@ -197,6 +209,24 @@ export const SoundtrackSection = ({
                   <RefreshCw className="h-4 w-4" />
                   Opnieuw
                 </Button>
+              </div>
+            )}
+
+            {/* Streaming preview - Audio player while track finishes */}
+            {soundtrack.status === 'polling' && soundtrack.streamAudioUrl && (
+              <div className="space-y-4">
+                <div className="p-4 bg-accent/5 border border-accent/20 rounded-xl">
+                  <p className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                    <Music className="h-4 w-4 text-accent" />
+                    Preview: Je nummer speelt af terwijl we de volledige versie afmaken
+                  </p>
+                  <audio
+                    controls
+                    className="w-full"
+                    src={soundtrack.streamAudioUrl}
+                    controlsList="nodownload"
+                  />
+                </div>
               </div>
             )}
 
