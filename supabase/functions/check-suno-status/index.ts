@@ -125,14 +125,19 @@ serve(async (req) => {
       });
     }
 
-    // Check if track is ready (SUCCESS with duration, or FIRST_SUCCESS with duration)
-    const isReady = (status === 'SUCCESS' || status === 'FIRST_SUCCESS') && 
-                    track && 
-                    track.duration && 
-                    (track.audioUrl || track.streamAudioUrl);
+    // FIRST_SUCCESS = streaming preview available, not fully ready yet
+    // SUCCESS = fully complete
+    const isFullyReady = status === 'SUCCESS' && 
+                         track && 
+                         track.duration && 
+                         (track.audioUrl || track.streamAudioUrl);
 
-    if (isReady) {
-      console.log(`Track ready! duration: ${track.duration}s, audioUrl: ${track.audioUrl}`);
+    const hasStreamPreview = status === 'FIRST_SUCCESS' && 
+                             track && 
+                             track.streamAudioUrl;
+
+    if (isFullyReady) {
+      console.log(`Track FULLY ready! duration: ${track.duration}s, audioUrl: ${track.audioUrl}`);
       return new Response(JSON.stringify({
         success: true,
         data: {
@@ -142,6 +147,24 @@ serve(async (req) => {
           audioUrl: track.audioUrl || track.streamAudioUrl,
           streamAudioUrl: track.streamAudioUrl,
           videoUrl: track.videoUrl,
+          duration: track.duration,
+          title: track.title,
+        }
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Stream preview available - not ready yet but can start playing
+    if (hasStreamPreview) {
+      console.log(`Stream preview available! streamUrl: ${track.streamAudioUrl}, duration so far: ${track.duration}s`);
+      return new Response(JSON.stringify({
+        success: true,
+        data: {
+          taskId,
+          status,
+          ready: false,
+          streamAudioUrl: track.streamAudioUrl,
           duration: track.duration,
           title: track.title,
         }
