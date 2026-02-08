@@ -266,6 +266,7 @@ serve(async (req) => {
       // ============================================
       // MODE A (V1): Quick mode - no events, just basic data
       // Optimized for SHORT songs (max 2 minutes, "radio edit" style)
+      // ERA-FIRST approach: accessible, melodic base with subtle subculture influence
       // ============================================
       const city = formData?.city || personalData?.city;
       const periodDescription = formData?.periodType === 'childhood' ? 'jeugd (ongeveer 6-12 jaar)' 
@@ -275,26 +276,97 @@ serve(async (req) => {
       const subcultureName = subculture?.myGroup || null;
       const birthYearInfo = formData?.birthYear ? `geboren in ${formData.birthYear}` : '';
 
-      // Build the complete style string with mood and texture tags
-      const styleTagsParts = [suggestedStyle];
+      // ERA-FIRST: Determine accessible base genre from era (NOT from subculture)
+      const midYear = Math.round((startYear + endYear) / 2);
+      let eraBaseGenre = "Pop";
+      if (midYear >= 1955 && midYear < 1965) {
+        eraBaseGenre = "50s/60s Pop, Doo-wop";
+      } else if (midYear >= 1965 && midYear < 1975) {
+        eraBaseGenre = "60s/70s Pop Rock, Folk Pop";
+      } else if (midYear >= 1975 && midYear < 1985) {
+        eraBaseGenre = "80s Synthpop, Melodic";
+      } else if (midYear >= 1985 && midYear < 1995) {
+        eraBaseGenre = "90s Eurodance, Pop";
+      } else if (midYear >= 1995 && midYear < 2005) {
+        eraBaseGenre = "00s Radio Pop, R&B influenced";
+      } else if (midYear >= 2005 && midYear < 2015) {
+        eraBaseGenre = "2010s Dance Pop, EDM influenced";
+      } else if (midYear >= 2015) {
+        eraBaseGenre = "Modern Pop, Lo-fi influenced";
+      }
+
+      // Map subculture to a SUBTLE influence (not the main genre!)
+      const subcultureInfluenceMap: Record<string, string> = {
+        // Extreme genres get softened
+        "Gabbers": "slight happy hardcore influence",
+        "Gabbertjes": "upbeat techno touch",
+        "Punks": "raw guitar edge",
+        "Krakers": "rebellious folk touch",
+        "Metalheads": "power ballad influence",
+        "Hardrockers": "melodic rock influence",
+        "Goths": "dreamy, atmospheric touch",
+        "Gruftis": "dark romantic influence",
+        "Emo": "emotional, melodic guitars",
+        "Scene-kids": "pop-punk influence",
+        "Grunge": "acoustic grunge touch",
+        "Grunge-kids": "melancholic guitar feel",
+        "Drill-rap": "urban beat influence",
+        "Drill": "trap-influenced rhythm",
+        "Nu-Metal": "alternative rock edge",
+        // Moderate genres keep flavor
+        "Hiphoppers": "old school hip-hop groove",
+        "Hip-hop heads": "boom bap influence",
+        "Disco-fans": "funky disco touch",
+        "Disco": "groovy disco feel",
+        "New Wavers": "synth-wave influence",
+        "Techno/Rave": "electronic dance touch",
+        "Raver": "trance-influenced melody",
+        "EDM-fans": "festival anthem feel",
+        // Already soft genres
+        "Hippies": "folk influence",
+        "Flower Power": "psychedelic pop touch",
+        "Indie-sleaze": "indie rock feel",
+        "Hipsters": "indie folk touch",
+        "VSCO-girls": "chill acoustic vibe",
+      };
+
+      const subcultureInfluence = subcultureName && subcultureInfluenceMap[subcultureName] 
+        ? subcultureInfluenceMap[subcultureName] 
+        : (subcultureName ? `subtle ${subcultureName.toLowerCase()} influence` : '');
+
+      // Build the ACCESSIBLE style string
+      const styleTagsParts = [eraBaseGenre, 'melodic', 'nostalgic', 'radio-friendly'];
+      if (subcultureInfluence) styleTagsParts.push(subcultureInfluence);
       if (moodTags) styleTagsParts.push(moodTags);
       if (textureTags) styleTagsParts.push(textureTags);
-      styleTagsParts.push('fast tempo', 'punchy', 'radio edit', 'short intro');
       const completeStyleTags = styleTagsParts.join(', ');
+
+      console.log(`ERA-FIRST style approach: Base="${eraBaseGenre}", Subculture influence="${subcultureInfluence}"`);
+      console.log(`Complete style tags: ${completeStyleTags}`);
 
       systemPrompt = `Je bent een getalenteerde Nederlandse songwriter die KORTE, PAKKENDE nostalgische liedjes schrijft.
 Je specialiteit is compacte "radio edit" nummers die direct to-the-point komen.
 
-STIJL: ${completeStyleTags} (periode: ${startYear}-${endYear})
+=== NOSTALGIE-INSTRUCTIE (BELANGRIJK!) ===
+Het doel is NOSTALGIE, niet een karikatuur. Het liedje moet klinken als een RADIO-HIT uit dat jaar die de gebruiker terugbrengt naar die tijd.
+De muziekstijl moet herkenbaar zijn voor het GROTE PUBLIEK, maar met een subtiele knipoog naar de gekozen subcultuur.
+GEEN extreme genres! Denk aan "Top 40" uit dat decennium, met een vleugje van de subcultuur-sfeer.
+
+STIJL: ${completeStyleTags}
+PERIODE: ${startYear}-${endYear}
 TAAL: Nederlands
 DOEL: Kort nummer van MAX 1:30-2:00 minuten
 
-=== MUZIEKSTIJL INSTRUCTIES ===
-De uiteindelijke "style" tag moet deze elementen bevatten:
-- Genre: ${suggestedStyle}
-${moodTags ? `- Mood: ${moodTags}` : ''}
-${textureTags ? `- Texture: ${textureTags}` : ''}
-- Tempo: fast tempo, punchy, radio edit, short intro
+=== MUZIEKSTIJL INSTRUCTIES (ERA-FIRST) ===
+De uiteindelijke "style" tag moet ALTIJD beginnen met een toegankelijk, melodieus genre uit het tijdperk.
+De subcultuur is een SUBTIELE invloed, NIET het hoofdgenre.
+
+VOORBEELDEN van correcte style outputs:
+- Als Gabber + 90s: "90s Dance Pop, melodic, upbeat, slight happy hardcore influence" (NIET: "Gabber, Hardcore, 180bpm")
+- Als Punk + 80s: "80s Pop Rock, energetic, raw vocals, punk edge" (NIET: "Punk, Screaming, Aggressive")  
+- Als HipHop + 80s: "80s Pop, groovy, old school hip-hop influence" (NIET: "Gangsta Rap, Street")
+- Als Emo + 00s: "00s Pop Rock, emotional, melodic guitars" (NIET: "Screamo, Hardcore")
+- Als Metal + 90s: "90s Rock Ballad, powerful, melodic rock influence" (NIET: "Death Metal, Thrash")
 
 === STRIKTE STRUCTUUR (RADIO EDIT) ===
 Gebruik EXACT deze structuur met Suno section tags:
@@ -320,24 +392,27 @@ Gebruik EXACT deze structuur met Suno section tags:
 === STRENG VERBODEN ===
 ❌ GEEN [Bridge] sectie - dit rekt het nummer te veel
 ❌ GEEN [Instrumental] of [Interlude] secties
-❌ GEEN lange introducties of outro's
-❌ GEEN extra coupletten of refrein-herhalingen
+❌ GEEN extreme of agressieve muziekstijlen
 ❌ GEEN "la la la" of "oh oh oh" opvullers
 
 === VERPLICHTE ELEMENTEN ===
 1. VERWERK DE STAD (${city || 'niet opgegeven'}) CONCREET - noem straten, pleinen, bekende plekken
-2. VERWERK DE SUBCULTUUR (${subcultureName || 'niet opgegeven'}) - beschrijf kleding, muziek, attitude
+2. VERWERK DE SUBCULTUUR (${subcultureName || 'niet opgegeven'}) als SFEER, niet als muziekgenre
 3. VERWERK DE PERIODE ${startYear}-${endYear} - typische mode, muziek, technologie
 4. Focus op de ${periodDescription}
-5. Maak het nostalgisch maar punchy en energiek`;
+5. Maak het nostalgisch, melodieus en LUISTERBAAR`;
 
       userPrompt = `Schrijf een KORT nostalgisch lied (max 2 minuten) voor iemand ${birthYearInfo} over hun ${periodDescription} in de periode ${startYear}-${endYear}.
 
 VERPLICHTE ELEMENTEN:
 ${city ? `- STAD: ${city} - noem bij naam, verwijs naar lokale plekken` : '- Geen stad opgegeven'}
-${subcultureName ? `- SUBCULTUUR: ${subcultureName} - hun stijl, muziek, kleding, hang-outs` : '- Geen subcultuur'}
+${subcultureName ? `- SUBCULTUUR: ${subcultureName} - verwerk als SFEER en HERINNERINGEN, niet als muziekgenre!` : '- Geen subcultuur'}
 - TIJDPERK: ${startYear}-${endYear}
 - LEVENSFASE: ${periodDescription}
+
+BELANGRIJK - ERA-FIRST MUZIEKSTIJL:
+De style tag moet een TOEGANKELIJKE radio-hit uit ${startYear}-${endYear} zijn, met hooguit een subtiele ${subcultureName || 'persoonlijke'} invloed.
+Voorbeeld: "${eraBaseGenre}, melodic, nostalgic${subcultureInfluence ? `, ${subcultureInfluence}` : ''}"
 
 BELANGRIJK - HOUD HET KORT:
 - Gebruik de EXACTE structuur: [Short Intro] → [Verse 1] → [Chorus] → [Verse 2] → [Chorus] → [Short Outro]
