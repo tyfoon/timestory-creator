@@ -19,6 +19,7 @@ import {
   PERSONAL_MEMORIES_ADDITION,
   getGenerationPerspective,
   GET_MUSIC_INSTRUCTIONS,
+  EMOTIONAL_VIBE_ADDITION,
 } from "../_shared/prompts.ts";
 
 const corsHeaders = {
