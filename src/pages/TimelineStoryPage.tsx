@@ -1399,6 +1399,12 @@ const TimelineStoryPage = () => {
           events={events}
           summary={storyIntroduction}
           formData={formData}
+          startYear={formData.type === 'birthdate' && formData.birthDate 
+            ? formData.birthDate.year 
+            : formData.yearRange?.startYear || 1980}
+          endYear={formData.type === 'birthdate' && formData.birthDate 
+            ? formData.birthDate.year + 25 
+            : formData.yearRange?.endYear || 2000}
         />
       )}
     </div>
