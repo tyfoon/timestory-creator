@@ -125,16 +125,19 @@ serve(async (req) => {
       });
     }
 
-    // FIRST_SUCCESS = streaming preview available, not fully ready yet
+    // FIRST_SUCCESS = preview available (often stream url, sometimes only audioUrl)
     // SUCCESS = fully complete
-    const isFullyReady = status === 'SUCCESS' && 
-                         track && 
-                         track.duration && 
+    const isFullyReady = status === 'SUCCESS' &&
+                         track &&
+                         track.duration &&
                          (track.audioUrl || track.streamAudioUrl);
 
-    const hasStreamPreview = status === 'FIRST_SUCCESS' && 
-                             track && 
-                             track.streamAudioUrl;
+    const previewUrl =
+      status === 'FIRST_SUCCESS' && track
+        ? (track.streamAudioUrl || track.audioUrl)
+        : undefined;
+
+    const hasPreview = status === 'FIRST_SUCCESS' && !!previewUrl;
 
     if (isFullyReady) {
       console.log(`Track FULLY ready! duration: ${track.duration}s, audioUrl: ${track.audioUrl}`);
@@ -155,18 +158,24 @@ serve(async (req) => {
       });
     }
 
-    // Stream preview available - not ready yet but can start playing
-    if (hasStreamPreview) {
-      console.log(`Stream preview available! streamUrl: ${track.streamAudioUrl}, duration so far: ${track.duration}s`);
+    // Preview available - not ready yet but can start playing
+    if (hasPreview) {
+      console.log(
+        `Preview available at FIRST_SUCCESS. audioUrl: ${track?.audioUrl} streamAudioUrl: ${track?.streamAudioUrl}`,
+      );
+
       return new Response(JSON.stringify({
         success: true,
         data: {
           taskId,
           status,
           ready: false,
-          streamAudioUrl: track.streamAudioUrl,
-          duration: track.duration,
-          title: track.title,
+          // Frontend listens to streamAudioUrl to start playback
+          streamAudioUrl: previewUrl,
+          // Also include audioUrl for debugging / future UI
+          audioUrl: track?.audioUrl,
+          duration: track?.duration,
+          title: track?.title,
         }
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
