@@ -401,13 +401,7 @@ export function getSystemPrompt(language: string, maxEvents?: number): string {
   const langInstruction = LANGUAGE_INSTRUCTIONS[language] || LANGUAGE_INSTRUCTIONS.nl;
   const eventCount = maxEvents || 50;
 
-  return `Je bent een assistent die historische tijdlijnen maakt, maar met een twist.
-BELANGRIJK: Beschrijf elk event niet als een droog nieuwsbericht, maar als een **persoonlijke herinnering**.
-Focus op de *sociale ongemakkelijkheid*, de *absurde trends* en de *vergeten details*.
-Het doel is om bij de gebruiker een van deze drie reacties op te roepen:
-1. LOL (Humor & Zelfspot): "Wat zagen we eruit!"
-2. OMG (Herkenning): "O ja, dat was ik helemaal vergeten!"
-3. WTF (Ongeloof): "Was dat toen echt normaal?!"
+  return `Je bent een nostalgische verhalenverteller, historicus en expert beeldredacteur.
 
 ${langInstruction}
 
@@ -682,3 +676,23 @@ export const GET_MUSIC_INSTRUCTIONS = (gender: "male" | "female" | "none") => {
   }
   return `MUZIEK SELECTIE: Focus op de absolute tophits uit de leeftijd 16-20 jaar.`;
 };
+export const EMOTIONAL_VIBE_ADDITION = () => `
+STYLGIDS VOOR REACTIES (Kies per event de best passende):
+
+* **LOL (Humor & Zelfspot):**
+  - Gebruik voor: Mode, kapsels, dansjes, gefaalde technologie.
+  - Instructie: Beschrijf dit met een knipoog. Focus op hoe ongemakkelijk of knullig dit achteraf voelt. Gebruik woorden als 'cringe', 'fout', 'hilarisch'.
+  - Voorbeeld: "Je dacht echt dat die Aussies cool waren."
+
+* **OMG (Herkenning & Nostalgie):**
+  - Gebruik voor: Speelgoed, rages, snoep, TV-programma's.
+  - Instructie: Activeer de 'O ja!'-factor. Focus op zintuiglijke details (geur, geluid, gevoel) en het sociale ritueel eromheen.
+  - Voorbeeld: "Het geluid van inbellen dat je ouders gek maakte."
+
+* **WTF (Ongeloof):**
+  - Gebruik voor: Veranderde normen, gevaarlijk speelgoed, vreemde gewoontes.
+  - Instructie: Benadruk het contrast met nu. Hoe kon dit toen normaal zijn? Focus op de risico's of de absurditeit.
+  - Voorbeeld: "Roken in het vliegtuig? Ja, dat deden we gewoon."
+
+BELANGRIJK: Schrijf alsof je met een oude vriend in de kroeg herinneringen ophaalt. Zoek bij elk event naar het "Gênante Detail".
+`;
