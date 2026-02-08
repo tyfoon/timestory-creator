@@ -271,13 +271,15 @@ const HomeV3 = () => {
     }
   }, [selectedPeriod, currentStep]);
 
-  // Auto-advance step 1 only after Enter is pressed
+  // Auto-advance step 1 as soon as the birth date is complete
   useEffect(() => {
-    if (step1ManualAdvance && isBirthDateComplete && currentStep === 1) {
-      setTimeout(() => setCurrentStep(2), 300);
-      setStep1ManualAdvance(false);
+    if (isBirthDateComplete && currentStep === 1 && !step1Completed) {
+      setStep1Completed(true);
+      // Small delay to let the user see completion before reveal
+      const t = setTimeout(() => setCurrentStep(2), 250);
+      return () => clearTimeout(t);
     }
-  }, [step1ManualAdvance, isBirthDateComplete, currentStep]);
+  }, [isBirthDateComplete, currentStep, step1Completed]);
 
   // Auto-advance step 2 only the FIRST time a period is selected AND city is filled (or user continues)
   // Now requires period selection - city is optional but user can continue
@@ -505,13 +507,13 @@ const HomeV3 = () => {
                         value={birthDate}
                         onChange={setBirthDate}
                         error={errors.birthDate}
+                        onComplete={() => {
+                          if (step1Completed) return;
+                          setStep1Completed(true);
+                          // Advance immediately to the next reveal (no Enter needed)
+                          setTimeout(() => setCurrentStep(2), 250);
+                        }}
                       />
-                      
-                      {isBirthDateComplete && (
-                        <p className="text-xs text-muted-foreground mt-4 text-center">
-                          Druk op Enter om verder te gaan
-                        </p>
-                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>

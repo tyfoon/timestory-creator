@@ -108,9 +108,10 @@ export const DateInput = ({ label, value, onChange, error, onComplete }: DateInp
     // When year is complete (4 digits and valid), blur and trigger onComplete
     if (rawVal.length >= 4 && val >= 1900 && val <= currentYear) {
       yearRef.current?.blur();
-      // Only call onComplete if day and month are also filled
+      // Only complete if day and month are also filled
       if (value.day > 0 && value.month > 0) {
-        onComplete?.();
+        // Defer so parent state (onChange) has a chance to commit before advancing UI
+        setTimeout(() => onComplete?.(), 0);
       }
     }
   };
