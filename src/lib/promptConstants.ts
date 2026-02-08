@@ -425,8 +425,32 @@ export const CHILDREN_ADDITION = (childrenInfo: string[]) =>
   `\nKinderen: ${childrenInfo.join(", ")}`;
 
 export const GENDER_ADDITION = (gender: 'male' | 'female') => {
-  const genderText = gender === 'male' ? 'man' : 'vrouw';
-  return `\nDe persoon voor wie deze tijdlijn is, is een ${genderText}. Pas de beschrijvingen subtiel aan zodat ze herkenbaar zijn vanuit dit perspectief.`;
+  if (gender === 'male') {
+    return `
+GENDER LENS (MAN):
+Bekijk de events vanuit het perspectief van een jongen/man die opgroeit in deze tijd.
+1. **Kindertijd (4-12):** Focus op **actie, constructie en competitie**.
+   - *Speelgoed:* Lego, technisch speelgoed, auto's (Matchbox/Hot Wheels), soldaatjes, actiefiguren (He-Man, Transformers, G.I. Joe) en de eerste spelcomputers (Gameboy).
+   - *Spel:* Buitenspelen was vaak fysiek en risicovoller (klimmen, crossen op de fiets, fikkie stoken).
+2. **Puberteit (13-18):** Focus op **onafhankelijkheid, status en rebellie**.
+   - *Interesses:* Brommers/scooters, technische gadgets, de eerste computer, "cool" zijn in de groep, en muziek als identiteitsstatement (Hiphop, Rock, Gabber - "ergens tegenaan schoppen").
+   - *Sfeer:* Minder praten over gevoelens, meer "dingen doen" met vrienden.`;
+  }
+
+  if (gender === 'female') {
+    return `
+GENDER LENS (VROUW):
+Bekijk de events vanuit het perspectief van een meisje/vrouw die opgroeit in deze tijd.
+1. **Kindertijd (4-12):** Focus op **sociale connectie, verzamelen en verbeelding**.
+   - *Speelgoed:* Poppen (Barbie, Cindy), verzamelrages (Stickers, Diddl, Flippo's), My Little Pony, Care Bears, en creatief speelgoed.
+   - *Spel:* Rollenspellen (vadertje en moedertje), elastieken, dagboeken bijhouden en vriendenboekjes.
+2. **Puberteit (13-18):** Focus op **sociale binding, 'bedroom culture' en emotie**.
+   - *Interesses:* Magazines (Tina, Fancy, Hitkrant), urenlang aan de telefoon hangen (of MSN'en), logeerpartijtjes.
+   - *Muziek:* Muziek als sociale "lijm" (samen meezingen, boybands, emotionele ballads). De "Music Memory Bump" ligt hier iets later (rond 19 jaar) en is socialer van aard.
+   - *Sfeer:* "Bedroom culture": samen op de kamer muziek luisteren, make-uppen en praten over verliefdheid.`;
+  }
+
+  return '';
 };
 
 export const SUBCULTURE_ADDITION = (myGroup: string, otherGroupsFromEra: string[], geoFocus: string = "netherlands") => {
@@ -434,23 +458,50 @@ export const SUBCULTURE_ADDITION = (myGroup: string, otherGroupsFromEra: string[
     .filter(g => g.toLowerCase() !== myGroup.toLowerCase())
     .join(", ");
 
+  // Bepaal context voor merken
+  const locationContext = geoFocus === 'netherlands' ? 'in Nederland' : 'in deze regio';
+
   return `
 SUBCULTUUR & IDENTITEIT (WIJ vs DE REST):
-De gebruiker hoorde in deze periode bij de groep: **"${myGroup}"**.
-Dit is de lens waardoor we naar alles kijken.
+De gebruiker hoorde bij: **"${myGroup}"**.
 
 1. **De 'In-Group' (Wij):**
-   - Focus sterk op de muziek, kleding, taal en hangplekken die cool waren voor **${myGroup}**.
-   - Gebruik jargon of slang dat bij deze groep past.
-   - Beschrijf het gevoel van verbondenheid met deze 'tribe'.
-
+   - Focus op de muziek, kleding en **MERKEN** die statussymbolen waren voor **${myGroup}** ${locationContext}.
+   - *Check:* Zijn deze merken logisch voor ${locationContext}? (Bijv. in NL: Australian trainingspakken voor Gabbers, kistjes voor Alto's).
+   
 2. **De 'Out-Group' (Zij - ${othersList}):**
-   - De andere stromingen in die tijd waren: ${othersList}.
-   - Benadruk het contrast. Als de gebruiker een ${myGroup} was, hoe keken ze dan naar die andere groepen?
+   - Hoe keken wij naar hen? (Arrogantie, angst, afkeer?)
 
-3. **Conflicten & Kruisbestuiving:**
-   - Waren er specifieke plekken waar deze groepen botsten?
-   - Of waren er onverwachte momenten van overlap?
-
+3. **Merk-Validatie:** Gebruik alleen merken die deze specifieke groep **${locationContext}** gebruikte. Vermijd generieke Amerikaanse merken als ze hier niet "cool" waren.
 `;
 };
+
+export const GET_MUSIC_INSTRUCTIONS = (gender: 'male' | 'female' | 'none') => {
+  if (gender === 'male') {
+    return `MUZIEK SELECTIE (MAN): Focus op de "Rebellious Years" (rond 16 jaar). Kies nummers die identiteit en onafhankelijkheid uitstralen (Rock, Hip-hop, ruwere genres).`;
+  } else if (gender === 'female') {
+    return `MUZIEK SELECTIE (VROUW): Focus op de "Social Bonding Years" (rond 19 jaar en ouder). Kies nummers die je samen met vriendinnen zong, emotionele ballads en 'anthems'.`;
+  }
+  return `MUZIEK SELECTIE: Focus op de absolute tophits uit de leeftijd 16-20 jaar.`;
+};
+
+export const EMOTIONAL_VIBE_ADDITION = () => `
+EMOTIONELE TOON - Roep deze gevoelens op (zonder de woorden zelf te gebruiken!):
+
+1. **Humor & Zelfspot:**
+   - Gebruik voor: Mode, kapsels, dansjes, gefaalde technologie.
+   - Instructie: Beschrijf dit met een knipoog. Focus op hoe ongemakkelijk of knullig dit achteraf voelt.
+   - Voorbeeld: "Je dacht echt dat die Aussies cool waren."
+
+2. **Herkenning & Verrassing:**
+   - Gebruik voor: Speelgoed, rages, snoep, TV-programma's.
+   - Instructie: Activeer de 'O ja!'-factor. Focus op zintuiglijke details (geur, geluid, gevoel) en het sociale ritueel eromheen.
+   - Voorbeeld: "Het geluid van inbellen dat je ouders gek maakte."
+
+3. **Verwondering & Ongeloof:**
+   - Gebruik voor: Veranderde normen, gevaarlijk speelgoed, vreemde gewoontes.
+   - Instructie: Benadruk het contrast met nu. Hoe kon dit toen normaal zijn? Focus op de risico's of de absurditeit.
+   - Voorbeeld: "Roken in het vliegtuig? Ja, dat deden we gewoon."
+
+BELANGRIJK: Schrijf alsof je met een oude vriend in de kroeg herinneringen ophaalt. Zoek bij elk event naar het "Gênante Detail".
+`;
