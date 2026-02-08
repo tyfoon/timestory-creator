@@ -228,6 +228,7 @@ serve(async (req) => {
     if (isQuickMode) {
       // ============================================
       // MODE A (V1): Quick mode - no events, just basic data
+      // Optimized for SHORT songs (max 2 minutes, "radio edit" style)
       // ============================================
       const city = formData?.city || personalData?.city;
       const periodDescription = formData?.periodType === 'childhood' ? 'jeugd (ongeveer 6-12 jaar)' 
@@ -237,49 +238,68 @@ serve(async (req) => {
       const subcultureName = subculture?.myGroup || null;
       const birthYearInfo = formData?.birthYear ? `geboren in ${formData.birthYear}` : '';
 
-      systemPrompt = `Je bent een getalenteerde Nederlandse songwriter die nostalgische liedjes schrijft.
-Je specialiteit is het oproepen van de sfeer en het gevoel van een bepaald tijdperk met CONCRETE verwijzingen naar de opgegeven locatie en subcultuur.
+      systemPrompt = `Je bent een getalenteerde Nederlandse songwriter die KORTE, PAKKENDE nostalgische liedjes schrijft.
+Je specialiteit is compacte "radio edit" nummers die direct to-the-point komen.
 
 STIJL: ${suggestedStyle} (periode: ${startYear}-${endYear})
 TAAL: Nederlands
+DOEL: Kort nummer van MAX 1:30-2:00 minuten
 
-STRUCTUUR:
-- Couplet 1 (4-6 regels): Schets de tijd en plek - NOEM DE STAD EXPLICIET
-- Refrein (4 regels): Emotionele kern, herkenbaar en meezingbaar
-- Couplet 2 (4-6 regels): Herinneringen aan de subcultuur/stijl van die tijd
-- Refrein (herhaling)
-- Bridge (2-4 regels): Reflectie
-- Outro/Refrein
+=== STRIKTE STRUCTUUR (RADIO EDIT) ===
+Gebruik EXACT deze structuur met Suno section tags:
 
-REGELS:
-1. VERWERK DE STAD (${city || 'niet opgegeven'}) CONCREET in de tekst - noem straten, pleinen, bekende plekken van die stad als je die kent
-2. VERWERK DE SUBCULTUUR (${subcultureName || 'niet opgegeven'}) - beschrijf de kleding, muziek, hang-outs, attitude van die groep
-3. VERWERK DE PERIODE ${startYear}-${endYear} - noem typische dingen uit die tijd (technologie, mode, muziek, TV-programma's)
-4. Focus op de ${periodDescription} - beschrijf hoe het voelde om in die levensfase te zitten
-5. Gebruik rijm waar mogelijk, maar forceer het niet
-6. De tekst moet geschikt zijn om gezongen te worden (let op lettergrepen)
-7. Maak het nostalgisch maar niet té zoetsappig
-8. GEEN specifieke nieuwsfeiten of wereldgebeurtenissen - focus op de persoonlijke beleving`;
+[Short Intro]
+(Max 2 regels - direct de sfeer neerzetten, GEEN lange instrumentale opbouw)
 
-      userPrompt = `Schrijf een nostalgisch lied voor iemand ${birthYearInfo} over hun ${periodDescription} in de periode ${startYear}-${endYear}.
+[Verse 1]
+(PRECIES 4 regels - schets de tijd en plek, NOEM DE STAD)
 
-VERPLICHTE ELEMENTEN (verwerk deze EXPLICIET in de tekst):
-${city ? `- STAD: ${city} - noem deze stad bij naam en verwijs naar lokale plekken, sfeer, dialectwoorden indien van toepassing` : '- Geen specifieke stad opgegeven'}
-${subcultureName ? `- SUBCULTUUR: ${subcultureName} - beschrijf hun stijl, muziek, kleding, attitude, hang-outs` : '- Geen specifieke subcultuur'}
-- TIJDPERK: ${startYear}-${endYear} - verwijs naar mode, muziek, technologie van toen
+[Chorus]
+(PRECIES 4 regels - pakkend, emotioneel, meezingbaar)
+
+[Verse 2]
+(PRECIES 4 regels - herinneringen aan subcultuur/stijl)
+
+[Chorus]
+(Herhaling van het refrein)
+
+[Short Outro]
+(Max 2 regels - korte afsluiting)
+
+=== STRENG VERBODEN ===
+❌ GEEN [Bridge] sectie - dit rekt het nummer te veel
+❌ GEEN [Instrumental] of [Interlude] secties
+❌ GEEN lange introducties of outro's
+❌ GEEN extra coupletten of refrein-herhalingen
+❌ GEEN "la la la" of "oh oh oh" opvullers
+
+=== VERPLICHTE ELEMENTEN ===
+1. VERWERK DE STAD (${city || 'niet opgegeven'}) CONCREET - noem straten, pleinen, bekende plekken
+2. VERWERK DE SUBCULTUUR (${subcultureName || 'niet opgegeven'}) - beschrijf kleding, muziek, attitude
+3. VERWERK DE PERIODE ${startYear}-${endYear} - typische mode, muziek, technologie
+4. Focus op de ${periodDescription}
+5. Maak het nostalgisch maar punchy en energiek`;
+
+      userPrompt = `Schrijf een KORT nostalgisch lied (max 2 minuten) voor iemand ${birthYearInfo} over hun ${periodDescription} in de periode ${startYear}-${endYear}.
+
+VERPLICHTE ELEMENTEN:
+${city ? `- STAD: ${city} - noem bij naam, verwijs naar lokale plekken` : '- Geen stad opgegeven'}
+${subcultureName ? `- SUBCULTUUR: ${subcultureName} - hun stijl, muziek, kleding, hang-outs` : '- Geen subcultuur'}
+- TIJDPERK: ${startYear}-${endYear}
 - LEVENSFASE: ${periodDescription}
 
-Dit is de EERSTE versie van het lied. Later kunnen specifieke herinneringen worden toegevoegd.
+BELANGRIJK - HOUD HET KORT:
+- Gebruik de EXACTE structuur: [Short Intro] → [Verse 1] → [Chorus] → [Verse 2] → [Chorus] → [Short Outro]
+- GEEN bridge, GEEN instrumentale stukken
+- Direct beginnen, geen lange intro
 
-BELANGRIJK: De luisteraar moet direct herkennen dat dit over ${city || 'hun stad'} gaat en over de ${subcultureName || 'jeugdcultuur'} van die tijd!
-
-Genereer nu de songtekst in het Nederlands.
+De luisteraar moet direct herkennen dat dit over ${city || 'hun stad'} gaat!
 
 Format je output als JSON:
 {
-  "lyrics": "De volledige songtekst hier...",
-  "style": "Korte muziekstijl beschrijving (bijv. '1988 Synthpop met disco invloeden')",
-  "title": "Titel van het lied - mag verwijzing naar stad of subcultuur bevatten"
+  "lyrics": "De volledige songtekst met [Section Tags]...",
+  "style": "Muziekstijl MET tempo-indicaties, bijv: '1985 Synthpop, fast tempo, punchy, radio edit, short intro'",
+  "title": "Pakkende korte titel"
 }`;
 
     } else {
