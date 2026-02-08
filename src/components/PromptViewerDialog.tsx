@@ -29,6 +29,8 @@ import {
   CHILDREN_ADDITION,
   GENDER_ADDITION,
   SUBCULTURE_ADDITION,
+  GET_MUSIC_INSTRUCTIONS,
+  EMOTIONAL_VIBE_ADDITION,
 } from '@/lib/promptConstants';
 
 interface PromptViewerDialogProps {
@@ -289,6 +291,25 @@ function buildPromptSections(formData: FormData, language: string, maxEvents?: n
       source: 'partnerName',
     });
   }
+
+  // Music Instructions (based on gender)
+  const gender = optionalData.gender || 'none';
+  sections.push({
+    label: '🎵 System: Muziek Selectie',
+    content: GET_MUSIC_INSTRUCTIONS(gender),
+    colorClass: PROMPT_COLORS.system,
+    source: 'GET_MUSIC_INSTRUCTIONS',
+  });
+
+  // Emotional Vibe Addition (always added)
+  sections.push({
+    label: '💫 System: Emotionele Toon',
+    content: EMOTIONAL_VIBE_ADDITION(),
+    colorClass: PROMPT_COLORS.nostalgia,
+    source: 'EMOTIONAL_VIBE_ADDITION',
+    isCollapsible: true,
+    defaultCollapsed: true,
+  });
 
   // Famous birthdays addition (at the end, D block in backend)
   if (formData.type === 'range' && formData.yearRange && formData.birthDate) {
