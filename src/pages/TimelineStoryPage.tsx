@@ -17,7 +17,7 @@ import { PromptViewerDialog } from '@/components/PromptViewerDialog';
 import { MediaButtons } from '@/components/story/MediaButtons';
 import { addToBlacklist } from '@/hooks/useImageBlacklist';
 import { VideoDialog } from '@/components/video/VideoDialog';
-import { MusicVideoGenerator } from '@/components/MusicVideoGenerator';
+
 import { SoundtrackSection } from '@/components/story/SoundtrackSection';
 import { PersonalizeSoundtrackDialog } from '@/components/story/PersonalizeSoundtrackDialog';
 
@@ -1263,38 +1263,8 @@ const TimelineStoryPage = () => {
               </div>
             </div>
             
-            {/* Bottom row: Action buttons - wrap on mobile */}
-            {events.length > 0 && !isLoading && (
-              <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                {/* Music Video Generator button */}
-                {formData && (
-                  <MusicVideoGenerator
-                    events={events}
-                    summary={storyIntroduction || ''}
-                    storyTitle={storyTitle}
-                    storyIntroduction={storyIntroduction}
-                    optionalData={formData.optionalData}
-                    startYear={formData.type === 'birthdate' && formData.birthDate 
-                      ? formData.birthDate.year 
-                      : formData.yearRange?.startYear || 1980}
-                    endYear={formData.type === 'birthdate' && formData.birthDate 
-                      ? formData.birthDate.year + 25
-                      : formData.yearRange?.endYear || 2000}
-                  />
-                )}
-
-                {/* Video button */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsVideoDialogOpen(true)}
-                  className="h-7 px-2 text-xs gap-1"
-                >
-                  <Video className="h-3.5 w-3.5" />
-                  <span className="hidden xs:inline">Video</span>
-                </Button>
-              </div>
-            )}
+            {/* Spacer for alignment when no action buttons */}
+            <div className="h-7" />
           </div>
         </div>
       </section>
@@ -1373,11 +1343,24 @@ const TimelineStoryPage = () => {
 
       {/* Footer */}
       {!isLoading && events.length > 0 && (
-        <footer className="py-16 text-center">
+        <footer className="py-16 text-center space-y-8">
           <Reveal>
             <p className={`${theme.fontMono} text-sm uppercase tracking-widest text-muted-foreground`}>
               Einde van je tijdreis
             </p>
+          </Reveal>
+          
+          {/* Video button - at the very bottom */}
+          <Reveal delay={0.2}>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => setIsVideoDialogOpen(true)}
+              className="gap-2"
+            >
+              <Video className="h-5 w-5" />
+              Bekijk als Video
+            </Button>
           </Reveal>
         </footer>
       )}
