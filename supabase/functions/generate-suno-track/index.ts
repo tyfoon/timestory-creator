@@ -79,6 +79,7 @@ serve(async (req) => {
       prompt: truncatedLyrics,
       style: truncatedStyle,
       title: truncatedTitle,
+      duration: 105, // Max 1:45 (in seconds)
       callBackUrl: callbackUrl,
     };
 
