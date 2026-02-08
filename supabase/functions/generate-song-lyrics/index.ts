@@ -413,12 +413,12 @@ KRITISCH - ULTRA-KORT:
 - GEEN bridge, GEEN extra secties
 
 ERA-FIRST STIJL:
-"${eraBaseGenre}, fast tempo, punchy, radio edit, short song${subcultureInfluence ? `, ${subcultureInfluence}` : ''}"
+"${eraBaseGenre}, fast tempo, punchy, radio edit, short song, spoken word delivery${subcultureInfluence ? `, ${subcultureInfluence}` : ''}"
 
 Format je output als JSON:
 {
   "lyrics": "De volledige songtekst met [Section Tags]...",
-  "style": "${eraBaseGenre}, fast tempo, punchy, radio edit, short song${subcultureInfluence ? `, ${subcultureInfluence}` : ''}, ${vocalType}",
+  "style": "${eraBaseGenre}, fast tempo, punchy, radio edit, short song, spoken word delivery${subcultureInfluence ? `, ${subcultureInfluence}` : ''}, ${vocalType}",
   "title": "Korte titel (max 3 woorden)"
 }`;
 
