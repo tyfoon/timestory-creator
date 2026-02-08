@@ -1365,6 +1365,8 @@ const TimelineStoryPage = () => {
           events={events}
           summary={storyIntroduction}
           formData={formData}
+          storyTitle={storyTitle}
+          storyIntroduction={storyIntroduction}
           onOpenPersonalizeDialog={() => setIsPersonalizeDialogOpen(true)}
         />
       )}
