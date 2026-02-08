@@ -19,7 +19,6 @@ import {
   PERSONAL_MEMORIES_ADDITION,
   getGenerationPerspective,
   GET_MUSIC_INSTRUCTIONS,
-  EMOTIONAL_VIBE_ADDITION,
 } from "../_shared/prompts.ts";
 
 const corsHeaders = {
@@ -550,6 +549,7 @@ function buildPrompt(data: TimelineRequest): string {
     promptParts.push(CITY_ADDITION(optionalData.city));
   }
 
+  promptParts.push(EMOTIONAL_VIBE_ADDITION());
   // B2. Geslacht (Perspectief)
   // Bepaalt de keuze van onderwerpen (bv. mode, idolen, speelgoed, tijdschriften)
 
