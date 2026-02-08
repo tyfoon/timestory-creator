@@ -347,9 +347,64 @@ function CollapsibleSection({ section }: { section: PromptSection }) {
   );
 }
 
+function CopyButton({ text, label }: { text: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+  
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="flex items-center gap-1 px-2 py-1 text-xs rounded hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
+      title="Kopieer naar klembord"
+    >
+      {copied ? (
+        <>
+          <Check className="h-3 w-3 text-green-500" />
+          <span className="text-green-600">Gekopieerd</span>
+        </>
+      ) : (
+        <>
+          <Copy className="h-3 w-3" />
+          {label && <span>{label}</span>}
+        </>
+      )}
+    </button>
+  );
+}
+
+function FullPromptSection({ title, content, defaultOpen = false }: { title: string; content: string; defaultOpen?: boolean }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <div className="border rounded-lg bg-muted/20">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full p-3 flex items-center justify-between text-left"
+      >
+        <div className="flex items-center gap-2">
+          {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          <span className="font-semibold text-sm">{title}</span>
+        </div>
+        <CopyButton text={content} label="Kopieer" />
+      </button>
+      {isOpen && (
+        <div className="px-3 pb-3 pt-0 border-t">
+          <pre className="text-[11px] whitespace-pre-wrap font-mono leading-relaxed bg-background/50 p-2 rounded mt-2 max-h-64 overflow-y-auto">
+            {content}
+          </pre>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function PromptViewerDialog({ formData, language, maxEvents }: PromptViewerDialogProps) {
   const [open, setOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   if (!formData) return null;
 
@@ -363,13 +418,6 @@ export function PromptViewerDialog({ formData, language, maxEvents }: PromptView
   const fullSystemPrompt = systemSections.filter(includeInFull).map(s => s.content).join('\n\n');
   const fullUserPrompt = userSections.filter(includeInFull).map(s => s.content).join('\n');
 
-  const handleCopy = async () => {
-    const fullText = `=== SYSTEM PROMPT ===\n${fullSystemPrompt}\n\n=== USER PROMPT ===\n${fullUserPrompt}`;
-    await navigator.clipboard.writeText(fullText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -382,29 +430,9 @@ export function PromptViewerDialog({ formData, language, maxEvents }: PromptView
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader className="shrink-0 pb-2">
-          <DialogTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-base">
-              <FileText className="h-4 w-4" />
-              AI Prompt Viewer
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopy}
-              className="gap-1.5"
-            >
-              {copied ? (
-                <>
-                  <Check className="h-3.5 w-3.5" />
-                  Gekopieerd
-                </>
-              ) : (
-                <>
-                  <Copy className="h-3.5 w-3.5" />
-                  Kopieer
-                </>
-              )}
-            </Button>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <FileText className="h-4 w-4" />
+            AI Prompt Viewer
           </DialogTitle>
         </DialogHeader>
 
@@ -413,49 +441,77 @@ export function PromptViewerDialog({ formData, language, maxEvents }: PromptView
           ⚠️ Mirror van <code className="font-mono">supabase/functions/_shared/prompts.ts</code> via <code className="font-mono">src/lib/promptConstants.ts</code>
         </div>
 
-        {/* Legend */}
-        <div className="shrink-0 flex flex-wrap gap-1.5 text-[10px] py-2 border-b">
-          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.system}`}>System</span>
-          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.language}`}>Taal</span>
-          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.visualDirector}`}>Visual</span>
-          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.format}`}>Format</span>
-          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.base}`}>Basis</span>
-          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.generation}`}>Generatie</span>
-          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.city}`}>Stad</span>
-          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.gender}`}>Geslacht</span>
-          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.subculture}`}>Subcultuur</span>
-          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.geographic}`}>Geo</span>
-          <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.personalName}`}>Naam</span>
-        </div>
-
-        {/* Prompt sections */}
+        {/* Scrollable content */}
         <div className="flex-1 min-h-0 overflow-y-auto pr-2 space-y-3 py-3">
-          {/* System Prompt Header */}
-          <div className="text-xs font-bold text-muted-foreground uppercase tracking-wide border-b pb-1">
-            System Prompt
+          
+          {/* ===== FULL PROMPTS (TOP) ===== */}
+          <div className="space-y-2">
+            <FullPromptSection 
+              title="📄 Volledige System Prompt (plain text)" 
+              content={fullSystemPrompt}
+              defaultOpen={false}
+            />
+            <FullPromptSection 
+              title="📝 Volledige User Prompt (plain text)" 
+              content={fullUserPrompt}
+              defaultOpen={false}
+            />
           </div>
-          {systemSections.map((section, index) => (
-            <CollapsibleSection key={`sys-${index}`} section={section} />
-          ))}
 
-          {/* User Prompt Header */}
-          <div className="text-xs font-bold text-muted-foreground uppercase tracking-wide border-b pb-1 pt-2">
-            User Prompt
+          {/* Divider */}
+          <div className="border-t pt-3">
+            <div className="text-xs text-muted-foreground mb-2">
+              Onderstaand de prompt opgedeeld in losse onderdelen:
+            </div>
           </div>
-          {userSections.map((section, index) => (
-            <CollapsibleSection key={`usr-${index}`} section={section} />
-          ))}
+
+          {/* ===== SYSTEM PROMPT SECTIONS (collapsed) ===== */}
+          <details className="group">
+            <summary className="text-xs font-bold text-muted-foreground uppercase tracking-wide cursor-pointer hover:text-foreground flex items-center gap-1">
+              <ChevronRight className="h-3 w-3 group-open:rotate-90 transition-transform" />
+              System Prompt Onderdelen ({systemSections.length})
+            </summary>
+            <div className="mt-2 space-y-2 pl-2 border-l-2 border-muted">
+              {systemSections.map((section, index) => (
+                <CollapsibleSection key={`sys-${index}`} section={{...section, defaultCollapsed: true}} />
+              ))}
+            </div>
+          </details>
+
+          {/* ===== USER PROMPT SECTIONS (collapsed) ===== */}
+          <details className="group">
+            <summary className="text-xs font-bold text-muted-foreground uppercase tracking-wide cursor-pointer hover:text-foreground flex items-center gap-1">
+              <ChevronRight className="h-3 w-3 group-open:rotate-90 transition-transform" />
+              User Prompt Onderdelen ({userSections.length})
+            </summary>
+            <div className="mt-2 space-y-2 pl-2 border-l-2 border-muted">
+              {userSections.map((section, index) => (
+                <CollapsibleSection key={`usr-${index}`} section={{...section, defaultCollapsed: true}} />
+              ))}
+            </div>
+          </details>
+
         </div>
 
-        {/* Full prompt preview */}
+        {/* Legend (bottom) */}
         <div className="shrink-0 pt-2 border-t">
           <details className="group">
-            <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
-              Bekijk volledige prompt (plain text)
+            <summary className="text-[10px] text-muted-foreground cursor-pointer hover:text-foreground">
+              Legenda kleuren
             </summary>
-            <pre className="mt-2 p-2 bg-muted rounded text-[10px] font-mono whitespace-pre-wrap max-h-32 overflow-y-auto">
-              {`=== SYSTEM PROMPT ===\n${fullSystemPrompt}\n\n=== USER PROMPT ===\n${fullUserPrompt}`}
-            </pre>
+            <div className="flex flex-wrap gap-1.5 text-[10px] py-2">
+              <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.system}`}>System</span>
+              <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.language}`}>Taal</span>
+              <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.visualDirector}`}>Visual</span>
+              <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.format}`}>Format</span>
+              <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.base}`}>Basis</span>
+              <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.generation}`}>Generatie</span>
+              <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.city}`}>Stad</span>
+              <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.gender}`}>Geslacht</span>
+              <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.subculture}`}>Subcultuur</span>
+              <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.geographic}`}>Geo</span>
+              <span className={`px-1.5 py-0.5 rounded border ${PROMPT_COLORS.personalName}`}>Naam</span>
+            </div>
           </details>
         </div>
       </DialogContent>
