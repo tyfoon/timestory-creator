@@ -18,7 +18,7 @@ import { MediaButtons } from '@/components/story/MediaButtons';
 import { addToBlacklist } from '@/hooks/useImageBlacklist';
 import { VideoDialog } from '@/components/video/VideoDialog';
 import { MusicVideoGenerator } from '@/components/MusicVideoGenerator';
-import { SoundtrackFooter } from '@/components/story/SoundtrackFooter';
+import { SoundtrackSection } from '@/components/story/SoundtrackSection';
 import { PersonalizeSoundtrackDialog } from '@/components/story/PersonalizeSoundtrackDialog';
 
 // Placeholder images by category
@@ -1359,9 +1359,19 @@ const TimelineStoryPage = () => {
         </div>
       )}
 
+      {/* Soundtrack Section - inline at bottom of page, before footer */}
+      {!isLoading && events.length > 0 && (
+        <SoundtrackSection
+          events={events}
+          summary={storyIntroduction}
+          formData={formData}
+          onOpenPersonalizeDialog={() => setIsPersonalizeDialogOpen(true)}
+        />
+      )}
+
       {/* Footer */}
       {!isLoading && events.length > 0 && (
-        <footer className="py-24 text-center">
+        <footer className="py-16 text-center">
           <Reveal>
             <p className={`${theme.fontMono} text-sm uppercase tracking-widest text-muted-foreground`}>
               Einde van je tijdreis
@@ -1377,14 +1387,6 @@ const TimelineStoryPage = () => {
         events={events}
         storyTitle={storyTitle}
         storyIntroduction={storyIntroduction}
-      />
-
-      {/* Soundtrack Footer - fixed at bottom */}
-      <SoundtrackFooter
-        events={events}
-        summary={storyIntroduction}
-        formData={formData}
-        onOpenPersonalizeDialog={() => setIsPersonalizeDialogOpen(true)}
       />
 
       {/* Personalize Soundtrack Dialog */}
