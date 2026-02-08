@@ -1220,51 +1220,45 @@ const TimelineStoryPage = () => {
 
   return (
     <div className={`min-h-screen bg-background ${!isHeroReady ? 'overflow-hidden max-h-screen' : ''}`}>
-      {/* Header - responsive without horizontal scroll */}
-      <section className="pt-3 pb-1 px-3 sm:px-4 relative z-50 bg-background/80 backdrop-blur-sm sticky top-0">
+      {/* Header - compact single row */}
+      <section className="py-2 px-3 sm:px-4 relative z-50 bg-background/80 backdrop-blur-sm sticky top-0">
         <div className="container mx-auto max-w-6xl">
-          {/* Mobile: stacked layout, Desktop: single row */}
-          <div className="flex flex-col gap-2 mb-2 fade-in">
-            {/* Top row: Back button + small icons + Title */}
-            <div className="flex items-center justify-between gap-2">
-              <button
-                onClick={() => navigate('/')}
-                className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{t('backToInput') as string}</span>
-              </button>
-              
-              {/* Small utility icons + Year range title */}
-              <div className="flex items-center gap-1.5">
-                {/* Debug dialogs - small icons before year range */}
-                {events.length > 0 && !isLoading && (
-                  <>
-                    <PromptViewerDialog formData={formData} language={language} maxEvents={currentMaxEvents} />
-                    <DebugInfoDialog 
-                      events={events} 
-                      onRefreshImages={handleRefreshAllImages}
-                      isRefreshing={isLoadingImages}
-                      onBlacklistImage={handleBlacklistImage}
-                    />
-                    <button
-                      onClick={handleClearCache}
-                      className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
-                      title={t('refreshButton') as string}
-                    >
-                      <RefreshCw className="h-3.5 w-3.5" />
-                    </button>
-                  </>
-                )}
-                
-                <h1 className="font-serif text-sm sm:text-xl lg:text-2xl font-bold text-foreground truncate">
-                  {getTitle()}
-                </h1>
-              </div>
-            </div>
+          <div className="flex items-center justify-between gap-2 fade-in">
+            {/* Back button */}
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">{t('backToInput') as string}</span>
+            </button>
             
-            {/* Spacer for alignment when no action buttons */}
-            <div className="h-7" />
+            {/* Title + Small utility icons */}
+            <div className="flex items-center gap-1.5">
+              <h1 className="font-serif text-sm sm:text-xl lg:text-2xl font-bold text-foreground truncate">
+                {getTitle()}
+              </h1>
+              
+              {/* Debug dialogs - small icons after title */}
+              {events.length > 0 && !isLoading && (
+                <>
+                  <PromptViewerDialog formData={formData} language={language} maxEvents={currentMaxEvents} />
+                  <DebugInfoDialog 
+                    events={events} 
+                    onRefreshImages={handleRefreshAllImages}
+                    isRefreshing={isLoadingImages}
+                    onBlacklistImage={handleBlacklistImage}
+                  />
+                  <button
+                    onClick={handleClearCache}
+                    className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+                    title={t('refreshButton') as string}
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </section>
