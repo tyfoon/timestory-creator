@@ -202,7 +202,7 @@ export const ScrapbookCard: React.FC<ScrapbookCardProps> = ({
       <p
         style={{
           fontFamily: fontBody,
-          fontSize: 20,
+          fontSize: 26,
           color: inkColor,
           lineHeight: 1.4,
           margin: 0,

@@ -112,11 +112,11 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
           {/* Description - light sans, generous line height */}
           <p style={{
             fontFamily: fontSans,
-            fontSize: 28,
+            fontSize: 36,
             fontWeight: 300,
             color: '#444',
             lineHeight: 1.65,
-            maxWidth: 800,
+            maxWidth: 900,
             opacity: descOpacity,
           }}>
             {event.description}
@@ -243,7 +243,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
             {/* Description with giant drop cap - magazine style */}
             <div style={{
               fontFamily: fontSans,
-              fontSize: 26,
+              fontSize: 34,
               fontWeight: 300,
               color: '#444',
               lineHeight: 1.7,
@@ -339,7 +339,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
         {/* Description - light, airy */}
         <p style={{
           fontFamily: fontSans,
-          fontSize: 22,
+          fontSize: 29,
           fontWeight: 300,
           color: '#555',
           lineHeight: 1.7,
