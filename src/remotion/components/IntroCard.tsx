@@ -92,11 +92,11 @@ export const IntroCard: React.FC<IntroCardProps> = ({ storyTitle, storyIntroduct
       {storyIntroduction && (
         <p style={{
           fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-          fontSize: 24,
+          fontSize: 31,
           color: '#555',
           lineHeight: 1.7,
           textAlign: 'center',
-          maxWidth: 700,
+          maxWidth: 850,
           opacity: introOpacity,
           transform: `translateY(${introY}px)`,
           zIndex: 10,

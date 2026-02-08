@@ -216,7 +216,7 @@ export const RetroCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
             {/* Body text - monospace terminal style */}
             <p style={{
               fontFamily: fontBody,
-              fontSize: 28,
+              fontSize: 36,
               color: inkColor,
               lineHeight: 1.5,
               opacity: descReveal,
@@ -320,11 +320,11 @@ export const RetroCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
         {/* Description */}
         <p style={{
           fontFamily: fontBody,
-          fontSize: 32,
+          fontSize: 42,
           color: '#eee',
           lineHeight: 1.4,
           opacity: descReveal,
-          maxWidth: 900,
+          maxWidth: 1000,
           textShadow: '2px 2px 0px #000',
         }}>
           {event.description}
