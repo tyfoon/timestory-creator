@@ -32,10 +32,12 @@ export interface SoundtrackState {
   style: string | null;
   title: string | null;
   audioUrl: string | null;
+  streamAudioUrl: string | null;
   duration: number | null;
   error: string | null;
   startedAt: number | null;
   completedAt: number | null;
+  isStreaming: boolean;
 }
 
 const initialState: SoundtrackState = {
@@ -46,10 +48,12 @@ const initialState: SoundtrackState = {
   style: null,
   title: null,
   audioUrl: null,
+  streamAudioUrl: null,
   duration: null,
   error: null,
   startedAt: null,
   completedAt: null,
+  isStreaming: false,
 };
 
 // Persist state to sessionStorage
@@ -258,6 +262,16 @@ export const useSoundtrackGeneration = () => {
           throw new Error(data.error || 'Status check failed');
         }
 
+        // Check for streaming preview (FIRST_SUCCESS)
+        if (data.data.streamAudioUrl && !state.streamAudioUrl && !state.isStreaming) {
+          console.log('[Soundtrack] Stream preview available - starting playback');
+          setState(prev => ({
+            ...prev,
+            streamAudioUrl: data.data.streamAudioUrl,
+            isStreaming: true,
+          }));
+        }
+
         if (data.data.ready) {
           // Get audio URL
           const audioUrl = data.data.audioUrl || data.data.streamAudioUrl;
@@ -289,6 +303,7 @@ export const useSoundtrackGeneration = () => {
             audioUrl: finalAudioUrl,
             duration: data.data.duration || 180,
             completedAt: Date.now(),
+            isStreaming: false,
           }));
 
           console.log('[Soundtrack] Generation completed!');
