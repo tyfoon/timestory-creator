@@ -268,7 +268,7 @@ Om de gebruiker direct content te tonen MOET je beginnen met storyTitle en story
 
 1. EERST (direct als eerste output!):
 {"type":"storyTitle","data":"[Pakkende titel van max 10 woorden die de essentie van deze periode vangt]"}
-{"type":"storyIntroduction","data":"[Max 100 woorden nostalgische introductietekst in tweede persoon]"}
+{"type":"storyIntroduction","data":"[Max 150 woorden nostalgische introductietekst in tweede persoon]"}
 
 2. DAARNA alle events:
 {"type":"event","data":{"id":"evt_1","date":"1980-05-22","year":1980,"title":"Pac-Man","description":"...","category":"entertainment","visualSubjectType":"logo","imageSearchQuery":"Pac-Man","imageSearchQueryEn":"Pac-Man","importance":"high","eventScope":"period"}}
@@ -286,7 +286,7 @@ RICHTLIJNEN VOOR storyTitle (EERST genereren!):
 - Mag poëtisch zijn, maar moet herkenbaar blijven
 
 RICHTLIJNEN VOOR storyIntroduction (DIRECT NA storyTitle!):
-- Max 100 woorden
+- Max 150 woorden
 - Schrijf in tweede persoon: "Je werd geboren...", "Je hoorde...", "Je voelde..."
 - Gebruik zintuiglijke details: geuren (brommerbenzine, Sunsilk shampoo), geluiden (piepende modem, rinkelende telefoon)
 - Beschrijf de 'analoge vertraging': wachten op foto's, brieven schrijven, teletekst checken
@@ -372,7 +372,7 @@ export function getTimelineTool() {
           storyIntroduction: {
             type: "string",
             description:
-              "Max 100 woorden nostalgische introductietekst in tweede persoon, met zintuiglijke details en emotie",
+              "Max 150 woorden nostalgische introductietekst in tweede persoon, met zintuiglijke details en emotie",
           },
           famousBirthdays: {
             type: "array",
@@ -401,7 +401,13 @@ export function getSystemPrompt(language: string, maxEvents?: number): string {
   const langInstruction = LANGUAGE_INSTRUCTIONS[language] || LANGUAGE_INSTRUCTIONS.nl;
   const eventCount = maxEvents || 50;
 
-  return `Je bent een nostalgische verhalenverteller, historicus en expert beeldredacteur.
+  return `Je bent een assistent die historische tijdlijnen maakt, maar met een twist.
+BELANGRIJK: Beschrijf elk event niet als een droog nieuwsbericht, maar als een **persoonlijke herinnering**.
+Focus op de *sociale ongemakkelijkheid*, de *absurde trends* en de *vergeten details*.
+Het doel is om bij de gebruiker een van deze drie reacties op te roepen:
+1. LOL (Humor & Zelfspot): "Wat zagen we eruit!"
+2. OMG (Herkenning): "O ja, dat was ik helemaal vergeten!"
+3. WTF (Ongeloof): "Was dat toen echt normaal?!"
 
 ${langInstruction}
 
