@@ -261,17 +261,17 @@ const HomeV3 = () => {
   // Track if step 3 has already auto-collapsed once
   const [step3HasAdvanced, setStep3HasAdvanced] = useState(false);
 
-  // Focus city input when birth date becomes complete
+  // Focus city input when period is selected in Step 2
   useEffect(() => {
-    if (isBirthDateComplete && currentStep === 1) {
-      // Small delay to ensure the year field has finished processing
+    if (selectedPeriod && currentStep === 2) {
+      // Small delay to ensure the period selection has been processed
       setTimeout(() => {
         cityInputRef.current?.focus();
       }, 50);
     }
-  }, [isBirthDateComplete, currentStep]);
+  }, [selectedPeriod, currentStep]);
 
-  // Auto-advance step 1 only after Enter is pressed in city field
+  // Auto-advance step 1 only after Enter is pressed
   useEffect(() => {
     if (step1ManualAdvance && isBirthDateComplete && currentStep === 1) {
       setTimeout(() => setCurrentStep(2), 300);
@@ -279,12 +279,12 @@ const HomeV3 = () => {
     }
   }, [step1ManualAdvance, isBirthDateComplete, currentStep]);
 
-  // Auto-advance step 2 only the FIRST time a period is selected
+  // Auto-advance step 2 only the FIRST time a period is selected AND city is filled (or user continues)
+  // Now requires period selection - city is optional but user can continue
   useEffect(() => {
-    if (isStep2Complete && currentStep === 2 && !step2HasAdvanced) {
-      setStep2HasAdvanced(true);
-      setTimeout(() => setCurrentStep(3), 300);
-    }
+    // Don't auto-advance - let user move on naturally after selecting period and optionally filling city
+    // The step is considered "complete" when period is selected
+    // No auto-advance for step 2 anymore since we added city field
   }, [isStep2Complete, currentStep, step2HasAdvanced]);
 
   // Auto-collapse step 3 only the FIRST time both gender and subculture are selected
@@ -295,8 +295,8 @@ const HomeV3 = () => {
     }
   }, [isStep3Complete, currentStep, step3HasAdvanced]);
 
-  // Handle Enter key on Step 1 city field - this is the only way to advance to step 2
-  const handleCityKeyDown = (e: React.KeyboardEvent) => {
+  // Handle Enter key on Step 1 - now just in the DateInput area
+  const handleStep1KeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && isBirthDateComplete) {
       e.preventDefault();
       setStep1Completed(true);
@@ -478,11 +478,10 @@ const HomeV3 = () => {
                         <Baby className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground">Geboortedatum & Woonplaats</h3>
+                        <h3 className="font-semibold text-foreground">Geboortedatum</h3>
                         {isBirthDateComplete && (
                           <p className="text-sm text-muted-foreground">
                             {String(birthDate.day).padStart(2, '0')}-{String(birthDate.month).padStart(2, '0')}-{birthDate.year}
-                            {optionalData.city && ` • ${optionalData.city}`}
                           </p>
                         )}
                       </div>
@@ -499,6 +498,7 @@ const HomeV3 = () => {
                       initial="hidden"
                       animate="visible"
                       exit="exit"
+                      onKeyDown={handleStep1KeyDown}
                     >
                       <DateInput
                         label={t("birthDateQuestion") as string}
@@ -507,25 +507,9 @@ const HomeV3 = () => {
                         error={errors.birthDate}
                       />
                       
-                      {/* City - in Step 1 */}
-                      <div className="mt-4 space-y-2">
-                        <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
-                          <MapPin className="h-4 w-4 text-accent" />
-                          {t("cityLabel") as string}
-                        </Label>
-                        <Input
-                          ref={cityInputRef}
-                          placeholder={t("cityPlaceholder") as string}
-                          value={optionalData.city || ""}
-                          onChange={(e) => setOptionalData({ ...optionalData, city: e.target.value })}
-                          onKeyDown={handleCityKeyDown}
-                          className="bg-card h-10"
-                        />
-                      </div>
-                      
                       {isBirthDateComplete && (
                         <p className="text-xs text-muted-foreground mt-4 text-center">
-                          Druk op Enter bij woonplaats om verder te gaan
+                          Druk op Enter om verder te gaan
                         </p>
                       )}
                     </motion.div>
@@ -560,6 +544,7 @@ const HomeV3 = () => {
                           <p className="text-sm text-muted-foreground">
                             {mainPeriodOptions.find(p => p.id === selectedPeriod)?.label}
                             {customStartYear && customEndYear && ` (${customStartYear}-${customEndYear})`}
+                            {optionalData.city && ` • ${optionalData.city}`}
                           </p>
                         )}
                       </div>
@@ -605,6 +590,38 @@ const HomeV3 = () => {
                             </button>
                           ))}
                         </div>
+                        
+                        {/* City - in Step 2 after period selection */}
+                        {selectedPeriod && (
+                          <div className="mt-4 space-y-2">
+                            <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                              <MapPin className="h-4 w-4 text-accent" />
+                              Welke plaats was in die tijd het belangrijkste?
+                            </Label>
+                            <Input
+                              ref={cityInputRef}
+                              placeholder={t("cityPlaceholder") as string}
+                              value={optionalData.city || ""}
+                              onChange={(e) => setOptionalData({ ...optionalData, city: e.target.value })}
+                              className="bg-card h-10"
+                            />
+                          </div>
+                        )}
+                        
+                        {/* Next button */}
+                        {selectedPeriod && (
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setStep2HasAdvanced(true);
+                              setCurrentStep(3);
+                            }}
+                            className="w-full mt-4 gap-2"
+                          >
+                            Volgende
+                            <ArrowRight className="h-4 w-4" />
+                          </Button>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
