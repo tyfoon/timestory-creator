@@ -229,57 +229,57 @@ serve(async (req) => {
       // ============================================
       // MODE A (V1): Quick mode - no events, just basic data
       // ============================================
+      const city = formData?.city || personalData?.city;
+      const periodDescription = formData?.periodType === 'childhood' ? 'jeugd (ongeveer 6-12 jaar)' 
+        : formData?.periodType === 'puberty' ? 'puberteit (ongeveer 12-18 jaar)'
+        : formData?.periodType === 'young-adult' ? 'jonge volwassenheid (ongeveer 18-25 jaar)'
+        : 'levensfase';
+      const subcultureName = subculture?.myGroup || null;
+      const birthYearInfo = formData?.birthYear ? `geboren in ${formData.birthYear}` : '';
+
       systemPrompt = `Je bent een getalenteerde Nederlandse songwriter die nostalgische liedjes schrijft.
-Je specialiteit is het oproepen van de sfeer en het gevoel van een bepaald tijdperk zonder specifieke gebeurtenissen te noemen.
+Je specialiteit is het oproepen van de sfeer en het gevoel van een bepaald tijdperk met CONCRETE verwijzingen naar de opgegeven locatie en subcultuur.
 
 STIJL: ${suggestedStyle} (periode: ${startYear}-${endYear})
 TAAL: Nederlands
 
 STRUCTUUR:
-- Couplet 1 (4-6 regels): Schets de sfeer van de tijd
+- Couplet 1 (4-6 regels): Schets de tijd en plek - NOEM DE STAD EXPLICIET
 - Refrein (4 regels): Emotionele kern, herkenbaar en meezingbaar
-- Couplet 2 (4-6 regels): Algemene herinneringen aan die tijd
+- Couplet 2 (4-6 regels): Herinneringen aan de subcultuur/stijl van die tijd
 - Refrein (herhaling)
 - Bridge (2-4 regels): Reflectie
 - Outro/Refrein
 
 REGELS:
-1. Gebruik GEEN specifieke nieuwsfeiten of gebeurtenissen (die kennen we nog niet)
-2. Focus op de SFEER en het GEVOEL van de periode (mode, muziek, technologie van toen)
-3. Als er een stad is gegeven, verwijs er subtiel naar
-4. Als er een subcultuur is, verwijs naar de stijl en het gevoel van die groep
+1. VERWERK DE STAD (${city || 'niet opgegeven'}) CONCREET in de tekst - noem straten, pleinen, bekende plekken van die stad als je die kent
+2. VERWERK DE SUBCULTUUR (${subcultureName || 'niet opgegeven'}) - beschrijf de kleding, muziek, hang-outs, attitude van die groep
+3. VERWERK DE PERIODE ${startYear}-${endYear} - noem typische dingen uit die tijd (technologie, mode, muziek, TV-programma's)
+4. Focus op de ${periodDescription} - beschrijf hoe het voelde om in die levensfase te zitten
 5. Gebruik rijm waar mogelijk, maar forceer het niet
 6. De tekst moet geschikt zijn om gezongen te worden (let op lettergrepen)
-7. Maak het nostalgisch maar niet té zoetsappig`;
+7. Maak het nostalgisch maar niet té zoetsappig
+8. GEEN specifieke nieuwsfeiten of wereldgebeurtenissen - focus op de persoonlijke beleving`;
 
-      const city = formData?.city || personalData?.city;
-      const periodDescription = formData?.periodType === 'childhood' ? 'jeugd' 
-        : formData?.periodType === 'puberty' ? 'puberteit'
-        : formData?.periodType === 'young-adult' ? 'jonge volwassenheid'
-        : 'levensfase';
+      userPrompt = `Schrijf een nostalgisch lied voor iemand ${birthYearInfo} over hun ${periodDescription} in de periode ${startYear}-${endYear}.
 
-      userPrompt = `Schrijf een nostalgisch lied over de periode ${startYear}-${endYear}.
+VERPLICHTE ELEMENTEN (verwerk deze EXPLICIET in de tekst):
+${city ? `- STAD: ${city} - noem deze stad bij naam en verwijs naar lokale plekken, sfeer, dialectwoorden indien van toepassing` : '- Geen specifieke stad opgegeven'}
+${subcultureName ? `- SUBCULTUUR: ${subcultureName} - beschrijf hun stijl, muziek, kleding, attitude, hang-outs` : '- Geen specifieke subcultuur'}
+- TIJDPERK: ${startYear}-${endYear} - verwijs naar mode, muziek, technologie van toen
+- LEVENSFASE: ${periodDescription}
 
-BESCHIKBARE INFORMATIE:
-${city ? `- Plaats: ${city}` : '- Geen plaats bekend'}
-${subculture?.myGroup ? `- Subcultuur/stijl: ${subculture.myGroup}` : '- Geen specifieke subcultuur'}
-- Periode/levensfase: ${periodDescription}
-- Tijdperk sfeer: ${suggestedStyle}
+Dit is de EERSTE versie van het lied. Later kunnen specifieke herinneringen worden toegevoegd.
 
-BELANGRIJK: Je hebt nog GEEN specifieke nieuwsfeiten. Schrijf een lied dat de SFEER van dit tijdperk vangt:
-- Hoe voelde het om toen op te groeien?
-- Welke muziek, mode, technologie hoorde bij die tijd?
-- Welke dromen en gevoelens had je toen?
+BELANGRIJK: De luisteraar moet direct herkennen dat dit over ${city || 'hun stad'} gaat en over de ${subcultureName || 'jeugdcultuur'} van die tijd!
 
-Dit is een EERSTE versie die later kan worden aangevuld met specifieke herinneringen.
-
-Genereer nu de songtekst in het Nederlands. Geef ook een korte beschrijving van de muziekstijl (max 10 woorden) die past bij dit lied.
+Genereer nu de songtekst in het Nederlands.
 
 Format je output als JSON:
 {
   "lyrics": "De volledige songtekst hier...",
   "style": "Korte muziekstijl beschrijving (bijv. '1988 Synthpop met disco invloeden')",
-  "title": "Titel van het lied"
+  "title": "Titel van het lied - mag verwijzing naar stad of subcultuur bevatten"
 }`;
 
     } else {
