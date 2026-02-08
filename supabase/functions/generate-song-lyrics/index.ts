@@ -29,6 +29,35 @@ interface SubcultureData {
 
 type Gender = 'male' | 'female' | 'none';
 
+// Helper function to generate nuanced style tags based on gender and birth year
+function getNuancedStyleTags(gender: Gender, birthYear?: number): { mood: string[], texture: string[] } {
+  const mood: string[] = [];
+  const texture: string[] = [];
+
+  // Mood tags based on gender
+  if (gender === 'male') {
+    mood.push('anthemic', 'driving', 'energetic');
+  } else if (gender === 'female') {
+    mood.push('melodic', 'sentimental', 'warm');
+  }
+
+  // Texture tags based on generation (birth year)
+  if (birthYear) {
+    if (birthYear < 1980) {
+      // Gen X
+      texture.push('analogue sound', 'raw production');
+    } else if (birthYear >= 1980 && birthYear <= 1996) {
+      // Millennials
+      texture.push('polished', 'radio hit');
+    } else if (birthYear > 1996) {
+      // Gen Z
+      texture.push('lo-fi aesthetics', 'dreamy reverb');
+    }
+  }
+
+  return { mood, texture };
+}
+
 // Extended request body to support both Mode A and Mode B
 interface RequestBody {
   // Mode B (full): events are present
@@ -221,6 +250,14 @@ serve(async (req) => {
       console.log(`Style determined by era (${midYear}): ${suggestedStyle}`);
     }
 
+    // Get nuanced mood and texture tags based on gender and birth year
+    const birthYear = formData?.birthYear;
+    const nuancedTags = getNuancedStyleTags(gender || 'none', birthYear);
+    const moodTags = nuancedTags.mood.join(', ');
+    const textureTags = nuancedTags.texture.join(', ');
+    
+    console.log(`Nuanced tags - Mood: [${moodTags}], Texture: [${textureTags}]`);
+
     // Build prompt based on mode
     let systemPrompt: string;
     let userPrompt: string;
@@ -238,12 +275,26 @@ serve(async (req) => {
       const subcultureName = subculture?.myGroup || null;
       const birthYearInfo = formData?.birthYear ? `geboren in ${formData.birthYear}` : '';
 
+      // Build the complete style string with mood and texture tags
+      const styleTagsParts = [suggestedStyle];
+      if (moodTags) styleTagsParts.push(moodTags);
+      if (textureTags) styleTagsParts.push(textureTags);
+      styleTagsParts.push('fast tempo', 'punchy', 'radio edit', 'short intro');
+      const completeStyleTags = styleTagsParts.join(', ');
+
       systemPrompt = `Je bent een getalenteerde Nederlandse songwriter die KORTE, PAKKENDE nostalgische liedjes schrijft.
 Je specialiteit is compacte "radio edit" nummers die direct to-the-point komen.
 
-STIJL: ${suggestedStyle} (periode: ${startYear}-${endYear})
+STIJL: ${completeStyleTags} (periode: ${startYear}-${endYear})
 TAAL: Nederlands
 DOEL: Kort nummer van MAX 1:30-2:00 minuten
+
+=== MUZIEKSTIJL INSTRUCTIES ===
+De uiteindelijke "style" tag moet deze elementen bevatten:
+- Genre: ${suggestedStyle}
+${moodTags ? `- Mood: ${moodTags}` : ''}
+${textureTags ? `- Texture: ${textureTags}` : ''}
+- Tempo: fast tempo, punchy, radio edit, short intro
 
 === STRIKTE STRUCTUUR (RADIO EDIT) ===
 Gebruik EXACT deze structuur met Suno section tags:
@@ -298,7 +349,7 @@ De luisteraar moet direct herkennen dat dit over ${city || 'hun stad'} gaat!
 Format je output als JSON:
 {
   "lyrics": "De volledige songtekst met [Section Tags]...",
-  "style": "Muziekstijl MET tempo-indicaties, bijv: '1985 Synthpop, fast tempo, punchy, radio edit, short intro'",
+  "style": "${completeStyleTags}",
   "title": "Pakkende korte titel"
 }`;
 
@@ -306,11 +357,24 @@ Format je output als JSON:
       // ============================================
       // MODE B (V2): Full mode - with events and personal details
       // ============================================
+      
+      // Build the complete style string with mood and texture tags for Mode B
+      const styleTagsPartsB = [suggestedStyle];
+      if (moodTags) styleTagsPartsB.push(moodTags);
+      if (textureTags) styleTagsPartsB.push(textureTags);
+      const completeStyleTagsB = styleTagsPartsB.join(', ');
+
       systemPrompt = `Je bent een getalenteerde Nederlandse songwriter die nostalgische liedjes schrijft.
 Je specialiteit is het verweven van persoonlijke herinneringen met historische gebeurtenissen tot een emotioneel en herkenbaar lied.
 
-STIJL: ${suggestedStyle} (periode: ${startYear}-${endYear})
+STIJL: ${completeStyleTagsB} (periode: ${startYear}-${endYear})
 TAAL: Nederlands
+
+=== MUZIEKSTIJL INSTRUCTIES ===
+De uiteindelijke "style" tag moet deze elementen bevatten:
+- Genre: ${suggestedStyle}
+${moodTags ? `- Mood: ${moodTags}` : ''}
+${textureTags ? `- Texture: ${textureTags}` : ''}
 
 STRUCTUUR:
 - Couplet 1 (4-6 regels): Schets de tijd en setting
@@ -358,12 +422,12 @@ ${personalEvents ? `PERSOONLIJKE MIJLPALEN:\n${personalEvents}` : ''}
 SAMENVATTING VAN DE PERIODE:
 ${summary || 'Geen samenvatting beschikbaar'}
 
-Genereer nu de songtekst in het Nederlands. Geef ook een korte beschrijving van de muziekstijl (max 10 woorden) die past bij dit lied.
+Genereer nu de songtekst in het Nederlands.
 
 Format je output als JSON:
 {
   "lyrics": "De volledige songtekst hier...",
-  "style": "Korte muziekstijl beschrijving (bijv. '1988 Synthpop met disco invloeden')",
+  "style": "${completeStyleTagsB}",
   "title": "Titel van het lied"
 }`;
     }
