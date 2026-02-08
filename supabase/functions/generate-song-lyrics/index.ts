@@ -29,14 +29,30 @@ interface SubcultureData {
 
 type Gender = 'male' | 'female' | 'none';
 
+// Extended request body to support both Mode A and Mode B
 interface RequestBody {
-  events: TimelineEvent[];
-  summary: string;
-  personalData: PersonalData;
+  // Mode B (full): events are present
+  events?: TimelineEvent[];
+  summary?: string;
+  
+  // Mode A (quick): just formData basics
+  formData?: {
+    birthYear?: number;
+    city?: string;
+    periodType?: string;
+    startYear?: number;
+    endYear?: number;
+  };
+  
+  // Shared fields
+  personalData?: PersonalData;
   subculture?: SubcultureData;
   gender?: Gender;
   startYear: number;
   endYear: number;
+  
+  // Mode indicator (optional, inferred from events presence)
+  mode?: 'quick' | 'full';
 }
 
 serve(async (req) => {
@@ -52,11 +68,22 @@ serve(async (req) => {
     }
 
     const body: RequestBody = await req.json();
-    const { events, summary, personalData, subculture, gender, startYear, endYear } = body;
+    const { events, summary, personalData, subculture, gender, startYear, endYear, formData, mode } = body;
 
-    console.log(`Generating song lyrics for ${events.length} events, years ${startYear}-${endYear}`);
-    console.log(`Personal data: friends=${personalData.friends}, school=${personalData.school}, nightlife=${personalData.nightlife}`);
+    // Determine which mode we're in
+    const isQuickMode = mode === 'quick' || !events || events.length === 0;
+    
+    console.log(`=== GENERATE SONG LYRICS ===`);
+    console.log(`Mode: ${isQuickMode ? 'QUICK (V1 - zonder events)' : 'FULL (V2 - met events)'}`);
+    console.log(`Years: ${startYear}-${endYear}`);
+    console.log(`Personal data: friends=${personalData?.friends}, school=${personalData?.school}, nightlife=${personalData?.nightlife}`);
     console.log(`Subculture: ${subculture?.myGroup || 'none'}, Gender: ${gender || 'none'}`);
+    if (formData) {
+      console.log(`FormData: birthYear=${formData.birthYear}, city=${formData.city}, period=${formData.periodType}`);
+    }
+    if (!isQuickMode && events) {
+      console.log(`Events count: ${events.length}`);
+    }
 
     // Determine vocal type based on gender
     let vocalType = "";
@@ -194,20 +221,72 @@ serve(async (req) => {
       console.log(`Style determined by era (${midYear}): ${suggestedStyle}`);
     }
 
-    // Build context from events
-    const eventHighlights = events
-      .filter(e => e.category !== 'personal')
-      .slice(0, 10)
-      .map(e => `- ${e.year}: ${e.title}`)
-      .join('\n');
+    // Build prompt based on mode
+    let systemPrompt: string;
+    let userPrompt: string;
 
-    const personalEvents = events
-      .filter(e => e.category === 'personal')
-      .slice(0, 5)
-      .map(e => `- ${e.title}`)
-      .join('\n');
+    if (isQuickMode) {
+      // ============================================
+      // MODE A (V1): Quick mode - no events, just basic data
+      // ============================================
+      systemPrompt = `Je bent een getalenteerde Nederlandse songwriter die nostalgische liedjes schrijft.
+Je specialiteit is het oproepen van de sfeer en het gevoel van een bepaald tijdperk zonder specifieke gebeurtenissen te noemen.
 
-    const systemPrompt = `Je bent een getalenteerde Nederlandse songwriter die nostalgische liedjes schrijft.
+STIJL: ${suggestedStyle} (periode: ${startYear}-${endYear})
+TAAL: Nederlands
+
+STRUCTUUR:
+- Couplet 1 (4-6 regels): Schets de sfeer van de tijd
+- Refrein (4 regels): Emotionele kern, herkenbaar en meezingbaar
+- Couplet 2 (4-6 regels): Algemene herinneringen aan die tijd
+- Refrein (herhaling)
+- Bridge (2-4 regels): Reflectie
+- Outro/Refrein
+
+REGELS:
+1. Gebruik GEEN specifieke nieuwsfeiten of gebeurtenissen (die kennen we nog niet)
+2. Focus op de SFEER en het GEVOEL van de periode (mode, muziek, technologie van toen)
+3. Als er een stad is gegeven, verwijs er subtiel naar
+4. Als er een subcultuur is, verwijs naar de stijl en het gevoel van die groep
+5. Gebruik rijm waar mogelijk, maar forceer het niet
+6. De tekst moet geschikt zijn om gezongen te worden (let op lettergrepen)
+7. Maak het nostalgisch maar niet té zoetsappig`;
+
+      const city = formData?.city || personalData?.city;
+      const periodDescription = formData?.periodType === 'childhood' ? 'jeugd' 
+        : formData?.periodType === 'puberty' ? 'puberteit'
+        : formData?.periodType === 'young-adult' ? 'jonge volwassenheid'
+        : 'levensfase';
+
+      userPrompt = `Schrijf een nostalgisch lied over de periode ${startYear}-${endYear}.
+
+BESCHIKBARE INFORMATIE:
+${city ? `- Plaats: ${city}` : '- Geen plaats bekend'}
+${subculture?.myGroup ? `- Subcultuur/stijl: ${subculture.myGroup}` : '- Geen specifieke subcultuur'}
+- Periode/levensfase: ${periodDescription}
+- Tijdperk sfeer: ${suggestedStyle}
+
+BELANGRIJK: Je hebt nog GEEN specifieke nieuwsfeiten. Schrijf een lied dat de SFEER van dit tijdperk vangt:
+- Hoe voelde het om toen op te groeien?
+- Welke muziek, mode, technologie hoorde bij die tijd?
+- Welke dromen en gevoelens had je toen?
+
+Dit is een EERSTE versie die later kan worden aangevuld met specifieke herinneringen.
+
+Genereer nu de songtekst in het Nederlands. Geef ook een korte beschrijving van de muziekstijl (max 10 woorden) die past bij dit lied.
+
+Format je output als JSON:
+{
+  "lyrics": "De volledige songtekst hier...",
+  "style": "Korte muziekstijl beschrijving (bijv. '1988 Synthpop met disco invloeden')",
+  "title": "Titel van het lied"
+}`;
+
+    } else {
+      // ============================================
+      // MODE B (V2): Full mode - with events and personal details
+      // ============================================
+      systemPrompt = `Je bent een getalenteerde Nederlandse songwriter die nostalgische liedjes schrijft.
 Je specialiteit is het verweven van persoonlijke herinneringen met historische gebeurtenissen tot een emotioneel en herkenbaar lied.
 
 STIJL: ${suggestedStyle} (periode: ${startYear}-${endYear})
@@ -229,14 +308,27 @@ REGELS:
 5. Verwijs naar minstens 3 historische gebeurtenissen uit de lijst
 6. Noem de persoonlijke details (vrienden, school, uitgaansleven) als die gegeven zijn`;
 
-    const userPrompt = `Schrijf een nostalgisch lied voor iemand geboren/opgegroeid in de periode ${startYear}-${endYear}.
+      // Build context from events
+      const eventHighlights = events!
+        .filter(e => e.category !== 'personal')
+        .slice(0, 10)
+        .map(e => `- ${e.year}: ${e.title}`)
+        .join('\n');
+
+      const personalEvents = events!
+        .filter(e => e.category === 'personal')
+        .slice(0, 5)
+        .map(e => `- ${e.title}`)
+        .join('\n');
+
+      userPrompt = `Schrijf een nostalgisch lied voor iemand geboren/opgegroeid in de periode ${startYear}-${endYear}.
 
 PERSOONLIJKE INFORMATIE:
-${personalData.firstName ? `- Naam: ${personalData.firstName}` : ''}
-${personalData.city ? `- Stad: ${personalData.city}` : ''}
-${personalData.friends ? `- Beste vrienden: ${personalData.friends}` : ''}
-${personalData.school ? `- School: ${personalData.school}` : ''}
-${personalData.nightlife ? `- Favoriete uitgaansgelegenheden: ${personalData.nightlife}` : ''}
+${personalData?.firstName ? `- Naam: ${personalData.firstName}` : ''}
+${personalData?.city ? `- Stad: ${personalData.city}` : ''}
+${personalData?.friends ? `- Beste vrienden: ${personalData.friends}` : ''}
+${personalData?.school ? `- School: ${personalData.school}` : ''}
+${personalData?.nightlife ? `- Favoriete uitgaansgelegenheden: ${personalData.nightlife}` : ''}
 
 BELANGRIJKE GEBEURTENISSEN UIT DIE TIJD:
 ${eventHighlights}
@@ -244,7 +336,7 @@ ${eventHighlights}
 ${personalEvents ? `PERSOONLIJKE MIJLPALEN:\n${personalEvents}` : ''}
 
 SAMENVATTING VAN DE PERIODE:
-${summary}
+${summary || 'Geen samenvatting beschikbaar'}
 
 Genereer nu de songtekst in het Nederlands. Geef ook een korte beschrijving van de muziekstijl (max 10 woorden) die past bij dit lied.
 
@@ -254,6 +346,7 @@ Format je output als JSON:
   "style": "Korte muziekstijl beschrijving (bijv. '1988 Synthpop met disco invloeden')",
   "title": "Titel van het lied"
 }`;
+    }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -324,6 +417,7 @@ Format je output als JSON:
     }
 
     console.log(`Generated song: "${parsedContent.title}" in style "${finalStyle}"`);
+    console.log(`Mode used: ${isQuickMode ? 'QUICK (V1)' : 'FULL (V2)'}`);
 
     return new Response(JSON.stringify({
       success: true,
@@ -332,6 +426,7 @@ Format je output als JSON:
         style: finalStyle,
         title: parsedContent.title,
         suggestedGenre: suggestedStyle,
+        mode: isQuickMode ? 'quick' : 'full',
       }
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
-import { FormData } from '@/types/form';
+import { FormData, OptionalData } from '@/types/form';
 import { TimelineEvent, FamousBirthday, SearchTraceEntry } from '@/types/timeline';
 import { generateTimelineStreaming } from '@/lib/api/timeline';
 import { useClientImageSearch } from '@/hooks/useClientImageSearch';
@@ -18,6 +18,8 @@ import { MediaButtons } from '@/components/story/MediaButtons';
 import { addToBlacklist } from '@/hooks/useImageBlacklist';
 import { VideoDialog } from '@/components/video/VideoDialog';
 import { MusicVideoGenerator } from '@/components/MusicVideoGenerator';
+import { SoundtrackFooter } from '@/components/story/SoundtrackFooter';
+import { PersonalizeSoundtrackDialog } from '@/components/story/PersonalizeSoundtrackDialog';
 
 // Placeholder images by category
 import birthdayPlaceholder from '@/assets/placeholders/birthday.jpg';
@@ -889,7 +891,7 @@ const TimelineStoryPage = () => {
   const [currentYear, setCurrentYear] = useState<number | null>(null);
   const [currentMaxEvents, setCurrentMaxEvents] = useState<number | undefined>(undefined);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
-  
+  const [isPersonalizeDialogOpen, setIsPersonalizeDialogOpen] = useState(false);
   const formDataRef = useRef<FormData | null>(null);
   const receivedEventsRef = useRef<TimelineEvent[]>([]);
   const eventRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -1376,6 +1378,25 @@ const TimelineStoryPage = () => {
         storyTitle={storyTitle}
         storyIntroduction={storyIntroduction}
       />
+
+      {/* Soundtrack Footer - fixed at bottom */}
+      <SoundtrackFooter
+        events={events}
+        summary={storyIntroduction}
+        formData={formData}
+        onOpenPersonalizeDialog={() => setIsPersonalizeDialogOpen(true)}
+      />
+
+      {/* Personalize Soundtrack Dialog */}
+      {formData && (
+        <PersonalizeSoundtrackDialog
+          open={isPersonalizeDialogOpen}
+          onOpenChange={setIsPersonalizeDialogOpen}
+          events={events}
+          summary={storyIntroduction}
+          formData={formData}
+        />
+      )}
     </div>
   );
 };
