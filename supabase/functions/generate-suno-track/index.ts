@@ -57,10 +57,15 @@ serve(async (req) => {
       : lyrics;
 
     // Truncate style if too long (max 1000 chars for V4_5ALL)
+    // Also ensure "short song" and "fast tempo" are included for length control
     const maxStyleLength = 200;
-    const truncatedStyle = style.length > maxStyleLength
-      ? style.substring(0, maxStyleLength)
-      : style;
+    let enhancedStyle = style;
+    if (!style.toLowerCase().includes('short song')) {
+      enhancedStyle = `${style}, short song, fast tempo`;
+    }
+    const truncatedStyle = enhancedStyle.length > maxStyleLength
+      ? enhancedStyle.substring(0, maxStyleLength)
+      : enhancedStyle;
 
     // Truncate title if too long (max 80 chars for V4_5ALL)
     const maxTitleLength = 75;
