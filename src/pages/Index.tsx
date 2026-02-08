@@ -73,6 +73,7 @@ const Index = () => {
   const navigate = useNavigate();
   const timelineLengthRef = useRef<HTMLDivElement>(null);
   const cityInputRef = useRef<HTMLDivElement>(null);
+  const periodSectionRef = useRef<HTMLDivElement>(null);
 
   // Restore form state from sessionStorage on mount
   const getInitialState = () => {
@@ -342,12 +343,18 @@ const Index = () => {
                 value={birthDate}
                 onChange={setBirthDate}
                 error={errors.birthDate}
+                onComplete={() => {
+                  // Auto-scroll to period selection after date is complete
+                  setTimeout(() => {
+                    periodSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  }, 100);
+                }}
               />
             </div>
 
             {/* Step 2: Period selection - 2x2 grid */}
             {isBirthDateComplete && (
-              <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div ref={periodSectionRef} className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                 <Label className="text-sm font-medium text-foreground">{t("periodQuestion") as string}</Label>
                 {errors.period && <p className="text-sm text-destructive">{errors.period}</p>}
 
