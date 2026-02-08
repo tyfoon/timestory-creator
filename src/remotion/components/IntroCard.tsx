@@ -53,7 +53,7 @@ export const IntroCard: React.FC<IntroCardProps> = ({ storyTitle, storyIntroduct
         color: '#1a1a1a',
         lineHeight: 1.0,
         textAlign: 'center',
-        maxWidth: 900,
+        maxWidth: 1400,
         marginBottom: 48,
         zIndex: 10,
       }}>
@@ -96,7 +96,7 @@ export const IntroCard: React.FC<IntroCardProps> = ({ storyTitle, storyIntroduct
           color: '#555',
           lineHeight: 1.7,
           textAlign: 'center',
-          maxWidth: 850,
+          maxWidth: 1200,
           opacity: introOpacity,
           transform: `translateY(${introY}px)`,
           zIndex: 10,
