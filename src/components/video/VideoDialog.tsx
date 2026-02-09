@@ -115,6 +115,8 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const [showFullscreenOverlay, setShowFullscreenOverlay] = useState(false);
   const [hasTriedAutoFullscreen, setHasTriedAutoFullscreen] = useState(false);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
   // Generate audio for all events - PARALLEL for speed, EXACT durations via Web Audio API
   const handleGenerateAudio = useCallback(async () => {
     setIsGeneratingAudio(true);
@@ -233,6 +235,37 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
 
   // Check if we're in music video mode (background music provided)
   const isMusicVideoMode = !!backgroundMusicUrl && !!backgroundMusicDuration;
+
+  // Wake Lock: keep screen awake while video is playing
+  useEffect(() => {
+    const shouldLock = isReady || isMusicVideoMode;
+    const acquireWakeLock = async () => {
+      if ('wakeLock' in navigator && shouldLock) {
+        try {
+          wakeLockRef.current = await navigator.wakeLock.request('screen');
+        } catch (err) {
+          console.log('Wake lock request failed:', err);
+        }
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && shouldLock) {
+        acquireWakeLock();
+      }
+    };
+
+    acquireWakeLock();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (wakeLockRef.current) {
+        wakeLockRef.current.release().catch(() => {});
+        wakeLockRef.current = null;
+      }
+    };
+  }, [isReady, isMusicVideoMode]);
 
   // Calculate total video duration based on variant and music mode
   const totalDuration = useMemo(() => {
