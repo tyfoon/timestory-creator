@@ -301,12 +301,12 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
       {/* Elegant floating text card - bottom left, larger */}
       <div style={{
         position: 'absolute',
-        bottom: 70,
-        left: 70,
-        maxWidth: 580,
+        bottom: 60,
+        left: 60,
+        maxWidth: 720,
         backgroundColor: 'rgba(255, 255, 255, 0.97)',
         backdropFilter: 'blur(12px)',
-        padding: '40px 48px',
+        padding: '48px 56px',
         borderRadius: 14,
         boxShadow: '0 35px 70px -15px rgba(0, 0, 0, 0.25)',
         zIndex: 20,
@@ -314,11 +314,11 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
         {/* Date - whisper small */}
         <div style={{
           fontFamily: fontMono,
-          fontSize: 12,
+          fontSize: 14,
           textTransform: 'uppercase',
           letterSpacing: '0.25em',
           color: '#888',
-          marginBottom: 16,
+          marginBottom: 18,
         }}>
           {event.date}
         </div>
@@ -326,11 +326,11 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
         {/* Title - medium serif, weighted */}
         <h1 style={{
           fontFamily: fontSerif,
-          fontSize: 42,
+          fontSize: 52,
           fontWeight: 700,
           color: '#1a1a1a',
           lineHeight: 1.15,
-          marginBottom: 22,
+          marginBottom: 24,
           transform: `translateY(${titleY}px)`,
         }}>
           {event.title}
@@ -339,10 +339,10 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
         {/* Description - light, airy */}
         <p style={{
           fontFamily: fontSans,
-          fontSize: 29,
+          fontSize: 34,
           fontWeight: 300,
           color: '#555',
-          lineHeight: 1.7,
+          lineHeight: 1.65,
           opacity: descOpacity,
         }}>
           {event.description}
