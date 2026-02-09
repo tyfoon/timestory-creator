@@ -1,9 +1,9 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { Player } from '@remotion/player';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Video, Volume2, AlertCircle, Music, Tv, Camera, Layers, Mic, Share2 } from 'lucide-react';
+import { Loader2, Video, Volume2, AlertCircle, Music, Tv, Camera, Layers, Mic, Share2, Maximize } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { TimelineEvent } from '@/types/timeline';
@@ -112,7 +112,9 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
   const [videoVariant, setVideoVariant] = useState<VideoVariant>('slideshow');
   const [voiceProvider, setVoiceProvider] = useState<VoiceProvider>('google');
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
-
+  const playerContainerRef = useRef<HTMLDivElement>(null);
+  const [showFullscreenOverlay, setShowFullscreenOverlay] = useState(false);
+  const [hasTriedAutoFullscreen, setHasTriedAutoFullscreen] = useState(false);
   // Generate audio for all events - PARALLEL for speed, EXACT durations via Web Audio API
   const handleGenerateAudio = useCallback(async () => {
     setIsGeneratingAudio(true);
@@ -265,6 +267,8 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
       setEnableVhsEffect(false);
       setVideoVariant('slideshow');
       setVoiceProvider('google');
+      setShowFullscreenOverlay(false);
+      setHasTriedAutoFullscreen(false);
     }
     onOpenChange(newOpen);
   }, [onOpenChange]);
@@ -417,7 +421,30 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
           {(isReady || isMusicVideoMode) && (
             <div className="space-y-2">
               {/* Video player - larger on mobile for better touch controls */}
-              <div className="aspect-video bg-black rounded-lg overflow-hidden min-h-[200px] sm:min-h-0">
+              <div
+                ref={playerContainerRef}
+                className="aspect-video bg-black rounded-lg overflow-hidden min-h-[200px] sm:min-h-0 relative"
+                onClick={() => {
+                  // On mobile, try auto-fullscreen on first interaction with the player
+                  if (!hasTriedAutoFullscreen && window.innerWidth < 768) {
+                    setHasTriedAutoFullscreen(true);
+                    const el = playerContainerRef.current;
+                    if (el) {
+                      const requestFs = el.requestFullscreen
+                        || (el as any).webkitRequestFullscreen
+                        || (el as any).webkitEnterFullscreen;
+                      if (requestFs) {
+                        requestFs.call(el).catch(() => {
+                          // Fullscreen denied, show overlay button
+                          setShowFullscreenOverlay(true);
+                        });
+                      } else {
+                        setShowFullscreenOverlay(true);
+                      }
+                    }
+                  }
+                }}
+              >
                 <Player
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   component={videoVariant === 'scrapbook' ? ScrapbookVideoComponent as any : TimelineVideoComponent as any}
@@ -426,7 +453,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                       ? events.map(e => ({ ...e, audioDurationFrames: Math.round(5 * FPS) })) as VideoEvent[]
                       : videoEvents,
                     storyTitle,
-                    storyIntroduction, // Always pass intro text - same as regular video
+                    storyIntroduction,
                     introAudioUrl: isMusicVideoMode ? undefined : introAudioUrl,
                     introDurationFrames: isMusicVideoMode ? 0 : introDurationFrames,
                     fps: FPS,
@@ -443,6 +470,28 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                   controls
                   autoPlay={false}
                 />
+
+                {/* Fullscreen overlay button - shown as fallback on mobile */}
+                {showFullscreenOverlay && window.innerWidth < 768 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const el = playerContainerRef.current;
+                      if (el) {
+                        const requestFs = el.requestFullscreen
+                          || (el as any).webkitRequestFullscreen
+                          || (el as any).webkitEnterFullscreen;
+                        if (requestFs) {
+                          requestFs.call(el).catch(() => {});
+                        }
+                      }
+                      setShowFullscreenOverlay(false);
+                    }}
+                    className="absolute top-2 right-2 z-50 bg-black/70 text-white rounded-full p-2 animate-pulse"
+                  >
+                    <Maximize className="h-5 w-5" />
+                  </button>
+                )}
               </div>
 
               {/* Info bar - stacked on mobile */}
