@@ -1,4 +1,4 @@
-/**
+t; /**
  * =============================================================================
  * AI PROMPTS CONFIGURATIE
  * =============================================================================
@@ -53,6 +53,8 @@ RICHTLIJNEN VOOR SFEER & STIJL:
 
 ⚠️ CRUCIAAL - CULTURELE VALIDATIE (${regionName.toUpperCase()}) ⚠️
 De AI heeft een bias naar Amerikaanse popcultuur. Corrigeer dit op basis van de gekozen regio: **${regionName}**.
+
+***Denk aan de tijdsgeest van de periode die je zoekt in die specieke regio door de lens van de leeftijd van de persoon***
 
 1. **Check de Markt:** Was dit product *echt* een icoon in **${regionName}**?
    - *ALS FOCUS NEDERLAND IS:* Vermijd Amerikaanse clichés zoals "Prom Night", "Yearbook", "Twinkies" of merken die hier niet te koop waren. Gebruik lokale equivalenten (Schoolfeest, Vriendenboekje, Raider, Studio Line).
