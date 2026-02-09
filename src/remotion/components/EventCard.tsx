@@ -97,12 +97,12 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
           {/* Title - MASSIVE, bold serif */}
           <h1 style={{
             fontFamily: fontSerif,
-            fontSize: 100,
+            fontSize: 115,
             fontWeight: 900,
             color: '#1a1a1a',
             lineHeight: 0.95,
             marginBottom: 40,
-            maxWidth: 1100,
+            maxWidth: 1400,
             transform: `translateY(${titleY}px)`,
             letterSpacing: '-0.02em',
           }}>
@@ -112,11 +112,11 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
           {/* Description - light sans, generous line height */}
           <p style={{
             fontFamily: fontSans,
-            fontSize: 36,
+            fontSize: 40,
             fontWeight: 300,
             color: '#444',
-            lineHeight: 1.65,
-            maxWidth: 900,
+            lineHeight: 1.6,
+            maxWidth: 1100,
             opacity: descOpacity,
           }}>
             {event.description}
