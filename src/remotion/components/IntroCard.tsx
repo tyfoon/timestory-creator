@@ -13,15 +13,15 @@ interface IntroCardProps {
 export const IntroCard: React.FC<IntroCardProps> = ({ storyTitle, storyIntroduction }) => {
   const frame = useCurrentFrame();
   
-  // Background fade
-  const bgOpacity = interpolate(frame, [0, 30], [0, 1], { extrapolateRight: 'clamp' });
-  
   // Title animation - word by word
   const words = storyTitle.split(' ');
   
   // Introduction fade in
   const introOpacity = interpolate(frame, [60, 90], [0, 1], { extrapolateRight: 'clamp' });
   const introY = interpolate(frame, [60, 90], [30, 0], { extrapolateRight: 'clamp' });
+
+  // "Ready" prompt visible at frame 0, fades out when title starts
+  const readyOpacity = interpolate(frame, [0, 10], [1, 0], { extrapolateRight: 'clamp' });
 
   return (
     <AbsoluteFill style={{ 
@@ -31,8 +31,40 @@ export const IntroCard: React.FC<IntroCardProps> = ({ storyTitle, storyIntroduct
       alignItems: 'center',
       justifyContent: 'center',
       padding: 80,
-      opacity: bgOpacity,
     }}>
+      {/* "Ready to play" message visible at frame 0, fades out */}
+      {readyOpacity > 0.01 && (
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: readyOpacity,
+          zIndex: 20,
+        }}>
+          <div style={{
+            fontFamily: 'ui-serif, Georgia, Cambria, serif',
+            fontSize: 48,
+            fontWeight: 700,
+            color: '#1a1a1a',
+            textAlign: 'center',
+            lineHeight: 1.3,
+          }}>
+            🎬 Je persoonlijke muziekvideo is klaar
+          </div>
+          <div style={{
+            fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+            fontSize: 24,
+            color: '#888',
+            marginTop: 20,
+          }}>
+            Druk op ▶ om af te spelen
+          </div>
+        </div>
+      )}
+
       {/* Decorative background symbol */}
       <div style={{
         position: 'absolute',
