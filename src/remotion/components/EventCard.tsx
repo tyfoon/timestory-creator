@@ -77,10 +77,10 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
+          alignItems: 'flex-start',
           justifyContent: 'flex-start',
-          padding: '100px 60px 60px 60px',
-          textAlign: 'center',
+          padding: '80px 60px 60px 60px',
+          textAlign: 'left',
         }}>
           {/* Date - tiny monospace with extreme letter-spacing */}
           <div style={{
