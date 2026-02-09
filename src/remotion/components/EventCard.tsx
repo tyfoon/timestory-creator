@@ -79,7 +79,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'flex-start',
-          padding: '120px 100px 60px 100px',
+          padding: '100px 60px 60px 60px',
           textAlign: 'center',
         }}>
           {/* Date - tiny monospace with extreme letter-spacing */}
@@ -128,8 +128,8 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
           position: 'absolute',
           bottom: 40,
           right: 50,
-          width: 550,
-          height: 420,
+          width: 715,
+          height: 546,
           transform: `rotate(2deg)`,
           boxShadow: '0 35px 70px -15px rgba(0, 0, 0, 0.3)',
           borderRadius: 10,
