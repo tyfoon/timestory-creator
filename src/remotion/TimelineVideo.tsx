@@ -12,8 +12,8 @@ import { getThemeForYear } from './themes';
 
 const SOUND_EFFECT_DELAY_FRAMES = 60; // 2 seconds delay at 30fps
 
-// Overlap: 30% of each event's duration overlaps with the next
-const OVERLAP_RATIO = 0.3;
+// Overlap: fixed 40 frames (~1.3s at 30fps) for fly-through tunnel effect
+const OVERLAP_FRAMES = 40;
 
 /**
  * Fly-Through Timeline Video.
@@ -67,11 +67,10 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
   // --- Calculate total duration first so we can size the tunnel ---
   const eventDurations: number[] = events.map((event) => {
     if (isMusicVideoMode && events.length > 0) {
-      // Compensate for overlap: with N events and overlap ratio R,
-      // total = D * (1 + (N-1) * (1-R)), so D = remaining / (1 + (N-1)*(1-R))
+      // Compensate for overlap: with N events and fixed overlap,
+      // total = N*D - (N-1)*OVERLAP, so D = (remaining + (N-1)*OVERLAP) / N
       const n = events.length;
-      const effectiveSlots = 1 + (n - 1) * (1 - OVERLAP_RATIO);
-      return Math.floor(remainingMusicFrames / effectiveSlots);
+      return Math.floor((remainingMusicFrames + (n - 1) * OVERLAP_FRAMES) / n);
     }
     return event.audioDurationFrames || Math.round(5 * fps);
   });
@@ -85,8 +84,8 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
     if (i === 0) {
       totalFrames += dur;
     } else {
-      const overlapFrames = Math.round(eventDurations[i - 1] * OVERLAP_RATIO);
-      totalFrames += dur - overlapFrames;
+      totalFrames += dur - OVERLAP_FRAMES;
+      totalFrames += dur - OVERLAP_FRAMES;
     }
   });
 
@@ -141,9 +140,7 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
     // Calculate overlap: the current event starts earlier by overlapping
     // with the previous event's exit phase
     if (index > 0) {
-      const prevDuration = eventDurations[index - 1];
-      const overlapFrames = Math.round(prevDuration * OVERLAP_RATIO);
-      currentFrame -= overlapFrames;
+      currentFrame -= OVERLAP_FRAMES;
     }
 
     const CardComponent = EventCard;
@@ -209,9 +206,8 @@ export const calculateTotalDuration = (
     if (index === 0) {
       total += eventDur;
     } else {
-      const prevDur = events[index - 1].audioDurationFrames || Math.round(5 * fps);
-      const overlapFrames = Math.round(prevDur * OVERLAP_RATIO);
-      total += eventDur - overlapFrames;
+      total += eventDur - OVERLAP_FRAMES;
+      total += eventDur - OVERLAP_FRAMES;
     }
   });
 
