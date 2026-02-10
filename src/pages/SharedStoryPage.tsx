@@ -32,9 +32,24 @@ export default function SharedStoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [vhsOverride, setVhsOverride] = useState<boolean | null>(null);
+  const [autoVhsApplied, setAutoVhsApplied] = useState(false);
 
   // Keep screen awake while viewing the shared story
   useWakeLock(!!story && !isLoading);
+
+  // Auto-enable VHS for 80s-dominant content
+  useEffect(() => {
+    if (story && !autoVhsApplied) {
+      const events = story.content.events as VideoEvent[];
+      if (events.length > 0) {
+        const eightyEvents = events.filter((e: any) => e.year >= 1980 && e.year < 1990).length;
+        if (eightyEvents / events.length > 0.5) {
+          setVhsOverride(true);
+        }
+        setAutoVhsApplied(true);
+      }
+    }
+  }, [story, autoVhsApplied]);
 
   useEffect(() => {
     const fetchStory = async () => {
