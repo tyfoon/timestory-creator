@@ -29,6 +29,7 @@ export interface EventCardProps {
   imageUrl: string;
   eventIndex: number;
   periodLabel?: string; // e.g. "1980-1990" or "Kindertijd"
+  theme?: import('./themes').EraTheme;
 }
 
 export interface AudioSegment {
