@@ -202,27 +202,15 @@ export const RetroCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
             {/* Headline */}
             <h1 style={{
               fontFamily: fontHeadline,
-              fontSize: 56,
+              fontSize: 64,
               color: inkColor,
-              lineHeight: 1.0,
+              lineHeight: 1.05,
               textTransform: 'uppercase',
-              marginBottom: 24,
               opacity: titleReveal,
               letterSpacing: '-0.02em',
             }}>
               {event.title}
             </h1>
-
-            {/* Body text - monospace terminal style */}
-            <p style={{
-              fontFamily: fontBody,
-              fontSize: 36,
-              color: inkColor,
-              lineHeight: 1.5,
-              opacity: descReveal,
-            }}>
-              {event.description}
-            </p>
 
             {/* Year stamp */}
             <div style={{
@@ -302,14 +290,12 @@ export const RetroCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
           {formatRetroDate(event.date)}
         </div>
 
-        {/* Headline */}
         <h1 style={{
           fontFamily: fontHeadline,
-          fontSize: 90,
+          fontSize: 100,
           color: '#fff',
           lineHeight: 0.95,
           textTransform: 'uppercase',
-          marginBottom: 24,
           opacity: titleReveal,
           textShadow: '4px 4px 0px #000',
           maxWidth: 1200,
@@ -317,18 +303,6 @@ export const RetroCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
           {event.title}
         </h1>
 
-        {/* Description */}
-        <p style={{
-          fontFamily: fontBody,
-          fontSize: 42,
-          color: '#eee',
-          lineHeight: 1.4,
-          opacity: descReveal,
-          maxWidth: 1000,
-          textShadow: '2px 2px 0px #000',
-        }}>
-          {event.description}
-        </p>
       </div>
 
       {/* Year watermark */}

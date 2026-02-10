@@ -297,6 +297,14 @@ RICHTLIJNEN VOOR storyIntroduction (DIRECT NA storyTitle!):
 - Beschrijf de 'analoge vertraging': wachten op foto's, brieven schrijven, teletekst checken
 - Maak het emotioneel en persoonlijk - dit is GEEN opsomming van feiten
 
+RICHTLIJNEN VOOR eventTitle (CRUCIAAL!):
+- Schrijf een pakkende headline van max 10-15 woorden die de emotie, humor of impact vat.
+- Het moet lezen als een krantenkop of social caption.
+- NIET: "De introductie van de Euro" → WEL: "Ineens betaalden we met die gekke munten"
+- NIET: "Het WK voetbal van 1998" → WEL: "Oranje-koorts: het hele land stond op z'n kop"
+- NIET: "De opkomst van het internet" → WEL: "Pieeep-krrrr... je bent online! (na 3 minuten wachten)"
+- Wees creatief, nostalgisch en persoonlijk. Vermijd saaie feitelijke titels.
+
 REGELS:
 1. GEEN markdown.
 2. BEGIN MET storyTitle en storyIntroduction - dit geeft de gebruiker direct iets te lezen!

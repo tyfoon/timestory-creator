@@ -127,7 +127,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
               fontWeight: 900,
               color: t.colors.accent,
               lineHeight: 0.85,
-              marginBottom: 16,
+              marginBottom: 20,
               opacity: yearOpacity,
               transform: `scale(${yearScale})`,
               transformOrigin: isReversed ? 'right center' : 'left center',
@@ -137,60 +137,28 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
             {event.year}
           </div>
 
-          {/* Date */}
-          <div
-            style={{
-              fontFamily: t.fonts.body,
-              fontSize: 15,
-              textTransform: 'uppercase',
-              letterSpacing: '0.25em',
-              color: `${t.colors.text}aa`,
-              opacity: dateOpacity,
-              marginBottom: 20,
-            }}
-          >
-            {event.date}
-          </div>
-
-          {/* Title — kinetic slide-in */}
+          {/* Title — kinetic slide-in, larger for video-only focus */}
           <h1
             style={{
               fontFamily: t.fonts.heading,
-              fontSize: 56,
+              fontSize: 72,
               fontWeight: 900,
               color: t.colors.text,
-              lineHeight: 1.05,
-              marginBottom: 24,
+              lineHeight: 1.1,
               opacity: titleOpacity,
               transform: `translateX(${titleX}px)`,
               textShadow: `0 2px 20px rgba(0,0,0,0.5)`,
+              maxWidth: 600,
             }}
           >
             {event.title}
           </h1>
 
-          {/* Description — fade up */}
-          <p
-            style={{
-              fontFamily: t.fonts.body,
-              fontSize: 28,
-              fontWeight: 300,
-              color: `${t.colors.text}dd`,
-              lineHeight: 1.6,
-              opacity: descOpacity,
-              transform: `translateY(${descY}px)`,
-              maxWidth: 550,
-              textShadow: `0 1px 10px rgba(0,0,0,0.4)`,
-            }}
-          >
-            {event.description}
-          </p>
-
           {/* Period label */}
           {periodLabel && (
             <div
               style={{
-                marginTop: 24,
+                marginTop: 28,
                 fontFamily: t.fonts.body,
                 fontSize: 12,
                 textTransform: 'uppercase',
