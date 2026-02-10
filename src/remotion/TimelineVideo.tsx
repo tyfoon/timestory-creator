@@ -8,6 +8,7 @@ import { TransitionSlide } from './components/TransitionSlide';
 import { RetroWrapper } from './components/RetroWrapper';
 import { getEventImageUrl } from './utils/placeholders';
 import { getThemeForYear } from './themes';
+import { AudioVisualizer } from './components/AudioVisualizer';
 
 const TRANSITION_DURATION_FRAMES = 15; // ~0.5 seconds at 30fps - snappy transitions
 const SOUND_EFFECT_DELAY_FRAMES = 60; // 2 seconds delay at 30fps - starts after voiceover begins
@@ -89,6 +90,12 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
     sequences.push(
       <Sequence key="external-audio" from={0} durationInFrames={totalMusicFrames}>
         <Audio src={externalAudioUrl} />
+      </Sequence>
+    );
+    // Audio visualizer overlay for music video mode
+    sequences.push(
+      <Sequence key="audio-visualizer" from={0} durationInFrames={totalMusicFrames}>
+        <AudioVisualizer theme={introTheme} />
       </Sequence>
     );
   }
