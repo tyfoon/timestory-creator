@@ -44,8 +44,8 @@ export const TIMELINE_THEMES: Record<string, EraTheme> = {
     id: "80s",
     name: "Neon VHS",
     fonts: {
-      heading: "'Arial Black', sans-serif",
-      body: "'Arial', sans-serif",
+      heading: "'Orbitron', 'Arial Black', sans-serif",
+      body: "'Orbitron', 'Arial', sans-serif",
     },
     colors: {
       background: "#0a0a0a",
