@@ -248,21 +248,33 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
 
     // Strategy 1: Screen Wake Lock API (works on Android Chrome, desktop)
     const acquireWakeLock = async () => {
+      // Release old lock first to avoid stale references
+      if (wakeLockRef.current) {
+        try { await wakeLockRef.current.release(); } catch {}
+        wakeLockRef.current = null;
+      }
+
       if ('wakeLock' in navigator) {
         try {
           wakeLockRef.current = await navigator.wakeLock.request('screen');
+          wakeLockRef.current.addEventListener('release', () => {
+            console.log('Wake lock was released by system');
+            // Re-acquire if still needed and visible
+            if (!released && document.visibilityState === 'visible') {
+              setTimeout(() => acquireWakeLock(), 500);
+            }
+          });
           console.log('Wake lock acquired via API');
         } catch (err) {
           console.log('Wake lock API failed, using video fallback:', err);
           startNoSleepVideo();
         }
       } else {
-        // No Wake Lock API (iOS Safari) – use video fallback
         startNoSleepVideo();
       }
     };
 
-    // Strategy 2: Play a tiny silent video in a loop to prevent iOS sleep
+    // Strategy 2: Play a tiny silent video in a loop to prevent sleep
     const startNoSleepVideo = () => {
       if (noSleepVideoRef.current || released) return;
       const video = document.createElement('video');
@@ -276,7 +288,6 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
       video.style.width = '1px';
       video.style.height = '1px';
       video.style.opacity = '0.01';
-      // Minimal silent mp4 (base64) – ~1 second of silence
       video.src = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAA' +
         'ONtZGF0AAACrgYF//+q3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE0OCByMjY0MyA1YzY1NzA0IC0gSC4yNjQv' +
         'TVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAxNSAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQ' +
@@ -306,18 +317,28 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
       console.log('No-sleep video fallback started');
     };
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && !released) {
+    // Re-acquire on visibility change AND fullscreen change
+    const handleReacquire = () => {
+      if (!released && document.visibilityState === 'visible') {
         acquireWakeLock();
       }
     };
 
     acquireWakeLock();
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('visibilitychange', handleReacquire);
+    document.addEventListener('fullscreenchange', handleReacquire);
+    document.addEventListener('webkitfullscreenchange', handleReacquire);
+
+    // Also use both strategies simultaneously on Android for extra reliability
+    if (/Android/i.test(navigator.userAgent)) {
+      startNoSleepVideo();
+    }
 
     return () => {
       released = true;
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('visibilitychange', handleReacquire);
+      document.removeEventListener('fullscreenchange', handleReacquire);
+      document.removeEventListener('webkitfullscreenchange', handleReacquire);
       if (wakeLockRef.current) {
         wakeLockRef.current.release().catch(() => {});
         wakeLockRef.current = null;
