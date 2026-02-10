@@ -4,19 +4,24 @@ import { TimelineVideoProps, VideoEvent } from './types';
 import { EventCard } from './components/EventCard';
 import { RetroCard } from './components/RetroCard';
 import { IntroCard } from './components/IntroCard';
-import { TransitionSlide } from './components/TransitionSlide';
 import { RetroWrapper } from './components/RetroWrapper';
+import { TimeTunnel } from './components/TimeTunnel';
+import { AudioVisualizer } from './components/AudioVisualizer';
 import { getEventImageUrl } from './utils/placeholders';
 import { getThemeForYear } from './themes';
-import { AudioVisualizer } from './components/AudioVisualizer';
 
-const TRANSITION_DURATION_FRAMES = 15; // ~0.5 seconds at 30fps - snappy transitions
-const SOUND_EFFECT_DELAY_FRAMES = 60; // 2 seconds delay at 30fps - starts after voiceover begins
+const SOUND_EFFECT_DELAY_FRAMES = 60; // 2 seconds delay at 30fps
+
+// Overlap: 30% of each event's duration overlaps with the next
+const OVERLAP_RATIO = 0.3;
 
 /**
- * Main Remotion composition for the timeline video.
- * Renders intro, then each event with transitions.
- * Optionally wraps content in RetroWrapper for 80s VHS effect.
+ * Fly-Through Timeline Video.
+ * 
+ * Instead of discrete slides, events overlap so the exit of Event A
+ * (zooming past the camera) coincides with the enter of Event B
+ * (appearing small in the distance). A global TimeTunnel background
+ * runs behind everything for a continuous warp-speed sensation.
  */
 export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
   events,
@@ -30,7 +35,6 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
   externalAudioUrl,
   externalAudioDuration,
 }) => {
-  let currentFrame = 0;
   const sequences: React.ReactNode[] = [];
 
   // Helper to wrap content in RetroWrapper if enabled
@@ -50,33 +54,54 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
     return content;
   };
 
-  // Calculate if we're in "music video mode" (external audio drives timing)
+  // Music video mode
   const isMusicVideoMode = !!externalAudioUrl && !!externalAudioDuration;
-  
-  // Music video intro duration: 15-20 seconds (we use 18 seconds = 540 frames at 30fps)
   const MUSIC_VIDEO_INTRO_SECONDS = 10;
   const musicVideoIntroFrames = Math.round(MUSIC_VIDEO_INTRO_SECONDS * fps);
-  
-  // In music video mode, calculate how long each event should be shown
-  // Subtract intro time from total, then distribute remaining time across events
   const totalMusicFrames = isMusicVideoMode ? Math.round(externalAudioDuration * fps) : 0;
   const remainingMusicFrames = isMusicVideoMode ? totalMusicFrames - musicVideoIntroFrames : 0;
-  const framesPerEvent = isMusicVideoMode && events.length > 0 
-    ? Math.floor(remainingMusicFrames / events.length) 
-    : 0;
 
-  // Determine intro theme from first event
+  // Theme from first event
   const introTheme = events.length > 0 ? getThemeForYear(events[0].year) : undefined;
 
-  // Intro sequence - now also shown in music video mode
+  // --- Calculate total duration first so we can size the tunnel ---
+  const eventDurations: number[] = events.map((event) => {
+    if (isMusicVideoMode && events.length > 0) {
+      return Math.floor(remainingMusicFrames / events.length);
+    }
+    return event.audioDurationFrames || Math.round(5 * fps);
+  });
+
+  // Calculate effective intro duration
+  const effectiveIntroDuration = isMusicVideoMode ? musicVideoIntroFrames : introDurationFrames;
+
+  // Calculate total with overlaps
+  let totalFrames = storyTitle ? effectiveIntroDuration : 0;
+  eventDurations.forEach((dur, i) => {
+    if (i === 0) {
+      totalFrames += dur;
+    } else {
+      const overlapFrames = Math.round(eventDurations[i - 1] * OVERLAP_RATIO);
+      totalFrames += dur - overlapFrames;
+    }
+  });
+
+  // Fallback for music mode total
+  const videoDuration = isMusicVideoMode ? totalMusicFrames : totalFrames;
+
+  // === GLOBAL TIME TUNNEL BACKGROUND (runs entire video) ===
+  sequences.push(
+    <Sequence key="time-tunnel" from={0} durationInFrames={videoDuration}>
+      {wrapContent(<TimeTunnel theme={introTheme} />)}
+    </Sequence>
+  );
+
+  // === INTRO ===
+  let currentFrame = 0;
   if (storyTitle) {
-    // In music video mode, use the fixed intro duration. Otherwise use voiceover duration.
-    const effectiveIntroDuration = isMusicVideoMode ? musicVideoIntroFrames : introDurationFrames;
-    
     sequences.push(
       <Sequence key="intro" from={currentFrame} durationInFrames={effectiveIntroDuration}>
         {wrapContent(<IntroCard storyTitle={storyTitle} storyIntroduction={storyIntroduction} theme={introTheme} />)}
-        {/* Only add intro audio in non-music-video mode (music plays separately) */}
         {!isMusicVideoMode && introAudioUrl && (
           <Audio src={introAudioUrl} />
         )}
@@ -85,14 +110,13 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
     currentFrame += effectiveIntroDuration;
   }
 
-  // Add external audio track (full duration) for music video mode
+  // === EXTERNAL AUDIO + VISUALIZER (music video mode) ===
   if (isMusicVideoMode && externalAudioUrl) {
     sequences.push(
       <Sequence key="external-audio" from={0} durationInFrames={totalMusicFrames}>
         <Audio src={externalAudioUrl} />
       </Sequence>
     );
-    // Audio visualizer overlay for music video mode
     sequences.push(
       <Sequence key="audio-visualizer" from={0} durationInFrames={totalMusicFrames}>
         <AudioVisualizer theme={introTheme} />
@@ -100,45 +124,25 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
     );
   }
 
-  // Event sequences
-  let lastYear: number | null = null;
-  
-  // Calculate period label from first and last event years
-  const firstYear = events.length > 0 ? events[0].year : null;
-  const lastEventYear = events.length > 0 ? events[events.length - 1].year : null;
-  const periodLabel = firstYear && lastEventYear ? `${firstYear}–${lastEventYear}` : undefined;
-  
+  // === EVENT SEQUENCES WITH OVERLAP ===
+  const periodLabel = events.length >= 2
+    ? `${events[0].year}–${events[events.length - 1].year}`
+    : undefined;
+
   events.forEach((event, index) => {
-    // In music video mode, skip year transitions for smoother flow
-    if (!isMusicVideoMode) {
-      // Add year transition if year changed
-      if (lastYear !== null && event.year !== lastYear) {
-        sequences.push(
-          <Sequence
-            key={`transition-${event.id}`}
-            from={currentFrame}
-            durationInFrames={TRANSITION_DURATION_FRAMES}
-          >
-            {wrapContent(<TransitionSlide year={event.year} durationFrames={TRANSITION_DURATION_FRAMES} />)}
-          </Sequence>
-        );
-        currentFrame += TRANSITION_DURATION_FRAMES;
-      }
-    }
-    lastYear = event.year;
-
-    // Event card
     const imageUrl = getEventImageUrl(event);
-    
-    // In music video mode, each event gets equal time. Otherwise use audio duration.
-    const eventDuration = isMusicVideoMode 
-      ? framesPerEvent 
-      : (event.audioDurationFrames || Math.round(5 * fps));
-
-    // Main event sequence with voiceover
-    // Use RetroCard when retro effect is enabled, otherwise use EventCard
-    const CardComponent = enableRetroEffect ? RetroCard : EventCard;
+    const eventDuration = eventDurations[index];
     const eventTheme = getThemeForYear(event.year);
+
+    // Calculate overlap: the current event starts earlier by overlapping
+    // with the previous event's exit phase
+    if (index > 0) {
+      const prevDuration = eventDurations[index - 1];
+      const overlapFrames = Math.round(prevDuration * OVERLAP_RATIO);
+      currentFrame -= overlapFrames;
+    }
+
+    const CardComponent = enableRetroEffect ? RetroCard : EventCard;
 
     sequences.push(
       <Sequence
@@ -147,18 +151,22 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
         durationInFrames={eventDuration}
       >
         {wrapContent(
-          <CardComponent event={event} imageUrl={imageUrl} eventIndex={index} periodLabel={periodLabel} theme={eventTheme} />,
-          event.date // Pass date for camcorder overlay
+          <CardComponent
+            event={event}
+            imageUrl={imageUrl}
+            eventIndex={index}
+            periodLabel={periodLabel}
+            theme={eventTheme}
+          />,
+          event.date
         )}
-        {/* Only add individual audio in non-music-video mode */}
         {!isMusicVideoMode && event.audioUrl && (
           <Audio src={event.audioUrl} />
         )}
       </Sequence>
     );
 
-    // Sound effect sequence - only in non-music-video mode
-    // In music video mode, the song provides all audio
+    // Sound effects
     if (!isMusicVideoMode && event.soundEffectAudioUrl && eventDuration > SOUND_EFFECT_DELAY_FRAMES) {
       sequences.push(
         <Sequence
@@ -178,8 +186,7 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
 };
 
 /**
- * Calculate total duration of the video based on events.
- * If externalAudioDuration is provided (music video mode), that becomes the total duration.
+ * Calculate total duration accounting for overlapping events.
  */
 export const calculateTotalDuration = (
   events: VideoEvent[],
@@ -187,23 +194,21 @@ export const calculateTotalDuration = (
   fps: number,
   externalAudioDuration?: number
 ): number => {
-  // In music video mode, the external audio duration is the total
   if (externalAudioDuration) {
     return Math.round(externalAudioDuration * fps);
   }
 
   let total = introDurationFrames;
-  let lastYear: number | null = null;
 
-  events.forEach((event) => {
-    // Add transition if year changed
-    if (lastYear !== null && event.year !== lastYear) {
-      total += TRANSITION_DURATION_FRAMES;
+  events.forEach((event, index) => {
+    const eventDur = event.audioDurationFrames || Math.round(5 * fps);
+    if (index === 0) {
+      total += eventDur;
+    } else {
+      const prevDur = events[index - 1].audioDurationFrames || Math.round(5 * fps);
+      const overlapFrames = Math.round(prevDur * OVERLAP_RATIO);
+      total += eventDur - overlapFrames;
     }
-    lastYear = event.year;
-
-    // Add event duration
-    total += event.audioDurationFrames || Math.round(5 * fps);
   });
 
   return total;
