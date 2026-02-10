@@ -128,22 +128,35 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
             padding: '20px 0',
           }}
         >
-          {/* Year — big, accent colored */}
+          {/* Month + Year — accent colored, refined size */}
           <div
             style={{
               fontFamily: t.fonts.heading,
-              fontSize: 140,
-              fontWeight: 900,
+              fontSize: 56,
+              fontWeight: 700,
               color: t.colors.accent,
-              lineHeight: 0.85,
-              marginBottom: 20,
+              lineHeight: 1,
+              marginBottom: 16,
               opacity: yearOpacity,
               transform: `scale(${yearScale})`,
               transformOrigin: isReversed ? 'right center' : 'left center',
-              textShadow: `0 4px 30px ${t.colors.accent}55`,
+              textShadow: `0 2px 20px ${t.colors.accent}44`,
+              letterSpacing: '0.02em',
             }}
           >
-            {event.year}
+            {(() => {
+              // Try to parse month from the date string
+              const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+              if (event.month && event.month >= 1 && event.month <= 12) {
+                return `${months[event.month - 1]} ${event.year}`;
+              }
+              // Fallback: try parsing date string
+              const parsed = new Date(event.date);
+              if (!isNaN(parsed.getTime())) {
+                return `${months[parsed.getMonth()]} ${event.year}`;
+              }
+              return event.year;
+            })()}
           </div>
 
           {/* Title — kinetic slide-in, larger for video-only focus */}
