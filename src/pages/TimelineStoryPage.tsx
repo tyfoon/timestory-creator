@@ -1152,13 +1152,14 @@ const TimelineStoryPage = () => {
     }
   };
 
-  const handleClearCache = () => {
+  const handleClearCache = (forceMaxEvents?: number) => {
     if (formData) {
       const key = getCacheKey(formData, language);
       sessionStorage.removeItem(key);
-      // Reset all state
-      const storedLength = sessionStorage.getItem('timelineLength') || 'short';
-      const maxEvents = storedLength === 'short' ? 20 : undefined;
+      // Use forced count or fall back to stored preference
+      const maxEvents = forceMaxEvents !== undefined
+        ? forceMaxEvents
+        : (sessionStorage.getItem('timelineLength') === 'short' ? 20 : undefined);
       setCurrentMaxEvents(maxEvents);
       resetImageSearch();
       receivedEventsRef.current = [];
@@ -1250,11 +1251,20 @@ const TimelineStoryPage = () => {
                     onBlacklistImage={handleBlacklistImage}
                   />
                   <button
-                    onClick={handleClearCache}
+                    onClick={() => handleClearCache(20)}
                     className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
-                    title={t('refreshButton') as string}
+                    title="Snel vernieuwen (20 events)"
                   >
                     <RefreshCw className="h-3.5 w-3.5" />
+                    <span className="sr-only">20</span>
+                  </button>
+                  <button
+                    onClick={() => handleClearCache()}
+                    className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50 relative"
+                    title="Volledig vernieuwen (50 events)"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    <span className="absolute -top-1 -right-1 text-[8px] font-bold bg-muted text-muted-foreground rounded-full w-3.5 h-3.5 flex items-center justify-center leading-none">50</span>
                   </button>
                 </>
               )}
