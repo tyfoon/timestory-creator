@@ -64,6 +64,9 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
     ? Math.floor(remainingMusicFrames / events.length) 
     : 0;
 
+  // Determine intro theme from first event
+  const introTheme = events.length > 0 ? getThemeForYear(events[0].year) : undefined;
+
   // Intro sequence - now also shown in music video mode
   if (storyTitle) {
     // In music video mode, use the fixed intro duration. Otherwise use voiceover duration.
@@ -71,7 +74,7 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
     
     sequences.push(
       <Sequence key="intro" from={currentFrame} durationInFrames={effectiveIntroDuration}>
-        {wrapContent(<IntroCard storyTitle={storyTitle} storyIntroduction={storyIntroduction} />)}
+        {wrapContent(<IntroCard storyTitle={storyTitle} storyIntroduction={storyIntroduction} theme={introTheme} />)}
         {/* Only add intro audio in non-music-video mode (music plays separately) */}
         {!isMusicVideoMode && introAudioUrl && (
           <Audio src={introAudioUrl} />
