@@ -237,6 +237,16 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
   // Check if we're in music video mode (background music provided)
   const isMusicVideoMode = !!backgroundMusicUrl && !!backgroundMusicDuration;
 
+  // Auto-enable VHS effect for 80s content
+  useEffect(() => {
+    if (events.length > 0) {
+      const eightyEvents = events.filter(e => e.year >= 1980 && e.year < 1990).length;
+      if (eightyEvents / events.length > 0.5) {
+        setEnableVhsEffect(true);
+      }
+    }
+  }, [events, open]);
+
   // Wake Lock: keep screen awake while video is playing
   useWakeLock(isReady || isMusicVideoMode);
 
