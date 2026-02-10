@@ -1,291 +1,126 @@
 import React from 'react';
-import { AbsoluteFill, Img, interpolate, useCurrentFrame } from 'remotion';
+import { AbsoluteFill, Img, interpolate, useCurrentFrame, useVideoConfig, spring } from 'remotion';
 import { EventCardProps } from '../types';
-import { KenBurns } from './KenBurns';
+import { EraTheme, TIMELINE_THEMES } from '../themes';
 
 /**
- * Playful event card for Remotion video with varied layouts.
- * Inspired by the editorial patterns from TimelineStoryPage.
- * Features dramatic typography with extreme font size contrasts.
+ * Cinematic Parallax Event Card for Remotion video.
+ * Creates depth through 3 layers moving at different speeds:
+ *   Layer 1 (Background): Blurred/colored slow-moving backdrop
+ *   Layer 2 (Photo): Ken Burns zoom/pan with era-specific filters
+ *   Layer 3 (Text): Fast-floating text with kinetic entrance animations
  */
-export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventIndex, periodLabel }) => {
+export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventIndex, periodLabel, theme }) => {
   const frame = useCurrentFrame();
-  
-  // Animation values - snappy entrance
-  const fadeIn = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: 'clamp' });
-  const titleY = interpolate(frame, [3, 15], [30, 0], { extrapolateRight: 'clamp' });
-  const descOpacity = interpolate(frame, [8, 18], [0, 1], { extrapolateRight: 'clamp' });
-  const imageScale = interpolate(frame, [0, 15], [1.08, 1], { extrapolateRight: 'clamp' });
-  const letterSpacing = interpolate(frame, [0, 20], [20, 0], { extrapolateRight: 'clamp' });
+  const { fps, durationInFrames } = useVideoConfig();
 
-  // Rotate between 3 layout patterns
-  const layoutPattern = eventIndex % 3;
+  // Fallback to default theme
+  const t: EraTheme = theme || TIMELINE_THEMES['default'];
 
-  // Shared styles - editorial typography inspired by TimelineStoryPage
-  const fontSerif = 'Georgia, "Times New Roman", serif';
-  const fontSans = 'system-ui, -apple-system, "Segoe UI", sans-serif';
-  const fontMono = 'ui-monospace, SFMono-Regular, "SF Mono", monospace';
+  // --- Parallax speeds (normalised 0→1 progress) ---
+  const progress = frame / Math.max(durationInFrames, 1);
 
-  // Period badge (top-right) - minimal, elegant
-  const PeriodBadge = () => (
-    <div style={{
-      position: 'absolute',
-      top: 40,
-      right: 50,
-      fontFamily: fontMono,
-      fontSize: 13,
-      textTransform: 'uppercase',
-      letterSpacing: '0.2em',
-      color: 'rgba(80, 80, 80, 0.7)',
-      zIndex: 50,
-    }}>
-      {periodLabel || `${event.year}`}
-    </div>
-  );
+  // Layer 1 – Background: slowest movement
+  const bgX = interpolate(progress, [0, 1], [0, -30], { extrapolateRight: 'clamp' });
+  const bgScale = interpolate(progress, [0, 1], [1.15, 1.25], { extrapolateRight: 'clamp' });
 
-  // Layout 0: "THE SHOUT" - Giant year background, massive title, minimal image
-  if (layoutPattern === 0) {
-    return (
-      <AbsoluteFill style={{ backgroundColor: '#f8f8f5', opacity: fadeIn }}>
-        <PeriodBadge />
-        
-        {/* Giant background year - extreme scale like TimelineStoryPage */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: 0.03,
-        }}>
-          <span style={{
-            fontFamily: fontSerif,
-            fontSize: 650,
-            fontWeight: 900,
-            color: '#1a1a1a',
-            lineHeight: 0.75,
-            letterSpacing: '-0.05em',
-          }}>
-            {event.year}
-          </span>
-        </div>
-        
-        {/* Center content - positioned higher to avoid photo overlap */}
-        <div style={{
-          position: 'relative',
-          zIndex: 10,
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-start',
-          justifyContent: 'flex-start',
-          padding: '80px 60px 60px 60px',
-          textAlign: 'left',
-        }}>
-          {/* Date - tiny monospace with extreme letter-spacing */}
-          <div style={{
-            fontFamily: fontMono,
-            fontSize: 11,
-            textTransform: 'uppercase',
-            letterSpacing: `${0.3 + letterSpacing * 0.01}em`,
-            color: '#888',
-            marginBottom: 30,
-          }}>
-            {event.date}
-          </div>
-          
-          {/* Title - MASSIVE, bold serif */}
-          <h1 style={{
-            fontFamily: fontSerif,
-            fontSize: 115,
-            fontWeight: 900,
-            color: '#1a1a1a',
-            lineHeight: 0.95,
-            marginBottom: 40,
-            maxWidth: 1400,
-            transform: `translateY(${titleY}px)`,
-            letterSpacing: '-0.02em',
-          }}>
-            {event.title}
-          </h1>
-          
-          {/* Description - light sans, generous line height */}
-          <p style={{
-            fontFamily: fontSans,
-            fontSize: 40,
-            fontWeight: 300,
-            color: '#444',
-            lineHeight: 1.6,
-            maxWidth: 1100,
-            opacity: descOpacity,
-          }}>
-            {event.description}
-          </p>
-        </div>
-        
-        {/* Floating image with Ken Burns effect - larger size */}
-        <div style={{
-          position: 'absolute',
-          bottom: 40,
-          right: 50,
-          width: 715,
-          height: 546,
-          transform: `rotate(2deg)`,
-          boxShadow: '0 35px 70px -15px rgba(0, 0, 0, 0.3)',
-          borderRadius: 10,
-          overflow: 'hidden',
-        }}>
-          <KenBurns step={eventIndex} intensity={0.6}>
-            <Img src={imageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
-          </KenBurns>
-        </div>
-      </AbsoluteFill>
-    );
-  }
+  // Layer 2 – Photo: medium Ken Burns
+  const kenBurnsPatterns = [
+    { scaleFrom: 1.0, scaleTo: 1.15, xFrom: 0, xTo: -20, yFrom: 0, yTo: -10 },
+    { scaleFrom: 1.15, scaleTo: 1.0, xFrom: -15, xTo: 15, yFrom: 5, yTo: -5 },
+    { scaleFrom: 1.05, scaleTo: 1.18, xFrom: 10, xTo: -10, yFrom: -8, yTo: 8 },
+  ];
+  const kb = kenBurnsPatterns[eventIndex % kenBurnsPatterns.length];
+  const photoScale = interpolate(progress, [0, 1], [kb.scaleFrom, kb.scaleTo], { extrapolateRight: 'clamp' });
+  const photoX = interpolate(progress, [0, 1], [kb.xFrom, kb.xTo], { extrapolateRight: 'clamp' });
+  const photoY = interpolate(progress, [0, 1], [kb.yFrom, kb.yTo], { extrapolateRight: 'clamp' });
 
-  // Layout 1: "THE MAGAZINE" - Side-by-side with massive drop cap
-  if (layoutPattern === 1) {
-    const firstLetter = event.description.charAt(0).toUpperCase();
-    const restOfDescription = event.description.slice(1);
-    
-    return (
-      <AbsoluteFill style={{ backgroundColor: '#f8f8f5', opacity: fadeIn }}>
-        <PeriodBadge />
-        
-        {/* Two-column magazine layout */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'row',
-          height: '100%',
-          padding: 50,
-          gap: 50,
-        }}>
-          {/* Left: Image with date badge */}
-          <div style={{
-            flex: '0 0 52%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <div style={{
-              position: 'relative',
-              borderRadius: 12,
-              overflow: 'hidden',
-              boxShadow: '0 35px 70px -15px rgba(0, 0, 0, 0.35)',
-              width: '100%',
-              height: 780,
-            }}>
-              <KenBurns step={eventIndex} intensity={0.7}>
-                <Img
-                  src={imageUrl}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    objectPosition: 'top',
-                  }}
-                />
-              </KenBurns>
-              {/* Date badge on image */}
-              <div style={{
-                position: 'absolute',
-                bottom: 25,
-                left: 25,
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                color: 'white',
-                padding: '14px 28px',
-                borderRadius: 30,
-                fontFamily: fontMono,
-                fontSize: 14,
-                letterSpacing: '0.15em',
-                textTransform: 'uppercase',
-                zIndex: 10,
-              }}>
-                {event.date}
-              </div>
-            </div>
-          </div>
+  // Layer 3 – Text: fastest parallax drift
+  const textDriftY = interpolate(progress, [0, 1], [10, -20], { extrapolateRight: 'clamp' });
 
-          {/* Right: Text content with editorial styling */}
-          <div style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            paddingRight: 30,
-          }}>
-            {/* Category - tiny, tracked out */}
-            <div style={{
-              fontFamily: fontMono,
-              fontSize: 10,
-              textTransform: 'uppercase',
-              letterSpacing: '0.25em',
-              color: '#999',
-              marginBottom: 24,
-            }}>
-              {event.category}
-            </div>
+  // --- Kinetic entrance animations ---
+  const titleSpring = spring({ frame, fps, config: { damping: 14, stiffness: 120 } });
+  const titleX = interpolate(titleSpring, [0, 1], [-120, 0]);
+  const titleOpacity = interpolate(titleSpring, [0, 1], [0, 1]);
 
-            {/* Title - large serif, tight leading */}
-            <h1 style={{
-              fontFamily: fontSerif,
-              fontSize: 68,
-              fontWeight: 700,
-              color: '#1a1a1a',
-              lineHeight: 1.05,
-              marginBottom: 35,
-              transform: `translateY(${titleY}px)`,
-              letterSpacing: '-0.01em',
-            }}>
-              {event.title}
-            </h1>
+  const yearSpring = spring({ frame, fps, config: { damping: 12, stiffness: 100 }, delay: 4 });
+  const yearScale = interpolate(yearSpring, [0, 1], [0.3, 1]);
+  const yearOpacity = interpolate(yearSpring, [0, 1], [0, 1]);
 
-            {/* Description with giant drop cap - magazine style */}
-            <div style={{
-              fontFamily: fontSans,
-              fontSize: 34,
-              fontWeight: 300,
-              color: '#444',
-              lineHeight: 1.7,
-              opacity: descOpacity,
-            }}>
-              {/* Drop cap - massive serif initial */}
-              <span style={{
-                fontFamily: fontSerif,
-                float: 'left',
-                fontSize: 120,
-                fontWeight: 900,
-                lineHeight: 0.7,
-                marginRight: 18,
-                marginTop: 10,
-                color: '#1a1a1a',
-              }}>
-                {firstLetter}
-              </span>
-              {restOfDescription}
-            </div>
-          </div>
-        </div>
-      </AbsoluteFill>
-    );
-  }
+  const descSpring = spring({ frame, fps, config: { damping: 16, stiffness: 80 }, delay: 10 });
+  const descOpacity = interpolate(descSpring, [0, 1], [0, 1]);
+  const descY = interpolate(descSpring, [0, 1], [40, 0]);
 
-  // Layout 2: "THE WHISPER" - Large image, floating text card with elegant type
+  const dateSpring = spring({ frame, fps, config: { damping: 18, stiffness: 90 }, delay: 6 });
+  const dateOpacity = interpolate(dateSpring, [0, 1], [0, 0.85]);
+  const dateX = interpolate(dateSpring, [0, 1], [60, 0]);
+
+  // Fade-in for the whole card
+  const fadeIn = interpolate(frame, [0, 8], [0, 1], { extrapolateRight: 'clamp' });
+
+  // Layout alternation for visual variety
+  const isReversed = eventIndex % 2 === 1;
+
   return (
-    <AbsoluteFill style={{ backgroundColor: '#f8f8f5', opacity: fadeIn }}>
-      <PeriodBadge />
-      
-      {/* Large background image with Ken Burns effect */}
-      <div style={{
-        position: 'absolute',
-        top: 60,
-        left: 60,
-        right: 60,
-        bottom: 60,
-        borderRadius: 16,
-        overflow: 'hidden',
-      }}>
-        <KenBurns step={eventIndex} intensity={0.8}>
+    <AbsoluteFill style={{ opacity: fadeIn, backgroundColor: t.colors.background }}>
+
+      {/* ===== LAYER 1: Background – blurred slow parallax ===== */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: -60,
+          transform: `translateX(${bgX}px) scale(${bgScale})`,
+          filter: 'blur(40px) brightness(0.5)',
+          willChange: 'transform',
+        }}
+      >
+        <Img
+          src={imageUrl}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            filter: t.filters.image,
+          }}
+        />
+      </div>
+
+      {/* Color overlay from theme */}
+      {t.filters.overlay !== 'none' && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: t.filters.overlay,
+            zIndex: 2,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+
+      {/* ===== LAYER 2: Photo – Ken Burns with era filter ===== */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 60,
+          bottom: 60,
+          left: isReversed ? 60 : undefined,
+          right: isReversed ? undefined : 60,
+          width: '55%',
+          borderRadius: 16,
+          overflow: 'hidden',
+          boxShadow: `0 40px 80px -20px rgba(0,0,0,0.6), 0 0 0 1px ${t.colors.accent}33`,
+          zIndex: 5,
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            transform: `scale(${photoScale}) translate(${photoX}px, ${photoY}px)`,
+            willChange: 'transform',
+          }}
+        >
           <Img
             src={imageUrl}
             style={{
@@ -293,61 +128,130 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
               height: '100%',
               objectFit: 'cover',
               objectPosition: 'top',
+              filter: t.filters.image,
             }}
           />
-        </KenBurns>
+        </div>
       </div>
-      
-      {/* Elegant floating text card - bottom left, larger */}
-      <div style={{
-        position: 'absolute',
-        bottom: 60,
-        left: 60,
-        maxWidth: 720,
-        backgroundColor: 'rgba(255, 255, 255, 0.97)',
-        backdropFilter: 'blur(12px)',
-        padding: '48px 56px',
-        borderRadius: 14,
-        boxShadow: '0 35px 70px -15px rgba(0, 0, 0, 0.25)',
-        zIndex: 20,
-      }}>
-        {/* Date - whisper small */}
-        <div style={{
-          fontFamily: fontMono,
-          fontSize: 14,
-          textTransform: 'uppercase',
-          letterSpacing: '0.25em',
-          color: '#888',
-          marginBottom: 18,
-        }}>
+
+      {/* ===== LAYER 3: Text & Date – fast floating parallax ===== */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          left: isReversed ? undefined : 60,
+          right: isReversed ? 60 : undefined,
+          width: '42%',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          padding: '60px 40px',
+          transform: `translateY(${textDriftY}px)`,
+          zIndex: 10,
+          willChange: 'transform',
+        }}
+      >
+        {/* Year – big kinetic entrance */}
+        <div
+          style={{
+            fontFamily: t.fonts.heading,
+            fontSize: 180,
+            fontWeight: 900,
+            color: t.colors.accent,
+            lineHeight: 0.85,
+            marginBottom: 20,
+            opacity: yearOpacity,
+            transform: `scale(${yearScale})`,
+            transformOrigin: isReversed ? 'right center' : 'left center',
+            textShadow: `0 4px 30px ${t.colors.accent}66`,
+          }}
+        >
+          {event.year}
+        </div>
+
+        {/* Date – slide in */}
+        <div
+          style={{
+            fontFamily: t.fonts.body,
+            fontSize: 16,
+            textTransform: 'uppercase',
+            letterSpacing: '0.25em',
+            color: t.colors.text,
+            opacity: dateOpacity,
+            transform: `translateX(${dateX}px)`,
+            marginBottom: 24,
+          }}
+        >
           {event.date}
         </div>
-        
-        {/* Title - medium serif, weighted */}
-        <h1 style={{
-          fontFamily: fontSerif,
-          fontSize: 52,
-          fontWeight: 700,
-          color: '#1a1a1a',
-          lineHeight: 1.15,
-          marginBottom: 24,
-          transform: `translateY(${titleY}px)`,
-        }}>
+
+        {/* Title – kinetic slide-in */}
+        <h1
+          style={{
+            fontFamily: t.fonts.heading,
+            fontSize: 64,
+            fontWeight: 900,
+            color: t.colors.text,
+            lineHeight: 1.05,
+            marginBottom: 28,
+            opacity: titleOpacity,
+            transform: `translateX(${titleX}px)`,
+            textShadow: `0 2px 20px ${t.colors.background}88`,
+          }}
+        >
           {event.title}
         </h1>
-        
-        {/* Description - light, airy */}
-        <p style={{
-          fontFamily: fontSans,
-          fontSize: 34,
-          fontWeight: 300,
-          color: '#555',
-          lineHeight: 1.65,
-          opacity: descOpacity,
-        }}>
+
+        {/* Description – fade up */}
+        <p
+          style={{
+            fontFamily: t.fonts.body,
+            fontSize: 30,
+            fontWeight: 300,
+            color: t.colors.text,
+            lineHeight: 1.65,
+            opacity: descOpacity,
+            transform: `translateY(${descY}px)`,
+            maxWidth: 600,
+            textShadow: `0 1px 10px ${t.colors.background}aa`,
+          }}
+        >
           {event.description}
         </p>
+
+        {/* Period label */}
+        {periodLabel && (
+          <div
+            style={{
+              marginTop: 30,
+              fontFamily: t.fonts.body,
+              fontSize: 13,
+              textTransform: 'uppercase',
+              letterSpacing: '0.3em',
+              color: `${t.colors.text}88`,
+              opacity: descOpacity,
+            }}
+          >
+            {periodLabel}
+          </div>
+        )}
       </div>
+
+      {/* Corner accent line */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 40,
+          left: isReversed ? undefined : 60,
+          right: isReversed ? 60 : undefined,
+          width: interpolate(frame, [5, 30], [0, 180], { extrapolateRight: 'clamp' }),
+          height: 3,
+          backgroundColor: t.colors.accent,
+          zIndex: 15,
+          borderRadius: 2,
+        }}
+      />
     </AbsoluteFill>
   );
 };

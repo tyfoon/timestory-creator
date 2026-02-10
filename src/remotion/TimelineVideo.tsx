@@ -7,6 +7,7 @@ import { IntroCard } from './components/IntroCard';
 import { TransitionSlide } from './components/TransitionSlide';
 import { RetroWrapper } from './components/RetroWrapper';
 import { getEventImageUrl } from './utils/placeholders';
+import { getThemeForYear } from './themes';
 
 const TRANSITION_DURATION_FRAMES = 15; // ~0.5 seconds at 30fps - snappy transitions
 const SOUND_EFFECT_DELAY_FRAMES = 60; // 2 seconds delay at 30fps - starts after voiceover begins
@@ -127,6 +128,7 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
     // Main event sequence with voiceover
     // Use RetroCard when retro effect is enabled, otherwise use EventCard
     const CardComponent = enableRetroEffect ? RetroCard : EventCard;
+    const eventTheme = getThemeForYear(event.year);
 
     sequences.push(
       <Sequence
@@ -135,7 +137,7 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
         durationInFrames={eventDuration}
       >
         {wrapContent(
-          <CardComponent event={event} imageUrl={imageUrl} eventIndex={index} periodLabel={periodLabel} />,
+          <CardComponent event={event} imageUrl={imageUrl} eventIndex={index} periodLabel={periodLabel} theme={eventTheme} />,
           event.date // Pass date for camcorder overlay
         )}
         {/* Only add individual audio in non-music-video mode */}
