@@ -304,7 +304,8 @@ REGELS:
 4. Vul 'visualSubjectType' ALTIJD in. KIES 'tv' voor TV-series, 'movie' ALLEEN voor bioscoopfilms!
 5. Zet 'isTV: true' voor ALLE TV-series (Dallas, Baywatch, Beverly Hills 90210, Friends, Seinfeld, etc.)
 6. Zet 'isMovie: true' ALLEEN voor bioscoopfilms (E.T., Titanic, Star Wars, etc.)
-7. Vul 'spotifySearchQuery' / 'movieSearchQuery' in waar relevant.`;
+7. Vul 'spotifySearchQuery' / 'movieSearchQuery' in waar relevant.
+8. **WOORDLIMIET PER EVENT:** Elke 'description' is MAXIMAAL 40-60 woorden (2-3 zinnen). Wees bondig, zintuiglijk en pakkend. Geen lange lappen tekst.`;
 }
 
 export function getTimelineTool() {
@@ -431,7 +432,8 @@ Genereer ${eventCount} historische events met de create_timeline tool.
 REGELS:
 1. Vul 'visualSubjectType' ALTIJD in.
 2. Vul 'spotifySearchQuery' in voor muziek events (Artiest - Titel).
-3. Vul 'movieSearchQuery' in voor film events (Titel trailer jaar).`;
+3. Vul 'movieSearchQuery' in voor film events (Titel trailer jaar).
+4. **WOORDLIMIET PER EVENT:** Elke 'description' is MAXIMAAL 40-60 woorden (2-3 zinnen). Wees bondig, zintuiglijk en pakkend. Geen lange lappen tekst.`;
 }
 
 // =============================================================================
