@@ -244,10 +244,11 @@ const HomeV3 = () => {
   
   // Step 1 is only complete after user presses Enter in city field
   const [step1Completed, setStep1Completed] = useState(false);
+  const [genderSelected, setGenderSelected] = useState(false);
   
   const isStep2Complete = step1Completed && selectedPeriod !== null;
   // Step 3 is complete when BOTH gender and subculture are selected
-  const isStep3Complete = isStep2Complete && optionalData.gender !== 'none' && !!optionalData.subculture;
+  const isStep3Complete = isStep2Complete && genderSelected && !!optionalData.subculture;
   const completedSteps: boolean[] = [
     step1Completed,
     isStep2Complete,
@@ -652,7 +653,8 @@ const HomeV3 = () => {
                           <p className="text-sm text-muted-foreground">
                             {optionalData.gender === 'male' && 'Man'}
                             {optionalData.gender === 'female' && 'Vrouw'}
-                            {optionalData.gender !== 'none' && optionalData.subculture?.myGroup && ' • '}
+                            {optionalData.gender === 'none' && 'Neutraal'}
+                            {optionalData.subculture?.myGroup && ' • '}
                             {optionalData.subculture?.myGroup}
                           </p>
                         )}
@@ -683,7 +685,7 @@ const HomeV3 = () => {
                           </Label>
                           <RadioGroup
                             value={optionalData.gender || 'none'}
-                            onValueChange={(v) => setOptionalData({ ...optionalData, gender: v as Gender })}
+                            onValueChange={(v) => { setOptionalData({ ...optionalData, gender: v as Gender }); setGenderSelected(true); }}
                             className="grid grid-cols-3 gap-2"
                           >
                             {([
