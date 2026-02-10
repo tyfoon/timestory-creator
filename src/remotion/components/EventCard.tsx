@@ -146,7 +146,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
           >
             {(() => {
               // Try to parse month from the date string
-              const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+              const months = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
               if (event.month && event.month >= 1 && event.month <= 12) {
                 return `${months[event.month - 1]} ${event.year}`;
               }
