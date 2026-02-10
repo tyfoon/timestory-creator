@@ -67,7 +67,11 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
   // --- Calculate total duration first so we can size the tunnel ---
   const eventDurations: number[] = events.map((event) => {
     if (isMusicVideoMode && events.length > 0) {
-      return Math.floor(remainingMusicFrames / events.length);
+      // Compensate for overlap: with N events and overlap ratio R,
+      // total = D * (1 + (N-1) * (1-R)), so D = remaining / (1 + (N-1)*(1-R))
+      const n = events.length;
+      const effectiveSlots = 1 + (n - 1) * (1 - OVERLAP_RATIO);
+      return Math.floor(remainingMusicFrames / effectiveSlots);
     }
     return event.audioDurationFrames || Math.round(5 * fps);
   });
