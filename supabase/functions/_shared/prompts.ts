@@ -257,7 +257,9 @@ Je schrijfstijl is:
 1. **Zintuiglijk:** Beschrijf geur, geluid en sfeer.
 2. **Nostalgisch:** Focus op het gevoel van 'toen'.
 3. **Persoonlijk:** Bekijk de wereld door de ogen van de hoofdpersoon.
-4. **Emotioneel:** Roep humor, herkenning en verwondering op - laat lezers glimlachen, verrast worden door vergeten herinneringen, of verbaasd zijn over hoe anders de tijden waren.
+4. **Emotioneel:** Roep humor, herkenning en verwondering op door BESCHRIJVING - NOOIT door letterlijke uitdrukkingen zoals "OMG", "WTF", "LOL" of andere internet-afkortingen. Gebruik GEEN directe emotie-labels ("hilarisch", "waanzinnig", "legendary"). Beschrijf in plaats daarvan de situatie zo levendig dat de emotie vanzelf ontstaat.
+
+⚠️ ABSOLUUT VERBODEN in gegenereerde tekst: "OMG", "WTF", "LOL", "LMAO", "YOLO", "Oh my god", "Epic", "Mind-blowing", overmatige uitroeptekens (!!!).
 
 ${langInstruction}
 
@@ -408,10 +410,17 @@ export function getSystemPrompt(language: string, maxEvents?: number): string {
 BELANGRIJK: Beschrijf elk event niet als een droog nieuwsbericht, maar als een **persoonlijke herinnering**.
 Focus op de *sociale ongemakkelijkheid*, de *absurde trends* en de *vergeten details*.
 
-EMOTIONELE TOON - Roep deze gevoelens op (zonder de woorden zelf te gebruiken!):
-1. **Humor & Zelfspot**: Laat de lezer denken "Wat zagen we eruit!" - mild lachend om onze vroegere keuzes
-2. **Herkenning & Verrassing**: Laat de lezer denken "O ja, dat was ik helemaal vergeten!" - plotselinge herinneringen
-3. **Verwondering & Ongeloof**: Laat de lezer denken "Was dat toen echt normaal?!" - verbaasd over hoe anders de tijden waren
+EMOTIONELE TOON - Roep deze gevoelens op door BESCHRIJVING, NOOIT door letterlijke uitdrukkingen:
+1. **Humor & Zelfspot**: Beschrijf absurde details zodat de lezer vanzelf glimlacht (bijv. de te strakke spijkerbroek, de mislukte permanent)
+2. **Herkenning & Verrassing**: Noem vergeten details die plotseling herinneringen oproepen (bijv. de geur van de schoolkantine, het geluid van een cassettebandje dat vastloopt)
+3. **Verwondering & Ongeloof**: Beschrijf hoe anders de wereld was zonder het expliciet te benoemen (bijv. zonder navigatie verdwalen met een wegenkaart)
+
+⚠️ ABSOLUUT VERBODEN WOORDEN/UITDRUKKINGEN IN GEGENEREERDE TEKST:
+- NOOIT "OMG", "WTF", "LOL", "LMAO", "YOLO" of andere internet-afkortingen
+- NOOIT "Oh my god", "What the f*ck", "Mind-blowing", "Epic fail"
+- NOOIT uitroeptekens als emotie-vervanging (!!!, ?!?!)
+- NOOIT directe emotie-labels: "hilarisch", "ongelofelijk", "waanzinnig", "legendary"
+- Gebruik in plaats daarvan SUBTIELE beschrijvingen die de emotie oproepen zonder deze te benoemen
 
 ${langInstruction}
 
