@@ -3,7 +3,9 @@ import { useParams, Link } from 'react-router-dom';
 import { Player } from '@remotion/player';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Loader2, Home, AlertCircle } from 'lucide-react';
+import { Loader2, Home, AlertCircle, Tv } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { 
   TimelineVideoComponent, 
   ScrapbookVideoComponent,
@@ -29,6 +31,7 @@ export default function SharedStoryPage() {
   const [story, setStory] = useState<SavedStory | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [vhsOverride, setVhsOverride] = useState<boolean | null>(null);
 
   // Keep screen awake while viewing the shared story
   useWakeLock(!!story && !isLoading);
@@ -144,6 +147,9 @@ export default function SharedStoryPage() {
   const events = content.events as VideoEvent[];
   const totalDuration = calculateDuration();
 
+  // VHS toggle: use override if set, otherwise use saved setting
+  const effectiveVhs = vhsOverride !== null ? vhsOverride : !!settings.enableVhsEffect;
+
   // Prepare video props
   const videoProps = {
     events: events,
@@ -152,7 +158,7 @@ export default function SharedStoryPage() {
     introAudioUrl: settings.isMusicVideo ? undefined : settings.introAudioUrl,
     introDurationFrames: settings.isMusicVideo ? 0 : (settings.introDurationFrames || 150),
     fps: FPS,
-    enableRetroEffect: settings.enableVhsEffect,
+    enableRetroEffect: effectiveVhs,
     retroIntensity: settings.retroIntensity || 0.85,
     externalAudioUrl: settings.isMusicVideo ? settings.backgroundMusicUrl : undefined,
     externalAudioDuration: settings.isMusicVideo ? settings.backgroundMusicDuration : undefined,
@@ -166,7 +172,20 @@ export default function SharedStoryPage() {
     <div className="min-h-screen bg-black flex flex-col">
       {/* Video Player - Full width, maintains aspect ratio */}
       <div className="flex-1 flex items-center justify-center p-0 sm:p-4">
-        <div className="w-full max-w-6xl aspect-video bg-black rounded-none sm:rounded-lg overflow-hidden shadow-2xl">
+        <div className="w-full max-w-6xl">
+          {/* VHS Toggle */}
+          <div className="flex items-center justify-end gap-2 mb-2 px-1">
+            <Tv className="h-4 w-4 text-muted-foreground" />
+            <Label htmlFor="vhs-shared" className="text-sm text-muted-foreground cursor-pointer">
+              VHS effect
+            </Label>
+            <Switch
+              id="vhs-shared"
+              checked={effectiveVhs}
+              onCheckedChange={(v) => setVhsOverride(v)}
+            />
+          </div>
+          <div className="aspect-video bg-black rounded-none sm:rounded-lg overflow-hidden shadow-2xl">
           <Player
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             component={VideoComponent as any}
@@ -181,6 +200,7 @@ export default function SharedStoryPage() {
             clickToPlay
             doubleClickToFullscreen
           />
+        </div>
         </div>
       </div>
 
