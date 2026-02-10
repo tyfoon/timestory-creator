@@ -20,29 +20,38 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
   // Normalised progress 0→1 over the card's lifespan
   const progress = frame / Math.max(durationInFrames, 1);
 
-  // === FLY-THROUGH SCALE ===
-  // Enter: 0.4 → 1.0 | Active: 1.0 | Exit: 1.0 → 2.0
+  // === FLY-THROUGH SCALE === (0.5 far away → 2.5 past camera)
   const scale = interpolate(
     progress,
-    [0, 0.2, 0.7, 1],
-    [0.4, 1.0, 1.0, 2.0],
+    [0, 0.5, 1],
+    [0.5, 1.0, 2.5],
     { extrapolateRight: 'clamp' }
   );
 
-  // === OPACITY ===
-  // Enter: 0 → 1 | Active: 1 | Exit: 1 → 0
+  // === OPACITY === (fade in first 30 frames, hold, fade out last 20 frames)
   const opacity = interpolate(
-    progress,
-    [0, 0.15, 0.7, 0.95],
+    frame,
+    [0, 30, durationInFrames - 20, durationInFrames],
     [0, 1, 1, 0],
     { extrapolateRight: 'clamp' }
   );
 
-  // === BLUR (CSS filter) ===
+  // === BLUR (depth of field) === (5px far → 0px focus → 10px motion blur)
   const blur = interpolate(
     progress,
-    [0, 0.2, 0.75, 1],
-    [12, 0, 0, 8],
+    [0, 0.25, 0.7, 1],
+    [5, 0, 0, 10],
+    { extrapolateRight: 'clamp' }
+  );
+
+  // === RANDOM ROTATION (floating drift) ===
+  // Deterministic per-event pseudo-random seed
+  const seed = Math.sin(eventIndex * 127.1 + 311.7) * 43758.5453;
+  const randBase = (seed - Math.floor(seed)) * 2 - 1; // -1 to 1
+  const rotation = interpolate(
+    progress,
+    [0, 0.5, 1],
+    [randBase * -3, randBase * 3, randBase * -2],
     { extrapolateRight: 'clamp' }
   );
 
@@ -69,7 +78,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, imageUrl, eventInde
     <AbsoluteFill
       style={{
         opacity,
-        transform: `scale(${scale})`,
+        transform: `scale(${scale}) rotate(${rotation}deg)`,
         filter: `blur(${blur}px)`,
         transformOrigin: 'center center',
         willChange: 'transform, opacity, filter',
