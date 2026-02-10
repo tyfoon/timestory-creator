@@ -53,7 +53,7 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
   const isMusicVideoMode = !!externalAudioUrl && !!externalAudioDuration;
   
   // Music video intro duration: 15-20 seconds (we use 18 seconds = 540 frames at 30fps)
-  const MUSIC_VIDEO_INTRO_SECONDS = 18;
+  const MUSIC_VIDEO_INTRO_SECONDS = 10;
   const musicVideoIntroFrames = Math.round(MUSIC_VIDEO_INTRO_SECONDS * fps);
   
   // In music video mode, calculate how long each event should be shown
