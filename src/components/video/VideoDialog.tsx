@@ -237,20 +237,77 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
   const isMusicVideoMode = !!backgroundMusicUrl && !!backgroundMusicDuration;
 
   // Wake Lock: keep screen awake while video is playing
+  // Uses Screen Wake Lock API (Android/Chrome) + hidden video fallback (iOS Safari)
+  const noSleepVideoRef = useRef<HTMLVideoElement | null>(null);
+
   useEffect(() => {
     const shouldLock = isReady || isMusicVideoMode;
+    if (!shouldLock) return;
+
+    let released = false;
+
+    // Strategy 1: Screen Wake Lock API (works on Android Chrome, desktop)
     const acquireWakeLock = async () => {
-      if ('wakeLock' in navigator && shouldLock) {
+      if ('wakeLock' in navigator) {
         try {
           wakeLockRef.current = await navigator.wakeLock.request('screen');
+          console.log('Wake lock acquired via API');
         } catch (err) {
-          console.log('Wake lock request failed:', err);
+          console.log('Wake lock API failed, using video fallback:', err);
+          startNoSleepVideo();
         }
+      } else {
+        // No Wake Lock API (iOS Safari) – use video fallback
+        startNoSleepVideo();
       }
     };
 
+    // Strategy 2: Play a tiny silent video in a loop to prevent iOS sleep
+    const startNoSleepVideo = () => {
+      if (noSleepVideoRef.current || released) return;
+      const video = document.createElement('video');
+      video.setAttribute('playsinline', '');
+      video.setAttribute('muted', '');
+      video.muted = true;
+      video.loop = true;
+      video.style.position = 'fixed';
+      video.style.top = '-1px';
+      video.style.left = '-1px';
+      video.style.width = '1px';
+      video.style.height = '1px';
+      video.style.opacity = '0.01';
+      // Minimal silent mp4 (base64) – ~1 second of silence
+      video.src = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAA' +
+        'ONtZGF0AAACrgYF//+q3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE0OCByMjY0MyA1YzY1NzA0IC0gSC4yNjQv' +
+        'TVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAxNSAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQ' +
+        'uaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTEgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MzoweDExMyBtZT1oZX' +
+        'ggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xI' +
+        'HRyZWxsaXM9MSA4eDhkY3Q9MSBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNl' +
+        'dD0tMiB0aHJlYWRzPTEgbG9va2FoZWFkX3RocmVhZHM9MSBzbGljZWRfdGhyZWFkcz0wIG5yPTAgZGVjaW1hdGU9MDEg' +
+        'aW50ZXJsYWNlZD0wIGJsdXJheV9jb21wYXQ9MCBjb25zdHJhaW5lZF9pbnRyYT0wIGJmcmFtZXM9MyBiX3B5cmFtaWQ' +
+        '9MiBiX2FkYXB0PTEgYl9iaWFzPTAgZGlyZWN0PTEgd2VpZ2h0Yj0xIG9wZW5fZ29wPTAgd2VpZ2h0cD0yIGtleWludD' +
+        '0yNTAga2V5aW50X21pbj0xIHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmI' +
+        'G1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQw' +
+        'IGFxPTE6MS4wMAAAAAADaW1vb3YAAABsbXZoZAAAAAAAAAAAAAAAAAAAA+gAAAAoAAEAAAEAAAAAAAAAAAAAAAABAAAAAAAA' +
+        'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+        'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH' +
+        'RyYWsAAABcdGtoZAAAAA8AAAAAAAAAAAAAAAEAAAAAAAAAKAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAABAA' +
+        'AAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAkbWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAAAoAAAAAgBVxAAAAAAALWhkbHI' +
+        'AAAAAAAAAAAB2aWRlAAAAAAAAAAAAAAAAVmlkZW9IYW5kbGVyAAAAD21pbmYAAAAUdm1oZAAAAAAAAAAAAAAAAAAAACRkaW5m' +
+        'AAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAAM9zdGJsAAAAl3N0c2QAAAAAAAAAAQAAAIdhdmMxAAAAAAAAAAEAAAAA' +
+        'AAAAAAAAAAAAAAAAACAAIABIAAAASAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGP//AAAALWF2Y' +
+        '0MBZAAf/+EAF2dkAB+s2UCgL/lwFqCgoKgAAB9IAAdTAHjBIllAAAAYc3R0cwAAAAAAAAABAAAAAgAAAgAAAAAUc3Rzcw' +
+        'AAAAAAAAABAAAAAQAAABBjdHRzAAAAAAAAAAAAAAASc3RzegAAAAAAAAAAAAAAAgAAAAMAAADkAAAAFHN0Y28AAAAAAAAAAQ' +
+        'AAACgAAABidWR0YQAAAFptZXRhAAAAAAAAACFoZGxyAAAAAAAAAABtZGlyYXBwbAAAAAAAAAAAAAAAAC1pbHN0AAAAJal0b2' +
+        '8AAAAdZGF0YQAAAAEAAAAATGF2ZjU2LjQwLjEwMQ==';
+      document.body.appendChild(video);
+      video.play().catch(() => {});
+      noSleepVideoRef.current = video;
+      console.log('No-sleep video fallback started');
+    };
+
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && shouldLock) {
+      if (document.visibilityState === 'visible' && !released) {
         acquireWakeLock();
       }
     };
@@ -259,10 +316,16 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
+      released = true;
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (wakeLockRef.current) {
         wakeLockRef.current.release().catch(() => {});
         wakeLockRef.current = null;
+      }
+      if (noSleepVideoRef.current) {
+        noSleepVideoRef.current.pause();
+        noSleepVideoRef.current.remove();
+        noSleepVideoRef.current = null;
       }
     };
   }, [isReady, isMusicVideoMode]);
