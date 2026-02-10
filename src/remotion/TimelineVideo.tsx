@@ -146,7 +146,7 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
       currentFrame -= overlapFrames;
     }
 
-    const CardComponent = enableRetroEffect ? RetroCard : EventCard;
+    const CardComponent = EventCard;
 
     sequences.push(
       <Sequence
