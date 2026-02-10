@@ -5,12 +5,14 @@
  * Shows the Remotion video with generated music as background when complete
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Music, Loader2, Play, Sparkles, AlertCircle, RefreshCw, Film, Share2 } from 'lucide-react';
+import { Music, Loader2, Play, Sparkles, AlertCircle, RefreshCw, Film, Share2, Tv } from 'lucide-react';
 import { Player } from '@remotion/player';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useSoundtrackGeneration, clearSoundtrackState } from '@/hooks/useSoundtrackGeneration';
 import { TimelineEvent } from '@/types/timeline';
 import { FormData } from '@/types/form';
@@ -38,6 +40,17 @@ export const SoundtrackSection = ({
 }: SoundtrackSectionProps) => {
   const soundtrack = useSoundtrackGeneration();
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [enableVhsEffect, setEnableVhsEffect] = useState(false);
+
+  // Auto-enable VHS for 80s-dominant content
+  useEffect(() => {
+    if (events.length > 0) {
+      const eightyEvents = events.filter(e => e.year >= 1980 && e.year < 1990).length;
+      if (eightyEvents / events.length > 0.5) {
+        setEnableVhsEffect(true);
+      }
+    }
+  }, [events]);
 
   // Convert timeline events to video events (with placeholder audio duration)
   const videoEvents: VideoEvent[] = useMemo(() => {
@@ -245,6 +258,21 @@ export const SoundtrackSection = ({
                   </span>
                 </div>
 
+                {/* VHS toggle */}
+                <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border">
+                  <div className="flex items-center gap-2">
+                    <Tv className="h-4 w-4 text-muted-foreground" />
+                    <Label htmlFor="vhs-toggle" className="text-sm text-muted-foreground cursor-pointer">
+                      VHS / Retro effect
+                    </Label>
+                  </div>
+                  <Switch
+                    id="vhs-toggle"
+                    checked={enableVhsEffect}
+                    onCheckedChange={setEnableVhsEffect}
+                  />
+                </div>
+
                 {/* Remotion Video Player */}
                 <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-lg">
                   <Player
@@ -254,10 +282,10 @@ export const SoundtrackSection = ({
                       events: videoEvents,
                       storyTitle: displayTitle,
                       storyIntroduction: storyIntroduction || summary,
-                      introAudioUrl: undefined, // No separate intro audio - music handles it
+                      introAudioUrl: undefined,
                       introDurationFrames: 0,
                       fps: FPS,
-                      enableRetroEffect: false,
+                      enableRetroEffect: enableVhsEffect,
                       retroIntensity: 0.85,
                       externalAudioUrl: soundtrack.audioUrl,
                       externalAudioDuration: soundtrack.duration,
@@ -341,7 +369,7 @@ export const SoundtrackSection = ({
         settings={{
           variant: 'slideshow',
           fps: FPS,
-          enableVhsEffect: false,
+          enableVhsEffect: enableVhsEffect,
           retroIntensity: 0.85,
           voiceProvider: 'google',
           isMusicVideo: true,
