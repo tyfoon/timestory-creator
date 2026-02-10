@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Player } from '@remotion/player';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +12,7 @@ import {
   VideoEvent 
 } from '@/remotion';
 import { StoryContent, StorySettings } from '@/hooks/useSaveStory';
+import { useWakeLock } from '@/hooks/useWakeLock';
 
 const FPS = 30;
 
@@ -28,6 +29,9 @@ export default function SharedStoryPage() {
   const [story, setStory] = useState<SavedStory | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Keep screen awake while viewing the shared story
+  useWakeLock(!!story && !isLoading);
 
   useEffect(() => {
     const fetchStory = async () => {
