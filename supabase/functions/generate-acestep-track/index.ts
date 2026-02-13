@@ -51,14 +51,15 @@ serve(async (req) => {
     console.log(`[AceStep] Lyrics length: ${lyrics.length} chars`);
 
     // Transform app payload to Ace-Step API format
-    // prompt = style description (identical to what Suno receives), lyrics = song lyrics
-     const aceStepPayload = {
-      prompt: style,
-      lyrics: lyrics,
-      duration: 90,
-      guidance_scale: 5.0,
-      audio_format: "mp3",
-    };
+     // prompt = style description (identical to what Suno receives), lyrics = song lyrics
+      const aceStepPayload = {
+       prompt: style,
+       lyrics: lyrics,
+       duration: 90,
+       guidance_scale: 5.0,
+       audio_format: "mp3",
+       quality: "studio",
+     };
 
     console.log("[AceStep] Request payload:", JSON.stringify(aceStepPayload, null, 2));
 
