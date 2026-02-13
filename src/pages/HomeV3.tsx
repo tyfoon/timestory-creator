@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { FormData, BirthDateData, OptionalData, PeriodType, Gender, SubcultureData } from "@/types/form";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
 import {
   ArrowRight,
   Sparkles,
@@ -683,32 +683,35 @@ const HomeV3 = () => {
                             <Users className="h-4 w-4 text-accent" />
                             Geslacht
                           </Label>
-                          <RadioGroup
-                            value={optionalData.gender || 'none'}
-                            onValueChange={(v) => { setOptionalData({ ...optionalData, gender: v as Gender }); setGenderSelected(true); }}
-                            className="grid grid-cols-3 gap-2"
-                          >
+                          <div className="grid grid-cols-3 gap-2">
                             {([
-                              { value: 'male', label: 'Man' },
-                              { value: 'female', label: 'Vrouw' },
-                              { value: 'none', label: 'Geen voorkeur' }
-                            ] as const).map((option) => (
-                              <Label
-                                key={option.value}
-                                className={`
-                                  flex items-center justify-center py-2 px-2 rounded-md cursor-pointer
-                                  border-2 transition-all duration-200
-                                  ${optionalData.gender === option.value || (!optionalData.gender && option.value === 'none')
-                                    ? 'border-accent bg-accent/10 text-foreground' 
-                                    : 'border-border bg-card hover:border-muted-foreground/30 text-muted-foreground'
-                                  }
-                                `}
-                              >
-                                <RadioGroupItem value={option.value} className="sr-only" />
-                                <span className="text-sm font-medium">{option.label}</span>
-                              </Label>
-                            ))}
-                          </RadioGroup>
+                              { value: 'male' as Gender, label: 'Man' },
+                              { value: 'female' as Gender, label: 'Vrouw' },
+                              { value: 'none' as Gender, label: 'Geen voorkeur' }
+                            ]).map((option) => {
+                              const isSelected = optionalData.gender === option.value || (!optionalData.gender && option.value === 'none');
+                              return (
+                                <button
+                                  key={option.value}
+                                  type="button"
+                                  onClick={() => {
+                                    setOptionalData({ ...optionalData, gender: option.value });
+                                    setGenderSelected(true);
+                                  }}
+                                  className={`
+                                    flex items-center justify-center py-2 px-2 rounded-md cursor-pointer
+                                    border-2 transition-all duration-200
+                                    ${isSelected
+                                      ? 'border-accent bg-accent/10 text-foreground' 
+                                      : 'border-border bg-card hover:border-muted-foreground/30 text-muted-foreground'
+                                    }
+                                  `}
+                                >
+                                  <span className="text-sm font-medium">{option.label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
 
                         {/* Subculture */}
