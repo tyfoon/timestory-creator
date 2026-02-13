@@ -20,6 +20,7 @@ import { VideoDialog } from '@/components/video/VideoDialog';
 
 import { SoundtrackSection } from '@/components/story/SoundtrackSection';
 import { PersonalizeSoundtrackDialog } from '@/components/story/PersonalizeSoundtrackDialog';
+import { startQuickSoundtrackGeneration, clearSoundtrackState } from '@/hooks/useSoundtrackGeneration';
 
 // Placeholder images by category
 import birthdayPlaceholder from '@/assets/placeholders/birthday.jpg';
@@ -1167,6 +1168,13 @@ const TimelineStoryPage = () => {
       setStoryTitle('');
       setStoryIntroduction('');
       setIsLoading(true);
+      
+      // Also regenerate the soundtrack when refreshing
+      clearSoundtrackState();
+      startQuickSoundtrackGeneration(formData).catch(err => {
+        console.error('[TimelineStoryPage] Background soundtrack regeneration failed:', err);
+      });
+      
       loadTimelineStreaming(formData, maxEvents);
     }
   };
