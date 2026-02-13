@@ -77,9 +77,15 @@ const loadState = (): SoundtrackState => {
     const saved = sessionStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      // If it was in a generating state but page was refreshed, reset to idle
+      // If it was in a generating state, only mark as interrupted if it's stale (>5 min)
       if (parsed.status === 'generating_lyrics' || parsed.status === 'generating_music' || parsed.status === 'warming_up') {
-        return { ...initialState, ...parsed, status: 'error', error: 'Generatie onderbroken' };
+        const elapsed = Date.now() - (parsed.startedAt || 0);
+        const STALE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+        if (elapsed > STALE_THRESHOLD) {
+          return { ...initialState, ...parsed, status: 'error', error: 'Generatie onderbroken' };
+        }
+        // Still fresh — keep the generating state so the async function can finish
+        return parsed;
       }
       return parsed;
     }
