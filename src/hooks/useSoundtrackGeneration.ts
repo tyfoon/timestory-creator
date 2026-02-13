@@ -3,11 +3,16 @@
  * Supports two-stage generation:
  * - V1 (Quick): Fire-and-forget from homepage, uses basic formData only
  * - V2 (Full): Detailed generation with events and personal data
+ * 
+ * Providers:
+ * - Suno: Async polling-based (generate -> poll status -> complete)
+ * - AceStep: Synchronous (generate -> direct response with audio)
  */
 
 import { useCallback, useEffect, useState } from 'react';
 import { FormData } from '@/types/form';
 import { TimelineEvent } from '@/types/timeline';
+import { MUSIC_GENERATION_PROVIDER } from '@/lib/promptConstants';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvZW9ib3lnc3NzeWFqcGRzdGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNTY2NjEsImV4cCI6MjA4NDgzMjY2MX0.KuFaWF4r_cxZRiOumPGMChLVmwgyhT9vR5s7L52zr5s';
@@ -18,6 +23,7 @@ export type SoundtrackStatus =
   | 'idle'           // Not started
   | 'generating_lyrics' 
   | 'generating_music' 
+  | 'warming_up'     // AceStep cold start (GPU spinning up)
   | 'polling'        // Waiting for Suno
   | 'completed' 
   | 'error';
@@ -72,7 +78,7 @@ const loadState = (): SoundtrackState => {
     if (saved) {
       const parsed = JSON.parse(saved);
       // If it was in a generating state but page was refreshed, reset to idle
-      if (parsed.status === 'generating_lyrics' || parsed.status === 'generating_music') {
+      if (parsed.status === 'generating_lyrics' || parsed.status === 'generating_music' || parsed.status === 'warming_up') {
         return { ...initialState, ...parsed, status: 'error', error: 'Generatie onderbroken' };
       }
       return parsed;
@@ -86,6 +92,54 @@ const loadState = (): SoundtrackState => {
 // Clear state
 export const clearSoundtrackState = () => {
   sessionStorage.removeItem(STORAGE_KEY);
+};
+
+/**
+ * Call Ace-Step edge function directly (synchronous - no polling needed)
+ * Returns audio URL on success
+ */
+const callAceStep = async (
+  lyrics: string, 
+  style: string, 
+  title: string,
+  onWarmingUp: () => void,
+): Promise<{ audioUrl: string; duration: number }> => {
+  // Set a timer: if response takes >10s, show "warming up" state
+  const warmupTimer = setTimeout(() => {
+    onWarmingUp();
+  }, 10_000);
+
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-acestep-track`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ lyrics, style, title }),
+    });
+
+    clearTimeout(warmupTimer);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `AceStep error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || 'AceStep generation failed');
+    }
+
+    return {
+      audioUrl: data.data.audio_url,
+      duration: data.data.duration || 60,
+    };
+  } catch (error) {
+    clearTimeout(warmupTimer);
+    throw error;
+  }
 };
 
 /**
@@ -110,10 +164,11 @@ export const startQuickSoundtrackGeneration = async (formData: FormData): Promis
   };
   saveState(newState);
 
-  console.log('[Soundtrack V1] Starting quick generation...', { startYear, endYear });
+  const provider = MUSIC_GENERATION_PROVIDER;
+  console.log(`[Soundtrack V1] Starting quick generation with provider: ${provider}`, { startYear, endYear });
 
   try {
-    // Step 1: Generate lyrics (Mode A - quick, no events)
+    // Step 1: Generate lyrics (same for both providers)
     const lyricsResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-song-lyrics`, {
       method: 'POST',
       headers: {
@@ -163,40 +218,68 @@ export const startQuickSoundtrackGeneration = async (formData: FormData): Promis
     };
     saveState(lyricsState);
 
-    // Step 2: Start Suno generation
-    const sunoResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-suno-track`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'apikey': SUPABASE_ANON_KEY,
-      },
-      body: JSON.stringify({
-        lyrics: lyricsData.data.lyrics,
-        style: lyricsData.data.style,
-        title: lyricsData.data.title,
-      }),
-    });
+    // Step 2: Generate music (provider-specific)
+    if (provider === 'acestep') {
+      // AceStep: Direct synchronous call
+      console.log('[Soundtrack V1] Using AceStep provider...');
+      const result = await callAceStep(
+        lyricsData.data.lyrics,
+        lyricsData.data.style,
+        lyricsData.data.title,
+        () => {
+          const warmupState: SoundtrackState = {
+            ...lyricsState,
+            status: 'warming_up',
+          };
+          saveState(warmupState);
+        },
+      );
 
-    if (!sunoResponse.ok) {
-      const errorData = await sunoResponse.json().catch(() => ({}));
-      throw new Error(errorData.error || `Suno error: ${sunoResponse.status}`);
+      const completedState: SoundtrackState = {
+        ...lyricsState,
+        status: 'completed',
+        audioUrl: result.audioUrl,
+        duration: result.duration,
+        completedAt: Date.now(),
+      };
+      saveState(completedState);
+      console.log('[Soundtrack V1] AceStep completed!');
+
+    } else {
+      // Suno: Async polling-based
+      const sunoResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-suno-track`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'apikey': SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          lyrics: lyricsData.data.lyrics,
+          style: lyricsData.data.style,
+          title: lyricsData.data.title,
+        }),
+      });
+
+      if (!sunoResponse.ok) {
+        const errorData = await sunoResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || `Suno error: ${sunoResponse.status}`);
+      }
+
+      const sunoData = await sunoResponse.json();
+      if (!sunoData.success || !sunoData.data?.taskId) {
+        throw new Error(sunoData.error || 'No taskId received');
+      }
+
+      console.log('[Soundtrack V1] Suno task started:', sunoData.data.taskId);
+
+      const pollingState: SoundtrackState = {
+        ...lyricsState,
+        status: 'polling',
+        taskId: sunoData.data.taskId,
+      };
+      saveState(pollingState);
     }
-
-    const sunoData = await sunoResponse.json();
-    if (!sunoData.success || !sunoData.data?.taskId) {
-      throw new Error(sunoData.error || 'No taskId received');
-    }
-
-    console.log('[Soundtrack V1] Suno task started:', sunoData.data.taskId);
-
-    // Update state with taskId - polling will be done by the hook
-    const pollingState: SoundtrackState = {
-      ...lyricsState,
-      status: 'polling',
-      taskId: sunoData.data.taskId,
-    };
-    saveState(pollingState);
 
   } catch (error) {
     console.error('[Soundtrack V1] Error:', error);
@@ -361,7 +444,8 @@ export const useSoundtrackGeneration = () => {
       startedAt: Date.now(),
     });
 
-    console.log('[Soundtrack V2] Starting full generation with events...', { eventCount: events.length });
+    const provider = MUSIC_GENERATION_PROVIDER;
+    console.log(`[Soundtrack V2] Starting full generation with provider: ${provider}`, { eventCount: events.length });
 
     try {
       // Step 1: Generate lyrics (Mode B - full, with events)
@@ -410,38 +494,62 @@ export const useSoundtrackGeneration = () => {
         title: lyricsData.data.title,
       }));
 
-      // Step 2: Start Suno generation
-      const sunoResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-suno-track`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'apikey': SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({
-          lyrics: lyricsData.data.lyrics,
-          style: lyricsData.data.style,
-          title: lyricsData.data.title,
-        }),
-      });
+      // Step 2: Generate music (provider-specific)
+      if (provider === 'acestep') {
+        console.log('[Soundtrack V2] Using AceStep provider...');
+        const result = await callAceStep(
+          lyricsData.data.lyrics,
+          lyricsData.data.style,
+          lyricsData.data.title,
+          () => {
+            setState(prev => ({ ...prev, status: 'warming_up' }));
+          },
+        );
 
-      if (!sunoResponse.ok) {
-        const errorData = await sunoResponse.json().catch(() => ({}));
-        throw new Error(errorData.error || `Suno error: ${sunoResponse.status}`);
+        setState(prev => ({
+          ...prev,
+          status: 'completed',
+          audioUrl: result.audioUrl,
+          duration: result.duration,
+          completedAt: Date.now(),
+          isStreaming: false,
+        }));
+        console.log('[Soundtrack V2] AceStep completed!');
+
+      } else {
+        // Suno: Async polling-based
+        const sunoResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-suno-track`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            lyrics: lyricsData.data.lyrics,
+            style: lyricsData.data.style,
+            title: lyricsData.data.title,
+          }),
+        });
+
+        if (!sunoResponse.ok) {
+          const errorData = await sunoResponse.json().catch(() => ({}));
+          throw new Error(errorData.error || `Suno error: ${sunoResponse.status}`);
+        }
+
+        const sunoData = await sunoResponse.json();
+        if (!sunoData.success || !sunoData.data?.taskId) {
+          throw new Error(sunoData.error || 'No taskId received');
+        }
+
+        console.log('[Soundtrack V2] Suno task started:', sunoData.data.taskId);
+
+        setState(prev => ({
+          ...prev,
+          status: 'polling',
+          taskId: sunoData.data.taskId,
+        }));
       }
-
-      const sunoData = await sunoResponse.json();
-      if (!sunoData.success || !sunoData.data?.taskId) {
-        throw new Error(sunoData.error || 'No taskId received');
-      }
-
-      console.log('[Soundtrack V2] Suno task started:', sunoData.data.taskId);
-
-      setState(prev => ({
-        ...prev,
-        status: 'polling',
-        taskId: sunoData.data.taskId,
-      }));
 
     } catch (error) {
       console.error('[Soundtrack V2] Error:', error);
@@ -455,9 +563,10 @@ export const useSoundtrackGeneration = () => {
 
   return {
     ...state,
+    provider: MUSIC_GENERATION_PROVIDER,
     reset,
     startFullGeneration,
-    isGenerating: state.status === 'generating_lyrics' || state.status === 'generating_music' || state.status === 'polling',
+    isGenerating: state.status === 'generating_lyrics' || state.status === 'generating_music' || state.status === 'polling' || state.status === 'warming_up',
     isComplete: state.status === 'completed',
     hasError: state.status === 'error',
   };
