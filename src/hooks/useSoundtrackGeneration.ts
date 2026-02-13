@@ -310,6 +310,26 @@ export const useSoundtrackGeneration = () => {
     saveState(state);
   }, [state]);
 
+  // Poll sessionStorage for updates from fire-and-forget startQuickSoundtrackGeneration
+  // This is needed because that function runs outside React and only writes to sessionStorage
+  useEffect(() => {
+    // Only poll when we're in a generating/warming_up state (waiting for the async function to finish)
+    if (state.status !== 'generating_lyrics' && state.status !== 'generating_music' && state.status !== 'warming_up') {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const stored = loadState();
+      // If sessionStorage has a different (more advanced) status, sync it to React state
+      if (stored.status !== state.status) {
+        console.log(`[Soundtrack] SessionStorage sync: ${state.status} → ${stored.status}`);
+        setState(stored);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [state.status]);
+
   // Poll for Suno completion when in polling state
   useEffect(() => {
     if (state.status !== 'polling' || !state.taskId) return;
