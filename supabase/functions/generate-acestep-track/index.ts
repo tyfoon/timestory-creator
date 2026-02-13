@@ -52,10 +52,10 @@ serve(async (req) => {
 
     // Transform app payload to Ace-Step API format
     // prompt = style description (identical to what Suno receives), lyrics = song lyrics
-    const aceStepPayload = {
+     const aceStepPayload = {
       prompt: style,
       lyrics: lyrics,
-      duration: 60,
+      duration: 90,
       guidance_scale: 5.0,
       audio_format: "mp3",
     };
