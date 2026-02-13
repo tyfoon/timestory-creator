@@ -51,13 +51,9 @@ serve(async (req) => {
     console.log(`[AceStep] Lyrics length: ${lyrics.length} chars`);
 
     // Transform app payload to Ace-Step API format
-    // prompt = style description, lyrics = song lyrics
-    const enhancedStyle = style.includes("high quality") 
-      ? style 
-      : `${style}, high quality, studio production`;
-
+    // prompt = style description (identical to what Suno receives), lyrics = song lyrics
     const aceStepPayload = {
-      prompt: enhancedStyle,
+      prompt: style,
       lyrics: lyrics,
       duration: 60,
       guidance_scale: 5.0,
