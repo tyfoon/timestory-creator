@@ -75,8 +75,12 @@ export const SoundtrackSection = ({
   }
 
   const handleReset = () => {
-    clearSoundtrackState();
-    soundtrack.reset();
+    if (formData) {
+      soundtrack.regenerateQuick(formData);
+    } else {
+      clearSoundtrackState();
+      soundtrack.reset();
+    }
   };
 
   const getStatusMessage = (): string => {

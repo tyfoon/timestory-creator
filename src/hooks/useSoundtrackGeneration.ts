@@ -418,6 +418,124 @@ export const useSoundtrackGeneration = () => {
     setState(initialState);
   }, []);
 
+  // Regenerate V1 (quick) soundtrack - reset and re-trigger
+  const regenerateQuick = useCallback(async (formData: FormData) => {
+    clearSoundtrackState();
+    setState({ ...initialState, status: 'generating_lyrics', version: 'v1', startedAt: Date.now() });
+
+    try {
+      // Re-use the same logic as startQuickSoundtrackGeneration but with setState
+      const startYear = formData.type === 'birthdate' && formData.birthDate 
+        ? formData.birthDate.year 
+        : formData.yearRange?.startYear || 1980;
+      const endYear = formData.type === 'birthdate' && formData.birthDate 
+        ? formData.birthDate.year + 25 
+        : formData.yearRange?.endYear || 2000;
+
+      const provider = MUSIC_GENERATION_PROVIDER;
+      console.log(`[Soundtrack Regenerate] Starting with provider: ${provider}`);
+
+      // Step 1: Generate lyrics
+      const lyricsResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-song-lyrics`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'apikey': SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          mode: 'quick',
+          formData: {
+            birthYear: formData.birthDate?.year,
+            city: formData.optionalData.city,
+            periodType: formData.optionalData.periodType,
+            startYear,
+            endYear,
+          },
+          personalData: {
+            firstName: formData.optionalData.firstName,
+            city: formData.optionalData.city,
+          },
+          subculture: formData.optionalData.subculture,
+          gender: formData.optionalData.gender,
+          startYear,
+          endYear,
+        }),
+      });
+
+      if (!lyricsResponse.ok) {
+        const errorData = await lyricsResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || `Lyrics error: ${lyricsResponse.status}`);
+      }
+
+      const lyricsData = await lyricsResponse.json();
+      if (!lyricsData.success) throw new Error(lyricsData.error || 'Lyrics generation failed');
+
+      console.log('[Soundtrack Regenerate] Lyrics generated:', lyricsData.data.title);
+
+      setState(prev => ({
+        ...prev,
+        status: 'generating_music',
+        lyrics: lyricsData.data.lyrics,
+        style: lyricsData.data.style,
+        title: lyricsData.data.title,
+      }));
+
+      if (provider === 'acestep') {
+        const result = await callAceStep(
+          lyricsData.data.lyrics,
+          lyricsData.data.style,
+          lyricsData.data.title,
+          () => setState(prev => ({ ...prev, status: 'warming_up' })),
+        );
+
+        setState(prev => ({
+          ...prev,
+          status: 'completed',
+          audioUrl: result.audioUrl,
+          duration: result.duration,
+          completedAt: Date.now(),
+        }));
+      } else {
+        // Suno path
+        const sunoResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-suno-track`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            lyrics: lyricsData.data.lyrics,
+            style: lyricsData.data.style,
+            title: lyricsData.data.title,
+          }),
+        });
+
+        if (!sunoResponse.ok) {
+          const errorData = await sunoResponse.json().catch(() => ({}));
+          throw new Error(errorData.error || `Suno error: ${sunoResponse.status}`);
+        }
+
+        const sunoData = await sunoResponse.json();
+        if (!sunoData.success || !sunoData.data?.taskId) throw new Error('No taskId received');
+
+        setState(prev => ({
+          ...prev,
+          status: 'polling',
+          taskId: sunoData.data.taskId,
+        }));
+      }
+    } catch (error) {
+      console.error('[Soundtrack Regenerate] Error:', error);
+      setState(prev => ({
+        ...prev,
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      }));
+    }
+  }, []);
+
   // Start V2 (full) generation with events
   const startFullGeneration = useCallback(async (
     events: TimelineEvent[],
@@ -565,6 +683,7 @@ export const useSoundtrackGeneration = () => {
     ...state,
     provider: MUSIC_GENERATION_PROVIDER,
     reset,
+    regenerateQuick,
     startFullGeneration,
     isGenerating: state.status === 'generating_lyrics' || state.status === 'generating_music' || state.status === 'polling' || state.status === 'warming_up',
     isComplete: state.status === 'completed',
