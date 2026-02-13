@@ -505,3 +505,9 @@ EMOTIONELE TOON - Roep deze gevoelens op (zonder de woorden zelf te gebruiken!):
 
 BELANGRIJK: Schrijf alsof je met een oude vriend in de kroeg herinneringen ophaalt. Zoek bij elk event naar het "Gênante Detail".
 `;
+
+// =============================================================================
+// MUSIC GENERATION PROVIDER (A/B Test Kill Switch)
+// =============================================================================
+// Switch between 'suno' (existing polling-based) and 'acestep' (direct response)
+export const MUSIC_GENERATION_PROVIDER: 'suno' | 'acestep' = 'acestep';
