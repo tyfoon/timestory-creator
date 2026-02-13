@@ -501,83 +501,96 @@ Format je output als JSON:
 }`;
     }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.8,
-        max_tokens: 2000,
-      }),
-    });
+    // Retry logic for short lyrics
+    const MAX_ATTEMPTS = 2;
+    let parsedContent: { lyrics: string; style: string; title: string } | null = null;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`AI gateway error: ${response.status}`, errorText);
-      
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Te veel verzoeken. Probeer het later opnieuw." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.8 + (attempt - 1) * 0.1, // Slightly increase temperature on retry
+          max_tokens: 2000,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`AI gateway error: ${response.status}`, errorText);
+        
+        if (response.status === 429) {
+          return new Response(JSON.stringify({ error: "Te veel verzoeken. Probeer het later opnieuw." }), {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (response.status === 402) {
+          return new Response(JSON.stringify({ error: "Credits op. Voeg credits toe aan je workspace." }), {
+            status: 402,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        
+        throw new Error(`AI gateway error: ${response.status}`);
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Credits op. Voeg credits toe aan je workspace." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+
+      const aiResponse = await response.json();
+      const content = aiResponse.choices?.[0]?.message?.content;
       
-      throw new Error(`AI gateway error: ${response.status}`);
-    }
+      if (!content) {
+        throw new Error("No content in AI response");
+      }
 
-    const aiResponse = await response.json();
-    const content = aiResponse.choices?.[0]?.message?.content;
-    
-    if (!content) {
-      throw new Error("No content in AI response");
-    }
+      console.log(`AI Response received (attempt ${attempt}), parsing...`);
 
-    console.log("AI Response received, parsing...");
+      // Parse JSON from response (handle markdown code blocks)
+      try {
+        const cleanedContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        parsedContent = JSON.parse(cleanedContent);
+      } catch (parseError) {
+        console.error("Failed to parse AI response as JSON:", content);
+        parsedContent = {
+          lyrics: content,
+          style: suggestedStyle,
+          title: `Mijn ${startYear}-${endYear}`,
+        };
+      }
 
-    // Parse JSON from response (handle markdown code blocks)
-    let parsedContent;
-    try {
-      // Remove markdown code blocks if present
-      const cleanedContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      parsedContent = JSON.parse(cleanedContent);
-    } catch (parseError) {
-      console.error("Failed to parse AI response as JSON:", content);
-      // Fallback: try to extract lyrics from raw text
-      parsedContent = {
-        lyrics: content,
-        style: suggestedStyle,
-        title: `Mijn ${startYear}-${endYear}`,
-      };
+      // Validate lyrics length (minimum 100 chars for a proper song)
+      const lyricsLength = parsedContent!.lyrics?.length || 0;
+      if (lyricsLength >= 100) {
+        console.log(`Lyrics length OK: ${lyricsLength} chars (attempt ${attempt})`);
+        break;
+      }
+
+      console.warn(`Lyrics too short (${lyricsLength} chars) on attempt ${attempt}/${MAX_ATTEMPTS}. ${attempt < MAX_ATTEMPTS ? 'Retrying...' : 'Using anyway.'}`);
     }
 
     // Combine style with vocal type for Suno
-    let finalStyle = parsedContent.style;
+    let finalStyle = parsedContent!.style;
     if (vocalType) {
-      finalStyle = `${parsedContent.style}, ${vocalType}`;
+      finalStyle = `${parsedContent!.style}, ${vocalType}`;
     }
 
-    console.log(`Generated song: "${parsedContent.title}" in style "${finalStyle}"`);
+    console.log(`Generated song: "${parsedContent!.title}" in style "${finalStyle}"`);
+    console.log(`Lyrics length: ${parsedContent!.lyrics?.length || 0} chars`);
     console.log(`Mode used: ${isQuickMode ? 'QUICK (V1)' : 'FULL (V2)'}`);
 
     return new Response(JSON.stringify({
       success: true,
       data: {
-        lyrics: parsedContent.lyrics,
+        lyrics: parsedContent!.lyrics,
         style: finalStyle,
-        title: parsedContent.title,
+        title: parsedContent!.title,
         suggestedGenre: suggestedStyle,
         mode: isQuickMode ? 'quick' : 'full',
       }
