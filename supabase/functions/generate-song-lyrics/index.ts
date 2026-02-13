@@ -234,18 +234,20 @@ serve(async (req) => {
     } else {
       // Fallback: determine by era
       const midYear = Math.round((startYear + endYear) / 2);
-      if (midYear >= 1975 && midYear < 1985) {
-        suggestedStyle = "Synthpop/New Wave";
-      } else if (midYear >= 1985 && midYear < 1992) {
-        suggestedStyle = "Eurodance/Hi-NRG";
-      } else if (midYear >= 1992 && midYear < 2000) {
-        suggestedStyle = "Eurodance/Happy Hardcore";
-      } else if (midYear >= 2000 && midYear < 2010) {
-        suggestedStyle = "Pop/R&B";
-      } else if (midYear >= 2010) {
-        suggestedStyle = "EDM/Dance Pop";
-      } else if (midYear >= 1965 && midYear < 1975) {
+      if (midYear >= 1965 && midYear < 1972) {
         suggestedStyle = "Rock/Nederpop";
+      } else if (midYear >= 1972 && midYear < 1980) {
+        suggestedStyle = "Disco/Funk/Soft Rock";
+      } else if (midYear >= 1980 && midYear < 1988) {
+        suggestedStyle = "Synthpop/New Wave";
+      } else if (midYear >= 1988 && midYear < 1996) {
+        suggestedStyle = "Eurodance/Hi-NRG";
+      } else if (midYear >= 1996 && midYear < 2005) {
+        suggestedStyle = "Eurodance/Happy Hardcore";
+      } else if (midYear >= 2005 && midYear < 2015) {
+        suggestedStyle = "Pop/R&B";
+      } else if (midYear >= 2015) {
+        suggestedStyle = "EDM/Dance Pop";
       }
       console.log(`Style determined by era (${midYear}): ${suggestedStyle}`);
     }
@@ -281,13 +283,15 @@ serve(async (req) => {
       let eraBaseGenre = "Pop";
       if (midYear >= 1955 && midYear < 1965) {
         eraBaseGenre = "50s/60s Pop, Doo-wop";
-      } else if (midYear >= 1965 && midYear < 1975) {
+      } else if (midYear >= 1965 && midYear < 1972) {
         eraBaseGenre = "60s/70s Pop Rock, Folk Pop";
-      } else if (midYear >= 1975 && midYear < 1985) {
+      } else if (midYear >= 1972 && midYear < 1980) {
+        eraBaseGenre = "70s Disco, Funk, Soft Rock";
+      } else if (midYear >= 1980 && midYear < 1988) {
         eraBaseGenre = "80s Synthpop, Melodic";
-      } else if (midYear >= 1985 && midYear < 1995) {
+      } else if (midYear >= 1988 && midYear < 1996) {
         eraBaseGenre = "90s Eurodance, Pop";
-      } else if (midYear >= 1995 && midYear < 2005) {
+      } else if (midYear >= 1996 && midYear < 2005) {
         eraBaseGenre = "00s Radio Pop, R&B influenced";
       } else if (midYear >= 2005 && midYear < 2015) {
         eraBaseGenre = "2010s Dance Pop, EDM influenced";
