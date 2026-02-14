@@ -76,7 +76,7 @@ export const SoundtrackSection = ({
 
   const handleReset = () => {
     if (formData) {
-      soundtrack.regenerateQuick(formData);
+      soundtrack.regenerateQuick(formData, events);
     } else {
       clearSoundtrackState();
       soundtrack.reset();

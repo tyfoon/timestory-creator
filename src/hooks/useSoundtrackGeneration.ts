@@ -222,7 +222,7 @@ const callAceStep = async (
  * Start V1 (quick) soundtrack generation - fire and forget
  * Called from homepage when user clicks "Start"
  */
-export const startQuickSoundtrackGeneration = async (formData: FormData): Promise<void> => {
+export const startQuickSoundtrackGeneration = async (formData: FormData, events?: TimelineEvent[]): Promise<void> => {
   const startYear = formData.type === 'birthdate' && formData.birthDate 
     ? formData.birthDate.year 
     : formData.yearRange?.startYear || 1980;
@@ -241,10 +241,43 @@ export const startQuickSoundtrackGeneration = async (formData: FormData): Promis
   saveState(newState);
 
   const provider = MUSIC_GENERATION_PROVIDER;
-  console.log(`[Soundtrack V1] Starting quick generation with provider: ${provider}`, { startYear, endYear });
+  const hasEvents = events && events.length > 0;
+  console.log(`[Soundtrack V1] Starting generation with provider: ${provider}, events: ${hasEvents ? events.length : 'none'}`, { startYear, endYear });
 
   try {
-    // Step 1: Generate lyrics (same for both providers)
+    // Step 1: Generate lyrics — pass events if available so lyrics match the video
+    const lyricsBody: Record<string, unknown> = {
+      mode: hasEvents ? 'full' : 'quick',
+      formData: {
+        birthYear: formData.birthDate?.year,
+        city: formData.optionalData.city,
+        periodType: formData.optionalData.periodType,
+        startYear,
+        endYear,
+      },
+      personalData: {
+        firstName: formData.optionalData.firstName,
+        city: formData.optionalData.city,
+      },
+      subculture: formData.optionalData.subculture,
+      gender: formData.optionalData.gender,
+      startYear,
+      endYear,
+      provider,
+    };
+    
+    // When events are available, include them so lyrics are synchronized per-event
+    if (hasEvents) {
+      lyricsBody.events = events.map(e => ({
+        id: e.id,
+        year: e.year,
+        title: e.title,
+        description: e.description,
+        category: e.category,
+      }));
+      lyricsBody.summary = `Tijdlijn van ${startYear} tot ${endYear}`;
+    }
+
     const lyricsResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-song-lyrics`, {
       method: 'POST',
       headers: {
@@ -252,25 +285,7 @@ export const startQuickSoundtrackGeneration = async (formData: FormData): Promis
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         'apikey': SUPABASE_ANON_KEY,
       },
-      body: JSON.stringify({
-        mode: 'quick',
-        formData: {
-          birthYear: formData.birthDate?.year,
-          city: formData.optionalData.city,
-          periodType: formData.optionalData.periodType,
-          startYear,
-          endYear,
-        },
-        personalData: {
-          firstName: formData.optionalData.firstName,
-          city: formData.optionalData.city,
-        },
-        subculture: formData.optionalData.subculture,
-        gender: formData.optionalData.gender,
-        startYear,
-        endYear,
-        provider,
-      }),
+      body: JSON.stringify(lyricsBody),
     });
 
     if (!lyricsResponse.ok) {
@@ -536,13 +551,12 @@ export const useSoundtrackGeneration = () => {
     setState(initialState);
   }, []);
 
-  // Regenerate V1 (quick) soundtrack - reset and re-trigger
-  const regenerateQuick = useCallback(async (formData: FormData) => {
+  // Regenerate V1 (quick) soundtrack - reset and re-trigger with events
+  const regenerateQuick = useCallback(async (formData: FormData, events?: TimelineEvent[]) => {
     clearSoundtrackState();
     setState({ ...initialState, status: 'generating_lyrics', version: 'v1', startedAt: Date.now() });
 
     try {
-      // Re-use the same logic as startQuickSoundtrackGeneration but with setState
       const startYear = formData.type === 'birthdate' && formData.birthDate 
         ? formData.birthDate.year 
         : formData.yearRange?.startYear || 1980;
@@ -551,9 +565,37 @@ export const useSoundtrackGeneration = () => {
         : formData.yearRange?.endYear || 2000;
 
       const provider = MUSIC_GENERATION_PROVIDER;
-      console.log(`[Soundtrack Regenerate] Starting with provider: ${provider}`);
+      const hasEvents = events && events.length > 0;
+      console.log(`[Soundtrack Regenerate] Starting with provider: ${provider}, events: ${hasEvents ? events.length : 'none'}`);
 
-      // Step 1: Generate lyrics
+      // Build lyrics request body — include events if available
+      const lyricsBody: Record<string, unknown> = {
+        mode: hasEvents ? 'full' : 'quick',
+        formData: {
+          birthYear: formData.birthDate?.year,
+          city: formData.optionalData.city,
+          periodType: formData.optionalData.periodType,
+          startYear,
+          endYear,
+        },
+        personalData: {
+          firstName: formData.optionalData.firstName,
+          city: formData.optionalData.city,
+        },
+        subculture: formData.optionalData.subculture,
+        gender: formData.optionalData.gender,
+        startYear,
+        endYear,
+        provider,
+      };
+
+      if (hasEvents) {
+        lyricsBody.events = events.map(e => ({
+          id: e.id, year: e.year, title: e.title, description: e.description, category: e.category,
+        }));
+        lyricsBody.summary = `Tijdlijn van ${startYear} tot ${endYear}`;
+      }
+
       const lyricsResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-song-lyrics`, {
         method: 'POST',
         headers: {
@@ -561,25 +603,7 @@ export const useSoundtrackGeneration = () => {
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
           'apikey': SUPABASE_ANON_KEY,
         },
-      body: JSON.stringify({
-          mode: 'quick',
-          formData: {
-            birthYear: formData.birthDate?.year,
-            city: formData.optionalData.city,
-            periodType: formData.optionalData.periodType,
-            startYear,
-            endYear,
-          },
-          personalData: {
-            firstName: formData.optionalData.firstName,
-            city: formData.optionalData.city,
-          },
-          subculture: formData.optionalData.subculture,
-          gender: formData.optionalData.gender,
-          startYear,
-          endYear,
-          provider,
-        }),
+        body: JSON.stringify(lyricsBody),
       });
 
       if (!lyricsResponse.ok) {

@@ -33,7 +33,7 @@ import heroBg80s from "@/assets/hero-bg-80s.png";
 import heroBg90s from "@/assets/hero-bg-90s.png";
 import heroBg00s from "@/assets/hero-bg-00s.png";
 import heroBg10s from "@/assets/hero-bg-10s.png";
-import { startQuickSoundtrackGeneration, clearSoundtrackState } from "@/hooks/useSoundtrackGeneration";
+import { clearSoundtrackState } from "@/hooks/useSoundtrackGeneration";
 
 // Main period options
 const getMainPeriodOptions = (
@@ -374,12 +374,8 @@ const HomeV3 = () => {
     sessionStorage.setItem("timelineFormData", JSON.stringify(formData));
     sessionStorage.setItem("timelineLength", timelineLength);
     
-    // Clear any previous soundtrack state and start V1 generation (fire & forget)
+    // Clear any previous soundtrack state — actual generation starts after events load on /story
     clearSoundtrackState();
-    startQuickSoundtrackGeneration(formData).catch(err => {
-      console.error('[HomeV3] Background soundtrack generation failed:', err);
-      // Silent fail - user will see error state on the story page
-    });
     
     navigate(targetRoute);
   };

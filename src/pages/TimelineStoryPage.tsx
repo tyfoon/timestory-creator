@@ -1037,6 +1037,16 @@ const TimelineStoryPage = () => {
         
         setIsLoading(false);
 
+        // Start soundtrack generation with cached events if no soundtrack is ready yet
+        const soundtrackState = sessionStorage.getItem('soundtrack_generation_state');
+        const parsed = soundtrackState ? JSON.parse(soundtrackState) : null;
+        if (!parsed || parsed.status === 'idle' || parsed.status === 'error') {
+          clearSoundtrackState();
+          startQuickSoundtrackGeneration(data, normalizedCachedEvents).catch(err => {
+            console.error('[TimelineStoryPage] Soundtrack generation from cache failed:', err);
+          });
+        }
+
         const needImages = normalizedCachedEvents.filter(e => 
           e.imageSearchQuery && (!e.imageUrl || e.imageStatus === 'loading')
         );
@@ -1098,6 +1108,7 @@ const TimelineStoryPage = () => {
           if (completeData.storyTitle) setStoryTitle(completeData.storyTitle);
           if (completeData.storyIntroduction) setStoryIntroduction(completeData.storyIntroduction);
 
+          let finalEvents: TimelineEvent[] = [];
           setEvents(() => {
             const refMap = new Map(receivedEventsRef.current.map(e => [e.id, e]));
 
@@ -1127,10 +1138,17 @@ const TimelineStoryPage = () => {
               storyTitle: completeData.storyTitle,
               storyIntroduction: completeData.storyIntroduction,
             });
+            finalEvents = sorted;
             return sorted;
           });
 
           setIsLoading(false);
+
+          // Start soundtrack generation WITH events so lyrics match what's shown in the video
+          clearSoundtrackState();
+          startQuickSoundtrackGeneration(data, finalEvents).catch(err => {
+            console.error('[TimelineStoryPage] Soundtrack generation with events failed:', err);
+          });
 
           toast({
             title: t('timelineLoaded') as string,
@@ -1170,11 +1188,8 @@ const TimelineStoryPage = () => {
       setStoryIntroduction('');
       setIsLoading(true);
       
-      // Also regenerate the soundtrack when refreshing
+      // Soundtrack will be regenerated in onComplete when new events arrive
       clearSoundtrackState();
-      startQuickSoundtrackGeneration(formData).catch(err => {
-        console.error('[TimelineStoryPage] Background soundtrack regeneration failed:', err);
-      });
       
       loadTimelineStreaming(formData, maxEvents);
     }
