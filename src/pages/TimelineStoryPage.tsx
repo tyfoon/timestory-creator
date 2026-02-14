@@ -1381,10 +1381,10 @@ const TimelineStoryPage = () => {
           </div>
         </div>
 
-        {/* Right: Parallax Music Sidebar - absolutely positioned, no own background */}
+        {/* Right: Parallax Music Sidebar - sticky, no own background, no scrollbar */}
         {!isLoading && events.length > 0 && formData && (
-          <div className="hidden lg:block absolute top-0 right-0 w-[20%] h-full pointer-events-none bg-transparent">
-            <div className="sticky top-14 pointer-events-auto">
+          <div className="hidden lg:block absolute top-0 right-0 w-[20%] h-full pointer-events-none bg-transparent overflow-visible">
+            <div className="sticky top-4 pointer-events-auto overflow-hidden">
               <ParallaxMusicColumn
                 startYear={
                   formData.type === 'birthdate' && formData.birthDate
