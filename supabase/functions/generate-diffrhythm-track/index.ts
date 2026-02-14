@@ -42,9 +42,14 @@ serve(async (req) => {
     console.log(`[DiffRhythm] Lyrics length: ${lyrics.length} chars`);
     console.log(`[DiffRhythm] Style: ${style}`);
 
+    // Always ensure Dutch language is in the style prompt for vocal synthesis
+    const dutchStyle = style.toLowerCase().includes('dutch') || style.toLowerCase().includes('nederland')
+      ? style
+      : `${style}, Dutch language vocals, sung in Dutch`;
+
     const falPayload = {
       lyrics: lyrics,
-      style_prompt: style,
+      style_prompt: dutchStyle,
       music_duration: "95s",
       cfg_strength: 4,
       scheduler: "euler",
