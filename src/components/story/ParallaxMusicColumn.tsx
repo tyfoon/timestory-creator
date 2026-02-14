@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, MotionValue } from 'framer-motion';
 import { Play, Pause, Loader2, Music, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { numberOneHits } from '@/data/numberOneHits';
@@ -36,30 +36,9 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
   const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
   const columnContentRef = useRef<HTMLDivElement>(null);
 
-  // Dynamically measured content height for parallax range
-  const [contentHeight, setContentHeight] = useState(0);
-
-  // Measure content height when tracks change or window resizes
-  useEffect(() => {
-    const measure = () => {
-      if (!columnContentRef.current) return;
-      setContentHeight(columnContentRef.current.scrollHeight);
-    };
-    measure();
-    window.addEventListener('resize', measure);
-    const timer = setTimeout(measure, 200);
-    return () => {
-      window.removeEventListener('resize', measure);
-      clearTimeout(timer);
-    };
-  }, [tracks.length]);
-
-  // Page scroll progress 0→1 (framer-motion, GPU-accelerated)
-  const { scrollYProgress } = useScroll();
-
-  // Linear map: as page scrolls 0→1, shift column up so last item ends in view
-  const overflow = Math.max(0, contentHeight - window.innerHeight + 100);
-  const y = useTransform(scrollYProgress, [0, 1], [0, -overflow]);
+  // GPU-accelerated parallax: column drifts at 15% of scroll speed
+  const { scrollY } = useScroll();
+  const y = useTransform(scrollY, (val) => val * 0.15);
 
   // Fetch tracks on mount
   useEffect(() => {
