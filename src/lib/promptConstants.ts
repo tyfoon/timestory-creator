@@ -511,4 +511,4 @@ BELANGRIJK: Schrijf alsof je met een oude vriend in de kroeg herinneringen ophaa
 // =============================================================================
 // Switch between 'suno' (existing polling-based), 'acestep' (direct response) and 'diffrhythm' (Fal.ai, LRC timestamps)
 export type MusicProvider = 'suno' | 'acestep' | 'diffrhythm';
-export const MUSIC_GENERATION_PROVIDER: MusicProvider = 'acestep';
+export const MUSIC_GENERATION_PROVIDER: MusicProvider = 'diffrhythm';
