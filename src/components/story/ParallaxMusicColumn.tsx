@@ -1,12 +1,11 @@
 /**
  * ParallaxMusicColumn - Right sidebar with parallax-scrolling album covers
- * Fetches #1 hits via search-spotify for each year in the timeline range
- * Uses framer-motion useScroll/useTransform for a "floating" parallax effect
+ * Uses embedded Spotify player (same as main storyline) for playback
  */
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { Play, Pause, Loader2, Music } from 'lucide-react';
+import { Play, Pause, Loader2, Music, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { numberOneHits } from '@/data/numberOneHits';
 
@@ -25,7 +24,6 @@ interface ParallaxMusicColumnProps {
   endYear: number;
 }
 
-// Get the hardcoded hit for a given year, formatted as "Artist - Title" for Spotify parsing
 const getHitQuery = (year: number): string | null => {
   const hit = numberOneHits[year];
   if (!hit) return null;
@@ -35,13 +33,10 @@ const getHitQuery = (year: number): string | null => {
 export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnProps) => {
   const [tracks, setTracks] = useState<HitTrack[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
+  const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
   const columnRef = useRef<HTMLDivElement>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Parallax: use the column container as scroll target for reliable tracking
   const { scrollY } = useScroll();
-  // Map window scroll pixels to a slower vertical offset for the music content
   const parallaxY = useTransform(scrollY, [0, 3000], [0, -600]);
 
   // Fetch tracks on mount
@@ -58,7 +53,6 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
         years.push(y);
       }
 
-      // Limit to ~40 hits, evenly distributed
       let selectedYears = years;
       if (years.length > 40) {
         const step = years.length / 40;
@@ -68,7 +62,6 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
         selectedYears = years.filter(y => !!numberOneHits[y]);
       }
 
-      // Fetch in parallel batches of 5, deduplicating by trackId
       const results: HitTrack[] = [];
       const seenTrackIds = new Set<string>();
       const batchSize = 5;
@@ -84,15 +77,8 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
               const { data, error } = await supabase.functions.invoke('search-spotify', {
                 body: { query: hitQuery }
               });
-              if (error || !data?.trackId) {
-                console.warn(`[ParallaxMusic] No result for year ${year}`);
-                return null;
-              }
-              // Skip duplicates
-              if (seenTrackIds.has(data.trackId)) {
-                console.log(`[ParallaxMusic] Skipping duplicate: ${data.trackName} (${year})`);
-                return null;
-              }
+              if (error || !data?.trackId) return null;
+              if (seenTrackIds.has(data.trackId)) return null;
               seenTrackIds.add(data.trackId);
               return {
                 year,
@@ -103,8 +89,7 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
                 previewUrl: data.previewUrl,
                 spotifyUrl: data.spotifyUrl,
               } as HitTrack;
-            } catch (e) {
-              console.error(`[ParallaxMusic] Error fetching year ${year}:`, e);
+            } catch {
               return null;
             }
           })
@@ -116,57 +101,22 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
           }
         }
 
-        // Update UI progressively
-        if (!cancelled) {
-          setTracks([...results]);
-        }
+        if (!cancelled) setTracks([...results]);
       }
 
-      if (!cancelled) {
-        setIsLoading(false);
-      }
+      if (!cancelled) setIsLoading(false);
     };
 
     fetchAllHits();
     return () => { cancelled = true; };
   }, [startYear, endYear]);
 
-  // Audio playback
-  const handlePlay = (track: HitTrack) => {
-    if (playingTrackId === track.trackId) {
-      // Stop
-      audioRef.current?.pause();
-      setPlayingTrackId(null);
-      return;
-    }
-
-    // Play new track
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-
-    if (track.previewUrl) {
-      const audio = new Audio(track.previewUrl);
-      audio.play().catch(() => {});
-      audio.onended = () => setPlayingTrackId(null);
-      audioRef.current = audio;
-      setPlayingTrackId(track.trackId);
-    } else {
-      // No preview, open Spotify
-      window.open(track.spotifyUrl, '_blank');
-    }
+  const handleToggleEmbed = (trackId: string) => {
+    setActiveTrackId(prev => prev === trackId ? null : trackId);
   };
-
-  // Cleanup audio on unmount
-  useEffect(() => {
-    return () => {
-      audioRef.current?.pause();
-    };
-  }, []);
 
   return (
     <div ref={columnRef} className="relative w-full">
-      {/* Header */}
       <div className="sticky top-14 z-30 py-3 px-2 mb-6">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Music className="h-4 w-4" />
@@ -176,9 +126,7 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
         </div>
       </div>
 
-      {/* Parallax content wrapper - moves at slower speed than page scroll */}
       <motion.div style={{ y: parallaxY }} className="space-y-8 pb-32 flex flex-col items-end pr-2">
-        {/* Loading skeleton */}
         {isLoading && tracks.length === 0 && (
           <div className="flex flex-col items-center gap-4 py-12">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -186,18 +134,16 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
           </div>
         )}
 
-        {/* Album covers */}
         {tracks.map((track, index) => (
           <AlbumCard
             key={`${track.trackId}-${track.year}`}
             track={track}
             index={index}
-            isPlaying={playingTrackId === track.trackId}
-            onPlay={() => handlePlay(track)}
+            isEmbedActive={activeTrackId === track.trackId}
+            onToggleEmbed={() => handleToggleEmbed(track.trackId)}
           />
         ))}
 
-        {/* Loading more indicator */}
         {isLoading && tracks.length > 0 && (
           <div className="flex items-center justify-center gap-2 py-4">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -212,35 +158,33 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
 };
 
 // =============================================
-// ALBUM CARD - Single cover with play button
+// ALBUM CARD - Single cover with embedded Spotify player
 // =============================================
 interface AlbumCardProps {
   track: HitTrack;
   index: number;
-  isPlaying: boolean;
-  onPlay: () => void;
+  isEmbedActive: boolean;
+  onToggleEmbed: () => void;
 }
 
-const AlbumCard = ({ track, index, isPlaying, onPlay }: AlbumCardProps) => {
-  const ref = useRef(null);
-
+const AlbumCard = ({ track, index, isEmbedActive, onToggleEmbed }: AlbumCardProps) => {
   return (
     <motion.div
-      ref={ref}
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-50px' }}
       transition={{ duration: 0.6, delay: index * 0.03 }}
-      className="group relative cursor-pointer"
-      onClick={onPlay}
+      className="group relative"
     >
-      {/* Year label - tiny, above cover */}
       <span className="block font-mono text-[10px] text-muted-foreground/60 mb-1.5 tracking-widest">
         {track.year}
       </span>
 
-      {/* Album cover - compact size */}
-      <div className="relative aspect-square w-[55%] overflow-hidden rounded-lg shadow-lg bg-muted">
+      {/* Album cover with play overlay */}
+      <div
+        className="relative aspect-square w-[55%] overflow-hidden rounded-lg shadow-lg bg-muted cursor-pointer"
+        onClick={onToggleEmbed}
+      >
         {track.albumImage ? (
           <img
             src={track.albumImage}
@@ -254,16 +198,15 @@ const AlbumCard = ({ track, index, isPlaying, onPlay }: AlbumCardProps) => {
           </div>
         )}
 
-        {/* Play/Pause overlay - visible on hover or when playing */}
         <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
-          isPlaying ? 'opacity-100 bg-black/40' : 'opacity-0 group-hover:opacity-100 bg-black/30'
+          isEmbedActive ? 'opacity-100 bg-black/40' : 'opacity-0 group-hover:opacity-100 bg-black/30'
         }`}>
           <div className={`p-3 rounded-full backdrop-blur-sm transition-transform duration-200 ${
-            isPlaying 
-              ? 'bg-[#1DB954] scale-100' 
+            isEmbedActive
+              ? 'bg-[#1DB954] scale-100'
               : 'bg-white/90 group-hover:scale-110'
           }`}>
-            {isPlaying ? (
+            {isEmbedActive ? (
               <Pause className="h-5 w-5 text-white fill-current" />
             ) : (
               <Play className="h-5 w-5 text-zinc-900 fill-current ml-0.5" />
@@ -271,13 +214,40 @@ const AlbumCard = ({ track, index, isPlaying, onPlay }: AlbumCardProps) => {
           </div>
         </div>
 
-        {/* Playing indicator - pulsing ring */}
-        {isPlaying && (
+        {isEmbedActive && (
           <div className="absolute inset-0 rounded-lg ring-2 ring-[#1DB954] ring-offset-2 ring-offset-background animate-pulse pointer-events-none" />
         )}
       </div>
 
-      {/* Track info on hover - subtle */}
+      {/* Spotify embed - appears below the cover when active */}
+      {isEmbedActive && (
+        <div className="mt-2 relative" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={onToggleEmbed}
+            className="absolute -top-1 -right-1 z-20 p-0.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full shadow-lg transition-colors"
+            title="Sluiten"
+          >
+            <X className="h-2.5 w-2.5" />
+          </button>
+          <div
+            className="origin-top-left"
+            style={{ transform: 'scale(0.5)', width: '304px', height: '160px' }}
+          >
+            <iframe
+              src={`https://open.spotify.com/embed/track/${track.trackId}?utm_source=generator&theme=0&autoplay=1`}
+              width="304"
+              height="160"
+              frameBorder="0"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="lazy"
+              className="rounded-xl"
+              title={`${track.trackName} - ${track.artistName}`}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Track info on hover */}
       <div className="mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <p className="text-[10px] text-foreground/80 font-medium truncate">{track.trackName}</p>
         <p className="text-[9px] text-muted-foreground truncate">{track.artistName}</p>
