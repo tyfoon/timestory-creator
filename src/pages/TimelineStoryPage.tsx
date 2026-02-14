@@ -359,12 +359,12 @@ const LayoutShout = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPattern
   
   return (
     <div ref={ref} className="relative min-h-[80vh] flex items-center justify-center py-16 overflow-hidden">
-      {/* Giant background year */}
+      {/* Giant background year - constrained to content area */}
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={isInView ? { opacity: 0.05, scale: 1 } : {}}
         transition={{ duration: 1.2 }}
-        className={`absolute inset-0 flex items-center justify-center pointer-events-none select-none`}
+        className={`absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden`}
       >
         <span 
           className={`${theme.fontDisplay} font-black text-foreground`}
@@ -1316,7 +1316,7 @@ const TimelineStoryPage = () => {
       <div className="relative">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           {/* Timeline events - leave right margin for sidebar on desktop */}
-          <div className="lg:mr-[22%]">
+          <div className="lg:mr-[22%] overflow-hidden">
             {events.map((event, index) => {
               const LayoutPattern = getLayoutPattern(index);
               const imageUrl = getEventImageUrl(event);
