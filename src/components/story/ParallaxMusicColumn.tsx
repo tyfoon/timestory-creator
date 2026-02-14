@@ -36,8 +36,27 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
   const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
   const columnRef = useRef<HTMLDivElement>(null);
 
-  const { scrollY } = useScroll();
-  const parallaxY = useTransform(scrollY, [0, 3000], [0, -600]);
+  const [columnHeight, setColumnHeight] = useState(0);
+  const { scrollYProgress } = useScroll();
+
+  // Measure the actual height of the music content
+  useEffect(() => {
+    if (!columnRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setColumnHeight(entry.contentRect.height);
+      }
+    });
+    observer.observe(columnRef.current);
+    return () => observer.disconnect();
+  }, [tracks.length]);
+
+  // The sticky container is ~100vh tall. We need to scroll the column content
+  // by (columnHeight - viewportHeight) over the full page scroll.
+  // Using a slower factor so covers scroll at ~60% of main content speed.
+  const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 900;
+  const maxScroll = Math.max(0, columnHeight - viewportHeight + 100);
+  const parallaxY = useTransform(scrollYProgress, [0, 1], [0, -maxScroll]);
 
   // Fetch tracks on mount
   useEffect(() => {
