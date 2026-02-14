@@ -509,5 +509,6 @@ BELANGRIJK: Schrijf alsof je met een oude vriend in de kroeg herinneringen ophaa
 // =============================================================================
 // MUSIC GENERATION PROVIDER (A/B Test Kill Switch)
 // =============================================================================
-// Switch between 'suno' (existing polling-based) and 'acestep' (direct response)
-export const MUSIC_GENERATION_PROVIDER: 'suno' | 'acestep' = 'acestep';
+// Switch between 'suno' (existing polling-based), 'acestep' (direct response) and 'diffrhythm' (Fal.ai, LRC timestamps)
+export type MusicProvider = 'suno' | 'acestep' | 'diffrhythm';
+export const MUSIC_GENERATION_PROVIDER: MusicProvider = 'acestep';

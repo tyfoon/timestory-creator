@@ -11,14 +11,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   User, Users, MapPin, Sparkles, GraduationCap, PartyPopper, 
-  Loader2, Check
+  Loader2, Check, Music
 } from 'lucide-react';
 import { useSoundtrackGeneration } from '@/hooks/useSoundtrackGeneration';
 import { TimelineEvent } from '@/types/timeline';
 import { FormData, OptionalData, Gender } from '@/types/form';
 import { SubcultureSelector } from '@/components/SubcultureSelector';
+import { MusicProvider } from '@/lib/promptConstants';
 
 interface PersonalizeSoundtrackDialogProps {
   open: boolean;
@@ -40,6 +42,9 @@ export const PersonalizeSoundtrackDialog = ({
   endYear,
 }: PersonalizeSoundtrackDialogProps) => {
   const soundtrack = useSoundtrackGeneration();
+  
+  // Provider selection
+  const [selectedProvider, setSelectedProvider] = useState<MusicProvider>('acestep');
   
   // Local copy of all optional data for editing
   const [localData, setLocalData] = useState<OptionalData>(() => ({
@@ -69,7 +74,7 @@ export const PersonalizeSoundtrackDialog = ({
       friends: localData.friends,
       school: localData.school,
       nightlife: localData.nightlife,
-    });
+    }, selectedProvider);
   };
 
   const updateField = <K extends keyof OptionalData>(key: K, value: OptionalData[K]) => {
@@ -243,6 +248,29 @@ export const PersonalizeSoundtrackDialog = ({
                 className="bg-card h-10 sm:h-9 text-sm"
               />
             </div>
+          </div>
+
+          {/* Provider Selector */}
+          <div className="space-y-2 pt-2 border-t border-border">
+            <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
+              <Music className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
+              Muziek Engine
+            </Label>
+            <Select value={selectedProvider} onValueChange={(v) => setSelectedProvider(v as MusicProvider)}>
+              <SelectTrigger className="bg-card h-10 sm:h-9 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="suno">Suno (V4.5) — Hoogste kwaliteit</SelectItem>
+                <SelectItem value="acestep">Ace-Step — Sneller, self-hosted</SelectItem>
+                <SelectItem value="diffrhythm">DiffRhythm — LRC timestamps, razendsnel</SelectItem>
+              </SelectContent>
+            </Select>
+            {selectedProvider === 'diffrhythm' && (
+              <p className="text-xs text-muted-foreground">
+                ⏱️ DiffRhythm genereert LRC-timestamps zodat muziek synchroon loopt met je tijdlijn-events.
+              </p>
+            )}
           </div>
 
           {/* Info text */}

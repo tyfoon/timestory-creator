@@ -82,6 +82,9 @@ interface RequestBody {
   
   // Mode indicator (optional, inferred from events presence)
   mode?: 'quick' | 'full';
+  
+  // Music provider - affects lyrics format (diffrhythm needs LRC timestamps)
+  provider?: 'suno' | 'acestep' | 'diffrhythm';
 }
 
 serve(async (req) => {
@@ -97,7 +100,7 @@ serve(async (req) => {
     }
 
     const body: RequestBody = await req.json();
-    const { events, summary, personalData, subculture, gender, startYear, endYear, formData, mode } = body;
+    const { events, summary, personalData, subculture, gender, startYear, endYear, formData, mode, provider } = body;
 
     // Determine which mode we're in
     const isQuickMode = mode === 'quick' || !events || events.length === 0;
@@ -501,6 +504,66 @@ Format je output als JSON:
 {
   "lyrics": "De volledige songtekst hier...",
   "style": "${completeStyleTagsB}",
+  "title": "Titel van het lied"
+}`;
+    }
+
+    // === STAP 2: DiffRhythm LRC timestamp mode ===
+    // If provider is 'diffrhythm', override the prompt to generate LRC-format lyrics
+    const isDiffRhythm = provider === 'diffrhythm';
+    if (isDiffRhythm) {
+      console.log('[DiffRhythm mode] Generating lyrics with LRC timestamps');
+      
+      // Calculate timestamps based on events (5 seconds per event, or distribute across 95s)
+      const eventList = events && events.length > 0 ? events : [];
+      const totalDuration = 95; // DiffRhythm generates 95s tracks
+      const secondsPerEvent = eventList.length > 0 
+        ? Math.floor(totalDuration / (eventList.length + 2)) // +2 for intro/outro
+        : 5;
+      
+      let eventTimestampGuide = '';
+      if (eventList.length > 0) {
+        eventTimestampGuide = eventList.map((e, i) => {
+          const seconds = (i + 1) * secondsPerEvent;
+          const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
+          const ss = String(seconds % 60).padStart(2, '0');
+          return `- Event ${i + 1} ("${e.title}", ${e.year}): start op [${mm}:${ss}.00]`;
+        }).join('\n');
+      }
+
+      // DiffRhythm needs [chorus] and [verse] section markers
+      const lrcInstructions = `
+=== DIFFRHYTHM LRC FORMAT ===
+Je MOET de lyrics in LRC-formaat schrijven met precieze timestamps.
+DiffRhythm vereist dat elke regel begint met een timestamp [mm:ss.ms].
+Gebruik ook sectie-markers: [verse] en [chorus].
+
+STRUCTUUR:
+[verse]
+[00:00.00] Eerste regel van het vers
+[00:05.00] Tweede regel van het vers
+...
+[chorus]
+[00:20.00] Refreinregel 1
+[00:25.00] Refreinregel 2
+...
+
+${eventTimestampGuide ? `TIMESTAMP VERDELING PER EVENT:\n${eventTimestampGuide}` : `Verdeel de tekst gelijkmatig over ${totalDuration} seconden.`}
+
+BELANGRIJK:
+- Elke regel MOET beginnen met [mm:ss.ms] (bijv. [00:10.00])
+- Gebruik [verse] en [chorus] als sectie-koppen (ZONDER timestamp)
+- Houd de totale duur onder de ${totalDuration} seconden
+- Schrijf voor elk event minimaal 1 regel tekst op de berekende timestamp
+`;
+
+      // Append LRC instructions to both prompts
+      systemPrompt += lrcInstructions;
+      userPrompt += `\n\nKRITISCH: Genereer de lyrics in LRC-timestamp formaat! Elke regel moet beginnen met [mm:ss.ms].
+Format je output als JSON:
+{
+  "lyrics": "De volledige songtekst in LRC formaat met timestamps...",
+  "style": "${isDiffRhythm ? suggestedStyle : ''}",
   "title": "Titel van het lied"
 }`;
     }

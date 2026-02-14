@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.generate-acestep-track]
 verify_jwt = false
+
+[functions.generate-diffrhythm-track]
+verify_jwt = false
