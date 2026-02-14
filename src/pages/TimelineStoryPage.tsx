@@ -1316,7 +1316,7 @@ const TimelineStoryPage = () => {
       <div className="relative">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           {/* Timeline events - leave right margin for sidebar on desktop */}
-          <div className="lg:mr-[22%] overflow-hidden">
+          <div className="lg:mr-[22%] overflow-hidden bg-transparent">
             {events.map((event, index) => {
               const LayoutPattern = getLayoutPattern(index);
               const imageUrl = getEventImageUrl(event);
@@ -1383,7 +1383,7 @@ const TimelineStoryPage = () => {
 
         {/* Right: Parallax Music Sidebar - absolutely positioned, no own background */}
         {!isLoading && events.length > 0 && formData && (
-          <div className="hidden lg:block absolute top-0 right-0 w-[20%] h-full pointer-events-none">
+          <div className="hidden lg:block absolute top-0 right-0 w-[20%] h-full pointer-events-none bg-transparent">
             <div className="sticky top-14 pointer-events-auto">
               <ParallaxMusicColumn
                 startYear={
