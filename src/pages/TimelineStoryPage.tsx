@@ -21,6 +21,7 @@ import { VideoDialog } from '@/components/video/VideoDialog';
 import { SoundtrackSection } from '@/components/story/SoundtrackSection';
 import { PersonalizeSoundtrackDialog } from '@/components/story/PersonalizeSoundtrackDialog';
 import { startQuickSoundtrackGeneration, clearSoundtrackState } from '@/hooks/useSoundtrackGeneration';
+import { ParallaxMusicColumn } from '@/components/story/ParallaxMusicColumn';
 
 // Placeholder images by category
 import birthdayPlaceholder from '@/assets/placeholders/birthday.jpg';
@@ -1311,71 +1312,93 @@ const TimelineStoryPage = () => {
         <StickyYear year={currentYear} theme={theme} />
       )}
 
-      {/* Timeline events */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-12">
-        {events.map((event, index) => {
-          const LayoutPattern = getLayoutPattern(index);
-          const imageUrl = getEventImageUrl(event);
+      {/* 75/25 Layout: Timeline (left) + Music Sidebar (right) */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col lg:flex-row gap-0 lg:gap-6">
+          {/* Left column: Timeline events (75%) */}
+          <div className="w-full lg:w-3/4 min-w-0">
+            {events.map((event, index) => {
+              const LayoutPattern = getLayoutPattern(index);
+              const imageUrl = getEventImageUrl(event);
 
-          return (
-            <div
-              key={event.id}
-              ref={(el) => {
-                if (el) eventRefs.current.set(event.id, el);
-              }}
-              className="border-b border-border/30 last:border-0"
-            >
-              <LayoutPattern event={event} theme={theme} imageUrl={imageUrl} onBlacklistImage={handleBlacklistImage} />
-            </div>
-          );
-        })}
-      </div>
+              return (
+                <div
+                  key={event.id}
+                  ref={(el) => {
+                    if (el) eventRefs.current.set(event.id, el);
+                  }}
+                  className="border-b border-border/30 last:border-0"
+                >
+                  <LayoutPattern event={event} theme={theme} imageUrl={imageUrl} onBlacklistImage={handleBlacklistImage} />
+                </div>
+              );
+            })}
 
-      {/* Loading indicator for streaming events */}
-      {isLoading && events.length > 0 && (
-        <div className="container mx-auto max-w-6xl px-4 py-8">
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>{events.length} {t('eventsLoaded') as string}</span>
+            {/* Loading indicator for streaming events */}
+            {isLoading && events.length > 0 && (
+              <div className="py-8">
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>{events.length} {t('eventsLoaded') as string}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Soundtrack Section - inline at bottom */}
+            {!isLoading && events.length > 0 && (
+              <SoundtrackSection
+                events={events}
+                summary={storyIntroduction}
+                formData={formData}
+                storyTitle={storyTitle}
+                storyIntroduction={storyIntroduction}
+                onOpenPersonalizeDialog={() => setIsPersonalizeDialogOpen(true)}
+              />
+            )}
+
+            {/* Footer */}
+            {!isLoading && events.length > 0 && (
+              <footer className="py-16 text-center space-y-8">
+                <Reveal>
+                  <p className={`${theme.fontMono} text-sm uppercase tracking-widest text-muted-foreground`}>
+                    Einde van je tijdreis
+                  </p>
+                </Reveal>
+                
+                <Reveal delay={0.2}>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => setIsVideoDialogOpen(true)}
+                    className="gap-2"
+                  >
+                    <Video className="h-5 w-5" />
+                    Bekijk als Video
+                  </Button>
+                </Reveal>
+              </footer>
+            )}
           </div>
+
+          {/* Right column: Parallax Music Sidebar (25%) - desktop only */}
+          {!isLoading && events.length > 0 && formData && (
+            <div className="hidden lg:block w-1/4 flex-shrink-0">
+              <ParallaxMusicColumn
+                startYear={
+                  formData.type === 'birthdate' && formData.birthDate
+                    ? formData.birthDate.year
+                    : formData.yearRange?.startYear || 1980
+                }
+                endYear={
+                  formData.type === 'birthdate' && formData.birthDate
+                    ? formData.birthDate.year + 25
+                    : formData.yearRange?.endYear || 2000
+                }
+              />
+            </div>
+          )}
         </div>
-      )}
-
-      {/* Soundtrack Section - inline at bottom of page, before footer */}
-      {!isLoading && events.length > 0 && (
-        <SoundtrackSection
-          events={events}
-          summary={storyIntroduction}
-          formData={formData}
-          storyTitle={storyTitle}
-          storyIntroduction={storyIntroduction}
-          onOpenPersonalizeDialog={() => setIsPersonalizeDialogOpen(true)}
-        />
-      )}
-
-      {/* Footer */}
-      {!isLoading && events.length > 0 && (
-        <footer className="py-16 text-center space-y-8">
-          <Reveal>
-            <p className={`${theme.fontMono} text-sm uppercase tracking-widest text-muted-foreground`}>
-              Einde van je tijdreis
-            </p>
-          </Reveal>
-          
-          {/* Video button - at the very bottom */}
-          <Reveal delay={0.2}>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => setIsVideoDialogOpen(true)}
-              className="gap-2"
-            >
-              <Video className="h-5 w-5" />
-              Bekijk als Video
-            </Button>
-          </Reveal>
-        </footer>
-      )}
+      </div>
 
       {/* Video Dialog */}
       <VideoDialog
