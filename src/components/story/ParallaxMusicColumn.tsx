@@ -1,10 +1,12 @@
 /**
  * ParallaxMusicColumn - Right sidebar with parallax-scrolling album covers
- * Uses embedded Spotify player (same as main storyline) for playback
+ * Uses sticky positioning + useTransform for smooth linear scroll sync.
+ * The parent container handles sticky; this component just renders the list
+ * with a y-offset that maps page scroll progress to the column's overflow.
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { Play, Pause, Loader2, Music, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { numberOneHits } from '@/data/numberOneHits';
@@ -34,26 +36,35 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
   const [tracks, setTracks] = useState<HitTrack[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
-  const columnRef = useRef<HTMLDivElement>(null);
-
   const columnContentRef = useRef<HTMLDivElement>(null);
-  const [offsetY, setOffsetY] = useState(0);
 
-  // Sync column scroll to page scroll using a plain listener
+  // Track measured overflow so we can recompute the transform range
+  const [overflow, setOverflow] = useState(0);
+
+  // Measure how much the column content exceeds the viewport
   useEffect(() => {
-    const onScroll = () => {
+    const measure = () => {
       if (!columnContentRef.current) return;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (docHeight <= 0) return;
-      const progress = window.scrollY / docHeight; // 0 → 1
-      const contentHeight = columnContentRef.current.scrollHeight;
-      const overflow = Math.max(0, contentHeight - window.innerHeight + 100);
-      setOffsetY(-progress * overflow);
+      const contentH = columnContentRef.current.scrollHeight;
+      const viewportH = window.innerHeight;
+      // 100px buffer so we don't cut off the last item
+      setOverflow(Math.max(0, contentH - viewportH + 100));
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
+    measure();
+    window.addEventListener('resize', measure);
+    // Re-measure when tracks change
+    const timer = setTimeout(measure, 200);
+    return () => {
+      window.removeEventListener('resize', measure);
+      clearTimeout(timer);
+    };
   }, [tracks.length]);
+
+  // Page scroll progress 0→1
+  const { scrollYProgress } = useScroll();
+
+  // Linear map: as page scrolls 0→1, shift column up by 0→overflow pixels
+  const y = useTransform(scrollYProgress, [0, 1], [0, -overflow]);
 
   // Fetch tracks on mount
   useEffect(() => {
@@ -64,7 +75,6 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
       const currentYear = new Date().getFullYear();
       const end = Math.min(endYear, currentYear);
 
-      // Build flat list of all hit queries across all years
       const allQueries: { year: number; query: string }[] = [];
       for (let y = startYear; y <= end; y++) {
         allQueries.push(...getHitQueries(y));
@@ -127,41 +137,42 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
   };
 
   return (
-    <div ref={columnRef} className="relative w-full">
+    <motion.div
+      ref={columnContentRef}
+      style={{ y }}
+      className="space-y-8 pb-32 flex flex-col items-end pr-2"
+    >
+      {isLoading && tracks.length === 0 && (
+        <div className="flex flex-col items-center gap-4 py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <span className="text-xs text-muted-foreground font-mono">Hits laden...</span>
+        </div>
+      )}
 
-      <div ref={columnContentRef} style={{ transform: `translateY(${offsetY}px)` }} className="space-y-8 pb-32 flex flex-col items-end pr-2">
-        {isLoading && tracks.length === 0 && (
-          <div className="flex flex-col items-center gap-4 py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            <span className="text-xs text-muted-foreground font-mono">Hits laden...</span>
-          </div>
-        )}
+      {tracks.map((track, index) => (
+        <AlbumCard
+          key={`${track.trackId}-${track.year}`}
+          track={track}
+          index={index}
+          isEmbedActive={activeTrackId === track.trackId}
+          onToggleEmbed={() => handleToggleEmbed(track.trackId)}
+        />
+      ))}
 
-        {tracks.map((track, index) => (
-          <AlbumCard
-            key={`${track.trackId}-${track.year}`}
-            track={track}
-            index={index}
-            isEmbedActive={activeTrackId === track.trackId}
-            onToggleEmbed={() => handleToggleEmbed(track.trackId)}
-          />
-        ))}
-
-        {isLoading && tracks.length > 0 && (
-          <div className="flex items-center justify-center gap-2 py-4">
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            <span className="text-[10px] text-muted-foreground font-mono">
-              {tracks.length} / ~40 hits
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
+      {isLoading && tracks.length > 0 && (
+        <div className="flex items-center justify-center gap-2 py-4">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          <span className="text-[10px] text-muted-foreground font-mono">
+            {tracks.length} / ~40 hits
+          </span>
+        </div>
+      )}
+    </motion.div>
   );
 };
 
 // =============================================
-// ALBUM CARD - Single cover with embedded Spotify player
+// ALBUM CARD
 // =============================================
 interface AlbumCardProps {
   track: HitTrack;
@@ -183,7 +194,6 @@ const AlbumCard = ({ track, index, isEmbedActive, onToggleEmbed }: AlbumCardProp
         {track.year}
       </span>
 
-      {/* Album cover with play overlay */}
       <div className="w-[55%]">
         <div
           className="relative aspect-square overflow-hidden rounded-lg shadow-lg bg-muted cursor-pointer"
@@ -223,7 +233,6 @@ const AlbumCard = ({ track, index, isEmbedActive, onToggleEmbed }: AlbumCardProp
           )}
         </div>
 
-        {/* Spotify embed - breaks out of cover width to show full player */}
         {isEmbedActive && (
           <div
             className="relative mt-2"
@@ -251,7 +260,6 @@ const AlbumCard = ({ track, index, isEmbedActive, onToggleEmbed }: AlbumCardProp
         )}
       </div>
 
-      {/* Track info on hover */}
       <div className="mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <p className="text-[10px] text-foreground/80 font-medium truncate">{track.trackName}</p>
         <p className="text-[9px] text-muted-foreground truncate">{track.artistName}</p>
