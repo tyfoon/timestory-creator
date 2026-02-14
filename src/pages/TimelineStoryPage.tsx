@@ -231,7 +231,7 @@ interface StickyYearProps {
 
 const StickyYear = ({ year, theme }: StickyYearProps) => {
   return (
-    <div className="hidden lg:block fixed left-4 xl:left-8 top-1/2 -translate-y-1/2 z-40 pointer-events-none">
+    <div className="hidden lg:block fixed left-4 xl:left-8 top-1/2 -translate-y-1/2 z-0 pointer-events-none">
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -1327,7 +1327,7 @@ const TimelineStoryPage = () => {
                   ref={(el) => {
                     if (el) eventRefs.current.set(event.id, el);
                   }}
-                  className="last:border-0"
+                  className="last:border-0 mb-8 lg:mb-16"
                 >
                   <LayoutPattern event={event} theme={theme} imageUrl={imageUrl} onBlacklistImage={handleBlacklistImage} />
                 </div>

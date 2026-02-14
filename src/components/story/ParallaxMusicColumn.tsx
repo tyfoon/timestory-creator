@@ -112,14 +112,6 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
 
   return (
     <div ref={columnRef} className="relative w-full">
-      <div className="sticky top-14 z-30 py-3 px-2 mb-6">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Music className="h-4 w-4" />
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em]">
-            Soundtrack {startYear}–{endYear}
-          </span>
-        </div>
-      </div>
 
       <motion.div style={{ y: parallaxY }} className="space-y-8 pb-32 flex flex-col items-end pr-2">
         {isLoading && tracks.length === 0 && (
