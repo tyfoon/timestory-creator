@@ -1312,11 +1312,11 @@ const TimelineStoryPage = () => {
         <StickyYear year={currentYear} theme={theme} />
       )}
 
-      {/* 75/25 Layout: Timeline (left) + Music Sidebar (right) */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row gap-0 lg:gap-6">
-          {/* Left column: Timeline events (75%) */}
-          <div className="w-full lg:w-3/4 min-w-0">
+      {/* Timeline content - full width, with music sidebar overlaid on right */}
+      <div className="relative">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Timeline events - leave right margin for sidebar on desktop */}
+          <div className="lg:mr-[22%]">
             {events.map((event, index) => {
               const LayoutPattern = getLayoutPattern(index);
               const imageUrl = getEventImageUrl(event);
@@ -1379,10 +1379,12 @@ const TimelineStoryPage = () => {
               </footer>
             )}
           </div>
+        </div>
 
-          {/* Right column: Parallax Music Sidebar (25%) - desktop only */}
-          {!isLoading && events.length > 0 && formData && (
-            <div className="hidden lg:block w-1/4 flex-shrink-0 pl-8 border-none bg-transparent">
+        {/* Right: Parallax Music Sidebar - absolutely positioned, no own background */}
+        {!isLoading && events.length > 0 && formData && (
+          <div className="hidden lg:block absolute top-0 right-0 w-[20%] h-full pointer-events-none">
+            <div className="sticky top-14 pointer-events-auto">
               <ParallaxMusicColumn
                 startYear={
                   formData.type === 'birthdate' && formData.birthDate
@@ -1392,8 +1394,8 @@ const TimelineStoryPage = () => {
                 endYear={new Date().getFullYear()}
               />
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Video Dialog */}
