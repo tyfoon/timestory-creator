@@ -24,10 +24,10 @@ interface ParallaxMusicColumnProps {
   endYear: number;
 }
 
-const getHitQuery = (year: number): string | null => {
-  const hit = numberOneHits[year];
-  if (!hit) return null;
-  return `${hit.artist} - ${hit.title}`;
+const getHitQueries = (year: number): { year: number; query: string }[] => {
+  const hits = numberOneHits[year];
+  if (!hits) return [];
+  return hits.map(hit => ({ year, query: `${hit.artist} - ${hit.title}` }));
 };
 
 export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnProps) => {
@@ -45,37 +45,32 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
 
     const fetchAllHits = async () => {
       setIsLoading(true);
-      const years: number[] = [];
       const currentYear = new Date().getFullYear();
       const end = Math.min(endYear, currentYear);
 
+      // Build flat list of all hit queries across all years
+      const allQueries: { year: number; query: string }[] = [];
       for (let y = startYear; y <= end; y++) {
-        years.push(y);
+        allQueries.push(...getHitQueries(y));
       }
 
-      let selectedYears = years;
-      if (years.length > 40) {
-        const step = years.length / 40;
-        selectedYears = Array.from({ length: 40 }, (_, i) => years[Math.floor(i * step)])
-          .filter(y => !!numberOneHits[y]);
-      } else {
-        selectedYears = years.filter(y => !!numberOneHits[y]);
-      }
+      // Cap at ~60
+      const selected = allQueries.length > 60
+        ? Array.from({ length: 60 }, (_, i) => allQueries[Math.floor(i * allQueries.length / 60)])
+        : allQueries;
 
       const results: HitTrack[] = [];
       const seenTrackIds = new Set<string>();
       const batchSize = 5;
 
-      for (let i = 0; i < selectedYears.length; i += batchSize) {
+      for (let i = 0; i < selected.length; i += batchSize) {
         if (cancelled) return;
-        const batch = selectedYears.slice(i, i + batchSize);
+        const batch = selected.slice(i, i + batchSize);
         const batchResults = await Promise.allSettled(
-          batch.map(async (year) => {
+          batch.map(async ({ year, query }) => {
             try {
-              const hitQuery = getHitQuery(year);
-              if (!hitQuery) return null;
               const { data, error } = await supabase.functions.invoke('search-spotify', {
-                body: { query: hitQuery }
+                body: { query }
               });
               if (error || !data?.trackId) return null;
               if (seenTrackIds.has(data.trackId)) return null;
