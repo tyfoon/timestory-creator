@@ -523,52 +523,66 @@ Format je output als JSON:
       const midYear = Math.round((startYear + endYear) / 2);
       const eraLabel = `Jaren ${Math.floor(midYear / 10) * 10}`;
 
+      // --- Helper: format time as [mm:ss.cc] (LRC format with centiseconds) ---
+      const formatLRC = (totalSeconds: number): string => {
+        const mm = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+        const ssFull = totalSeconds % 60;
+        const ss = String(Math.floor(ssFull)).padStart(2, '0');
+        const cs = String(Math.round((ssFull - Math.floor(ssFull)) * 100)).padStart(2, '0');
+        return `[${mm}:${ss}.${cs}]`;
+      };
+
       // --- Build the event skeleton string ---
+      // DiffRhythm API requires: sections starting with [chorus] or [verse]
+      // and timestamps in [mm:ss.cc] format
       const skeletonLines: string[] = [];
 
-      // Intro
-      skeletonLines.push(`[00:00] Introductie (Thema: ${eraLabel})`);
+      // Intro as first verse
+      skeletonLines.push(`[verse]`);
+      skeletonLines.push(`${formatLRC(0)} Introductie (Thema: ${eraLabel})`);
 
-      // Each event gets a precise timestamp
+      // Distribute events into verse/chorus sections
       eventList.forEach((e, i) => {
         const time = (i + 1) * EFFECTIVE_DURATION;
-        const mm = String(Math.floor(time / 60)).padStart(2, '0');
-        const ss = String(Math.floor(time % 60)).padStart(2, '0');
-        skeletonLines.push(`[${mm}:${ss}] Event: ${e.title}`);
+        // Every 4 events, switch between verse and chorus
+        if (i > 0 && i % 4 === 0) {
+          skeletonLines.push(i % 8 === 0 ? `[verse]` : `[chorus]`);
+        }
+        skeletonLines.push(`${formatLRC(time)} Event: ${e.title}`);
       });
 
-      // Outro after last event
+      // Outro as final chorus
       const outroTime = (eventList.length + 1) * EFFECTIVE_DURATION;
-      const outroMm = String(Math.floor(outroTime / 60)).padStart(2, '0');
-      const outroSs = String(Math.floor(outroTime % 60)).padStart(2, '0');
-      skeletonLines.push(`[${outroMm}:${outroSs}] Outro`);
+      skeletonLines.push(`[chorus]`);
+      skeletonLines.push(`${formatLRC(outroTime)} Outro`);
 
       const structurePrompt = skeletonLines.join('\n');
       console.log('[DiffRhythm] Event skeleton:\n' + structurePrompt);
 
       // --- Override system prompt ---
-      systemPrompt = `Je bent een lyricist die muziek schrijft voor een videoclip. Hieronder staat een tijdlijn van gebeurtenissen met harde timestamps. Jouw taak: Schrijf voor elke tijdregel exact één korte, zingbare zin die past bij dat specifieke event.
+      systemPrompt = `Je bent een lyricist die muziek schrijft voor een videoclip. Hieronder staat een tijdlijn van gebeurtenissen met harde timestamps in LRC-formaat. Jouw taak: Schrijf voor elke tijdregel exact één korte, zingbare zin die past bij dat specifieke event.
 
 Regels:
-1. Neem de timestamp EXACT over (bijv. [00:04]). Verander de tijd NIET.
-2. De tekst moet gaan over het event dat achter de timestamp staat.
-3. Houd het kort (max 6-8 woorden per regel), het tempo ligt hoog.
-4. Rijm is leuk, maar het matchen van de inhoud met het event is BELANGRIJKER.
-5. Schrijf in het Nederlands.
-6. Output ALLEEN de LRC tekst (timestamp + zin), geen andere praat.
-7. De intro-regel mag een sfeervolle openingszin zijn over het tijdperk.
-8. De outro-regel mag een afsluitende, nostalgische zin zijn.
+1. Neem de timestamp EXACT over in [mm:ss.cc] formaat (bijv. [00:03.70]). Verander de tijd NIET.
+2. Behoud de [verse] en [chorus] sectie-markers EXACT zoals gegeven.
+3. De tekst moet gaan over het event dat achter de timestamp staat.
+4. Houd het kort (max 6-8 woorden per regel), het tempo ligt hoog.
+5. Rijm is leuk, maar het matchen van de inhoud met het event is BELANGRIJKER.
+6. Schrijf in het Nederlands.
+7. Output ALLEEN de LRC tekst ([verse]/[chorus] markers + timestamp + zin), geen andere praat.
+8. De intro-regel mag een sfeervolle openingszin zijn over het tijdperk.
+9. De outro-regel mag een afsluitende, nostalgische zin zijn.
 
 MUZIEKSTIJL: ${suggestedStyle}${moodTags ? `, ${moodTags}` : ''}${textureTags ? `, ${textureTags}` : ''}`;
 
       // --- Override user prompt ---
-      userPrompt = `Hier is de tijdlijn met harde timestamps. Schrijf voor ELKE regel exact één korte zingbare zin:
+      userPrompt = `Hier is de tijdlijn met harde timestamps en sectie-markers. Schrijf voor ELKE tijdregel exact één korte zingbare zin. Behoud [verse] en [chorus] markers en alle timestamps exact:
 
 ${structurePrompt}
 
 Format je output als JSON:
 {
-  "lyrics": "De volledige LRC tekst met timestamps...",
+  "lyrics": "De volledige LRC tekst met [verse]/[chorus] markers en [mm:ss.cc] timestamps...",
   "style": "${suggestedStyle}${vocalType ? `, ${vocalType}` : ''}${moodTags ? `, ${moodTags}` : ''}${textureTags ? `, ${textureTags}` : ''}",
   "title": "Korte titel (max 3 woorden)"
 }`;
