@@ -1382,18 +1382,14 @@ const TimelineStoryPage = () => {
 
           {/* Right column: Parallax Music Sidebar (25%) - desktop only */}
           {!isLoading && events.length > 0 && formData && (
-            <div className="hidden lg:block w-1/4 flex-shrink-0">
+            <div className="hidden lg:block w-1/4 flex-shrink-0 pl-6">
               <ParallaxMusicColumn
                 startYear={
                   formData.type === 'birthdate' && formData.birthDate
                     ? formData.birthDate.year
                     : formData.yearRange?.startYear || 1980
                 }
-                endYear={
-                  formData.type === 'birthdate' && formData.birthDate
-                    ? formData.birthDate.year + 25
-                    : formData.yearRange?.endYear || 2000
-                }
+                endYear={new Date().getFullYear()}
               />
             </div>
           )}
