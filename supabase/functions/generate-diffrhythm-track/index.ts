@@ -45,7 +45,7 @@ serve(async (req) => {
     // The lyrics should already contain timestamps from generate-song-lyrics
     const falPayload = {
       lyrics: lyrics,
-      style: style,
+      style_prompt: style,
       music_duration: "95s",
       cfg_strength: 4,
       scheduler: "euler",
