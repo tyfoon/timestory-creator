@@ -232,8 +232,8 @@ const AlbumCard = ({ track, index, isPlaying, onPlay }: AlbumCardProps) => {
         {track.year}
       </span>
 
-      {/* Album cover - 70% width */}
-      <div className="relative aspect-square w-[70%] overflow-hidden rounded-lg shadow-lg bg-muted">
+      {/* Album cover - compact size */}
+      <div className="relative aspect-square w-[55%] overflow-hidden rounded-lg shadow-lg bg-muted">
         {track.albumImage ? (
           <img
             src={track.albumImage}
