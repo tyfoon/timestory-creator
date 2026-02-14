@@ -38,7 +38,7 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
 
   // GPU-accelerated parallax: column drifts at 15% of scroll speed
   const { scrollY } = useScroll();
-  const y = useTransform(scrollY, (val) => val * 0.15);
+  const y = useTransform(scrollY, (val) => val * -0.15);
 
   // Fetch tracks on mount
   useEffect(() => {
