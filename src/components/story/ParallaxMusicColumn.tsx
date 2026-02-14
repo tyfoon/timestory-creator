@@ -36,27 +36,17 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
   const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
   const columnRef = useRef<HTMLDivElement>(null);
 
-  const [columnHeight, setColumnHeight] = useState(0);
+  const columnContentRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll();
 
-  // Measure the actual height of the music content
-  useEffect(() => {
-    if (!columnRef.current) return;
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setColumnHeight(entry.contentRect.height);
-      }
-    });
-    observer.observe(columnRef.current);
-    return () => observer.disconnect();
-  }, [tracks.length]);
-
-  // The sticky container is ~100vh tall. We need to scroll the column content
-  // by (columnHeight - viewportHeight) over the full page scroll.
-  // Using a slower factor so covers scroll at ~60% of main content speed.
-  const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 900;
-  const maxScroll = Math.max(0, columnHeight - viewportHeight + 100);
-  const parallaxY = useTransform(scrollYProgress, [0, 1], [0, -maxScroll]);
+  // Use a function-based transform that reads live DOM measurements each frame
+  const parallaxY = useTransform(scrollYProgress, (progress) => {
+    if (!columnContentRef.current) return 0;
+    const contentHeight = columnContentRef.current.scrollHeight;
+    const vh = window.innerHeight;
+    const overflow = Math.max(0, contentHeight - vh + 100);
+    return -progress * overflow;
+  });
 
   // Fetch tracks on mount
   useEffect(() => {
@@ -132,7 +122,7 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
   return (
     <div ref={columnRef} className="relative w-full">
 
-      <motion.div style={{ y: parallaxY }} className="space-y-8 pb-32 flex flex-col items-end pr-2">
+      <motion.div ref={columnContentRef} style={{ y: parallaxY }} className="space-y-8 pb-32 flex flex-col items-end pr-2">
         {isLoading && tracks.length === 0 && (
           <div className="flex flex-col items-center gap-4 py-12">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
