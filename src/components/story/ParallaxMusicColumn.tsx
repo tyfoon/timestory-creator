@@ -37,12 +37,15 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
   const columnRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Parallax: the column content moves at 0.6x speed relative to page scroll
-  const { scrollYProgress } = useScroll();
-  const parallaxY = useTransform(scrollYProgress, [0, 1], ['0%', '-20%']);
+  // Parallax: use the column container as scroll target for reliable tracking
+  const { scrollY } = useScroll();
+  // Map window scroll pixels to a slower vertical offset for the music content
+  const parallaxY = useTransform(scrollY, [0, 3000], [0, -600]);
 
   // Fetch tracks on mount
   useEffect(() => {
+    let cancelled = false;
+
     const fetchAllHits = async () => {
       setIsLoading(true);
       const years: number[] = [];
@@ -60,11 +63,13 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
         selectedYears = Array.from({ length: 40 }, (_, i) => years[Math.floor(i * step)]);
       }
 
-      // Fetch in parallel batches of 5
+      // Fetch in parallel batches of 5, deduplicating by trackId
       const results: HitTrack[] = [];
+      const seenTrackIds = new Set<string>();
       const batchSize = 5;
 
       for (let i = 0; i < selectedYears.length; i += batchSize) {
+        if (cancelled) return;
         const batch = selectedYears.slice(i, i + batchSize);
         const batchResults = await Promise.allSettled(
           batch.map(async (year) => {
@@ -72,7 +77,16 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
               const { data, error } = await supabase.functions.invoke('search-spotify', {
                 body: { query: getHitQuery(year) }
               });
-              if (error || !data?.trackId) return null;
+              if (error || !data?.trackId) {
+                console.warn(`[ParallaxMusic] No result for year ${year}`);
+                return null;
+              }
+              // Skip duplicates
+              if (seenTrackIds.has(data.trackId)) {
+                console.log(`[ParallaxMusic] Skipping duplicate: ${data.trackName} (${year})`);
+                return null;
+              }
+              seenTrackIds.add(data.trackId);
               return {
                 year,
                 trackId: data.trackId,
@@ -82,7 +96,8 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
                 previewUrl: data.previewUrl,
                 spotifyUrl: data.spotifyUrl,
               } as HitTrack;
-            } catch {
+            } catch (e) {
+              console.error(`[ParallaxMusic] Error fetching year ${year}:`, e);
               return null;
             }
           })
@@ -95,13 +110,18 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
         }
 
         // Update UI progressively
-        setTracks([...results]);
+        if (!cancelled) {
+          setTracks([...results]);
+        }
       }
 
-      setIsLoading(false);
+      if (!cancelled) {
+        setIsLoading(false);
+      }
     };
 
     fetchAllHits();
+    return () => { cancelled = true; };
   }, [startYear, endYear]);
 
   // Audio playback
@@ -149,8 +169,8 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
         </div>
       </div>
 
-      {/* Parallax content wrapper */}
-      <motion.div style={{ y: parallaxY }} className="space-y-10 px-2 pb-32">
+      {/* Parallax content wrapper - moves at slower speed than page scroll */}
+      <motion.div style={{ y: parallaxY }} className="space-y-8 px-2 pb-32">
         {/* Loading skeleton */}
         {isLoading && tracks.length === 0 && (
           <div className="flex flex-col items-center gap-4 py-12">
@@ -212,8 +232,8 @@ const AlbumCard = ({ track, index, isPlaying, onPlay }: AlbumCardProps) => {
         {track.year}
       </span>
 
-      {/* Album cover */}
-      <div className="relative aspect-square w-full overflow-hidden rounded-lg shadow-lg bg-muted">
+      {/* Album cover - 70% width */}
+      <div className="relative aspect-square w-[70%] overflow-hidden rounded-lg shadow-lg bg-muted">
         {track.albumImage ? (
           <img
             src={track.albumImage}
