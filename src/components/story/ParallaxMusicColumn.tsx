@@ -1,11 +1,9 @@
 /**
  * ParallaxMusicColumn - Right sidebar with parallax-scrolling album covers
- * Uses sticky positioning + useTransform for smooth linear scroll sync.
- * The parent container handles sticky; this component just renders the list
- * with a y-offset that maps page scroll progress to the column's overflow.
+ * Uses framer-motion useScroll + useTransform for GPU-accelerated linear scroll sync.
  */
 
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Play, Pause, Loader2, Music, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,21 +36,17 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
   const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
   const columnContentRef = useRef<HTMLDivElement>(null);
 
-  // Track measured overflow so we can recompute the transform range
-  const [overflow, setOverflow] = useState(0);
+  // Dynamically measured content height for parallax range
+  const [contentHeight, setContentHeight] = useState(0);
 
-  // Measure how much the column content exceeds the viewport
+  // Measure content height when tracks change or window resizes
   useEffect(() => {
     const measure = () => {
       if (!columnContentRef.current) return;
-      const contentH = columnContentRef.current.scrollHeight;
-      const viewportH = window.innerHeight;
-      // 100px buffer so we don't cut off the last item
-      setOverflow(Math.max(0, contentH - viewportH + 100));
+      setContentHeight(columnContentRef.current.scrollHeight);
     };
     measure();
     window.addEventListener('resize', measure);
-    // Re-measure when tracks change
     const timer = setTimeout(measure, 200);
     return () => {
       window.removeEventListener('resize', measure);
@@ -60,10 +54,11 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
     };
   }, [tracks.length]);
 
-  // Page scroll progress 0→1
+  // Page scroll progress 0→1 (framer-motion, GPU-accelerated)
   const { scrollYProgress } = useScroll();
 
-  // Linear map: as page scrolls 0→1, shift column up by 0→overflow pixels
+  // Linear map: as page scrolls 0→1, shift column up so last item ends in view
+  const overflow = Math.max(0, contentHeight - window.innerHeight + 100);
   const y = useTransform(scrollYProgress, [0, 1], [0, -overflow]);
 
   // Fetch tracks on mount
@@ -76,8 +71,8 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
       const end = Math.min(endYear, currentYear);
 
       const allQueries: { year: number; query: string }[] = [];
-      for (let y = startYear; y <= end; y++) {
-        allQueries.push(...getHitQueries(y));
+      for (let yr = startYear; yr <= end; yr++) {
+        allQueries.push(...getHitQueries(yr));
       }
 
       // Cap at ~60

@@ -1229,7 +1229,7 @@ const TimelineStoryPage = () => {
   const isHeroReady = !isLoading || storyTitle || events.length > 0;
 
   return (
-    <div className={`min-h-screen bg-background ${!isHeroReady ? 'overflow-hidden max-h-screen' : ''}`}>
+    <div className={`min-h-screen bg-[url('/src/assets/wood-table-bg.jpg')] bg-cover bg-fixed bg-center ${!isHeroReady ? 'overflow-hidden max-h-screen' : ''}`}>
       {/* Header - compact single row */}
       <section className="py-2 px-3 sm:px-4 relative z-50 bg-background/80 backdrop-blur-sm sticky top-0">
         <div className="container mx-auto max-w-6xl">
