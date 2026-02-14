@@ -1327,7 +1327,7 @@ const TimelineStoryPage = () => {
                   ref={(el) => {
                     if (el) eventRefs.current.set(event.id, el);
                   }}
-                  className="border-b border-border/30 last:border-0"
+                  className="last:border-0"
                 >
                   <LayoutPattern event={event} theme={theme} imageUrl={imageUrl} onBlacklistImage={handleBlacklistImage} />
                 </div>
@@ -1382,7 +1382,7 @@ const TimelineStoryPage = () => {
 
           {/* Right column: Parallax Music Sidebar (25%) - desktop only */}
           {!isLoading && events.length > 0 && formData && (
-            <div className="hidden lg:block w-1/4 flex-shrink-0 pl-6">
+            <div className="hidden lg:block w-1/4 flex-shrink-0 pl-8 border-none bg-transparent">
               <ParallaxMusicColumn
                 startYear={
                   formData.type === 'birthdate' && formData.birthDate
