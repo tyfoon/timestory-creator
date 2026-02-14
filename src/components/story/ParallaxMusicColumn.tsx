@@ -181,71 +181,68 @@ const AlbumCard = ({ track, index, isEmbedActive, onToggleEmbed }: AlbumCardProp
       </span>
 
       {/* Album cover with play overlay */}
-      <div
-        className="relative aspect-square w-[55%] overflow-hidden rounded-lg shadow-lg bg-muted cursor-pointer"
-        onClick={onToggleEmbed}
-      >
-        {track.albumImage ? (
-          <img
-            src={track.albumImage}
-            alt={`${track.trackName} - ${track.artistName}`}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-muted">
-            <Music className="h-8 w-8 text-muted-foreground/30" />
-          </div>
-        )}
+      <div className="w-[55%]">
+        <div
+          className="relative aspect-square overflow-hidden rounded-lg shadow-lg bg-muted cursor-pointer"
+          onClick={onToggleEmbed}
+        >
+          {track.albumImage ? (
+            <img
+              src={track.albumImage}
+              alt={`${track.trackName} - ${track.artistName}`}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-muted">
+              <Music className="h-8 w-8 text-muted-foreground/30" />
+            </div>
+          )}
 
-        <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
-          isEmbedActive ? 'opacity-100 bg-black/40' : 'opacity-0 group-hover:opacity-100 bg-black/30'
-        }`}>
-          <div className={`p-3 rounded-full backdrop-blur-sm transition-transform duration-200 ${
-            isEmbedActive
-              ? 'bg-[#1DB954] scale-100'
-              : 'bg-white/90 group-hover:scale-110'
+          <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
+            isEmbedActive ? 'opacity-100 bg-black/40' : 'opacity-0 group-hover:opacity-100 bg-black/30'
           }`}>
-            {isEmbedActive ? (
-              <Pause className="h-5 w-5 text-white fill-current" />
-            ) : (
-              <Play className="h-5 w-5 text-zinc-900 fill-current ml-0.5" />
-            )}
+            <div className={`p-3 rounded-full backdrop-blur-sm transition-transform duration-200 ${
+              isEmbedActive
+                ? 'bg-[#1DB954] scale-100'
+                : 'bg-white/90 group-hover:scale-110'
+            }`}>
+              {isEmbedActive ? (
+                <Pause className="h-5 w-5 text-white fill-current" />
+              ) : (
+                <Play className="h-5 w-5 text-zinc-900 fill-current ml-0.5" />
+              )}
+            </div>
           </div>
+
+          {isEmbedActive && (
+            <div className="absolute inset-0 rounded-lg ring-2 ring-[#1DB954] ring-offset-2 ring-offset-background animate-pulse pointer-events-none" />
+          )}
         </div>
 
+        {/* Spotify embed - compact, same width as cover */}
         {isEmbedActive && (
-          <div className="absolute inset-0 rounded-lg ring-2 ring-[#1DB954] ring-offset-2 ring-offset-background animate-pulse pointer-events-none" />
-        )}
-      </div>
-
-      {/* Spotify embed - appears below the cover when active */}
-      {isEmbedActive && (
-        <div className="mt-2 relative" onClick={(e) => e.stopPropagation()}>
-          <button
-            onClick={onToggleEmbed}
-            className="absolute -top-1 -right-1 z-20 p-0.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full shadow-lg transition-colors"
-            title="Sluiten"
-          >
-            <X className="h-2.5 w-2.5" />
-          </button>
-          <div
-            className="origin-top-left"
-            style={{ transform: 'scale(0.5)', width: '304px', height: '160px' }}
-          >
+          <div className="mt-2 relative" style={{ height: '80px' }} onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={onToggleEmbed}
+              className="absolute -top-1 right-0 z-20 p-0.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full shadow-lg transition-colors"
+              title="Sluiten"
+            >
+              <X className="h-2.5 w-2.5" />
+            </button>
             <iframe
               src={`https://open.spotify.com/embed/track/${track.trackId}?utm_source=generator&theme=0&autoplay=1`}
-              width="304"
-              height="160"
+              width="100%"
+              height="80"
               frameBorder="0"
               allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
               loading="lazy"
-              className="rounded-xl"
+              className="rounded-lg"
               title={`${track.trackName} - ${track.artistName}`}
             />
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Track info on hover */}
       <div className="mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
