@@ -406,7 +406,7 @@ export const useSoundtrackGeneration = () => {
   // This is needed because that function runs outside React and only writes to sessionStorage
   useEffect(() => {
     // Only poll when we're in a generating/warming_up state (waiting for the async function to finish)
-    if (state.status !== 'generating_lyrics' && state.status !== 'generating_music' && state.status !== 'warming_up') {
+    if (state.status !== 'generating_lyrics' && state.status !== 'generating_music' && state.status !== 'warming_up' && state.status !== 'polling') {
       return;
     }
 
