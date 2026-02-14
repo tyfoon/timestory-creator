@@ -220,9 +220,13 @@ const AlbumCard = ({ track, index, isEmbedActive, onToggleEmbed }: AlbumCardProp
           )}
         </div>
 
-        {/* Spotify embed - compact, same width as cover */}
+        {/* Spotify embed - breaks out of cover width to show full player */}
         {isEmbedActive && (
-          <div className="mt-2 relative" style={{ height: '80px' }} onClick={(e) => e.stopPropagation()}>
+          <div
+            className="relative mt-2"
+            style={{ width: '300px', marginLeft: '-40px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={onToggleEmbed}
               className="absolute -top-1 right-0 z-20 p-0.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full shadow-lg transition-colors"
@@ -232,7 +236,7 @@ const AlbumCard = ({ track, index, isEmbedActive, onToggleEmbed }: AlbumCardProp
             </button>
             <iframe
               src={`https://open.spotify.com/embed/track/${track.trackId}?utm_source=generator&theme=0&autoplay=1`}
-              width="100%"
+              width="300"
               height="80"
               frameBorder="0"
               allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
