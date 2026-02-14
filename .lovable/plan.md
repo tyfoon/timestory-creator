@@ -1,54 +1,42 @@
 
-# Plan: Fix Progressive Disclosure - Step 2 alleen tonen na Enter bij woonplaats
 
-## Probleem
+## Plan: Betrouwbare #1 Hits via Hardcoded Dataset
 
-Step 2 (Periode selectie) verschijnt zodra de geboortedatum compleet is ingevuld (`isBirthDateComplete`). Dit is incorrect - Step 2 moet pas verschijnen nadat:
-1. De geboortedatum compleet is
-2. De gebruiker op Enter drukt bij het woonplaatsveld
+### Probleem
+De Spotify Search API is tekst-gebaseerd, niet chart-gebaseerd. De huidige query `"number one hit single [jaar]"` vindt letterlijk nummers die zo heten (obscure tracks), niet daadwerkelijke #1 hits.
 
-## Oplossing
+### Oplossing
+Gebruik een hardcoded lijst van echte #1 hits per jaar (1960-2025) en zoek die op naam+artiest via Spotify.
 
-### Wijziging in `src/pages/HomeV3.tsx`
+### Stappen
 
-**Huidige logica (regel 517):**
-```jsx
-{isBirthDateComplete && (
-  <motion.div>  {/* Step 2 */}
-```
+**1. Nieuwe data-file: `src/data/numberOneHits.ts`**
+- Maak een object/map met per jaar een `{ artist: string, title: string }` van een bekende #1 hit
+- Dekking: 1960 t/m 2025 (66 entries)
+- Voorbeelden:
+  - 1980: "Call Me" - Blondie
+  - 1992: "I Will Always Love You" - Whitney Houston  
+  - 2003: "Crazy in Love" - Beyonce
+  - 2015: "Uptown Funk" - Mark Ronson ft. Bruno Mars
+  - 2023: "Flowers" - Miley Cyrus
 
-**Nieuwe logica:**
-Introduceer een nieuwe state `step1Completed` die pas `true` wordt als de gebruiker Enter drukt bij woonplaats. Step 2 wordt dan alleen getoond als `step1Completed` waar is.
+**2. Aanpassing `ParallaxMusicColumn.tsx`**
+- Importeer de hits-lijst
+- Voor elk geselecteerd jaar: haal `artist` en `title` op uit de lijst
+- Stuur naar Spotify als `"Artist - Title"` formaat (de edge function parsed dit al correct naar `track:"Title" artist:"Artist"`)
+- Verwijder het `year` filter uit de query (niet meer nodig, we zoeken op exacte naam)
 
-### Technische aanpassingen
+**3. Aanpassing `search-spotify` edge function**
+- Geen wijzigingen nodig: de "Artist - Title" parsing en het `year` filter werken al correct
+- Het `year` filter kan optioneel meegegeven blijven als extra precisie
 
-1. **Nieuwe state toevoegen:**
-   ```typescript
-   const [step1Completed, setStep1Completed] = useState(false);
-   ```
+### Waarom dit werkt
+- De Spotify query wordt bijv. `track:"Uptown Funk" artist:"Mark Ronson"` in plaats van `"number one hit single 2015"`
+- Dit levert vrijwel altijd een exact match op
+- Geen afhankelijkheid van een externe chart-API
 
-2. **`handleCityKeyDown` aanpassen:**
-   ```typescript
-   const handleCityKeyDown = (e: React.KeyboardEvent) => {
-     if (e.key === 'Enter' && isBirthDateComplete) {
-       e.preventDefault();
-       setStep1Completed(true);  // <-- markeer step 1 als voltooid
-       setStep1ManualAdvance(true);
-     }
-   };
-   ```
+### Technische details
+- De hardcoded lijst is ~3KB en bevat 66 entries
+- Selectie van 40 uit de relevante range blijft werken via de bestaande `selectedYears` logica
+- Jaren zonder entry in de lijst worden overgeslagen
 
-3. **Visibility van Step 2 en Step 3 aanpassen:**
-   - Step 2: `{step1Completed && (` i.p.v. `{isBirthDateComplete && (`
-   - Step 3: blijft `{isStep2Complete && (` (dit is al correct)
-
-4. **Update `isStep1Complete` en `completedSteps`:**
-   - `isStep1Complete` moet `step1Completed` gebruiken voor de visuele indicator
-
-### Resultaat
-
-| Actie | Huidige gedrag | Nieuw gedrag |
-|-------|---------------|--------------|
-| Jaar ingevuld | Step 2 verschijnt | Focus springt naar woonplaats |
-| Woonplaats + Enter | Geen effect op visibility | Step 2 verschijnt |
-| Klik periode | Step 3 verschijnt | Step 3 verschijnt (ongewijzigd) |
