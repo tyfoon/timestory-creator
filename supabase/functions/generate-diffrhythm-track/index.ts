@@ -121,21 +121,25 @@ serve(async (req) => {
       console.log(`[DiffRhythm] Submitting to queue: "${title}"`);
       console.log(`[DiffRhythm] Lyrics length: ${lyrics.length} chars`);
 
-      // DiffRhythm style_prompt should be SHORT and SIMPLE (e.g. "pop", "synthpop")
-      // DiffRhythm sings whatever lyrics you provide - no need for language/vocal instructions
-      // Strip out long descriptive tags, keep only the core genre
+      // DiffRhythm style_prompt: keep short but MUST include language for correct pronunciation
+      // Strip verbose mood/texture tags, keep genre + language
       const cleanStyle = style
-        .replace(/,?\s*(Dutch language vocals|sung in Dutch|male vocals|female vocals|fast tempo|radio edit|short song|spoken word delivery|melodic|nostalgic|radio-friendly|anthemic|driving|energetic|sentimental|warm|analogue sound|raw production|polished|radio hit|lo-fi aesthetics|dreamy reverb|punchy)/gi, '')
+        .replace(/,?\s*(male vocals|female vocals|fast tempo|radio edit|short song|spoken word delivery|melodic|nostalgic|radio-friendly|anthemic|driving|energetic|sentimental|warm|analogue sound|raw production|polished|radio hit|lo-fi aesthetics|dreamy reverb|punchy)/gi, '')
         .replace(/,\s*,/g, ',')
         .replace(/^,\s*|,\s*$/g, '')
         .trim() || 'pop';
 
+      // Always ensure Dutch language is specified for correct vocal pronunciation
+      const finalStyle = cleanStyle.toLowerCase().includes('dutch')
+        ? cleanStyle
+        : `${cleanStyle}, Dutch language`;
+
       console.log(`[DiffRhythm] Original style: ${style}`);
-      console.log(`[DiffRhythm] Clean style for API: ${cleanStyle}`);
+      console.log(`[DiffRhythm] Final style for API: ${finalStyle}`);
 
       const falPayload = {
         lyrics: lyrics,
-        style_prompt: cleanStyle,
+        style_prompt: finalStyle,
         music_duration: "95s",
         cfg_strength: 4,
         scheduler: "euler",
