@@ -509,62 +509,68 @@ Format je output als JSON:
     }
 
     // === STAP 2: DiffRhythm LRC timestamp mode ===
-    // If provider is 'diffrhythm', override the prompt to generate LRC-format lyrics
+    // Overrides prompts entirely with event-skeleton + strict LRC instructions
     const isDiffRhythm = provider === 'diffrhythm';
     if (isDiffRhythm) {
-      console.log('[DiffRhythm mode] Generating lyrics with LRC timestamps');
-      
-      // Calculate timestamps based on events (5 seconds per event, or distribute across 95s)
+      console.log('[DiffRhythm mode] Building event skeleton with exact timestamps');
+
+      // --- Timing constants (must match Remotion video) ---
+      const DURATION_PER_SLIDE = 5.0;
+      const OVERLAP = 1.3;
+      const EFFECTIVE_DURATION = DURATION_PER_SLIDE - OVERLAP; // 3.7s
+
       const eventList = events && events.length > 0 ? events : [];
-      const totalDuration = 95; // DiffRhythm generates 95s tracks
-      const secondsPerEvent = eventList.length > 0 
-        ? Math.floor(totalDuration / (eventList.length + 2)) // +2 for intro/outro
-        : 5;
-      
-      let eventTimestampGuide = '';
-      if (eventList.length > 0) {
-        eventTimestampGuide = eventList.map((e, i) => {
-          const seconds = (i + 1) * secondsPerEvent;
-          const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
-          const ss = String(seconds % 60).padStart(2, '0');
-          return `- Event ${i + 1} ("${e.title}", ${e.year}): start op [${mm}:${ss}.00]`;
-        }).join('\n');
-      }
+      const midYear = Math.round((startYear + endYear) / 2);
+      const eraLabel = `Jaren ${Math.floor(midYear / 10) * 10}`;
 
-      // DiffRhythm needs [chorus] and [verse] section markers
-      const lrcInstructions = `
-=== DIFFRHYTHM LRC FORMAT ===
-Je MOET de lyrics in LRC-formaat schrijven met precieze timestamps.
-DiffRhythm vereist dat elke regel begint met een timestamp [mm:ss.ms].
-Gebruik ook sectie-markers: [verse] en [chorus].
+      // --- Build the event skeleton string ---
+      const skeletonLines: string[] = [];
 
-STRUCTUUR:
-[verse]
-[00:00.00] Eerste regel van het vers
-[00:05.00] Tweede regel van het vers
-...
-[chorus]
-[00:20.00] Refreinregel 1
-[00:25.00] Refreinregel 2
-...
+      // Intro
+      skeletonLines.push(`[00:00] Introductie (Thema: ${eraLabel})`);
 
-${eventTimestampGuide ? `TIMESTAMP VERDELING PER EVENT:\n${eventTimestampGuide}` : `Verdeel de tekst gelijkmatig over ${totalDuration} seconden.`}
+      // Each event gets a precise timestamp
+      eventList.forEach((e, i) => {
+        const time = (i + 1) * EFFECTIVE_DURATION;
+        const mm = String(Math.floor(time / 60)).padStart(2, '0');
+        const ss = String(Math.floor(time % 60)).padStart(2, '0');
+        skeletonLines.push(`[${mm}:${ss}] Event: ${e.title}`);
+      });
 
-BELANGRIJK:
-- Elke regel MOET beginnen met [mm:ss.ms] (bijv. [00:10.00])
-- Gebruik [verse] en [chorus] als sectie-koppen (ZONDER timestamp)
-- Houd de totale duur onder de ${totalDuration} seconden
-- Schrijf voor elk event minimaal 1 regel tekst op de berekende timestamp
-`;
+      // Outro after last event
+      const outroTime = (eventList.length + 1) * EFFECTIVE_DURATION;
+      const outroMm = String(Math.floor(outroTime / 60)).padStart(2, '0');
+      const outroSs = String(Math.floor(outroTime % 60)).padStart(2, '0');
+      skeletonLines.push(`[${outroMm}:${outroSs}] Outro`);
 
-      // Append LRC instructions to both prompts
-      systemPrompt += lrcInstructions;
-      userPrompt += `\n\nKRITISCH: Genereer de lyrics in LRC-timestamp formaat! Elke regel moet beginnen met [mm:ss.ms].
+      const structurePrompt = skeletonLines.join('\n');
+      console.log('[DiffRhythm] Event skeleton:\n' + structurePrompt);
+
+      // --- Override system prompt ---
+      systemPrompt = `Je bent een lyricist die muziek schrijft voor een videoclip. Hieronder staat een tijdlijn van gebeurtenissen met harde timestamps. Jouw taak: Schrijf voor elke tijdregel exact één korte, zingbare zin die past bij dat specifieke event.
+
+Regels:
+1. Neem de timestamp EXACT over (bijv. [00:04]). Verander de tijd NIET.
+2. De tekst moet gaan over het event dat achter de timestamp staat.
+3. Houd het kort (max 6-8 woorden per regel), het tempo ligt hoog.
+4. Rijm is leuk, maar het matchen van de inhoud met het event is BELANGRIJKER.
+5. Schrijf in het Nederlands.
+6. Output ALLEEN de LRC tekst (timestamp + zin), geen andere praat.
+7. De intro-regel mag een sfeervolle openingszin zijn over het tijdperk.
+8. De outro-regel mag een afsluitende, nostalgische zin zijn.
+
+MUZIEKSTIJL: ${suggestedStyle}${moodTags ? `, ${moodTags}` : ''}${textureTags ? `, ${textureTags}` : ''}`;
+
+      // --- Override user prompt ---
+      userPrompt = `Hier is de tijdlijn met harde timestamps. Schrijf voor ELKE regel exact één korte zingbare zin:
+
+${structurePrompt}
+
 Format je output als JSON:
 {
-  "lyrics": "De volledige songtekst in LRC formaat met timestamps...",
-  "style": "${isDiffRhythm ? suggestedStyle : ''}",
-  "title": "Titel van het lied"
+  "lyrics": "De volledige LRC tekst met timestamps...",
+  "style": "${suggestedStyle}${vocalType ? `, ${vocalType}` : ''}${moodTags ? `, ${moodTags}` : ''}${textureTags ? `, ${textureTags}` : ''}",
+  "title": "Korte titel (max 3 woorden)"
 }`;
     }
 
