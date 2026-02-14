@@ -1391,7 +1391,10 @@ const TimelineStoryPage = () => {
                     ? formData.birthDate.year
                     : formData.yearRange?.startYear || 1980
                 }
-                endYear={new Date().getFullYear()}
+                endYear={
+                  formData.yearRange?.endYear
+                    || (events.length > 0 ? Math.max(...events.map(e => e.year)) : new Date().getFullYear())
+                }
               />
             </div>
           </div>
