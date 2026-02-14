@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Play, Pause, Loader2, Music } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { numberOneHits } from '@/data/numberOneHits';
 
 interface HitTrack {
   year: number;
@@ -24,10 +25,11 @@ interface ParallaxMusicColumnProps {
   endYear: number;
 }
 
-// Build a more specific query per year to get actual #1 hits
-const getHitQuery = (year: number): string => {
-  // Use English "number one hit" + year for broader Spotify coverage
-  return `number one hit single ${year}`;
+// Get the hardcoded hit for a given year, formatted as "Artist - Title" for Spotify parsing
+const getHitQuery = (year: number): string | null => {
+  const hit = numberOneHits[year];
+  if (!hit) return null;
+  return `${hit.artist} - ${hit.title}`;
 };
 
 export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnProps) => {
@@ -60,7 +62,10 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
       let selectedYears = years;
       if (years.length > 40) {
         const step = years.length / 40;
-        selectedYears = Array.from({ length: 40 }, (_, i) => years[Math.floor(i * step)]);
+        selectedYears = Array.from({ length: 40 }, (_, i) => years[Math.floor(i * step)])
+          .filter(y => !!numberOneHits[y]);
+      } else {
+        selectedYears = years.filter(y => !!numberOneHits[y]);
       }
 
       // Fetch in parallel batches of 5, deduplicating by trackId
@@ -74,8 +79,10 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
         const batchResults = await Promise.allSettled(
           batch.map(async (year) => {
             try {
+              const hitQuery = getHitQuery(year);
+              if (!hitQuery) return null;
               const { data, error } = await supabase.functions.invoke('search-spotify', {
-                body: { query: getHitQuery(year), year }
+                body: { query: hitQuery }
               });
               if (error || !data?.trackId) {
                 console.warn(`[ParallaxMusic] No result for year ${year}`);
