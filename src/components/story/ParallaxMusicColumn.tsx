@@ -24,10 +24,10 @@ interface ParallaxMusicColumnProps {
   endYear: number;
 }
 
-// Generate search queries for #1 hits per year
+// Build a more specific query per year to get actual #1 hits
 const getHitQuery = (year: number): string => {
-  // Iconic #1 hit queries per year — use generic "hit [year]" approach
-  return `nummer 1 hit ${year}`;
+  // Use English "number one hit" + year for broader Spotify coverage
+  return `number one hit single ${year}`;
 };
 
 export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnProps) => {
@@ -75,7 +75,7 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
           batch.map(async (year) => {
             try {
               const { data, error } = await supabase.functions.invoke('search-spotify', {
-                body: { query: getHitQuery(year) }
+                body: { query: getHitQuery(year), year }
               });
               if (error || !data?.trackId) {
                 console.warn(`[ParallaxMusic] No result for year ${year}`);
@@ -160,7 +160,7 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
   return (
     <div ref={columnRef} className="relative w-full">
       {/* Header */}
-      <div className="sticky top-14 z-30 bg-background/90 backdrop-blur-sm py-3 px-2 border-b border-border/30 mb-6">
+      <div className="sticky top-14 z-30 py-3 px-2 mb-6">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Music className="h-4 w-4" />
           <span className="font-mono text-[10px] uppercase tracking-[0.2em]">
@@ -170,7 +170,7 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
       </div>
 
       {/* Parallax content wrapper - moves at slower speed than page scroll */}
-      <motion.div style={{ y: parallaxY }} className="space-y-8 px-2 pb-32">
+      <motion.div style={{ y: parallaxY }} className="space-y-8 pb-32 flex flex-col items-end pr-2">
         {/* Loading skeleton */}
         {isLoading && tracks.length === 0 && (
           <div className="flex flex-col items-center gap-4 py-12">

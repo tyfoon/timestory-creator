@@ -34,7 +34,7 @@ serve(async (req) => {
   }
 
   try {
-    const { query } = await req.json();
+    const { query, year } = await req.json();
 
     if (!query || typeof query !== "string") {
       return new Response(
@@ -121,24 +121,26 @@ serve(async (req) => {
 
     // Step B: Search for track
     // CRITICAL: Parse "Artist - Title" format into Spotify field query for accurate results
-    // Without this, "Michael Jackson - Thriller" might return Jay-Z's "Holy Grail" (!)
     let spotifyQuery = query;
     if (query.includes(" - ")) {
       const [artist, ...titleParts] = query.split(" - ");
-      const title = titleParts.join(" - ").trim(); // Handle titles with " - " in them
+      const title = titleParts.join(" - ").trim();
       if (artist && title) {
-        // Use Spotify's field filters for precise matching
         spotifyQuery = `track:"${title}" artist:"${artist.trim()}"`;
         console.log(`[Spotify Search] Parsed query: "${query}" -> "${spotifyQuery}"`);
       }
     }
 
+    // If a year is provided, add year filter for more accurate period-specific results
+    if (year && typeof year === 'number') {
+      spotifyQuery += ` year:${year}`;
+      console.log(`[Spotify Search] Added year filter: ${year}`);
+    }
+
     const searchUrl = new URL("https://api.spotify.com/v1/search");
     searchUrl.searchParams.set("q", spotifyQuery);
     searchUrl.searchParams.set("type", "track");
-    // Ask for multiple results so we can pick one that has a preview_url (for autoplay on the client)
     searchUrl.searchParams.set("limit", "10");
-    // Market can influence availability of preview_url
     searchUrl.searchParams.set("market", "NL");
 
     const searchResponse = await fetch(searchUrl.toString(), {
