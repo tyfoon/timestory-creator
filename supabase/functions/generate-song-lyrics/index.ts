@@ -575,7 +575,7 @@ ${structurePrompt}
 Format je output als JSON:
 {
   "lyrics": "De volledige LRC tekst...",
-  "style": "${suggestedStyle}${vocalType ? `, ${vocalType}` : ''}${moodTags ? `, ${moodTags}` : ''}${textureTags ? `, ${textureTags}` : ''}, Dutch language vocals",
+  "style": "${suggestedStyle}",
   "title": "Korte titel (max 3 woorden)"
 }`;
 
@@ -659,7 +659,7 @@ Vervang "(regel X)" door je eigen zingbare tekst die AANSLUIT bij herkenbare geb
 Format je output als JSON:
 {
   "lyrics": "De volledige LRC tekst met [verse]/[chorus] markers en timestamps...",
-  "style": "${suggestedStyle}${vocalType ? `, ${vocalType}` : ''}${moodTags ? `, ${moodTags}` : ''}${textureTags ? `, ${textureTags}` : ''}, Dutch language vocals",
+  "style": "${suggestedStyle}",
   "title": "Korte titel (max 3 woorden)"
 }`;
       }
@@ -739,9 +739,9 @@ Format je output als JSON:
       console.warn(`Lyrics too short (${lyricsLength} chars) on attempt ${attempt}/${MAX_ATTEMPTS}. ${attempt < MAX_ATTEMPTS ? 'Retrying...' : 'Using anyway.'}`);
     }
 
-    // Combine style with vocal type for Suno
+    // For DiffRhythm: keep style SHORT (just genre). For Suno: add vocal type.
     let finalStyle = parsedContent!.style;
-    if (vocalType) {
+    if (provider !== 'diffrhythm' && vocalType) {
       finalStyle = `${parsedContent!.style}, ${vocalType}`;
     }
 
