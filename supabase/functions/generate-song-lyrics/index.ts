@@ -575,7 +575,7 @@ ${structurePrompt}
 Format je output als JSON:
 {
   "lyrics": "De volledige LRC tekst...",
-  "style": "${suggestedStyle}${vocalType ? `, ${vocalType}` : ''}${moodTags ? `, ${moodTags}` : ''}${textureTags ? `, ${textureTags}` : ''}",
+  "style": "${suggestedStyle}${vocalType ? `, ${vocalType}` : ''}${moodTags ? `, ${moodTags}` : ''}${textureTags ? `, ${textureTags}` : ''}, Dutch language vocals",
   "title": "Korte titel (max 3 woorden)"
 }`;
 
@@ -601,9 +601,30 @@ Format je output als JSON:
         const templatePrompt = templateLines.join('\n');
         console.log(`[DiffRhythm] V1 quick template (${totalLines} lines):\n` + templatePrompt);
 
+        // Build era-specific event examples to make lyrics relevant to what user sees
+        const eraEventExamples: Record<string, string[]> = {
+          '50': ['Rock around the Clock', 'Elvis op de radio', 'Eerste televisie thuis', 'Watersnoodramp'],
+          '60': ['De Beatles op TV', 'Maanlanding', 'Provo-beweging', 'Piratenzenders', 'Flower Power'],
+          '70': ['Disco op zaterdagavond', 'Oliecrisis en autoloze zondag', 'ABBA wint Songfestival', 'Punk in de kroeg', 'Star Wars in de bios'],
+          '80': ['Doe Maar op de radio', 'MTV en videoclips', 'Walkman mee naar school', 'Val van de Muur', 'Pac-Man en Atari', 'Live Aid'],
+          '90': ['Gabberfeesten', 'Internet voor het eerst', 'Tamagotchi', 'Spice Girls', 'Euro komt eraan', 'MSN Messenger', 'Nirvana op MTV'],
+          '00': ['9/11 op televisie', 'Hyves en MSN', 'iPod en mp3', 'Holland op het EK', 'Harry Potter', 'Facebook begint'],
+          '10': ['Instagram en selfies', 'Vlogs kijken', 'Spotify', 'Pokémon Go', 'Netflix bingewatchen', 'Klimaatprotesten'],
+          '20': ['Corona en lockdowns', 'TikTok', 'Thuiswerken', 'Livestreams', 'AI breekt door'],
+        };
+        
+        const decadeKey = String(Math.floor(midYear / 10) * 10).slice(-2);
+        const relevantEvents = eraEventExamples[decadeKey] || eraEventExamples['90'];
+        const eventExamplesStr = relevantEvents.map((e, i) => `  - ${e}`).join('\n');
+
         systemPrompt = `Je bent een getalenteerde Nederlandse songwriter die nostalgische liedjes schrijft in LRC-formaat voor DiffRhythm muziekgeneratie.
 
 Je schrijft een compleet lied van ~90 seconden in LRC-formaat met [verse] en [chorus] secties.
+
+=== KRITISCH: INHOUD MOET AANSLUITEN BIJ HET TIJDPERK ===
+De teksten moeten CONCREET verwijzen naar herkenbare gebeurtenissen, trends en herinneringen uit de ${eraLabel} (${startYear}-${endYear}).
+Gebruik deze voorbeelden als inspiratie (verwerk er minstens 5 in de songtekst):
+${eventExamplesStr}
 
 BELANGRIJK LRC-FORMAAT:
 - Elke regel begint met een timestamp in [mm:ss.cc] formaat
@@ -615,7 +636,7 @@ BELANGRIJK LRC-FORMAAT:
 THEMA: Nostalgie naar de ${eraLabel} (${startYear}-${endYear})
 ${city ? `STAD: ${city}` : ''}
 ${subcultureName ? `SUBCULTUUR: ${subcultureName}` : ''}
-TAAL: Nederlands
+TAAL: Nederlands — alle tekst MOET in het Nederlands zijn
 MUZIEKSTIJL: ${suggestedStyle}${moodTags ? `, ${moodTags}` : ''}${textureTags ? `, ${textureTags}` : ''}`;
 
         userPrompt = `Schrijf een nostalgisch Nederlands lied in LRC-formaat over opgroeien in de ${eraLabel}${city ? ` in ${city}` : ''}.
@@ -625,19 +646,20 @@ Het lied moet:
 - Timestamps verspreid over 90 seconden ([00:00.00] tot [01:25.00])
 - [verse] en [chorus] sectie-markers bevatten
 - Kort, zingbaar en emotioneel zijn
-- Concrete herinneringen uit die tijd oproepen
+- CONCREET verwijzen naar herkenbare gebeurtenissen en trends uit de ${eraLabel}:
+${eventExamplesStr}
 ${subcultureName ? `- De sfeer van de ${subcultureName} subcultuur ademen` : ''}
 
 Hier is de structuur met timestamps die je EXACT moet overnemen:
 
 ${templatePrompt}
 
-Vervang "(regel X)" door je eigen zingbare tekst. Behoud de timestamps en sectie-markers EXACT.
+Vervang "(regel X)" door je eigen zingbare tekst die AANSLUIT bij herkenbare gebeurtenissen uit de ${eraLabel}. Behoud de timestamps en sectie-markers EXACT.
 
 Format je output als JSON:
 {
   "lyrics": "De volledige LRC tekst met [verse]/[chorus] markers en timestamps...",
-  "style": "${suggestedStyle}${vocalType ? `, ${vocalType}` : ''}${moodTags ? `, ${moodTags}` : ''}${textureTags ? `, ${textureTags}` : ''}",
+  "style": "${suggestedStyle}${vocalType ? `, ${vocalType}` : ''}${moodTags ? `, ${moodTags}` : ''}${textureTags ? `, ${textureTags}` : ''}, Dutch language vocals",
   "title": "Korte titel (max 3 woorden)"
 }`;
       }
