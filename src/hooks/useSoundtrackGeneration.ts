@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FormData } from '@/types/form';
 import { TimelineEvent } from '@/types/timeline';
-import { MUSIC_GENERATION_PROVIDER } from '@/lib/promptConstants';
+import { MUSIC_GENERATION_PROVIDER, MusicProvider } from '@/lib/promptConstants';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvZW9ib3lnc3NzeWFqcGRzdGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNTY2NjEsImV4cCI6MjA4NDgzMjY2MX0.KuFaWF4r_cxZRiOumPGMChLVmwgyhT9vR5s7L52zr5s';
@@ -571,7 +571,8 @@ export const useSoundtrackGeneration = () => {
       friends?: string;
       school?: string;
       nightlife?: string;
-    }
+    },
+    providerOverride?: MusicProvider,
   ) => {
     const startYear = formData.type === 'birthdate' && formData.birthDate 
       ? formData.birthDate.year 
@@ -588,7 +589,7 @@ export const useSoundtrackGeneration = () => {
       startedAt: Date.now(),
     });
 
-    const provider = MUSIC_GENERATION_PROVIDER;
+    const provider = providerOverride || MUSIC_GENERATION_PROVIDER;
     console.log(`[Soundtrack V2] Starting full generation with provider: ${provider}`, { eventCount: events.length });
 
     try {
@@ -615,6 +616,7 @@ export const useSoundtrackGeneration = () => {
           gender: formData.optionalData.gender,
           startYear,
           endYear,
+          provider, // Pass provider so lyrics function can generate LRC format for diffrhythm
         }),
       });
 
@@ -639,7 +641,55 @@ export const useSoundtrackGeneration = () => {
       }));
 
       // Step 2: Generate music (provider-specific)
-      if (provider === 'acestep') {
+      if (provider === 'diffrhythm') {
+        // DiffRhythm: Synchronous via Fal.ai queue (polls internally in edge function)
+        console.log('[Soundtrack V2] Using DiffRhythm provider...');
+        const warmupTimer = setTimeout(() => {
+          setState(prev => ({ ...prev, status: 'warming_up' }));
+        }, 10_000);
+
+        try {
+          const drResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-diffrhythm-track`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'apikey': SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({
+              lyrics: lyricsData.data.lyrics,
+              style: lyricsData.data.style,
+              title: lyricsData.data.title,
+            }),
+          });
+
+          clearTimeout(warmupTimer);
+
+          if (!drResponse.ok) {
+            const errorData = await drResponse.json().catch(() => ({}));
+            throw new Error(errorData.error || `DiffRhythm error: ${drResponse.status}`);
+          }
+
+          const drData = await drResponse.json();
+          if (!drData.success) {
+            throw new Error(drData.error || 'DiffRhythm generation failed');
+          }
+
+          setState(prev => ({
+            ...prev,
+            status: 'completed',
+            audioUrl: drData.data.audio_url,
+            duration: drData.data.duration || 95,
+            completedAt: Date.now(),
+            isStreaming: false,
+          }));
+          console.log('[Soundtrack V2] DiffRhythm completed!');
+        } catch (error) {
+          clearTimeout(warmupTimer);
+          throw error;
+        }
+
+      } else if (provider === 'acestep') {
         console.log('[Soundtrack V2] Using AceStep provider...');
         const result = await callAceStep(
           lyricsData.data.lyrics,
