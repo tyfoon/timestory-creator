@@ -101,6 +101,77 @@ export const clearSoundtrackState = () => {
 };
 
 /**
+ * Call DiffRhythm via async queue (submit + poll)
+ * Avoids Edge Function timeout by splitting into fast submit + client-side polling
+ */
+const callDiffRhythm = async (
+  lyrics: string,
+  style: string,
+  title: string,
+  onPolling?: () => void,
+): Promise<{ audioUrl: string; duration: number }> => {
+  // Step 1: Submit to queue (fast, <2s)
+  const submitResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-diffrhythm-track`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'apikey': SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify({ action: 'submit', lyrics, style, title }),
+  });
+
+  if (!submitResponse.ok) {
+    const errorData = await submitResponse.json().catch(() => ({}));
+    throw new Error(errorData.error || `DiffRhythm submit error: ${submitResponse.status}`);
+  }
+
+  const submitData = await submitResponse.json();
+  if (!submitData.success || !submitData.data?.requestId) {
+    throw new Error(submitData.error || 'No requestId from DiffRhythm queue');
+  }
+
+  const requestId = submitData.data.requestId;
+  console.log(`[DiffRhythm] Queued with requestId: ${requestId}`);
+  onPolling?.();
+
+  // Step 2: Poll until complete (every 5s, max 60 attempts = 5 min)
+  const MAX_POLL = 60;
+  const POLL_INTERVAL = 5000;
+
+  for (let i = 0; i < MAX_POLL; i++) {
+    await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
+
+    const pollResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-diffrhythm-track`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ action: 'poll', requestId, title }),
+    });
+
+    if (!pollResponse.ok) {
+      console.warn(`[DiffRhythm] Poll attempt ${i + 1} failed: ${pollResponse.status}`);
+      continue;
+    }
+
+    const pollData = await pollResponse.json();
+    if (pollData.success && pollData.data?.status === 'completed') {
+      return {
+        audioUrl: pollData.data.audio_url,
+        duration: pollData.data.duration || 95,
+      };
+    }
+
+    console.log(`[DiffRhythm] Poll ${i + 1}/${MAX_POLL}: ${pollData.data?.status}`);
+  }
+
+  throw new Error('DiffRhythm generation timed out after 5 minutes');
+};
+
+/**
  * Call Ace-Step edge function directly (synchronous - no polling needed)
  * Returns audio URL on success
  */
@@ -110,7 +181,6 @@ const callAceStep = async (
   title: string,
   onWarmingUp: () => void,
 ): Promise<{ audioUrl: string; duration: number }> => {
-  // Set a timer: if response takes >10s, show "warming up" state
   const warmupTimer = setTimeout(() => {
     onWarmingUp();
   }, 10_000);
@@ -227,37 +297,21 @@ export const startQuickSoundtrackGeneration = async (formData: FormData): Promis
 
     // Step 2: Generate music (provider-specific)
     if (provider === 'diffrhythm') {
-      // DiffRhythm: Synchronous via Fal.ai queue
-      console.log('[Soundtrack V1] Using DiffRhythm provider...');
-      const drResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-diffrhythm-track`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'apikey': SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({
-          lyrics: lyricsData.data.lyrics,
-          style: lyricsData.data.style,
-          title: lyricsData.data.title,
-        }),
-      });
+      console.log('[Soundtrack V1] Using DiffRhythm provider (async queue)...');
+      const pollingState: SoundtrackState = { ...lyricsState, status: 'polling' };
+      saveState(pollingState);
 
-      if (!drResponse.ok) {
-        const errorData = await drResponse.json().catch(() => ({}));
-        throw new Error(errorData.error || `DiffRhythm error: ${drResponse.status}`);
-      }
-
-      const drData = await drResponse.json();
-      if (!drData.success) {
-        throw new Error(drData.error || 'DiffRhythm generation failed');
-      }
+      const result = await callDiffRhythm(
+        lyricsData.data.lyrics,
+        lyricsData.data.style,
+        lyricsData.data.title,
+      );
 
       const completedState: SoundtrackState = {
         ...lyricsState,
         status: 'completed',
-        audioUrl: drData.data.audio_url,
-        duration: drData.data.duration || 95,
+        audioUrl: result.audioUrl,
+        duration: result.duration,
         completedAt: Date.now(),
       };
       saveState(completedState);
@@ -547,50 +601,23 @@ export const useSoundtrackGeneration = () => {
       }));
 
       if (provider === 'diffrhythm') {
-        console.log('[Soundtrack Regenerate] Using DiffRhythm provider...');
-        const warmupTimer = setTimeout(() => {
-          setState(prev => ({ ...prev, status: 'warming_up' }));
-        }, 10_000);
+        console.log('[Soundtrack Regenerate] Using DiffRhythm provider (async queue)...');
+        setState(prev => ({ ...prev, status: 'polling' }));
 
-        try {
-          const drResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-diffrhythm-track`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-              'apikey': SUPABASE_ANON_KEY,
-            },
-            body: JSON.stringify({
-              lyrics: lyricsData.data.lyrics,
-              style: lyricsData.data.style,
-              title: lyricsData.data.title,
-            }),
-          });
+        const result = await callDiffRhythm(
+          lyricsData.data.lyrics,
+          lyricsData.data.style,
+          lyricsData.data.title,
+        );
 
-          clearTimeout(warmupTimer);
-
-          if (!drResponse.ok) {
-            const errorData = await drResponse.json().catch(() => ({}));
-            throw new Error(errorData.error || `DiffRhythm error: ${drResponse.status}`);
-          }
-
-          const drData = await drResponse.json();
-          if (!drData.success) {
-            throw new Error(drData.error || 'DiffRhythm generation failed');
-          }
-
-          setState(prev => ({
-            ...prev,
-            status: 'completed',
-            audioUrl: drData.data.audio_url,
-            duration: drData.data.duration || 95,
-            completedAt: Date.now(),
-          }));
-          console.log('[Soundtrack Regenerate] DiffRhythm completed!');
-        } catch (error) {
-          clearTimeout(warmupTimer);
-          throw error;
-        }
+        setState(prev => ({
+          ...prev,
+          status: 'completed',
+          audioUrl: result.audioUrl,
+          duration: result.duration,
+          completedAt: Date.now(),
+        }));
+        console.log('[Soundtrack Regenerate] DiffRhythm completed!');
 
       } else if (provider === 'acestep') {
         const result = await callAceStep(
