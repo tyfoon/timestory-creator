@@ -3,8 +3,8 @@
  * Uses embedded Spotify player (same as main storyline) for playback
  */
 
-import { useEffect, useRef, useState } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { Play, Pause, Loader2, Music, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { numberOneHits } from '@/data/numberOneHits';
@@ -37,16 +37,23 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
   const columnRef = useRef<HTMLDivElement>(null);
 
   const columnContentRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll();
+  const [offsetY, setOffsetY] = useState(0);
 
-  // Use a function-based transform that reads live DOM measurements each frame
-  const parallaxY = useTransform(scrollYProgress, (progress) => {
-    if (!columnContentRef.current) return 0;
-    const contentHeight = columnContentRef.current.scrollHeight;
-    const vh = window.innerHeight;
-    const overflow = Math.max(0, contentHeight - vh + 100);
-    return -progress * overflow;
-  });
+  // Sync column scroll to page scroll using a plain listener
+  useEffect(() => {
+    const onScroll = () => {
+      if (!columnContentRef.current) return;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (docHeight <= 0) return;
+      const progress = window.scrollY / docHeight; // 0 → 1
+      const contentHeight = columnContentRef.current.scrollHeight;
+      const overflow = Math.max(0, contentHeight - window.innerHeight + 100);
+      setOffsetY(-progress * overflow);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [tracks.length]);
 
   // Fetch tracks on mount
   useEffect(() => {
@@ -122,7 +129,7 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
   return (
     <div ref={columnRef} className="relative w-full">
 
-      <motion.div ref={columnContentRef} style={{ y: parallaxY }} className="space-y-8 pb-32 flex flex-col items-end pr-2">
+      <div ref={columnContentRef} style={{ transform: `translateY(${offsetY}px)` }} className="space-y-8 pb-32 flex flex-col items-end pr-2">
         {isLoading && tracks.length === 0 && (
           <div className="flex flex-col items-center gap-4 py-12">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -148,7 +155,7 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
             </span>
           </div>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 };
