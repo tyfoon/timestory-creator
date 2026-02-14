@@ -512,16 +512,12 @@ Format je output als JSON:
     // Overrides prompts entirely with event-skeleton + strict LRC instructions
     const isDiffRhythm = provider === 'diffrhythm';
     if (isDiffRhythm) {
-      console.log('[DiffRhythm mode] Building event skeleton with exact timestamps');
+      console.log('[DiffRhythm mode] Building LRC lyrics');
 
-      // --- Timing constants (must match Remotion video) ---
-      const DURATION_PER_SLIDE = 5.0;
-      const OVERLAP = 1.3;
-      const EFFECTIVE_DURATION = DURATION_PER_SLIDE - OVERLAP; // 3.7s
-
-      const eventList = events && events.length > 0 ? events : [];
       const midYear = Math.round((startYear + endYear) / 2);
       const eraLabel = `Jaren ${Math.floor(midYear / 10) * 10}`;
+      const city = personalData?.city || formData?.city || '';
+      const subcultureName = subculture?.myGroup || '';
 
       // --- Helper: format time as [mm:ss.cc] (LRC format with centiseconds) ---
       const formatLRC = (totalSeconds: number): string => {
@@ -532,60 +528,119 @@ Format je output als JSON:
         return `[${mm}:${ss}.${cs}]`;
       };
 
-      // --- Build the event skeleton string ---
-      // DiffRhythm API requires: sections starting with [chorus] or [verse]
-      // and timestamps in [mm:ss.cc] format
-      const skeletonLines: string[] = [];
+      const hasEvents = events && events.length > 0;
 
-      // Intro as first verse
-      skeletonLines.push(`[verse]`);
-      skeletonLines.push(`${formatLRC(0)} Introductie (Thema: ${eraLabel})`);
+      if (hasEvents) {
+        // === MODE B: Event-synchronized LRC ===
+        const DURATION_PER_SLIDE = 5.0;
+        const OVERLAP = 1.3;
+        const EFFECTIVE_DURATION = DURATION_PER_SLIDE - OVERLAP; // 3.7s
 
-      // Distribute events into verse/chorus sections
-      eventList.forEach((e, i) => {
-        const time = (i + 1) * EFFECTIVE_DURATION;
-        // Every 4 events, switch between verse and chorus
-        if (i > 0 && i % 4 === 0) {
-          skeletonLines.push(i % 8 === 0 ? `[verse]` : `[chorus]`);
-        }
-        skeletonLines.push(`${formatLRC(time)} Event: ${e.title}`);
-      });
+        const skeletonLines: string[] = [];
+        skeletonLines.push(`[verse]`);
+        skeletonLines.push(`${formatLRC(0)} Introductie (Thema: ${eraLabel})`);
 
-      // Outro as final chorus
-      const outroTime = (eventList.length + 1) * EFFECTIVE_DURATION;
-      skeletonLines.push(`[chorus]`);
-      skeletonLines.push(`${formatLRC(outroTime)} Outro`);
+        events!.forEach((e, i) => {
+          const time = (i + 1) * EFFECTIVE_DURATION;
+          if (i > 0 && i % 4 === 0) {
+            skeletonLines.push(i % 8 === 0 ? `[verse]` : `[chorus]`);
+          }
+          skeletonLines.push(`${formatLRC(time)} Event: ${e.title}`);
+        });
 
-      const structurePrompt = skeletonLines.join('\n');
-      console.log('[DiffRhythm] Event skeleton:\n' + structurePrompt);
+        const outroTime = (events!.length + 1) * EFFECTIVE_DURATION;
+        skeletonLines.push(`[chorus]`);
+        skeletonLines.push(`${formatLRC(outroTime)} Outro`);
 
-      // --- Override system prompt ---
-      systemPrompt = `Je bent een lyricist die muziek schrijft voor een videoclip. Hieronder staat een tijdlijn van gebeurtenissen met harde timestamps in LRC-formaat. Jouw taak: Schrijf voor elke tijdregel exact één korte, zingbare zin die past bij dat specifieke event.
+        const structurePrompt = skeletonLines.join('\n');
+        console.log('[DiffRhythm] Event skeleton:\n' + structurePrompt);
+
+        systemPrompt = `Je bent een lyricist die muziek schrijft voor een videoclip. Hieronder staat een tijdlijn van gebeurtenissen met harde timestamps in LRC-formaat. Jouw taak: Schrijf voor elke tijdregel exact één korte, zingbare zin die past bij dat specifieke event.
 
 Regels:
-1. Neem de timestamp EXACT over in [mm:ss.cc] formaat (bijv. [00:03.70]). Verander de tijd NIET.
+1. Neem de timestamp EXACT over in [mm:ss.cc] formaat. Verander de tijd NIET.
 2. Behoud de [verse] en [chorus] sectie-markers EXACT zoals gegeven.
 3. De tekst moet gaan over het event dat achter de timestamp staat.
 4. Houd het kort (max 6-8 woorden per regel), het tempo ligt hoog.
 5. Rijm is leuk, maar het matchen van de inhoud met het event is BELANGRIJKER.
 6. Schrijf in het Nederlands.
 7. Output ALLEEN de LRC tekst ([verse]/[chorus] markers + timestamp + zin), geen andere praat.
-8. De intro-regel mag een sfeervolle openingszin zijn over het tijdperk.
-9. De outro-regel mag een afsluitende, nostalgische zin zijn.
 
 MUZIEKSTIJL: ${suggestedStyle}${moodTags ? `, ${moodTags}` : ''}${textureTags ? `, ${textureTags}` : ''}`;
 
-      // --- Override user prompt ---
-      userPrompt = `Hier is de tijdlijn met harde timestamps en sectie-markers. Schrijf voor ELKE tijdregel exact één korte zingbare zin. Behoud [verse] en [chorus] markers en alle timestamps exact:
+        userPrompt = `Schrijf voor ELKE tijdregel exact één korte zingbare zin. Behoud [verse]/[chorus] markers en timestamps exact:
 
 ${structurePrompt}
 
 Format je output als JSON:
 {
-  "lyrics": "De volledige LRC tekst met [verse]/[chorus] markers en [mm:ss.cc] timestamps...",
+  "lyrics": "De volledige LRC tekst...",
   "style": "${suggestedStyle}${vocalType ? `, ${vocalType}` : ''}${moodTags ? `, ${moodTags}` : ''}${textureTags ? `, ${textureTags}` : ''}",
   "title": "Korte titel (max 3 woorden)"
 }`;
+
+      } else {
+        // === MODE A (V1 quick): No events — generate a full 95s nostalgic LRC song ===
+        // Create timestamps spread across 95 seconds (approx 3.5s per line = ~27 lines)
+        const SONG_DURATION = 90; // seconds of content
+        const LINE_INTERVAL = 3.5;
+        const totalLines = Math.floor(SONG_DURATION / LINE_INTERVAL);
+
+        const templateLines: string[] = [];
+        // Structure: verse (8 lines) → chorus (4 lines) → verse (8 lines) → chorus (4 lines) → outro (3 lines)
+        for (let i = 0; i < totalLines; i++) {
+          const time = i * LINE_INTERVAL;
+          if (i === 0) templateLines.push(`[verse]`);
+          else if (i === 8) templateLines.push(`[chorus]`);
+          else if (i === 12) templateLines.push(`[verse]`);
+          else if (i === 20) templateLines.push(`[chorus]`);
+          else if (i === 24) templateLines.push(`[verse]`);
+          templateLines.push(`${formatLRC(time)} (regel ${i + 1})`);
+        }
+
+        const templatePrompt = templateLines.join('\n');
+        console.log(`[DiffRhythm] V1 quick template (${totalLines} lines):\n` + templatePrompt);
+
+        systemPrompt = `Je bent een getalenteerde Nederlandse songwriter die nostalgische liedjes schrijft in LRC-formaat voor DiffRhythm muziekgeneratie.
+
+Je schrijft een compleet lied van ~90 seconden in LRC-formaat met [verse] en [chorus] secties.
+
+BELANGRIJK LRC-FORMAAT:
+- Elke regel begint met een timestamp in [mm:ss.cc] formaat
+- Secties worden gemarkeerd met [verse] of [chorus] op een aparte regel
+- Houd regels kort (6-10 woorden), zingbaar en ritmisch
+- Het lied moet MINSTENS 20 regels bevatten verspreid over 90 seconden
+- Timestamps moeten oplopen van [00:00.00] tot circa [01:25.00]
+
+THEMA: Nostalgie naar de ${eraLabel} (${startYear}-${endYear})
+${city ? `STAD: ${city}` : ''}
+${subcultureName ? `SUBCULTUUR: ${subcultureName}` : ''}
+TAAL: Nederlands
+MUZIEKSTIJL: ${suggestedStyle}${moodTags ? `, ${moodTags}` : ''}${textureTags ? `, ${textureTags}` : ''}`;
+
+        userPrompt = `Schrijf een nostalgisch Nederlands lied in LRC-formaat over opgroeien in de ${eraLabel}${city ? ` in ${city}` : ''}.
+
+Het lied moet:
+- Minimaal 20 regels bevatten
+- Timestamps verspreid over 90 seconden ([00:00.00] tot [01:25.00])
+- [verse] en [chorus] sectie-markers bevatten
+- Kort, zingbaar en emotioneel zijn
+- Concrete herinneringen uit die tijd oproepen
+${subcultureName ? `- De sfeer van de ${subcultureName} subcultuur ademen` : ''}
+
+Hier is de structuur met timestamps die je EXACT moet overnemen:
+
+${templatePrompt}
+
+Vervang "(regel X)" door je eigen zingbare tekst. Behoud de timestamps en sectie-markers EXACT.
+
+Format je output als JSON:
+{
+  "lyrics": "De volledige LRC tekst met [verse]/[chorus] markers en timestamps...",
+  "style": "${suggestedStyle}${vocalType ? `, ${vocalType}` : ''}${moodTags ? `, ${moodTags}` : ''}${textureTags ? `, ${textureTags}` : ''}",
+  "title": "Korte titel (max 3 woorden)"
+}`;
+      }
     }
 
     // Retry logic for short lyrics
