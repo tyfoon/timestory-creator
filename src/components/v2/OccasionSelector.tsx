@@ -33,6 +33,9 @@ const getOccasions = (t: (key: any) => any): { id: Occasion; icon: React.ReactNo
 ];
 
 export const OccasionSelector = ({ selected, onSelect, eraTheme }: OccasionSelectorProps) => {
+  const { t } = useLanguage();
+  const occasions = getOccasions(t);
+
   return (
     <div className="flex flex-wrap justify-center gap-4">
       {occasions.map((occasion, index) => {
