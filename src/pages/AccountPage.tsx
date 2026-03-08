@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, Clock, ExternalLink, Share2, Trash2, CreditCard, Loader2, Bookmark } from 'lucide-react';
+import { SavedEventCard } from '@/components/account/SavedEventCard';
 import { useToast } from '@/hooks/use-toast';
 
 interface SavedStory {
