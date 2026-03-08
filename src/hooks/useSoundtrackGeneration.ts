@@ -452,7 +452,7 @@ export const useSoundtrackGeneration = () => {
           setState(prev => ({
             ...prev,
             status: 'error',
-            error: 'Muziek generatie duurde te lang',
+            error: 'musicGenerationTimeout',
           }));
         }
         return;
