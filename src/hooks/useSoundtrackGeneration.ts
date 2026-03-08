@@ -711,6 +711,7 @@ export const useSoundtrackGeneration = () => {
       nightlife?: string;
     },
     providerOverride?: MusicProvider,
+    language?: string,
   ) => {
     const startYear = formData.type === 'birthdate' && formData.birthDate 
       ? formData.birthDate.year 
