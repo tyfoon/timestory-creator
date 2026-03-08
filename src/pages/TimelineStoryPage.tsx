@@ -1326,6 +1326,7 @@ const TimelineStoryPage = () => {
                   </button>
                 </>
               )}
+              <AccountLink />
             </div>
           </div>
         </div>
