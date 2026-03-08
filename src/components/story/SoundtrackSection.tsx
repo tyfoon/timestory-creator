@@ -324,11 +324,10 @@ export const SoundtrackSection = ({
                       <div className="flex-1">
                         <h4 className="font-semibold text-foreground flex items-center gap-2">
                           <Sparkles className="h-4 w-4 text-primary" />
-                          Maak het nog persoonlijker
+                          {t('makeMorePersonal') as string}
                         </h4>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Voeg vrienden, school en uitgaansplekken toe voor een unieke songtekst 
-                          met jouw herinneringen én de nieuwsfeiten uit je tijdlijn.
+                          {t('upgradeDescription') as string}
                         </p>
                       </div>
                       <Button
