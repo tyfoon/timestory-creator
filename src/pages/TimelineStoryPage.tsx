@@ -652,6 +652,7 @@ const LayoutOverlap = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatte
 
 // Pattern: "THE SPLIT" - Dramatic half-and-half with huge type
 const LayoutSplit = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatternProps) => {
+  const { t } = useLanguage();
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
   
