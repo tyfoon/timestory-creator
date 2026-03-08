@@ -1119,6 +1119,13 @@ export const translations = {
     accountBillingDesc: "Gérez votre abonnement et vos coordonnées de paiement",
     accountManageSubscription: "Gérer l'abonnement",
     accountEvents: "événements",
+    saveEvent: "Sauvegarder l'événement",
+    eventSaved: "Événement sauvegardé",
+    eventAlreadySaved: "Déjà sauvegardé",
+    accountSavedEvents: "Événements sauvegardés",
+    accountNoSavedEvents: "Pas encore d'événements sauvegardés",
+    accountNoSavedEventsDesc: "Sauvegardez des événements individuels depuis votre chronologie",
+    eventDeleted: "Événement supprimé",
   },
 } as const;
 
