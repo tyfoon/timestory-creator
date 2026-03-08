@@ -176,14 +176,14 @@ export const generateTimelineStreaming = async (
     // Fallback: if stream ends without complete message, use collected data
     if (!receivedComplete) {
       if (collectedEvents.length === 0) {
-        callbacks.onError('De verbinding is beëindigd voordat er resultaten binnenkwamen. Probeer opnieuw.');
+        callbacks.onError(getTranslation('connectionLost', language as Language));
         return;
       }
 
       console.log(`Stream ended without complete message. Using ${collectedEvents.length} collected events.`);
       callbacks.onComplete({
         events: collectedEvents,
-        summary: collectedSummary || 'Een overzicht van belangrijke gebeurtenissen.',
+        summary: collectedSummary || getTranslation('defaultSummary', language as Language),
         famousBirthdays: collectedBirthdays,
         storyTitle: collectedStoryTitle,
         storyIntroduction: collectedStoryIntroduction,
