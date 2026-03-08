@@ -755,7 +755,8 @@ export const useSoundtrackGeneration = () => {
           gender: formData.optionalData.gender,
           startYear,
           endYear,
-          provider, // Pass provider so lyrics function can generate LRC format for diffrhythm
+          provider,
+          language: language || 'nl',
         }),
       });
 
