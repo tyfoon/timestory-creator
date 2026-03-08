@@ -136,7 +136,7 @@ export const PersonalizeSoundtrackDialog = ({
               {t('cityLabelShort') as string}
             </Label>
             <Input
-              placeholder="Bijv. Amsterdam"
+              placeholder={t('cityPlaceholder') as string}
               value={localData.city || ''}
               onChange={(e) => updateField('city', e.target.value)}
               className="bg-card h-10 sm:h-9 text-sm"
