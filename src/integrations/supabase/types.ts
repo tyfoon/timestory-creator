@@ -89,6 +89,42 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_events: {
+        Row: {
+          created_at: string
+          event_category: string | null
+          event_date: string | null
+          event_description: string | null
+          event_title: string
+          event_year: number | null
+          id: string
+          image_url: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_category?: string | null
+          event_date?: string | null
+          event_description?: string | null
+          event_title: string
+          event_year?: number | null
+          id?: string
+          image_url?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_category?: string | null
+          event_date?: string | null
+          event_description?: string | null
+          event_title?: string
+          event_year?: number | null
+          id?: string
+          image_url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       saved_stories: {
         Row: {
           content: Json
