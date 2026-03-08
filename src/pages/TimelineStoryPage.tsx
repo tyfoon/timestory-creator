@@ -283,6 +283,7 @@ interface ImageWithBlacklistProps {
 }
 
 const ImageWithBlacklist = ({ src, alt, className = '', event, onBlacklistImage }: ImageWithBlacklistProps) => {
+  const { t } = useLanguage();
   // Check if this is a placeholder (not a real searched image)
   const isPlaceholder = !event.imageUrl || event.imageStatus !== 'found';
 
