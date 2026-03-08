@@ -222,7 +222,7 @@ const callAceStep = async (
  * Start V1 (quick) soundtrack generation - fire and forget
  * Called from homepage when user clicks "Start"
  */
-export const startQuickSoundtrackGeneration = async (formData: FormData, events?: TimelineEvent[]): Promise<void> => {
+export const startQuickSoundtrackGeneration = async (formData: FormData, events?: TimelineEvent[], language?: string): Promise<void> => {
   const startYear = formData.type === 'birthdate' && formData.birthDate 
     ? formData.birthDate.year 
     : formData.yearRange?.startYear || 1980;
