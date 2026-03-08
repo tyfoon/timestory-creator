@@ -538,7 +538,7 @@ const HomeV3 = () => {
                         <Calendar className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground">Welke periode?</h3>
+                        <h3 className="font-semibold text-foreground">{t('periodStepLabel') as string}</h3>
                         {selectedPeriod && currentStep !== 2 && (
                           <p className="text-sm text-muted-foreground">
                             {mainPeriodOptions.find(p => p.id === selectedPeriod)?.label}
