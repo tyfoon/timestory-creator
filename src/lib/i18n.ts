@@ -1087,6 +1087,17 @@ export const translations = {
     authMyAccount: "Mon compte",
     accountNoContent: "Pas encore de contenu sauvegardé",
     accountNoContentDesc: "Vos chronologies générées apparaîtront ici",
+    accountSavedStories: "Chronologies sauvegardées",
+    accountViewStory: "Voir",
+    accountShareStory: "Partager",
+    accountDeleteStory: "Supprimer",
+    accountDeleteConfirm: "Êtes-vous sûr de vouloir supprimer cette chronologie ?",
+    accountStoryDeleted: "Chronologie supprimée",
+    accountCreatedAt: "Créée le",
+    accountBilling: "Paiements",
+    accountBillingDesc: "Gérez votre abonnement et vos coordonnées de paiement",
+    accountManageSubscription: "Gérer l'abonnement",
+    accountEvents: "événements",
   },
 } as const;
 
