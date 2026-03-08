@@ -335,7 +335,7 @@ export const SoundtrackSection = ({
                         className="gap-2 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 whitespace-nowrap"
                       >
                         <Sparkles className="h-4 w-4" />
-                        Upgrade naar V2
+                        {t('upgradeToV2') as string}
                       </Button>
                     </div>
                   </div>
