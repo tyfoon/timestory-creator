@@ -346,8 +346,8 @@ export const SoundtrackSection = ({
                   <details className="group">
                     <summary className="text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors list-none flex items-center gap-2">
                       <span className="text-xs">▶</span>
-                      <span className="group-open:hidden">Bekijk songtekst</span>
-                      <span className="hidden group-open:inline">Verberg songtekst</span>
+                      <span className="group-open:hidden">{t('viewLyrics') as string}</span>
+                      <span className="hidden group-open:inline">{t('hideLyrics') as string}</span>
                     </summary>
                     <div className="mt-4 p-4 bg-muted/20 rounded-xl max-h-64 overflow-y-auto">
                       <pre className="text-sm text-muted-foreground whitespace-pre-wrap font-sans leading-relaxed">
