@@ -186,7 +186,7 @@ export const SoundtrackSection = ({
                   className="gap-2"
                 >
                   <Share2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Delen</span>
+                  <span className="hidden sm:inline">{t('shareButton') as string}</span>
                 </Button>
               )}
             </div>
