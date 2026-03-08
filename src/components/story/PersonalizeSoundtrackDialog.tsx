@@ -91,10 +91,10 @@ export const PersonalizeSoundtrackDialog = ({
         <DialogHeader className="pb-2">
           <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
             <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-            Aanpassen
+            {t('customizeTitle') as string}
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm">
-            Pas je gegevens aan voor een persoonlijker resultaat met jouw herinneringen én nieuwsfeiten.
+            {t('customizeDescription') as string}
           </DialogDescription>
         </DialogHeader>
 
