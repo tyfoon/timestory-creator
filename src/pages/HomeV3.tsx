@@ -477,7 +477,7 @@ const HomeV3 = () => {
                         <Baby className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground">Geboortedatum</h3>
+                        <h3 className="font-semibold text-foreground">{t('birthDateStepLabel') as string}</h3>
                         {isBirthDateComplete && (
                           <p className="text-sm text-muted-foreground">
                             {String(birthDate.day).padStart(2, '0')}-{String(birthDate.month).padStart(2, '0')}-{birthDate.year}
