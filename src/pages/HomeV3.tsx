@@ -131,7 +131,9 @@ const StepIndicator = ({
 );
 
 const HomeV3 = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { user } = useAuth();
+  const { saveSettings, loadSettings } = useUserSettings();
   const navigate = useNavigate();
 
   // Restore form state from sessionStorage on mount
