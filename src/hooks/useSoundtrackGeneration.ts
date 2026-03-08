@@ -13,6 +13,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { FormData } from '@/types/form';
 import { TimelineEvent } from '@/types/timeline';
 import { MUSIC_GENERATION_PROVIDER, MusicProvider } from '@/lib/promptConstants';
+import { getTranslation, Language } from '@/lib/i18n';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvZW9ib3lnc3NzeWFqcGRzdGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNTY2NjEsImV4cCI6MjA4NDgzMjY2MX0.KuFaWF4r_cxZRiOumPGMChLVmwgyhT9vR5s7L52zr5s';
@@ -82,7 +83,7 @@ const loadState = (): SoundtrackState => {
         const elapsed = Date.now() - (parsed.startedAt || 0);
         const STALE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
         if (elapsed > STALE_THRESHOLD) {
-          return { ...initialState, ...parsed, status: 'error', error: 'Generatie onderbroken' };
+          return { ...initialState, ...parsed, status: 'error', error: 'generationInterrupted' };
         }
         // Still fresh — keep the generating state so the async function can finish
         return parsed;
@@ -276,7 +277,7 @@ export const startQuickSoundtrackGeneration = async (formData: FormData, events?
         description: e.description,
         category: e.category,
       }));
-      lyricsBody.summary = `Tijdlijn van ${startYear} tot ${endYear}`;
+      lyricsBody.summary = `${getTranslation('timelineOf', (language || 'nl') as Language)} ${startYear} ${getTranslation('to', (language || 'nl') as Language)} ${endYear}`;
     }
 
     const lyricsResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-song-lyrics`, {
@@ -452,7 +453,7 @@ export const useSoundtrackGeneration = () => {
           setState(prev => ({
             ...prev,
             status: 'error',
-            error: 'Muziek generatie duurde te lang',
+            error: 'musicGenerationTimeout',
           }));
         }
         return;
@@ -534,7 +535,7 @@ export const useSoundtrackGeneration = () => {
         setState(prev => ({
           ...prev,
           status: 'error',
-          error: error instanceof Error ? error.message : 'Polling failed',
+          error: error instanceof Error ? error.message : 'pollingFailed',
         }));
       }
     };
@@ -595,7 +596,7 @@ export const useSoundtrackGeneration = () => {
         lyricsBody.events = events.map(e => ({
           id: e.id, year: e.year, title: e.title, description: e.description, category: e.category,
         }));
-        lyricsBody.summary = `Tijdlijn van ${startYear} tot ${endYear}`;
+        lyricsBody.summary = `${getTranslation('timelineOf', (language || 'nl') as Language)} ${startYear} ${getTranslation('to', (language || 'nl') as Language)} ${endYear}`;
       }
 
       const lyricsResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-song-lyrics`, {

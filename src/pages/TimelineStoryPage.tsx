@@ -283,6 +283,7 @@ interface ImageWithBlacklistProps {
 }
 
 const ImageWithBlacklist = ({ src, alt, className = '', event, onBlacklistImage }: ImageWithBlacklistProps) => {
+  const { t } = useLanguage();
   // Check if this is a placeholder (not a real searched image)
   const isPlaceholder = !event.imageUrl || event.imageStatus !== 'found';
 
@@ -338,8 +339,8 @@ const ImageWithBlacklist = ({ src, alt, className = '', event, onBlacklistImage 
             }
           }}
           className="absolute top-2 left-2 z-20 w-7 h-7 rounded-full bg-black/60 hover:bg-destructive/90 text-white/70 hover:text-white flex items-center justify-center transition-all duration-200 opacity-0 group-hover/img:opacity-100 backdrop-blur-sm"
-          title="Foto blacklisten (globaal) en nieuwe zoeken"
-          aria-label="Blacklist afbeelding"
+          title={t('blacklistTooltip') as string}
+          aria-label={t('blacklistAriaLabel') as string}
         >
           <Ban className="h-3.5 w-3.5" />
         </button>
@@ -651,6 +652,7 @@ const LayoutOverlap = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatte
 
 // Pattern: "THE SPLIT" - Dramatic half-and-half with huge type
 const LayoutSplit = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatternProps) => {
+  const { t } = useLanguage();
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
   
@@ -681,8 +683,8 @@ const LayoutSplit = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPattern
               }
             }}
             className="absolute top-2 left-2 z-20 w-7 h-7 rounded-full bg-black/60 hover:bg-destructive/90 text-white/70 hover:text-white flex items-center justify-center transition-all duration-200 opacity-0 group-hover/img:opacity-100 backdrop-blur-sm"
-            title="Foto blacklisten (globaal) en nieuwe zoeken"
-            aria-label="Blacklist afbeelding"
+            title={t('blacklistTooltip') as string}
+            aria-label={t('blacklistAriaLabel') as string}
           >
             <Ban className="h-3.5 w-3.5" />
           </button>
@@ -753,6 +755,7 @@ interface HeroSectionProps {
 }
 
 const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading, targetYear, onTimeTravelComplete, timeTravelComplete }: HeroSectionProps) => {
+  const { t } = useLanguage();
   const { scrollY } = useScroll();
   const opacity = useTransform(scrollY, [0, 400], [1, 0]);
   const y = useTransform(scrollY, [0, 400], [0, 100]);
@@ -845,7 +848,7 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading, targetYe
               <div className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 <span className={`${theme.fontMono} text-xs uppercase tracking-widest text-muted-foreground`}>
-                  Gebeurtenissen ophalen...
+                  {t('fetchingEvents') as string}
                 </span>
               </div>
               <motion.div
@@ -858,7 +861,7 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading, targetYe
           ) : (
             <>
               <span className={`${theme.fontMono} text-xs uppercase tracking-widest text-muted-foreground`}>
-                Scroll to begin
+                {t('scrollToBegin') as string}
               </span>
               <motion.div
                 animate={{ y: [0, 8, 0] }}
@@ -1167,7 +1170,7 @@ const TimelineStoryPage = () => {
         }
       }, { maxEvents });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Er ging iets mis');
+      setError(err instanceof Error ? err.message : t('unknownError') as string);
       setIsLoading(false);
     }
   };

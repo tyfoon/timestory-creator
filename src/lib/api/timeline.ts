@@ -1,5 +1,6 @@
 import { FormData } from '@/types/form';
 import { TimelineEvent, TimelineResponse, FamousBirthday } from '@/types/timeline';
+import { getTranslation, Language } from '@/lib/i18n';
 
 // Fallback Supabase configuration
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
@@ -72,15 +73,15 @@ export const generateTimelineStreaming = async (
       console.error('Edge function error:', response.status, errorText);
       
       if (response.status === 429) {
-        callbacks.onError('Te veel verzoeken. Probeer het later opnieuw.');
+        callbacks.onError(getTranslation('tooManyRequests', language as Language));
         return;
       }
       if (response.status === 402) {
-        callbacks.onError('Credits op. Voeg credits toe aan je workspace.');
+        callbacks.onError(getTranslation('creditsExhausted', language as Language));
         return;
       }
       
-      callbacks.onError(`Server error: ${response.status}`);
+      callbacks.onError(`${getTranslation('serverError', language as Language)}: ${response.status}`);
       return;
     }
 
@@ -175,14 +176,14 @@ export const generateTimelineStreaming = async (
     // Fallback: if stream ends without complete message, use collected data
     if (!receivedComplete) {
       if (collectedEvents.length === 0) {
-        callbacks.onError('De verbinding is beëindigd voordat er resultaten binnenkwamen. Probeer opnieuw.');
+        callbacks.onError(getTranslation('connectionLost', language as Language));
         return;
       }
 
       console.log(`Stream ended without complete message. Using ${collectedEvents.length} collected events.`);
       callbacks.onComplete({
         events: collectedEvents,
-        summary: collectedSummary || 'Een overzicht van belangrijke gebeurtenissen.',
+        summary: collectedSummary || getTranslation('defaultSummary', language as Language),
         famousBirthdays: collectedBirthdays,
         storyTitle: collectedStoryTitle,
         storyIntroduction: collectedStoryIntroduction,
@@ -195,8 +196,8 @@ export const generateTimelineStreaming = async (
     console.error('Streaming error:', err);
     callbacks.onError(
       isAbort 
-        ? 'Het laden duurde te lang en is gestopt. Probeer opnieuw.' 
-        : (err instanceof Error ? err.message : 'Onbekende fout')
+        ? getTranslation('loadingTooLong', language as Language)
+        : (err instanceof Error ? err.message : getTranslation('unknownError', language as Language))
     );
   }
 };
@@ -229,13 +230,13 @@ export const generateTimeline = async (
       console.error('Edge function error:', response.status, errorText);
       
       if (response.status === 429) {
-        return { success: false, error: 'Te veel verzoeken. Probeer het later opnieuw.' };
+        return { success: false, error: getTranslation('tooManyRequests', language as Language) };
       }
       if (response.status === 402) {
-        return { success: false, error: 'Credits op. Voeg credits toe aan je workspace.' };
+        return { success: false, error: getTranslation('creditsExhausted', language as Language) };
       }
       
-      return { success: false, error: `Server error: ${response.status}` };
+      return { success: false, error: `${getTranslation('serverError', language as Language)}: ${response.status}` };
     }
 
     const data = await response.json();
@@ -246,7 +247,7 @@ export const generateTimeline = async (
     console.error('Error calling generate-timeline:', err);
     return { 
       success: false, 
-      error: err instanceof Error ? err.message : 'Onbekende fout' 
+      error: err instanceof Error ? err.message : getTranslation('unknownError', language as Language)
     };
   }
 };

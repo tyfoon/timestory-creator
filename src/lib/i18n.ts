@@ -291,6 +291,18 @@ export const translations = {
     creditsExhausted: "Credits op. Voeg credits toe aan je workspace.",
     generationInterrupted: "Generatie onderbroken",
     musicGenerationTimeout: "Muziek generatie duurde te lang",
+    connectionLost: "De verbinding is beëindigd voordat er resultaten binnenkwamen. Probeer opnieuw.",
+    defaultSummary: "Een overzicht van belangrijke gebeurtenissen.",
+    loadingTooLong: "Het laden duurde te lang en is gestopt. Probeer opnieuw.",
+    unknownError: "Onbekende fout",
+    fetchingEvents: "Gebeurtenissen ophalen...",
+    scrollToBegin: "Scroll om te beginnen",
+    blacklistTooltip: "Foto blacklisten (globaal) en nieuwe zoeken",
+    blacklistAriaLabel: "Blacklist afbeelding",
+    timelineOf: "Tijdlijn van",
+    to: "tot",
+    serverError: "Server fout",
+    pollingFailed: "Statuscontrole mislukt",
   },
   en: {
     heroTitle: "Your Story in Time",
@@ -568,6 +580,18 @@ export const translations = {
     creditsExhausted: "Credits exhausted. Please add credits to your workspace.",
     generationInterrupted: "Generation interrupted",
     musicGenerationTimeout: "Music generation took too long",
+    connectionLost: "Connection lost before results arrived. Please try again.",
+    defaultSummary: "An overview of important events.",
+    loadingTooLong: "Loading took too long and was stopped. Please try again.",
+    unknownError: "Unknown error",
+    fetchingEvents: "Fetching events...",
+    scrollToBegin: "Scroll to begin",
+    blacklistTooltip: "Blacklist photo (global) and search new",
+    blacklistAriaLabel: "Blacklist image",
+    timelineOf: "Timeline from",
+    to: "to",
+    serverError: "Server error",
+    pollingFailed: "Status check failed",
   },
   de: {
     heroTitle: "Deine Geschichte in der Zeit",
@@ -731,6 +755,24 @@ export const translations = {
       "November",
       "Dezember",
     ],
+
+    // Error messages
+    tooManyRequests: "Zu viele Anfragen. Bitte versuche es später erneut.",
+    creditsExhausted: "Credits aufgebraucht. Bitte füge Credits hinzu.",
+    generationInterrupted: "Generierung unterbrochen",
+    musicGenerationTimeout: "Musikgenerierung hat zu lange gedauert",
+    connectionLost: "Verbindung unterbrochen bevor Ergebnisse ankamen. Bitte erneut versuchen.",
+    defaultSummary: "Ein Überblick über wichtige Ereignisse.",
+    loadingTooLong: "Das Laden hat zu lange gedauert und wurde gestoppt. Bitte erneut versuchen.",
+    unknownError: "Unbekannter Fehler",
+    fetchingEvents: "Ereignisse werden geladen...",
+    scrollToBegin: "Scrolle um zu beginnen",
+    blacklistTooltip: "Foto blacklisten (global) und neue suchen",
+    blacklistAriaLabel: "Bild blacklisten",
+    timelineOf: "Zeitleiste von",
+    to: "bis",
+    serverError: "Serverfehler",
+    pollingFailed: "Statusprüfung fehlgeschlagen",
   },
   fr: {
     heroTitle: "Votre Histoire dans le Temps",
@@ -894,11 +936,38 @@ export const translations = {
       "Novembre",
       "Décembre",
     ],
+
+    // Error messages
+    tooManyRequests: "Trop de requêtes. Veuillez réessayer plus tard.",
+    creditsExhausted: "Crédits épuisés. Veuillez ajouter des crédits.",
+    generationInterrupted: "Génération interrompue",
+    musicGenerationTimeout: "La génération de musique a pris trop de temps",
+    connectionLost: "Connexion perdue avant l'arrivée des résultats. Veuillez réessayer.",
+    defaultSummary: "Un aperçu des événements importants.",
+    loadingTooLong: "Le chargement a pris trop de temps et a été arrêté. Veuillez réessayer.",
+    unknownError: "Erreur inconnue",
+    fetchingEvents: "Chargement des événements...",
+    scrollToBegin: "Faites défiler pour commencer",
+    blacklistTooltip: "Blacklister la photo (global) et chercher une nouvelle",
+    blacklistAriaLabel: "Blacklister l'image",
+    timelineOf: "Chronologie de",
+    to: "à",
+    serverError: "Erreur serveur",
+    pollingFailed: "Vérification du statut échouée",
   },
 } as const;
 
 export type TranslationKey = keyof typeof translations.nl;
 export type TranslationValue = string | readonly string[];
+
+/**
+ * Lightweight translation helper for non-React files (API utils, hooks).
+ * Use useTranslation() or useLanguage() inside React components instead.
+ */
+export function getTranslation(key: TranslationKey, language: Language): string {
+  const value = (translations[language] as Record<string, unknown>)?.[key] ?? (translations.nl as Record<string, unknown>)?.[key] ?? key;
+  return typeof value === 'string' ? value : key;
+}
 
 export const useTranslation = (lang: Language = "nl") => {
   const t = (key: TranslationKey): TranslationValue => {
