@@ -378,6 +378,14 @@ const HomeV3 = () => {
     sessionStorage.setItem("timelineFormData", JSON.stringify(formData));
     sessionStorage.setItem("timelineLength", timelineLength);
     
+    // Save settings to user account if logged in
+    if (user) {
+      saveSettings(
+        { birthDate, selectedPeriod, customStartYear, customEndYear, optionalData },
+        { language, timelineLength }
+      );
+    }
+    
     // Clear any previous soundtrack state — actual generation starts after events load on /story
     clearSoundtrackState();
     
