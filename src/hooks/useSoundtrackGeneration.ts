@@ -588,6 +588,7 @@ export const useSoundtrackGeneration = () => {
         startYear,
         endYear,
         provider,
+        language: language || 'nl',
       };
 
       if (hasEvents) {
