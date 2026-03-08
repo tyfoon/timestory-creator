@@ -270,7 +270,7 @@ export const PersonalizeSoundtrackDialog = ({
             </Select>
             {selectedProvider === 'diffrhythm' && (
               <p className="text-xs text-muted-foreground">
-                ⏱️ DiffRhythm genereert LRC-timestamps zodat muziek synchroon loopt met je tijdlijn-events.
+                {t('diffrhythmNote') as string}
               </p>
             )}
           </div>
