@@ -90,7 +90,9 @@ export const MediaButtons = ({
   };
 
   const hasMedia = spotifySearchQuery || movieSearchQuery;
-  if (!hasMedia) return null;
+
+  // Always render if user is logged in (for save button) or has media
+  // SaveEventButton internally checks auth state
 
   // When trailer is playing, show just the video player
   if (isPlayingTrailer && youtubeVideoId) {
