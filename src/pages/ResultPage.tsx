@@ -17,6 +17,7 @@ import { getCachedTimeline, cacheTimeline, updateCachedEvents, getCacheKey } fro
 import { generateTikTokSlides, shareGeneratedFiles, canShareToTikTok } from '@/lib/tiktokGenerator';
 import { downloadPolaroidCollage } from '@/lib/collageGenerator';
 import { ArrowLeft, Clock, Loader2, AlertCircle, RefreshCw, Cake, Star, Download, Camera, Share2, Check, Image, X, Bug, BookOpen } from 'lucide-react';
+import { AccountLink } from '@/components/AccountLink';
 import { DebugInfoDialog } from '@/components/DebugInfoDialog';
 import { PromptViewerDialog } from '@/components/PromptViewerDialog';
 import { useToast } from '@/hooks/use-toast';
@@ -823,6 +824,7 @@ const ResultPage = () => {
                 </>
               )}
               
+              <AccountLink />
               <h1 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
                 {isSelectingMode ? t('selectPhotos') as string : getTitle()}
               </h1>
