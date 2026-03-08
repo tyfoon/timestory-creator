@@ -595,7 +595,7 @@ const HomeV3 = () => {
                           <div className="mt-4 space-y-2">
                             <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
                               <MapPin className="h-4 w-4 text-accent" />
-                              Welke plaats was in die tijd het belangrijkste?
+                              {t('cityQuestion') as string}
                             </Label>
                             <Input
                               ref={cityInputRef}
