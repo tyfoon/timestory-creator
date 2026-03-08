@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import HomeV2 from "./pages/HomeV2";
 import HomeV3 from "./pages/HomeV3";
@@ -11,33 +12,41 @@ import ResultPage from "./pages/ResultPage";
 import PolaroidCollagePage from "./pages/PolaroidCollagePage";
 import TimelineStoryPage from "./pages/TimelineStoryPage";
 import SharedStoryPage from "./pages/SharedStoryPage";
+import AuthPage from "./pages/AuthPage";
+import AccountPage from "./pages/AccountPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<HomeV3 />} />
-            <Route path="/home-v2" element={<HomeV2 />} />
-            <Route path="/home-v3" element={<HomeV3 />} />
-            <Route path="/home-v4" element={<Index />} />
-            <Route path="/resultaat" element={<ResultPage />} />
-            <Route path="/polaroid" element={<PolaroidCollagePage />} />
-            <Route path="/story" element={<TimelineStoryPage />} />
-            <Route path="/s/:id" element={<SharedStoryPage />} />
-            {/* Redirect old routes to home */}
-            <Route path="/keuze" element={<Navigate to="/" replace />} />
-            <Route path="/invoer" element={<Navigate to="/" replace />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<HomeV3 />} />
+              <Route path="/home-v2" element={<HomeV2 />} />
+              <Route path="/home-v3" element={<HomeV3 />} />
+              <Route path="/home-v4" element={<Index />} />
+              <Route path="/resultaat" element={<ResultPage />} />
+              <Route path="/polaroid" element={<PolaroidCollagePage />} />
+              <Route path="/story" element={<TimelineStoryPage />} />
+              <Route path="/s/:id" element={<SharedStoryPage />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/account" element={<AccountPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              {/* Redirect old routes to home */}
+              <Route path="/keuze" element={<Navigate to="/" replace />} />
+              <Route path="/invoer" element={<Navigate to="/" replace />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
     </LanguageProvider>
   </QueryClientProvider>
 );
