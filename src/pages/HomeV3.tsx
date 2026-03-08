@@ -612,7 +612,7 @@ const HomeV3 = () => {
                               className="bg-card h-10"
                             />
                             <p className="text-xs text-muted-foreground text-center">
-                              Druk op Enter om verder te gaan
+                              {t('pressEnterToContinue') as string}
                             </p>
                           </div>
                         )}
