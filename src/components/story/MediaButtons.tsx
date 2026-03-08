@@ -3,11 +3,18 @@ import { Play, Loader2, X } from 'lucide-react';
 import { SpotifyPlayer } from '@/components/SpotifyPlayer';
 import { searchYouTube } from '@/lib/api/youtube';
 import { useToast } from '@/hooks/use-toast';
+import { SaveEventButton } from './SaveEventButton';
 
 interface MediaButtonsProps {
   spotifySearchQuery?: string;
   movieSearchQuery?: string;
   eventTitle: string;
+  /** Event data for save functionality */
+  eventDate?: string;
+  eventYear?: number;
+  eventDescription?: string;
+  eventCategory?: string;
+  imageUrl?: string;
   /** Optional callback when trailer starts playing */
   onTrailerPlay?: () => void;
   /** Optional callback when trailer stops */
