@@ -3,11 +3,18 @@ import { Play, Loader2, X } from 'lucide-react';
 import { SpotifyPlayer } from '@/components/SpotifyPlayer';
 import { searchYouTube } from '@/lib/api/youtube';
 import { useToast } from '@/hooks/use-toast';
+import { SaveEventButton } from './SaveEventButton';
 
 interface MediaButtonsProps {
   spotifySearchQuery?: string;
   movieSearchQuery?: string;
   eventTitle: string;
+  /** Event data for save functionality */
+  eventDate?: string;
+  eventYear?: number;
+  eventDescription?: string;
+  eventCategory?: string;
+  imageUrl?: string;
   /** Optional callback when trailer starts playing */
   onTrailerPlay?: () => void;
   /** Optional callback when trailer stops */
@@ -22,6 +29,11 @@ export const MediaButtons = ({
   spotifySearchQuery,
   movieSearchQuery,
   eventTitle,
+  eventDate,
+  eventYear,
+  eventDescription,
+  eventCategory,
+  imageUrl,
   onTrailerPlay,
   onTrailerStop,
 }: MediaButtonsProps) => {
@@ -78,7 +90,9 @@ export const MediaButtons = ({
   };
 
   const hasMedia = spotifySearchQuery || movieSearchQuery;
-  if (!hasMedia) return null;
+
+  // Always render if user is logged in (for save button) or has media
+  // SaveEventButton internally checks auth state
 
   // When trailer is playing, show just the video player
   if (isPlayingTrailer && youtubeVideoId) {
@@ -102,7 +116,7 @@ export const MediaButtons = ({
     );
   }
 
-  // Default: show media buttons
+  // Default: show media buttons + save button
   return (
     <div className="flex items-center gap-2 flex-wrap">
       {/* Spotify Player */}
@@ -128,6 +142,16 @@ export const MediaButtons = ({
           )}
         </button>
       )}
+
+      {/* Save Event Button */}
+      <SaveEventButton
+        eventTitle={eventTitle}
+        eventDate={eventDate}
+        eventYear={eventYear}
+        eventDescription={eventDescription}
+        eventCategory={eventCategory}
+        imageUrl={imageUrl}
+      />
     </div>
   );
 };

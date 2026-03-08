@@ -413,6 +413,11 @@ const LayoutShout = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPattern
             spotifySearchQuery={event.spotifySearchQuery}
             movieSearchQuery={event.movieSearchQuery}
             eventTitle={event.title}
+            eventDate={event.date}
+            eventYear={event.year}
+            eventDescription={event.description}
+            eventCategory={event.category}
+            imageUrl={imageUrl}
           />
         </motion.div>
       </div>
@@ -479,6 +484,11 @@ const LayoutWhisper = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatte
           spotifySearchQuery={event.spotifySearchQuery}
           movieSearchQuery={event.movieSearchQuery}
           eventTitle={event.title}
+          eventDate={event.date}
+          eventYear={event.year}
+          eventDescription={event.description}
+          eventCategory={event.category}
+          imageUrl={imageUrl}
         />
       </motion.div>
     </div>
@@ -526,6 +536,11 @@ const LayoutMagazine = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatt
               spotifySearchQuery={event.spotifySearchQuery}
               movieSearchQuery={event.movieSearchQuery}
               eventTitle={event.title}
+              eventDate={event.date}
+              eventYear={event.year}
+              eventDescription={event.description}
+              eventCategory={event.category}
+              imageUrl={imageUrl}
             />
           </motion.div>
         </div>
@@ -591,6 +606,11 @@ const LayoutOverlap = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatte
               spotifySearchQuery={event.spotifySearchQuery}
               movieSearchQuery={event.movieSearchQuery}
               eventTitle={event.title}
+              eventDate={event.date}
+              eventYear={event.year}
+              eventDescription={event.description}
+              eventCategory={event.category}
+              imageUrl={imageUrl}
             />
           </div>
         </div>
@@ -641,6 +661,11 @@ const LayoutOverlap = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatte
                 spotifySearchQuery={event.spotifySearchQuery}
                 movieSearchQuery={event.movieSearchQuery}
                 eventTitle={event.title}
+                eventDate={event.date}
+                eventYear={event.year}
+                eventDescription={event.description}
+                eventCategory={event.category}
+                imageUrl={imageUrl}
               />
             </div>
           </motion.div>
@@ -728,6 +753,11 @@ const LayoutSplit = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPattern
             spotifySearchQuery={event.spotifySearchQuery}
             movieSearchQuery={event.movieSearchQuery}
             eventTitle={event.title}
+            eventDate={event.date}
+            eventYear={event.year}
+            eventDescription={event.description}
+            eventCategory={event.category}
+            imageUrl={imageUrl}
           />
         </div>
       </motion.div>
