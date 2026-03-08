@@ -196,8 +196,8 @@ export const generateTimelineStreaming = async (
     console.error('Streaming error:', err);
     callbacks.onError(
       isAbort 
-        ? 'Het laden duurde te lang en is gestopt. Probeer opnieuw.' 
-        : (err instanceof Error ? err.message : 'Onbekende fout')
+        ? getTranslation('loadingTooLong', language as Language)
+        : (err instanceof Error ? err.message : getTranslation('unknownError', language as Language))
     );
   }
 };
