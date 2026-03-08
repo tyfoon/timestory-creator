@@ -644,12 +644,12 @@ const HomeV3 = () => {
                         <Users className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground">Stijl & Subcultuur</h3>
+                        <h3 className="font-semibold text-foreground">{t('styleStepLabel') as string}</h3>
                         {isStep3Complete && currentStep !== 3 && (
                           <p className="text-sm text-muted-foreground">
-                            {optionalData.gender === 'male' && 'Man'}
-                            {optionalData.gender === 'female' && 'Vrouw'}
-                            {optionalData.gender === 'none' && 'Neutraal'}
+                            {optionalData.gender === 'male' && (t('genderMale') as string)}
+                            {optionalData.gender === 'female' && (t('genderFemale') as string)}
+                            {optionalData.gender === 'none' && (t('genderNeutral') as string)}
                             {optionalData.subculture?.myGroup && ' • '}
                             {optionalData.subculture?.myGroup}
                           </p>
