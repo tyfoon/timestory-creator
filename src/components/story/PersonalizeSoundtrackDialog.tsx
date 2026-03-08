@@ -43,6 +43,7 @@ export const PersonalizeSoundtrackDialog = ({
   endYear,
 }: PersonalizeSoundtrackDialogProps) => {
   const soundtrack = useSoundtrackGeneration();
+  const { t } = useLanguage();
   
   // Provider selection
   const [selectedProvider, setSelectedProvider] = useState<MusicProvider>('acestep');
