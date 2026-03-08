@@ -346,6 +346,7 @@ export const translations = {
     accountNoSavedEvents: "Nog geen opgeslagen gebeurtenissen",
     accountNoSavedEventsDesc: "Sla individuele gebeurtenissen op vanuit je tijdlijn",
     eventDeleted: "Gebeurtenis verwijderd",
+    eventShared: "Gebeurtenis gekopieerd naar klembord",
   },
   en: {
     heroTitle: "Your Story in Time",
