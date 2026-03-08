@@ -82,7 +82,7 @@ const loadState = (): SoundtrackState => {
         const elapsed = Date.now() - (parsed.startedAt || 0);
         const STALE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
         if (elapsed > STALE_THRESHOLD) {
-          return { ...initialState, ...parsed, status: 'error', error: 'Generatie onderbroken' };
+          return { ...initialState, ...parsed, status: 'error', error: 'generationInterrupted' };
         }
         // Still fresh — keep the generating state so the async function can finish
         return parsed;
