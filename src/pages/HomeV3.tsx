@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useUserSettings } from "@/hooks/useUserSettings";
 import { Header } from "@/components/Header";
 import { DateInput } from "@/components/DateInput";
 import { OptionalInfoForm } from "@/components/OptionalInfoForm";
@@ -129,7 +131,9 @@ const StepIndicator = ({
 );
 
 const HomeV3 = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { user } = useAuth();
+  const { saveSettings, loadSettings } = useUserSettings();
   const navigate = useNavigate();
 
   // Restore form state from sessionStorage on mount
@@ -205,7 +209,20 @@ const HomeV3 = () => {
     sessionStorage.setItem("homepageFormState", JSON.stringify(formState));
   }, [birthDate, selectedPeriod, customStartYear, customEndYear, timelineLength, optionalData]);
 
-  // Determine which background to use based on birth year
+  // Load saved settings from user account when logged in (and no sessionStorage state)
+  useEffect(() => {
+    if (!user || initialState) return;
+    loadSettings().then((settings) => {
+      if (!settings) return;
+      const { formData, preferences } = settings;
+      if (formData.birthDate) setBirthDate(formData.birthDate as any);
+      if (formData.selectedPeriod) setSelectedPeriod(formData.selectedPeriod as any);
+      if (formData.customStartYear) setCustomStartYear(formData.customStartYear);
+      if (formData.customEndYear) setCustomEndYear(formData.customEndYear);
+      if (formData.optionalData) setOptionalData(prev => ({ ...prev, ...formData.optionalData as any }));
+      if (preferences.timelineLength) setTimelineLength(preferences.timelineLength);
+    });
+  }, [user]);
   const getBackgroundImage = () => {
     if (birthDate.year >= 1969 && birthDate.year <= 1979) return heroBg70s;
     if (birthDate.year >= 1980 && birthDate.year <= 1989) return heroBg80s;
@@ -373,6 +390,14 @@ const HomeV3 = () => {
     };
     sessionStorage.setItem("timelineFormData", JSON.stringify(formData));
     sessionStorage.setItem("timelineLength", timelineLength);
+    
+    // Save settings to user account if logged in
+    if (user) {
+      saveSettings(
+        { birthDate, selectedPeriod, customStartYear, customEndYear, optionalData },
+        { language, timelineLength }
+      );
+    }
     
     // Clear any previous soundtrack state — actual generation starts after events load on /story
     clearSoundtrackState();
