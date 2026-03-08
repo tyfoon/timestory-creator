@@ -753,6 +753,11 @@ const LayoutSplit = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPattern
             spotifySearchQuery={event.spotifySearchQuery}
             movieSearchQuery={event.movieSearchQuery}
             eventTitle={event.title}
+            eventDate={event.date}
+            eventYear={event.year}
+            eventDescription={event.description}
+            eventCategory={event.category}
+            imageUrl={imageUrl}
           />
         </div>
       </motion.div>
