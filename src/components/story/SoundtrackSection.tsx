@@ -40,6 +40,7 @@ export const SoundtrackSection = ({
   onOpenPersonalizeDialog,
 }: SoundtrackSectionProps) => {
   const soundtrack = useSoundtrackGeneration();
+  const { t } = useLanguage();
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [enableVhsEffect, setEnableVhsEffect] = useState(false);
 
