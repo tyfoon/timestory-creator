@@ -553,7 +553,7 @@ export const useSoundtrackGeneration = () => {
   }, []);
 
   // Regenerate V1 (quick) soundtrack - reset and re-trigger with events
-  const regenerateQuick = useCallback(async (formData: FormData, events?: TimelineEvent[]) => {
+  const regenerateQuick = useCallback(async (formData: FormData, events?: TimelineEvent[], language?: string) => {
     clearSoundtrackState();
     setState({ ...initialState, status: 'generating_lyrics', version: 'v1', startedAt: Date.now() });
 
