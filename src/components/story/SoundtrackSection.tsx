@@ -88,20 +88,20 @@ export const SoundtrackSection = ({
   const getStatusMessage = (): string => {
     switch (soundtrack.status) {
       case 'generating_lyrics':
-        return 'Songtekst wordt geschreven...';
+        return t('writingLyrics') as string;
       case 'generating_music':
-        return 'Muziek wordt gestart...';
+        return t('startingMusic') as string;
       case 'polling':
         if (soundtrack.isStreaming) {
-          return 'Jouw persoonlijke soundtrack speelt af (nog aan het afmaken)...';
+          return t('soundtrackStreaming') as string;
         }
-        return 'Jouw persoonlijke soundtrack wordt gecomponeerd...';
+        return t('composingSoundtrack') as string;
       case 'completed':
-        return soundtrack.title || 'Je muziekvideo is klaar!';
+        return soundtrack.title || (t('musicVideoReady') as string);
       case 'error':
-        return 'Er ging iets mis';
+        return t('somethingWentWrong') as string;
       default:
-        return 'Laden...';
+        return t('loading') as string;
     }
   };
 
