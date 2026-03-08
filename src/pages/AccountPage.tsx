@@ -39,7 +39,9 @@ const AccountPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [stories, setStories] = useState<SavedStory[]>([]);
+  const [savedEvents, setSavedEvents] = useState<SavedEvent[]>([]);
   const [loadingStories, setLoadingStories] = useState(true);
+  const [loadingEvents, setLoadingEvents] = useState(true);
   const [subscribed, setSubscribed] = useState(false);
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
   const [billingLoading, setBillingLoading] = useState(false);
