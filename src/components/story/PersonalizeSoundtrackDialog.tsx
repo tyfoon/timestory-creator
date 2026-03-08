@@ -206,7 +206,7 @@ export const PersonalizeSoundtrackDialog = ({
           {/* Personal details section */}
           <div className="space-y-3 pt-2 border-t border-border">
             <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-              ✨ Persoonlijke herinneringen voor een unieker lied:
+              {t('personalMemories') as string}
             </p>
             
             {/* Friends */}
