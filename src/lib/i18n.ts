@@ -339,6 +339,13 @@ export const translations = {
     accountBillingDesc: "Beheer je abonnement en betalingsgegevens",
     accountManageSubscription: "Abonnement beheren",
     accountEvents: "momenten",
+    saveEvent: "Gebeurtenis opslaan",
+    eventSaved: "Gebeurtenis opgeslagen",
+    eventAlreadySaved: "Al opgeslagen",
+    accountSavedEvents: "Opgeslagen gebeurtenissen",
+    accountNoSavedEvents: "Nog geen opgeslagen gebeurtenissen",
+    accountNoSavedEventsDesc: "Sla individuele gebeurtenissen op vanuit je tijdlijn",
+    eventDeleted: "Gebeurtenis verwijderd",
   },
   en: {
     heroTitle: "Your Story in Time",
