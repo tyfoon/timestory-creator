@@ -115,7 +115,7 @@ export const PersonalizeSoundtrackDialog = ({
             </Label>
             <div className="grid gap-2 sm:grid-cols-2">
               <Input
-                placeholder="Voornaam"
+                placeholder={t('firstNameLabel') as string}
                 value={localData.firstName || ''}
                 onChange={(e) => updateField('firstName', e.target.value)}
                 className="bg-card h-10 sm:h-9 text-sm"
