@@ -264,6 +264,7 @@ export const startQuickSoundtrackGeneration = async (formData: FormData, events?
       startYear,
       endYear,
       provider,
+      language: language || 'nl',
     };
     
     // When events are available, include them so lyrics are synchronized per-event
