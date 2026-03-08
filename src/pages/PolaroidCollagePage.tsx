@@ -9,6 +9,7 @@ import { generateTimelineStreaming } from '@/lib/api/timeline';
 import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents, getCacheKey } from '@/lib/timelineCache';
 import { ArrowLeft, Clock, Loader2, RefreshCw, Share2, Check, Image, X, Download } from 'lucide-react';
+import { AccountLink } from '@/components/AccountLink';
 import { generateTikTokSlides, shareGeneratedFiles, canShareToTikTok } from '@/lib/tiktokGenerator';
 import { downloadPolaroidCollage } from '@/lib/collageGenerator';
 import { useIsMobile } from '@/hooks/use-mobile';
