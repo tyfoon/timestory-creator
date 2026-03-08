@@ -338,8 +338,8 @@ const ImageWithBlacklist = ({ src, alt, className = '', event, onBlacklistImage 
             }
           }}
           className="absolute top-2 left-2 z-20 w-7 h-7 rounded-full bg-black/60 hover:bg-destructive/90 text-white/70 hover:text-white flex items-center justify-center transition-all duration-200 opacity-0 group-hover/img:opacity-100 backdrop-blur-sm"
-          title="Foto blacklisten (globaal) en nieuwe zoeken"
-          aria-label="Blacklist afbeelding"
+          title={t('blacklistTooltip') as string}
+          aria-label={t('blacklistAriaLabel') as string}
         >
           <Ban className="h-3.5 w-3.5" />
         </button>
