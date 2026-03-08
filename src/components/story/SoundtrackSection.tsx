@@ -206,7 +206,7 @@ export const SoundtrackSection = ({
                       {getStatusMessage()}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Dit kan 2-4 minuten duren. Je kunt ondertussen verder scrollen.
+                      {t('generationTime') as string}
                     </p>
                   </div>
                 </div>
