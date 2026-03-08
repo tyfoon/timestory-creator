@@ -29,6 +29,11 @@ export const MediaButtons = ({
   spotifySearchQuery,
   movieSearchQuery,
   eventTitle,
+  eventDate,
+  eventYear,
+  eventDescription,
+  eventCategory,
+  imageUrl,
   onTrailerPlay,
   onTrailerStop,
 }: MediaButtonsProps) => {
