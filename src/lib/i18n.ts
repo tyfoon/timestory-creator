@@ -1129,6 +1129,7 @@ export const translations = {
     accountNoSavedEvents: "Pas encore d'événements sauvegardés",
     accountNoSavedEventsDesc: "Sauvegardez des événements individuels depuis votre chronologie",
     eventDeleted: "Événement supprimé",
+    eventShared: "Événement copié dans le presse-papiers",
   },
 } as const;
 
