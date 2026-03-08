@@ -596,7 +596,7 @@ export const useSoundtrackGeneration = () => {
         lyricsBody.events = events.map(e => ({
           id: e.id, year: e.year, title: e.title, description: e.description, category: e.category,
         }));
-        lyricsBody.summary = `Tijdlijn van ${startYear} tot ${endYear}`;
+        lyricsBody.summary = `${getTranslation('timelineOf', (language || 'nl') as Language)} ${startYear} ${getTranslation('to', (language || 'nl') as Language)} ${endYear}`;
       }
 
       const lyricsResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-song-lyrics`, {
