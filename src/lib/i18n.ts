@@ -895,6 +895,13 @@ export const translations = {
     accountBillingDesc: "Verwalte dein Abonnement und Zahlungsdaten",
     accountManageSubscription: "Abonnement verwalten",
     accountEvents: "Momente",
+    saveEvent: "Ereignis speichern",
+    eventSaved: "Ereignis gespeichert",
+    eventAlreadySaved: "Bereits gespeichert",
+    accountSavedEvents: "Gespeicherte Ereignisse",
+    accountNoSavedEvents: "Noch keine gespeicherten Ereignisse",
+    accountNoSavedEventsDesc: "Speichere einzelne Ereignisse aus deiner Zeitleiste",
+    eventDeleted: "Ereignis gelöscht",
   },
   fr: {
     heroTitle: "Votre Histoire dans le Temps",
