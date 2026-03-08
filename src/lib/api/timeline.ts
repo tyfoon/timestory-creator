@@ -73,15 +73,15 @@ export const generateTimelineStreaming = async (
       console.error('Edge function error:', response.status, errorText);
       
       if (response.status === 429) {
-        callbacks.onError('Te veel verzoeken. Probeer het later opnieuw.');
+        callbacks.onError(getTranslation('tooManyRequests', language as Language));
         return;
       }
       if (response.status === 402) {
-        callbacks.onError('Credits op. Voeg credits toe aan je workspace.');
+        callbacks.onError(getTranslation('creditsExhausted', language as Language));
         return;
       }
       
-      callbacks.onError(`Server error: ${response.status}`);
+      callbacks.onError(`${getTranslation('serverError', language as Language)}: ${response.status}`);
       return;
     }
 
