@@ -230,13 +230,13 @@ export const generateTimeline = async (
       console.error('Edge function error:', response.status, errorText);
       
       if (response.status === 429) {
-        return { success: false, error: 'Te veel verzoeken. Probeer het later opnieuw.' };
+        return { success: false, error: getTranslation('tooManyRequests', language as Language) };
       }
       if (response.status === 402) {
-        return { success: false, error: 'Credits op. Voeg credits toe aan je workspace.' };
+        return { success: false, error: getTranslation('creditsExhausted', language as Language) };
       }
       
-      return { success: false, error: `Server error: ${response.status}` };
+      return { success: false, error: `${getTranslation('serverError', language as Language)}: ${response.status}` };
     }
 
     const data = await response.json();
