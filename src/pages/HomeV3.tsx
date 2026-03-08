@@ -677,13 +677,13 @@ const HomeV3 = () => {
                         <div className="space-y-2">
                           <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
                             <Users className="h-4 w-4 text-accent" />
-                            Geslacht
+                            {t('genderLabel') as string}
                           </Label>
                           <div className="grid grid-cols-3 gap-2">
                             {([
-                              { value: 'male' as Gender, label: 'Man' },
-                              { value: 'female' as Gender, label: 'Vrouw' },
-                              { value: 'none' as Gender, label: 'Geen voorkeur' }
+                              { value: 'male' as Gender, label: t('genderMale') as string },
+                              { value: 'female' as Gender, label: t('genderFemale') as string },
+                              { value: 'none' as Gender, label: t('genderNone') as string }
                             ]).map((option) => {
                               const isSelected = optionalData.gender === option.value || (!optionalData.gender && option.value === 'none');
                               return (
