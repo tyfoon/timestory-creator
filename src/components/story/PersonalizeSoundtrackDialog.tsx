@@ -21,6 +21,7 @@ import { TimelineEvent } from '@/types/timeline';
 import { FormData, OptionalData, Gender } from '@/types/form';
 import { SubcultureSelector } from '@/components/SubcultureSelector';
 import { MusicProvider } from '@/lib/promptConstants';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PersonalizeSoundtrackDialogProps {
   open: boolean;
