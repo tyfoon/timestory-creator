@@ -846,7 +846,7 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading, targetYe
               <div className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 <span className={`${theme.fontMono} text-xs uppercase tracking-widest text-muted-foreground`}>
-                  Gebeurtenissen ophalen...
+                  {t('fetchingEvents') as string}
                 </span>
               </div>
               <motion.div
