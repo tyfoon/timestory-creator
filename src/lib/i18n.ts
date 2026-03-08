@@ -671,6 +671,13 @@ export const translations = {
     accountBillingDesc: "Manage your subscription and payment details",
     accountManageSubscription: "Manage subscription",
     accountEvents: "events",
+    saveEvent: "Save event",
+    eventSaved: "Event saved",
+    eventAlreadySaved: "Already saved",
+    accountSavedEvents: "Saved events",
+    accountNoSavedEvents: "No saved events yet",
+    accountNoSavedEventsDesc: "Save individual events from your timeline",
+    eventDeleted: "Event deleted",
   },
   de: {
     heroTitle: "Deine Geschichte in der Zeit",
