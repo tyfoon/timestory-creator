@@ -955,6 +955,7 @@ export const translations = {
     serverError: "Erreur serveur",
     pollingFailed: "Vérification du statut échouée",
   },
+} as const;
 
 export type TranslationKey = keyof typeof translations.nl;
 export type TranslationValue = string | readonly string[];
