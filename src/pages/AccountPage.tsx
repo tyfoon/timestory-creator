@@ -340,48 +340,11 @@ const AccountPage = () => {
             ) : (
               <div className="space-y-3">
                 {savedEvents.map((event) => (
-                  <div
+                  <SavedEventCard
                     key={event.id}
-                    className="rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors flex gap-3"
-                  >
-                    {/* Event image thumbnail */}
-                    {event.image_url && (
-                      <div className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden">
-                        <img
-                          src={event.image_url}
-                          alt={event.event_title}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <h4 className="font-serif font-medium text-foreground text-sm truncate">
-                            {event.event_title}
-                          </h4>
-                          {event.event_date && (
-                            <p className="text-xs text-muted-foreground">{event.event_date}</p>
-                          )}
-                          {event.event_description && (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {event.event_description}
-                            </p>
-                          )}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteEvent(event.id)}
-                          title={String(t('accountDeleteStory'))}
-                          className="text-destructive hover:text-destructive flex-shrink-0"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                    event={event}
+                    onDelete={handleDeleteEvent}
+                  />
                 ))}
               </div>
             )}
