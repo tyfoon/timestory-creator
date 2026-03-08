@@ -41,14 +41,15 @@ const AccountPage = () => {
   const loadStories = useCallback(async () => {
     if (!user) return;
     setLoadingStories(true);
-    const { data, error } = await supabase
+    // Use any to avoid deep type instantiation with user_id column
+    const { data, error } = await (supabase
       .from('saved_stories')
-      .select('id, created_at, content, settings, is_public')
-      .eq('user_id' as any, user.id)
+      .select('id, created_at, content, settings, is_public') as any)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     if (!error && data) {
-      setStories(data as any);
+      setStories(data as SavedStory[]);
     }
     setLoadingStories(false);
   }, [user]);
