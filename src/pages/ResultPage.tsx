@@ -824,6 +824,7 @@ const ResultPage = () => {
                 </>
               )}
               
+              <AccountLink />
               <h1 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
                 {isSelectingMode ? t('selectPhotos') as string : getTitle()}
               </h1>

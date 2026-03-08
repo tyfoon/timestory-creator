@@ -623,6 +623,7 @@ const PolaroidCollagePage = () => {
                 </>
               )}
               
+              <AccountLink />
               <h1 className="font-handwriting text-xl sm:text-2xl font-bold text-foreground">
                 {isSelectingMode ? t('selectPhotos') as string : getTitle()}
               </h1>
