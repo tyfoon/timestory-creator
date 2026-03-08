@@ -1042,7 +1042,7 @@ const TimelineStoryPage = () => {
         const parsed = soundtrackState ? JSON.parse(soundtrackState) : null;
         if (!parsed || parsed.status === 'idle' || parsed.status === 'error') {
           clearSoundtrackState();
-          startQuickSoundtrackGeneration(data, normalizedCachedEvents).catch(err => {
+          startQuickSoundtrackGeneration(data, normalizedCachedEvents, language).catch(err => {
             console.error('[TimelineStoryPage] Soundtrack generation from cache failed:', err);
           });
         }
