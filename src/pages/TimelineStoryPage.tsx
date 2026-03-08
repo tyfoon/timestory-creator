@@ -1146,7 +1146,7 @@ const TimelineStoryPage = () => {
 
           // Start soundtrack generation WITH events so lyrics match what's shown in the video
           clearSoundtrackState();
-          startQuickSoundtrackGeneration(data, finalEvents).catch(err => {
+          startQuickSoundtrackGeneration(data, finalEvents, language).catch(err => {
             console.error('[TimelineStoryPage] Soundtrack generation with events failed:', err);
           });
 

@@ -76,7 +76,7 @@ export const PersonalizeSoundtrackDialog = ({
       friends: localData.friends,
       school: localData.school,
       nightlife: localData.nightlife,
-    }, selectedProvider);
+    }, selectedProvider, language);
   };
 
   const updateField = <K extends keyof OptionalData>(key: K, value: OptionalData[K]) => {
