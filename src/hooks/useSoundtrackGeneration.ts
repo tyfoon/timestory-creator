@@ -534,7 +534,7 @@ export const useSoundtrackGeneration = () => {
         setState(prev => ({
           ...prev,
           status: 'error',
-          error: error instanceof Error ? error.message : 'Polling failed',
+          error: error instanceof Error ? error.message : 'pollingFailed',
         }));
       }
     };
