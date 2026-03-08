@@ -278,9 +278,7 @@ export const PersonalizeSoundtrackDialog = ({
           {/* Info text */}
           <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
             <p className="text-xs text-muted-foreground">
-              <strong className="text-foreground">Upgrade naar V2:</strong> Je nieuwe soundtrack 
-              zal niet alleen de sfeer van je tijd vangen, maar ook specifieke nieuwsfeiten uit 
-              je tijdlijn en je persoonlijke herinneringen verweven tot een echt uniek lied.
+              <strong className="text-foreground">{t('upgradeInfoTitle') as string}</strong> {t('upgradeInfo') as string}
             </p>
           </div>
         </div>
