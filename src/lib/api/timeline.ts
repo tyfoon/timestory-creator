@@ -247,7 +247,7 @@ export const generateTimeline = async (
     console.error('Error calling generate-timeline:', err);
     return { 
       success: false, 
-      error: err instanceof Error ? err.message : 'Onbekende fout' 
+      error: err instanceof Error ? err.message : getTranslation('unknownError', language as Language)
     };
   }
 };
