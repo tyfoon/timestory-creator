@@ -484,6 +484,11 @@ const LayoutWhisper = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatte
           spotifySearchQuery={event.spotifySearchQuery}
           movieSearchQuery={event.movieSearchQuery}
           eventTitle={event.title}
+          eventDate={event.date}
+          eventYear={event.year}
+          eventDescription={event.description}
+          eventCategory={event.category}
+          imageUrl={imageUrl}
         />
       </motion.div>
     </div>
