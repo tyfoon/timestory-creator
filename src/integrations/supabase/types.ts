@@ -96,6 +96,7 @@ export type Database = {
           id: string
           is_public: boolean
           settings: Json
+          user_id: string | null
           view_count: number
         }
         Insert: {
@@ -104,6 +105,7 @@ export type Database = {
           id?: string
           is_public?: boolean
           settings?: Json
+          user_id?: string | null
           view_count?: number
         }
         Update: {
@@ -112,6 +114,7 @@ export type Database = {
           id?: string
           is_public?: boolean
           settings?: Json
+          user_id?: string | null
           view_count?: number
         }
         Relationships: []
