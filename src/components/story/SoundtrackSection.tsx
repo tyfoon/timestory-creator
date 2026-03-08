@@ -18,6 +18,7 @@ import { TimelineEvent } from '@/types/timeline';
 import { FormData } from '@/types/form';
 import { TimelineVideoComponent, VideoEvent } from '@/remotion';
 import { ShareDialog } from '@/components/video/ShareDialog';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const FPS = 30;
 
