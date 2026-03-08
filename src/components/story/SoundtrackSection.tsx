@@ -221,7 +221,7 @@ export const SoundtrackSection = ({
                   <AlertCircle className="h-6 w-6 text-destructive" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium text-foreground">Er ging iets mis</p>
+                  <p className="font-medium text-foreground">{t('somethingWentWrong') as string}</p>
                   <p className="text-sm text-muted-foreground">{soundtrack.error}</p>
                 </div>
                 <Button variant="outline" size="sm" onClick={handleReset} className="gap-1.5">
