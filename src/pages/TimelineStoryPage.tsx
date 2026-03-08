@@ -1168,7 +1168,7 @@ const TimelineStoryPage = () => {
         }
       }, { maxEvents });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Er ging iets mis');
+      setError(err instanceof Error ? err.message : t('unknownError') as string);
       setIsLoading(false);
     }
   };
