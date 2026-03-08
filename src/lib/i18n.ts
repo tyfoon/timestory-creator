@@ -679,6 +679,7 @@ export const translations = {
     accountNoSavedEvents: "No saved events yet",
     accountNoSavedEventsDesc: "Save individual events from your timeline",
     eventDeleted: "Event deleted",
+    eventShared: "Event copied to clipboard",
   },
   de: {
     heroTitle: "Deine Geschichte in der Zeit",
