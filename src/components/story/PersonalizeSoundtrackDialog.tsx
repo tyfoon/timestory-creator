@@ -263,9 +263,9 @@ export const PersonalizeSoundtrackDialog = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="suno">Suno (V4.5) — Hoogste kwaliteit</SelectItem>
-                <SelectItem value="acestep">Ace-Step — Sneller, self-hosted</SelectItem>
-                <SelectItem value="diffrhythm">DiffRhythm — LRC timestamps, razendsnel</SelectItem>
+                <SelectItem value="suno">{t('sunoDescription') as string}</SelectItem>
+                <SelectItem value="acestep">{t('acestepDescription') as string}</SelectItem>
+                <SelectItem value="diffrhythm">{t('diffrhythmDescription') as string}</SelectItem>
               </SelectContent>
             </Select>
             {selectedProvider === 'diffrhythm' && (
