@@ -222,7 +222,7 @@ export const SoundtrackSection = ({
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-foreground">{t('somethingWentWrong') as string}</p>
-                  <p className="text-sm text-muted-foreground">{soundtrack.error}</p>
+                  <p className="text-sm text-muted-foreground">{t(soundtrack.error as any) as string || soundtrack.error}</p>
                 </div>
                 <Button variant="outline" size="sm" onClick={handleReset} className="gap-1.5">
                   <RefreshCw className="h-4 w-4" />
