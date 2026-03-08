@@ -290,7 +290,7 @@ export const PersonalizeSoundtrackDialog = ({
             onClick={() => onOpenChange(false)} 
             className="h-11 sm:h-9"
           >
-            Annuleren
+            {t('cancelButton') as string}
           </Button>
           <Button 
             onClick={handleSubmit}
@@ -300,12 +300,12 @@ export const PersonalizeSoundtrackDialog = ({
             {isGenerating ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Bezig...
+                {t('generating') as string}
               </>
             ) : (
               <>
                 <Check className="h-4 w-4" />
-                Genereer V2
+                {t('generateV2') as string}
               </>
             )}
           </Button>
