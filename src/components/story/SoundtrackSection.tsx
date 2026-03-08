@@ -226,7 +226,7 @@ export const SoundtrackSection = ({
                 </div>
                 <Button variant="outline" size="sm" onClick={handleReset} className="gap-1.5">
                   <RefreshCw className="h-4 w-4" />
-                  Opnieuw
+                  {t('retryButton') as string}
                 </Button>
               </div>
             )}
