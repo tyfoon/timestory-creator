@@ -18,6 +18,7 @@ import { TimelineEvent } from '@/types/timeline';
 import { FormData } from '@/types/form';
 import { TimelineVideoComponent, VideoEvent } from '@/remotion';
 import { ShareDialog } from '@/components/video/ShareDialog';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const FPS = 30;
 
@@ -39,6 +40,7 @@ export const SoundtrackSection = ({
   onOpenPersonalizeDialog,
 }: SoundtrackSectionProps) => {
   const soundtrack = useSoundtrackGeneration();
+  const { t } = useLanguage();
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [enableVhsEffect, setEnableVhsEffect] = useState(false);
 
@@ -86,20 +88,20 @@ export const SoundtrackSection = ({
   const getStatusMessage = (): string => {
     switch (soundtrack.status) {
       case 'generating_lyrics':
-        return 'Songtekst wordt geschreven...';
+        return t('writingLyrics') as string;
       case 'generating_music':
-        return 'Muziek wordt gestart...';
+        return t('startingMusic') as string;
       case 'polling':
         if (soundtrack.isStreaming) {
-          return 'Jouw persoonlijke soundtrack speelt af (nog aan het afmaken)...';
+          return t('soundtrackStreaming') as string;
         }
-        return 'Jouw persoonlijke soundtrack wordt gecomponeerd...';
+        return t('composingSoundtrack') as string;
       case 'completed':
-        return soundtrack.title || 'Je muziekvideo is klaar!';
+        return soundtrack.title || (t('musicVideoReady') as string);
       case 'error':
-        return 'Er ging iets mis';
+        return t('somethingWentWrong') as string;
       default:
-        return 'Laden...';
+        return t('loading') as string;
     }
   };
 
@@ -140,8 +142,8 @@ export const SoundtrackSection = ({
 
   // Derive display title from formData if not provided
   const displayTitle = storyTitle || (formData?.birthDate 
-    ? `Jouw jaren ${formData.birthDate.year}-${formData.birthDate.year + 25}`
-    : 'Jouw Verhaal');
+    ? `${t('yourYears') as string} ${formData.birthDate.year}-${formData.birthDate.year + 25}`
+    : t('yourStory') as string);
 
   return (
     <>
@@ -167,10 +169,10 @@ export const SoundtrackSection = ({
                 </div>
                 <div>
                   <h2 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
-                    Jouw Muziekvideo
+                    {t('yourMusicVideo') as string}
                   </h2>
                   <p className="text-sm text-muted-foreground">
-                    {soundtrack.version === 'v1' ? 'Preview versie' : 'Gepersonaliseerde versie'}
+                    {soundtrack.version === 'v1' ? t('previewVersion') as string : t('personalizedVersion') as string}
                   </p>
                 </div>
               </div>
@@ -184,7 +186,7 @@ export const SoundtrackSection = ({
                   className="gap-2"
                 >
                   <Share2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Delen</span>
+                  <span className="hidden sm:inline">{t('shareButton') as string}</span>
                 </Button>
               )}
             </div>
@@ -204,7 +206,7 @@ export const SoundtrackSection = ({
                       {getStatusMessage()}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Dit kan 2-4 minuten duren. Je kunt ondertussen verder scrollen.
+                      {t('generationTime') as string}
                     </p>
                   </div>
                 </div>
@@ -219,12 +221,12 @@ export const SoundtrackSection = ({
                   <AlertCircle className="h-6 w-6 text-destructive" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium text-foreground">Er ging iets mis</p>
+                  <p className="font-medium text-foreground">{t('somethingWentWrong') as string}</p>
                   <p className="text-sm text-muted-foreground">{soundtrack.error}</p>
                 </div>
                 <Button variant="outline" size="sm" onClick={handleReset} className="gap-1.5">
                   <RefreshCw className="h-4 w-4" />
-                  Opnieuw
+                  {t('retryButton') as string}
                 </Button>
               </div>
             )}
@@ -235,7 +237,7 @@ export const SoundtrackSection = ({
                 <div className="p-4 bg-accent/5 border border-accent/20 rounded-xl">
                   <p className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                     <Music className="h-4 w-4 text-accent" />
-                    Preview: Je nummer speelt af terwijl we de volledige versie afmaken
+                    {t('previewPlaying') as string}
                   </p>
                   <audio
                     controls
@@ -311,7 +313,7 @@ export const SoundtrackSection = ({
                   </span>
                   <span className="flex items-center gap-1">
                     <Music className="h-3 w-3" />
-                    AI Muziekvideo
+                    {t('aiMusicVideo') as string}
                   </span>
                 </div>
 
@@ -322,11 +324,10 @@ export const SoundtrackSection = ({
                       <div className="flex-1">
                         <h4 className="font-semibold text-foreground flex items-center gap-2">
                           <Sparkles className="h-4 w-4 text-primary" />
-                          Maak het nog persoonlijker
+                          {t('makeMorePersonal') as string}
                         </h4>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Voeg vrienden, school en uitgaansplekken toe voor een unieke songtekst 
-                          met jouw herinneringen én de nieuwsfeiten uit je tijdlijn.
+                          {t('upgradeDescription') as string}
                         </p>
                       </div>
                       <Button
@@ -334,7 +335,7 @@ export const SoundtrackSection = ({
                         className="gap-2 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 whitespace-nowrap"
                       >
                         <Sparkles className="h-4 w-4" />
-                        Upgrade naar V2
+                        {t('upgradeToV2') as string}
                       </Button>
                     </div>
                   </div>
@@ -345,8 +346,8 @@ export const SoundtrackSection = ({
                   <details className="group">
                     <summary className="text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors list-none flex items-center gap-2">
                       <span className="text-xs">▶</span>
-                      <span className="group-open:hidden">Bekijk songtekst</span>
-                      <span className="hidden group-open:inline">Verberg songtekst</span>
+                      <span className="group-open:hidden">{t('viewLyrics') as string}</span>
+                      <span className="hidden group-open:inline">{t('hideLyrics') as string}</span>
                     </summary>
                     <div className="mt-4 p-4 bg-muted/20 rounded-xl max-h-64 overflow-y-auto">
                       <pre className="text-sm text-muted-foreground whitespace-pre-wrap font-sans leading-relaxed">

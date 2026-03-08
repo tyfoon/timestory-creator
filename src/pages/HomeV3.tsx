@@ -48,27 +48,27 @@ const getMainPeriodOptions = (
   {
     id: "birthyear",
     label: t("periodBirthyear") as string,
-    description: "Het jaar waarin jij ter wereld kwam",
+    description: t("periodBirthyearLong") as string,
     icon: <Baby className="h-6 w-6" />,
   },
   {
     id: "childhood",
     label: t("periodChildhood") as string,
-    description: "Buitenspelen, eerste vriendjes, basisschool",
+    description: t("periodChildhoodLong") as string,
     icon: <GraduationCap className="h-6 w-6" />,
     ageRange: [6, 12],
   },
   {
     id: "puberty",
     label: t("periodPuberty") as string,
-    description: "Eerste verliefdheid, muziek ontdekken",
+    description: t("periodPubertyLong") as string,
     icon: <Heart className="h-6 w-6" />,
     ageRange: [12, 17],
   },
   {
     id: "young-adult",
     label: t("periodYoungAdult") as string,
-    description: "Uitgaan, studeren, de wereld ontdekken",
+    description: t("periodYoungAdultLong") as string,
     icon: <Calendar className="h-6 w-6" />,
     ageRange: [18, 25],
   },
@@ -477,7 +477,7 @@ const HomeV3 = () => {
                         <Baby className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground">Geboortedatum</h3>
+                        <h3 className="font-semibold text-foreground">{t('birthDateStepLabel') as string}</h3>
                         {isBirthDateComplete && (
                           <p className="text-sm text-muted-foreground">
                             {String(birthDate.day).padStart(2, '0')}-{String(birthDate.month).padStart(2, '0')}-{birthDate.year}
@@ -538,7 +538,7 @@ const HomeV3 = () => {
                         <Calendar className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground">Welke periode?</h3>
+                        <h3 className="font-semibold text-foreground">{t('periodStepLabel') as string}</h3>
                         {selectedPeriod && currentStep !== 2 && (
                           <p className="text-sm text-muted-foreground">
                             {mainPeriodOptions.find(p => p.id === selectedPeriod)?.label}
@@ -595,7 +595,7 @@ const HomeV3 = () => {
                           <div className="mt-4 space-y-2">
                             <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
                               <MapPin className="h-4 w-4 text-accent" />
-                              Welke plaats was in die tijd het belangrijkste?
+                              {t('cityQuestion') as string}
                             </Label>
                             <Input
                               ref={cityInputRef}
@@ -612,7 +612,7 @@ const HomeV3 = () => {
                               className="bg-card h-10"
                             />
                             <p className="text-xs text-muted-foreground text-center">
-                              Druk op Enter om verder te gaan
+                              {t('pressEnterToContinue') as string}
                             </p>
                           </div>
                         )}
@@ -644,12 +644,12 @@ const HomeV3 = () => {
                         <Users className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground">Stijl & Subcultuur</h3>
+                        <h3 className="font-semibold text-foreground">{t('styleStepLabel') as string}</h3>
                         {isStep3Complete && currentStep !== 3 && (
                           <p className="text-sm text-muted-foreground">
-                            {optionalData.gender === 'male' && 'Man'}
-                            {optionalData.gender === 'female' && 'Vrouw'}
-                            {optionalData.gender === 'none' && 'Neutraal'}
+                            {optionalData.gender === 'male' && (t('genderMale') as string)}
+                            {optionalData.gender === 'female' && (t('genderFemale') as string)}
+                            {optionalData.gender === 'none' && (t('genderNeutral') as string)}
                             {optionalData.subculture?.myGroup && ' • '}
                             {optionalData.subculture?.myGroup}
                           </p>
@@ -677,13 +677,13 @@ const HomeV3 = () => {
                         <div className="space-y-2">
                           <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
                             <Users className="h-4 w-4 text-accent" />
-                            Geslacht
+                            {t('genderLabel') as string}
                           </Label>
                           <div className="grid grid-cols-3 gap-2">
                             {([
-                              { value: 'male' as Gender, label: 'Man' },
-                              { value: 'female' as Gender, label: 'Vrouw' },
-                              { value: 'none' as Gender, label: 'Geen voorkeur' }
+                              { value: 'male' as Gender, label: t('genderMale') as string },
+                              { value: 'female' as Gender, label: t('genderFemale') as string },
+                              { value: 'none' as Gender, label: t('genderNone') as string }
                             ]).map((option) => {
                               const isSelected = optionalData.gender === option.value || (!optionalData.gender && option.value === 'none');
                               return (
@@ -740,7 +740,7 @@ const HomeV3 = () => {
                   className="w-full btn-vintage h-14 text-lg font-bold text-primary-foreground rounded-xl shadow-xl"
                 >
                   <BookOpen className="mr-2 h-6 w-6" />
-                  <span>Start mijn Tijdreis</span>
+                  <span>{t('startTimeJourney') as string}</span>
                   <ArrowRight className="ml-2 h-6 w-6" />
                 </Button>
               </motion.div>

@@ -21,6 +21,7 @@ import { TimelineEvent } from '@/types/timeline';
 import { FormData, OptionalData, Gender } from '@/types/form';
 import { SubcultureSelector } from '@/components/SubcultureSelector';
 import { MusicProvider } from '@/lib/promptConstants';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PersonalizeSoundtrackDialogProps {
   open: boolean;
@@ -42,6 +43,7 @@ export const PersonalizeSoundtrackDialog = ({
   endYear,
 }: PersonalizeSoundtrackDialogProps) => {
   const soundtrack = useSoundtrackGeneration();
+  const { t } = useLanguage();
   
   // Provider selection
   const [selectedProvider, setSelectedProvider] = useState<MusicProvider>('acestep');
@@ -89,10 +91,10 @@ export const PersonalizeSoundtrackDialog = ({
         <DialogHeader className="pb-2">
           <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
             <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-            Aanpassen
+            {t('customizeTitle') as string}
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm">
-            Pas je gegevens aan voor een persoonlijker resultaat met jouw herinneringen én nieuwsfeiten.
+            {t('customizeDescription') as string}
           </DialogDescription>
         </DialogHeader>
 
@@ -100,7 +102,7 @@ export const PersonalizeSoundtrackDialog = ({
           {/* Current song info */}
           {soundtrack.title && (
             <div className="p-3 bg-muted/30 rounded-lg">
-              <p className="text-xs text-muted-foreground mb-1">Huidige versie (V1):</p>
+              <p className="text-xs text-muted-foreground mb-1">{t('currentVersionV1') as string}</p>
               <p className="text-sm font-medium text-foreground">{soundtrack.title}</p>
             </div>
           )}
@@ -109,17 +111,17 @@ export const PersonalizeSoundtrackDialog = ({
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
               <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-              Naam
+              {t('nameLabel') as string}
             </Label>
             <div className="grid gap-2 sm:grid-cols-2">
               <Input
-                placeholder="Voornaam"
+                placeholder={t('firstNameLabel') as string}
                 value={localData.firstName || ''}
                 onChange={(e) => updateField('firstName', e.target.value)}
                 className="bg-card h-10 sm:h-9 text-sm"
               />
               <Input
-                placeholder="Achternaam"
+                placeholder={t('lastNameLabel') as string}
                 value={localData.lastName || ''}
                 onChange={(e) => updateField('lastName', e.target.value)}
                 className="bg-card h-10 sm:h-9 text-sm"
@@ -131,10 +133,10 @@ export const PersonalizeSoundtrackDialog = ({
           <div className="space-y-1">
             <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
               <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-              Woonplaats
+              {t('cityLabelShort') as string}
             </Label>
             <Input
-              placeholder="Bijv. Amsterdam"
+              placeholder={t('cityPlaceholder') as string}
               value={localData.city || ''}
               onChange={(e) => updateField('city', e.target.value)}
               className="bg-card h-10 sm:h-9 text-sm"
@@ -145,7 +147,7 @@ export const PersonalizeSoundtrackDialog = ({
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
               <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-              Geslacht (voor stem)
+              {t('genderForVoice') as string}
             </Label>
             <RadioGroup
               value={localData.gender || 'none'}
@@ -153,9 +155,9 @@ export const PersonalizeSoundtrackDialog = ({
               className="grid grid-cols-3 gap-2"
             >
               {([
-                { value: 'male', label: 'Man' },
-                { value: 'female', label: 'Vrouw' },
-                { value: 'none', label: 'Geen voorkeur' }
+                { value: 'male', label: t('genderMale') as string },
+                { value: 'female', label: t('genderFemale') as string },
+                { value: 'none', label: t('genderNone') as string }
               ] as const).map((option) => (
                 <Label
                   key={option.value}
@@ -179,10 +181,10 @@ export const PersonalizeSoundtrackDialog = ({
           <div className="space-y-1">
             <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
               <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-              Interesses
+              {t('interestsLabel') as string}
             </Label>
             <Input
-              placeholder="Bijv. voetbal, muziek, reizen"
+              placeholder={t('interestsPlaceholder') as string}
               value={localData.interests || ''}
               onChange={(e) => updateField('interests', e.target.value)}
               className="bg-card h-10 sm:h-9 text-sm"
@@ -204,17 +206,17 @@ export const PersonalizeSoundtrackDialog = ({
           {/* Personal details section */}
           <div className="space-y-3 pt-2 border-t border-border">
             <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-              ✨ Persoonlijke herinneringen voor een unieker lied:
+              {t('personalMemories') as string}
             </p>
             
             {/* Friends */}
             <div className="space-y-1">
               <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
                 <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-                Top 3 vrienden van toen
+                {t('top3Friends') as string}
               </Label>
               <Input
-                placeholder="Namen gescheiden door komma's"
+                placeholder={t('friendsPlaceholder') as string}
                 value={localData.friends || ''}
                 onChange={(e) => updateField('friends', e.target.value)}
                 className="bg-card h-10 sm:h-9 text-sm"
@@ -225,10 +227,10 @@ export const PersonalizeSoundtrackDialog = ({
             <div className="space-y-1">
               <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
                 <GraduationCap className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-                Middelbare School
+                {t('highSchool') as string}
               </Label>
               <Input
-                placeholder="Bijv. Christelijk Lyceum"
+                placeholder={t('schoolPlaceholder') as string}
                 value={localData.school || ''}
                 onChange={(e) => updateField('school', e.target.value)}
                 className="bg-card h-10 sm:h-9 text-sm"
@@ -239,10 +241,10 @@ export const PersonalizeSoundtrackDialog = ({
             <div className="space-y-1">
               <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
                 <PartyPopper className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-                Favoriete uitgaansplekken
+                {t('favoriteVenues') as string}
               </Label>
               <Input
-                placeholder="Bijv. De Melkweg, Paradiso"
+                placeholder={t('venuesPlaceholder') as string}
                 value={localData.nightlife || ''}
                 onChange={(e) => updateField('nightlife', e.target.value)}
                 className="bg-card h-10 sm:h-9 text-sm"
@@ -254,21 +256,21 @@ export const PersonalizeSoundtrackDialog = ({
           <div className="space-y-2 pt-2 border-t border-border">
             <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
               <Music className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-              Muziek Engine
+              {t('musicEngine') as string}
             </Label>
             <Select value={selectedProvider} onValueChange={(v) => setSelectedProvider(v as MusicProvider)}>
               <SelectTrigger className="bg-card h-10 sm:h-9 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="suno">Suno (V4.5) — Hoogste kwaliteit</SelectItem>
-                <SelectItem value="acestep">Ace-Step — Sneller, self-hosted</SelectItem>
-                <SelectItem value="diffrhythm">DiffRhythm — LRC timestamps, razendsnel</SelectItem>
+                <SelectItem value="suno">{t('sunoDescription') as string}</SelectItem>
+                <SelectItem value="acestep">{t('acestepDescription') as string}</SelectItem>
+                <SelectItem value="diffrhythm">{t('diffrhythmDescription') as string}</SelectItem>
               </SelectContent>
             </Select>
             {selectedProvider === 'diffrhythm' && (
               <p className="text-xs text-muted-foreground">
-                ⏱️ DiffRhythm genereert LRC-timestamps zodat muziek synchroon loopt met je tijdlijn-events.
+                {t('diffrhythmNote') as string}
               </p>
             )}
           </div>
@@ -276,9 +278,7 @@ export const PersonalizeSoundtrackDialog = ({
           {/* Info text */}
           <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
             <p className="text-xs text-muted-foreground">
-              <strong className="text-foreground">Upgrade naar V2:</strong> Je nieuwe soundtrack 
-              zal niet alleen de sfeer van je tijd vangen, maar ook specifieke nieuwsfeiten uit 
-              je tijdlijn en je persoonlijke herinneringen verweven tot een echt uniek lied.
+              <strong className="text-foreground">{t('upgradeInfoTitle') as string}</strong> {t('upgradeInfo') as string}
             </p>
           </div>
         </div>
@@ -290,7 +290,7 @@ export const PersonalizeSoundtrackDialog = ({
             onClick={() => onOpenChange(false)} 
             className="h-11 sm:h-9"
           >
-            Annuleren
+            {t('cancelButton') as string}
           </Button>
           <Button 
             onClick={handleSubmit}
@@ -300,12 +300,12 @@ export const PersonalizeSoundtrackDialog = ({
             {isGenerating ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Bezig...
+                {t('generating') as string}
               </>
             ) : (
               <>
                 <Check className="h-4 w-4" />
-                Genereer V2
+                {t('generateV2') as string}
               </>
             )}
           </Button>
