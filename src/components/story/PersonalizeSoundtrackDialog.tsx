@@ -256,7 +256,7 @@ export const PersonalizeSoundtrackDialog = ({
           <div className="space-y-2 pt-2 border-t border-border">
             <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
               <Music className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-              Muziek Engine
+              {t('musicEngine') as string}
             </Label>
             <Select value={selectedProvider} onValueChange={(v) => setSelectedProvider(v as MusicProvider)}>
               <SelectTrigger className="bg-card h-10 sm:h-9 text-sm">
