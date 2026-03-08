@@ -22,6 +22,17 @@ interface SavedStory {
   is_public: boolean;
 }
 
+interface SavedEvent {
+  id: string;
+  event_title: string;
+  event_date?: string;
+  event_year?: number;
+  event_description?: string;
+  event_category?: string;
+  image_url?: string;
+  created_at: string;
+}
+
 const AccountPage = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const { t, language } = useLanguage();
