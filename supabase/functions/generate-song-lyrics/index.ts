@@ -34,23 +34,18 @@ function getNuancedStyleTags(gender: Gender, birthYear?: number): { mood: string
   const mood: string[] = [];
   const texture: string[] = [];
 
-  // Mood tags based on gender
   if (gender === 'male') {
     mood.push('anthemic', 'driving', 'energetic');
   } else if (gender === 'female') {
     mood.push('melodic', 'sentimental', 'warm');
   }
 
-  // Texture tags based on generation (birth year)
   if (birthYear) {
     if (birthYear < 1980) {
-      // Gen X
       texture.push('analogue sound', 'raw production');
     } else if (birthYear >= 1980 && birthYear <= 1996) {
-      // Millennials
       texture.push('polished', 'radio hit');
     } else if (birthYear > 1996) {
-      // Gen Z
       texture.push('lo-fi aesthetics', 'dreamy reverb');
     }
   }
@@ -58,13 +53,67 @@ function getNuancedStyleTags(gender: Gender, birthYear?: number): { mood: string
   return { mood, texture };
 }
 
+// Language-specific prompt templates
+function getLanguageConfig(language: string) {
+  if (language === 'en') {
+    return {
+      langName: 'English',
+      langCode: 'en',
+      writeInstructions: 'Write all lyrics in English.',
+      periodDescriptions: {
+        childhood: 'childhood (about 6-12 years old)',
+        puberty: 'teenage years (about 12-18 years old)',
+        'young-adult': 'young adulthood (about 18-25 years old)',
+        default: 'life phase',
+      },
+      bornIn: 'born in',
+      cityLabel: 'CITY',
+      subcultureLabel: 'SUBCULTURE',
+      periodLabel: 'PERIOD',
+      lifePhaseLabel: 'LIFE PHASE',
+      noCity: 'No city',
+      eraLabel: (decade: number) => `The ${decade}s`,
+      personalInfoLabel: 'PERSONAL INFORMATION',
+      importantEventsLabel: 'IMPORTANT EVENTS FROM THAT TIME',
+      personalMilestonesLabel: 'PERSONAL MILESTONES',
+      periodSummaryLabel: 'PERIOD SUMMARY',
+      noSummary: 'No summary available',
+      generateNow: 'Now generate the lyrics in English.',
+      songTitleFallback: (start: number, end: number) => `My ${start}-${end}`,
+    };
+  }
+  // Default: Dutch
+  return {
+    langName: 'Nederlands',
+    langCode: 'nl',
+    writeInstructions: 'Schrijf alle teksten in het Nederlands.',
+    periodDescriptions: {
+      childhood: 'jeugd (ongeveer 6-12 jaar)',
+      puberty: 'puberteit (ongeveer 12-18 jaar)',
+      'young-adult': 'jonge volwassenheid (ongeveer 18-25 jaar)',
+      default: 'levensfase',
+    },
+    bornIn: 'geboren in',
+    cityLabel: 'STAD',
+    subcultureLabel: 'SUBCULTUUR',
+    periodLabel: 'PERIODE',
+    lifePhaseLabel: 'LEVENSFASE',
+    noCity: 'Geen stad',
+    eraLabel: (decade: number) => `Jaren ${decade}`,
+    personalInfoLabel: 'PERSOONLIJKE INFORMATIE',
+    importantEventsLabel: 'BELANGRIJKE GEBEURTENISSEN UIT DIE TIJD',
+    personalMilestonesLabel: 'PERSOONLIJKE MIJLPALEN',
+    periodSummaryLabel: 'SAMENVATTING VAN DE PERIODE',
+    noSummary: 'Geen samenvatting beschikbaar',
+    generateNow: 'Genereer nu de songtekst in het Nederlands.',
+    songTitleFallback: (start: number, end: number) => `Mijn ${start}-${end}`,
+  };
+}
+
 // Extended request body to support both Mode A and Mode B
 interface RequestBody {
-  // Mode B (full): events are present
   events?: TimelineEvent[];
   summary?: string;
-  
-  // Mode A (quick): just formData basics
   formData?: {
     birthYear?: number;
     city?: string;
@@ -72,23 +121,17 @@ interface RequestBody {
     startYear?: number;
     endYear?: number;
   };
-  
-  // Shared fields
   personalData?: PersonalData;
   subculture?: SubcultureData;
   gender?: Gender;
   startYear: number;
   endYear: number;
-  
-  // Mode indicator (optional, inferred from events presence)
   mode?: 'quick' | 'full';
-  
-  // Music provider - affects lyrics format (diffrhythm needs LRC timestamps)
   provider?: 'suno' | 'acestep' | 'diffrhythm';
+  language?: string; // 'nl' | 'en'
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -100,13 +143,16 @@ serve(async (req) => {
     }
 
     const body: RequestBody = await req.json();
-    const { events, summary, personalData, subculture, gender, startYear, endYear, formData, mode, provider } = body;
+    const { events, summary, personalData, subculture, gender, startYear, endYear, formData, mode, provider, language } = body;
 
-    // Determine which mode we're in
+    // Get language config (default to Dutch)
+    const lang = getLanguageConfig(language || 'nl');
+
     const isQuickMode = mode === 'quick' || !events || events.length === 0;
     
     console.log(`=== GENERATE SONG LYRICS ===`);
-    console.log(`Mode: ${isQuickMode ? 'QUICK (V1 - zonder events)' : 'FULL (V2 - met events)'}`);
+    console.log(`Mode: ${isQuickMode ? 'QUICK (V1)' : 'FULL (V2)'}`);
+    console.log(`Language: ${lang.langName}`);
     console.log(`Years: ${startYear}-${endYear}`);
     console.log(`Personal data: friends=${personalData?.friends}, school=${personalData?.school}, nightlife=${personalData?.nightlife}`);
     console.log(`Subculture: ${subculture?.myGroup || 'none'}, Gender: ${gender || 'none'}`);
@@ -117,7 +163,6 @@ serve(async (req) => {
       console.log(`Events count: ${events.length}`);
     }
 
-    // Determine vocal type based on gender
     let vocalType = "";
     if (gender === 'male') {
       vocalType = "male vocals";
@@ -125,24 +170,19 @@ serve(async (req) => {
       vocalType = "female vocals";
     }
 
-    // Subculture to music style mapping - subculture is the PRIMARY determinant
+    // Subculture to music style mapping
     const subcultureStyleMap: Record<string, string> = {
-      // 1950s
       "Rock 'n' Roll": "1950s Rock 'n' Roll",
       "Nozems": "Nederpop / Rock 'n' Roll",
       "Elvis-fans": "Rockabilly",
       "Beatniks": "Cool Jazz / Beat Poetry",
       "Jazz-cats": "Bebop Jazz",
-      
-      // 1960s
       "Beatlemania": "British Beat / Merseybeat",
       "Beat-fans": "Beat muziek",
       "Hippies": "Psychedelic Rock / Folk",
       "Provos": "Protestlied / Folk",
       "Mods": "British Mod / Northern Soul",
       "Flower Power": "Psychedelic Pop",
-      
-      // 1970s
       "Disco-fans": "Disco",
       "Disco": "Disco / Funk",
       "Glamrockers": "Glam Rock",
@@ -153,8 +193,6 @@ serve(async (req) => {
       "Northern Soulers": "Northern Soul",
       "ABBA-fans": "Euro Disco / ABBA-style Pop",
       "ABBA-mania": "Euro Disco Pop",
-      
-      // 1980s
       "Doe Maar-fans": "Nederpop / Ska",
       "Kakkers": "Synthpop / Yuppie Pop",
       "New Wavers": "New Wave / Synthpop",
@@ -171,8 +209,6 @@ serve(async (req) => {
       "Valley Girls": "Synth Pop / Teen Pop",
       "Hair Metalers": "Glam Metal / Hair Metal",
       "Paninari": "Italo Disco / Europop",
-      
-      // 1990s
       "Gabbers": "Gabber / Hardcore Techno",
       "Gabbertjes": "Happy Hardcore / Gabber",
       "Grunge": "Grunge / Alternative Rock",
@@ -188,8 +224,6 @@ serve(async (req) => {
       "Riot Grrrl": "Riot Grrrl / Punk",
       "Love Parade": "Techno / Trance",
       "Raver": "Rave / Trance",
-      
-      // 2000s
       "Breezers": "R&B / Urban Pop",
       "MSN-generatie": "Pop Punk / Emo Pop",
       "Emo": "Emo / Post-Hardcore",
@@ -201,8 +235,6 @@ serve(async (req) => {
       "Tokio Hotel fans": "Emo Rock / Pop Rock",
       "Pop-punk": "Pop Punk",
       "Nu-Metal": "Nu Metal",
-      
-      // 2010s
       "Vlog-volgers": "EDM / Pop",
       "Fandoms": "K-Pop / Stan Pop",
       "K-pop fans": "K-Pop",
@@ -214,8 +246,6 @@ serve(async (req) => {
       "Berlin-Techno": "Minimal Techno / Deep House",
       "Klimaat-activisten": "Indie Folk / Protest",
       "FFF-Aktivisten": "Indie / Protest Pop",
-      
-      // 2020s
       "TikTok-aesthetic": "Hyperpop / TikTok Pop",
       "Gym-bros": "EDM / Hardstyle / Motivational",
       "Gym-cultuur": "EDM / Hardstyle",
@@ -228,14 +258,12 @@ serve(async (req) => {
       "Gaming": "Electronic / Chiptune",
     };
 
-    // Get style from subculture first, then fall back to era-based style
     let suggestedStyle = "Pop ballade";
     
     if (subculture?.myGroup && subcultureStyleMap[subculture.myGroup]) {
       suggestedStyle = subcultureStyleMap[subculture.myGroup];
       console.log(`Style determined by subculture "${subculture.myGroup}": ${suggestedStyle}`);
     } else {
-      // Fallback: determine by era
       const midYear = Math.round((startYear + endYear) / 2);
       if (midYear >= 1965 && midYear < 1972) {
         suggestedStyle = "Rock/Nederpop";
@@ -255,7 +283,6 @@ serve(async (req) => {
       console.log(`Style determined by era (${midYear}): ${suggestedStyle}`);
     }
 
-    // Get nuanced mood and texture tags based on gender and birth year
     const birthYear = formData?.birthYear;
     const nuancedTags = getNuancedStyleTags(gender || 'none', birthYear);
     const moodTags = nuancedTags.mood.join(', ');
@@ -263,25 +290,18 @@ serve(async (req) => {
     
     console.log(`Nuanced tags - Mood: [${moodTags}], Texture: [${textureTags}]`);
 
-    // Build prompt based on mode
     let systemPrompt: string;
     let userPrompt: string;
 
     if (isQuickMode) {
       // ============================================
       // MODE A (V1): Quick mode - no events, just basic data
-      // Optimized for SHORT songs (max 2 minutes, "radio edit" style)
-      // ERA-FIRST approach: accessible, melodic base with subtle subculture influence
       // ============================================
       const city = formData?.city || personalData?.city;
-      const periodDescription = formData?.periodType === 'childhood' ? 'jeugd (ongeveer 6-12 jaar)' 
-        : formData?.periodType === 'puberty' ? 'puberteit (ongeveer 12-18 jaar)'
-        : formData?.periodType === 'young-adult' ? 'jonge volwassenheid (ongeveer 18-25 jaar)'
-        : 'levensfase';
+      const periodDescription = lang.periodDescriptions[formData?.periodType as keyof typeof lang.periodDescriptions] || lang.periodDescriptions.default;
       const subcultureName = subculture?.myGroup || null;
-      const birthYearInfo = formData?.birthYear ? `geboren in ${formData.birthYear}` : '';
+      const birthYearInfo = formData?.birthYear ? `${lang.bornIn} ${formData.birthYear}` : '';
 
-      // ERA-FIRST: Determine accessible base genre from era (NOT from subculture)
       const midYear = Math.round((startYear + endYear) / 2);
       let eraBaseGenre = "Pop";
       if (midYear >= 1955 && midYear < 1965) {
@@ -302,9 +322,7 @@ serve(async (req) => {
         eraBaseGenre = "Modern Pop, Lo-fi influenced";
       }
 
-      // Map subculture to a SUBTLE influence (not the main genre!)
       const subcultureInfluenceMap: Record<string, string> = {
-        // Extreme genres get softened
         "Gabbers": "slight happy hardcore influence",
         "Gabbertjes": "upbeat techno touch",
         "Punks": "raw guitar edge",
@@ -320,7 +338,6 @@ serve(async (req) => {
         "Drill-rap": "urban beat influence",
         "Drill": "trap-influenced rhythm",
         "Nu-Metal": "alternative rock edge",
-        // Moderate genres keep flavor
         "Hiphoppers": "old school hip-hop groove",
         "Hip-hop heads": "boom bap influence",
         "Disco-fans": "funky disco touch",
@@ -329,7 +346,6 @@ serve(async (req) => {
         "Techno/Rave": "electronic dance touch",
         "Raver": "trance-influenced melody",
         "EDM-fans": "festival anthem feel",
-        // Already soft genres
         "Hippies": "folk influence",
         "Flower Power": "psychedelic pop touch",
         "Indie-sleaze": "indie rock feel",
@@ -341,7 +357,6 @@ serve(async (req) => {
         ? subcultureInfluenceMap[subcultureName] 
         : (subcultureName ? `subtle ${subcultureName.toLowerCase()} influence` : '');
 
-      // Build the ACCESSIBLE style string
       const styleTagsParts = [eraBaseGenre, 'melodic', 'nostalgic', 'radio-friendly'];
       if (subcultureInfluence) styleTagsParts.push(subcultureInfluence);
       if (moodTags) styleTagsParts.push(moodTags);
@@ -351,7 +366,87 @@ serve(async (req) => {
       console.log(`ERA-FIRST style approach: Base="${eraBaseGenre}", Subculture influence="${subcultureInfluence}"`);
       console.log(`Complete style tags: ${completeStyleTags}`);
 
-      systemPrompt = `Je bent een getalenteerde Nederlandse songwriter die ULTRA-KORTE nostalgische liedjes schrijft.
+      if (lang.langCode === 'en') {
+        systemPrompt = `You are a talented songwriter who writes ULTRA-SHORT nostalgic songs.
+Your specialty is MICRO-SONGS of maximum 1 minute 30 seconds that instantly evoke emotion.
+
+=== CRITICAL: LENGTH LIMIT ===
+The MAXIMUM duration is 1:30 (90 seconds). This means EXTREMELY little text.
+Suno generates approximately 15-20 words per 10 seconds.
+So your TOTAL lyrics must NOT exceed 120-150 words!
+
+=== NOSTALGIA INSTRUCTION ===
+The goal is NOSTALGIA with a radio-hit sound from that era.
+The music style should be recognizable for a BROAD AUDIENCE, with a subtle nod to the subculture.
+
+STYLE: ${completeStyleTags}
+PERIOD: ${startYear}-${endYear}
+LANGUAGE: English
+
+=== MUSIC STYLE (ERA-FIRST) ===
+Style tag always starts with accessible, melodic genre from the era.
+Subculture is a SUBTLE influence, NOT the main genre.
+
+=== ULTRA-STRICT STRUCTURE (MAX 1:30) ===
+Use EXACTLY this minimal structure:
+
+[Intro]
+(Literally 1 line of max 8 words - set the mood immediately)
+
+[Verse]
+(EXACTLY 3 short lines - sketch time, place, mention the city)
+
+[Chorus]
+(EXACTLY 3 short lines - catchy, emotional)
+
+[Verse 2]
+(EXACTLY 3 short lines - memories)
+
+[Chorus]
+(Repeat - IDENTICAL to first chorus)
+
+[Outro]
+(1 line - short closing)
+
+=== STRICTLY FORBIDDEN ===
+❌ NO Bridge section
+❌ NO Instrumental or Interlude
+❌ NO extra verses
+❌ NO long lines (max 10 words per line)
+❌ NO repetition of words within lines
+
+=== REQUIRED ELEMENTS ===
+1. CITY ${city || 'not specified'} mentioned concretely
+2. SUBCULTURE ${subcultureName || 'not specified'} woven in as atmosphere
+3. PERIOD ${startYear}-${endYear} made recognizable
+4. Total MAX 120 words`;
+
+        userPrompt = `Write an ULTRA-SHORT nostalgic song (MAXIMUM 1:30 minutes, max 120 words total) for someone ${birthYearInfo} about their ${periodDescription}.
+
+REQUIRED ELEMENTS:
+${city ? `- CITY: ${city} - mention by name` : '- No city'}
+${subcultureName ? `- SUBCULTURE: ${subcultureName} - weave in as atmosphere` : ''}
+- ERA: ${startYear}-${endYear}
+- LIFE PHASE: ${periodDescription}
+
+CRITICAL - ULTRA-SHORT:
+- EXACT structure: [Intro](1 line) → [Verse](3 lines) → [Chorus](3 lines) → [Verse 2](3 lines) → [Chorus](3 lines) → [Outro](1 line)
+- MAXIMUM 120 words total
+- Short, punchy lines of max 10 words
+- NO bridge, NO extra sections
+
+ERA-FIRST STYLE:
+"${eraBaseGenre}, fast tempo, punchy, radio edit, short song, spoken word delivery${subcultureInfluence ? `, ${subcultureInfluence}` : ''}"
+
+Format your output as JSON:
+{
+  "lyrics": "The full lyrics with [Section Tags]...",
+  "style": "${eraBaseGenre}, fast tempo, punchy, radio edit, short song, spoken word delivery${subcultureInfluence ? `, ${subcultureInfluence}` : ''}, ${vocalType}",
+  "title": "Short title (max 3 words)"
+}`;
+      } else {
+        // Dutch (original)
+        systemPrompt = `Je bent een getalenteerde Nederlandse songwriter die ULTRA-KORTE nostalgische liedjes schrijft.
 Je specialiteit is MICRO-SONGS van maximaal 1 minuut 30 seconden die direct emotie oproepen.
 
 === KRITISCH: LENGTE LIMIET ===
@@ -405,7 +500,7 @@ Gebruik EXACT deze minimale structuur:
 3. PERIODE ${startYear}-${endYear} herkenbaar maken
 4. Totaal MAX 120 woorden`;
 
-      userPrompt = `Schrijf een ULTRA-KORT nostalgisch lied (MAXIMAAL 1:30 minuut, max 120 woorden totaal) voor iemand ${birthYearInfo} over hun ${periodDescription}.
+        userPrompt = `Schrijf een ULTRA-KORT nostalgisch lied (MAXIMAAL 1:30 minuut, max 120 woorden totaal) voor iemand ${birthYearInfo} over hun ${periodDescription}.
 
 VERPLICHTE ELEMENTEN:
 ${city ? `- STAD: ${city} - noem bij naam` : '- Geen stad'}
@@ -428,19 +523,88 @@ Format je output als JSON:
   "style": "${eraBaseGenre}, fast tempo, punchy, radio edit, short song, spoken word delivery${subcultureInfluence ? `, ${subcultureInfluence}` : ''}, ${vocalType}",
   "title": "Korte titel (max 3 woorden)"
 }`;
+      }
 
     } else {
       // ============================================
       // MODE B (V2): Full mode - with events and personal details
       // ============================================
       
-      // Build the complete style string with mood and texture tags for Mode B
       const styleTagsPartsB = [suggestedStyle];
       if (moodTags) styleTagsPartsB.push(moodTags);
       if (textureTags) styleTagsPartsB.push(textureTags);
       const completeStyleTagsB = styleTagsPartsB.join(', ');
 
-      systemPrompt = `Je bent een getalenteerde Nederlandse songwriter die nostalgische liedjes schrijft.
+      if (lang.langCode === 'en') {
+        systemPrompt = `You are a talented songwriter who writes nostalgic songs.
+Your specialty is weaving personal memories with historical events into an emotional and recognizable song.
+
+STYLE: ${completeStyleTagsB} (period: ${startYear}-${endYear})
+LANGUAGE: English
+
+=== MUSIC STYLE INSTRUCTIONS ===
+The final "style" tag should contain these elements:
+- Genre: ${suggestedStyle}
+${moodTags ? `- Mood: ${moodTags}` : ''}
+${textureTags ? `- Texture: ${textureTags}` : ''}
+
+STRUCTURE:
+- Verse 1 (4-6 lines): Set the scene and era
+- Chorus (4 lines): Emotional core, catchy and singable
+- Verse 2 (4-6 lines): Personal memories
+- Chorus (repeat)
+- Bridge (2-4 lines): Reflection
+- Outro/Chorus
+
+RULES:
+1. Weave SPECIFIC details through the lyrics (names of friends, places, events)
+2. Use rhyme where possible, but don't force it
+3. The lyrics must be suitable for singing (mind the syllables)
+4. Make it nostalgic but not too sappy
+5. Reference at least 3 historical events from the list
+6. Mention personal details (friends, school, nightlife) if provided`;
+
+        // Build context from events
+        const eventHighlights = events!
+          .filter(e => e.category !== 'personal')
+          .slice(0, 10)
+          .map(e => `- ${e.year}: ${e.title}`)
+          .join('\n');
+
+        const personalEvents = events!
+          .filter(e => e.category === 'personal')
+          .slice(0, 5)
+          .map(e => `- ${e.title}`)
+          .join('\n');
+
+        userPrompt = `Write a nostalgic song for someone born/growing up in the period ${startYear}-${endYear}.
+
+PERSONAL INFORMATION:
+${personalData?.firstName ? `- Name: ${personalData.firstName}` : ''}
+${personalData?.city ? `- City: ${personalData.city}` : ''}
+${personalData?.friends ? `- Best friends: ${personalData.friends}` : ''}
+${personalData?.school ? `- School: ${personalData.school}` : ''}
+${personalData?.nightlife ? `- Favorite venues: ${personalData.nightlife}` : ''}
+
+IMPORTANT EVENTS FROM THAT TIME:
+${eventHighlights}
+
+${personalEvents ? `PERSONAL MILESTONES:\n${personalEvents}` : ''}
+
+PERIOD SUMMARY:
+${summary || 'No summary available'}
+
+Now generate the lyrics in English.
+
+Format your output as JSON:
+{
+  "lyrics": "The full lyrics here...",
+  "style": "${completeStyleTagsB}",
+  "title": "Song title"
+}`;
+      } else {
+        // Dutch (original)
+        systemPrompt = `Je bent een getalenteerde Nederlandse songwriter die nostalgische liedjes schrijft.
 Je specialiteit is het verweven van persoonlijke herinneringen met historische gebeurtenissen tot een emotioneel en herkenbaar lied.
 
 STIJL: ${completeStyleTagsB} (periode: ${startYear}-${endYear})
@@ -468,20 +632,20 @@ REGELS:
 5. Verwijs naar minstens 3 historische gebeurtenissen uit de lijst
 6. Noem de persoonlijke details (vrienden, school, uitgaansleven) als die gegeven zijn`;
 
-      // Build context from events
-      const eventHighlights = events!
-        .filter(e => e.category !== 'personal')
-        .slice(0, 10)
-        .map(e => `- ${e.year}: ${e.title}`)
-        .join('\n');
+        // Build context from events
+        const eventHighlights = events!
+          .filter(e => e.category !== 'personal')
+          .slice(0, 10)
+          .map(e => `- ${e.year}: ${e.title}`)
+          .join('\n');
 
-      const personalEvents = events!
-        .filter(e => e.category === 'personal')
-        .slice(0, 5)
-        .map(e => `- ${e.title}`)
-        .join('\n');
+        const personalEvents = events!
+          .filter(e => e.category === 'personal')
+          .slice(0, 5)
+          .map(e => `- ${e.title}`)
+          .join('\n');
 
-      userPrompt = `Schrijf een nostalgisch lied voor iemand geboren/opgegroeid in de periode ${startYear}-${endYear}.
+        userPrompt = `Schrijf een nostalgisch lied voor iemand geboren/opgegroeid in de periode ${startYear}-${endYear}.
 
 PERSOONLIJKE INFORMATIE:
 ${personalData?.firstName ? `- Naam: ${personalData.firstName}` : ''}
@@ -506,20 +670,19 @@ Format je output als JSON:
   "style": "${completeStyleTagsB}",
   "title": "Titel van het lied"
 }`;
+      }
     }
 
     // === STAP 2: DiffRhythm LRC timestamp mode ===
-    // Overrides prompts entirely with event-skeleton + strict LRC instructions
     const isDiffRhythm = provider === 'diffrhythm';
     if (isDiffRhythm) {
       console.log('[DiffRhythm mode] Building LRC lyrics');
 
       const midYear = Math.round((startYear + endYear) / 2);
-      const eraLabel = `Jaren ${Math.floor(midYear / 10) * 10}`;
+      const eraLabel = lang.eraLabel(Math.floor(midYear / 10) * 10);
       const city = personalData?.city || formData?.city || '';
       const subcultureName = subculture?.myGroup || '';
 
-      // --- Helper: format time as [mm:ss.cc] (LRC format with centiseconds) ---
       const formatLRC = (totalSeconds: number): string => {
         const mm = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
         const ssFull = totalSeconds % 60;
@@ -531,14 +694,13 @@ Format je output als JSON:
       const hasEvents = events && events.length > 0;
 
       if (hasEvents) {
-        // === MODE B: Event-synchronized LRC ===
         const DURATION_PER_SLIDE = 5.0;
         const OVERLAP = 1.3;
-        const EFFECTIVE_DURATION = DURATION_PER_SLIDE - OVERLAP; // 3.7s
+        const EFFECTIVE_DURATION = DURATION_PER_SLIDE - OVERLAP;
 
         const skeletonLines: string[] = [];
         skeletonLines.push(`[verse]`);
-        skeletonLines.push(`${formatLRC(0)} Introductie (Thema: ${eraLabel})`);
+        skeletonLines.push(`${formatLRC(0)} Introduction (Theme: ${eraLabel})`);
 
         events!.forEach((e, i) => {
           const time = (i + 1) * EFFECTIVE_DURATION;
@@ -555,39 +717,41 @@ Format je output als JSON:
         const structurePrompt = skeletonLines.join('\n');
         console.log('[DiffRhythm] Event skeleton:\n' + structurePrompt);
 
-        systemPrompt = `Je bent een lyricist die muziek schrijft voor een videoclip. Hieronder staat een tijdlijn van gebeurtenissen met harde timestamps in LRC-formaat. Jouw taak: Schrijf voor elke tijdregel exact één korte, zingbare zin die past bij dat specifieke event.
+        const lrcLangInstruction = lang.langCode === 'en' 
+          ? 'Write in English.' 
+          : 'Schrijf in het Nederlands.';
 
-Regels:
-1. Neem de timestamp EXACT over in [mm:ss.cc] formaat. Verander de tijd NIET.
-2. Behoud de [verse] en [chorus] sectie-markers EXACT zoals gegeven.
-3. De tekst moet gaan over het event dat achter de timestamp staat.
-4. Houd het kort (max 6-8 woorden per regel), het tempo ligt hoog.
-5. Rijm is leuk, maar het matchen van de inhoud met het event is BELANGRIJKER.
-6. Schrijf in het Nederlands.
-7. Output ALLEEN de LRC tekst ([verse]/[chorus] markers + timestamp + zin), geen andere praat.
+        systemPrompt = `You are a lyricist writing music for a video clip. Below is a timeline of events with hard timestamps in LRC format. Your task: Write exactly one short, singable line for each timestamp that matches that specific event.
 
-MUZIEKSTIJL: ${suggestedStyle}${moodTags ? `, ${moodTags}` : ''}${textureTags ? `, ${textureTags}` : ''}`;
+Rules:
+1. Copy the timestamp EXACTLY in [mm:ss.cc] format. Do NOT change the time.
+2. Keep the [verse] and [chorus] section markers EXACTLY as given.
+3. The text must relate to the event behind the timestamp.
+4. Keep it short (max 6-8 words per line), the tempo is high.
+5. Rhyme is nice, but matching content with the event is MORE IMPORTANT.
+6. ${lrcLangInstruction}
+7. Output ONLY the LRC text ([verse]/[chorus] markers + timestamp + line), no other text.
 
-        userPrompt = `Schrijf voor ELKE tijdregel exact één korte zingbare zin. Behoud [verse]/[chorus] markers en timestamps exact:
+MUSIC STYLE: ${suggestedStyle}${moodTags ? `, ${moodTags}` : ''}${textureTags ? `, ${textureTags}` : ''}`;
+
+        const writeVerb = lang.langCode === 'en' ? 'Write' : 'Schrijf';
+        userPrompt = `${writeVerb} for EACH timestamp exactly one short singable line. Keep [verse]/[chorus] markers and timestamps exact:
 
 ${structurePrompt}
 
-Format je output als JSON:
+Format your output as JSON:
 {
-  "lyrics": "De volledige LRC tekst...",
+  "lyrics": "The full LRC text...",
   "style": "${suggestedStyle}",
-  "title": "Korte titel (max 3 woorden)"
+  "title": "Short title (max 3 words)"
 }`;
 
       } else {
-        // === MODE A (V1 quick): No events — generate a full 95s nostalgic LRC song ===
-        // Create timestamps spread across 95 seconds (approx 3.5s per line = ~27 lines)
-        const SONG_DURATION = 90; // seconds of content
+        const SONG_DURATION = 90;
         const LINE_INTERVAL = 3.5;
         const totalLines = Math.floor(SONG_DURATION / LINE_INTERVAL);
 
         const templateLines: string[] = [];
-        // Structure: verse (8 lines) → chorus (4 lines) → verse (8 lines) → chorus (4 lines) → outro (3 lines)
         for (let i = 0; i < totalLines; i++) {
           const time = i * LINE_INTERVAL;
           if (i === 0) templateLines.push(`[verse]`);
@@ -595,14 +759,22 @@ Format je output als JSON:
           else if (i === 12) templateLines.push(`[verse]`);
           else if (i === 20) templateLines.push(`[chorus]`);
           else if (i === 24) templateLines.push(`[verse]`);
-          templateLines.push(`${formatLRC(time)} (regel ${i + 1})`);
+          templateLines.push(`${formatLRC(time)} (line ${i + 1})`);
         }
 
         const templatePrompt = templateLines.join('\n');
         console.log(`[DiffRhythm] V1 quick template (${totalLines} lines):\n` + templatePrompt);
 
-        // Build era-specific event examples to make lyrics relevant to what user sees
-        const eraEventExamples: Record<string, string[]> = {
+        const eraEventExamples: Record<string, string[]> = lang.langCode === 'en' ? {
+          '50': ['Rock around the Clock', 'Elvis on the radio', 'First TV at home', 'Korean War ends'],
+          '60': ['The Beatles on TV', 'Moon landing', 'Woodstock', 'Pirate radio', 'Flower Power'],
+          '70': ['Disco on Saturday night', 'Oil crisis', 'ABBA wins Eurovision', 'Punk at the pub', 'Star Wars in cinema'],
+          '80': ['MTV and music videos', 'Walkman to school', 'Fall of the Wall', 'Pac-Man and Atari', 'Live Aid'],
+          '90': ['Rave parties', 'Internet for the first time', 'Tamagotchi', 'Spice Girls', 'Y2K panic', 'MSN Messenger', 'Nirvana on MTV'],
+          '00': ['9/11 on television', 'MySpace and MSN', 'iPod and mp3', 'Harry Potter', 'Facebook begins'],
+          '10': ['Instagram and selfies', 'Watching vlogs', 'Spotify', 'Pokémon Go', 'Netflix binge-watching', 'Climate protests'],
+          '20': ['Corona and lockdowns', 'TikTok', 'Working from home', 'Livestreams', 'AI breaks through'],
+        } : {
           '50': ['Rock around the Clock', 'Elvis op de radio', 'Eerste televisie thuis', 'Watersnoodramp'],
           '60': ['De Beatles op TV', 'Maanlanding', 'Provo-beweging', 'Piratenzenders', 'Flower Power'],
           '70': ['Disco op zaterdagavond', 'Oliecrisis en autoloze zondag', 'ABBA wint Songfestival', 'Punk in de kroeg', 'Star Wars in de bios'],
@@ -617,7 +789,33 @@ Format je output als JSON:
         const relevantEvents = eraEventExamples[decadeKey] || eraEventExamples['90'];
         const eventExamplesStr = relevantEvents.map((e, i) => `  - ${e}`).join('\n');
 
-        systemPrompt = `Je bent een getalenteerde Nederlandse songwriter die nostalgische liedjes schrijft in LRC-formaat voor DiffRhythm muziekgeneratie.
+        const lrcLangInstruction = lang.langCode === 'en'
+          ? 'LANGUAGE: English — all text MUST be in English'
+          : 'TAAL: Nederlands — alle tekst MOET in het Nederlands zijn';
+
+        systemPrompt = lang.langCode === 'en'
+          ? `You are a talented songwriter who writes nostalgic songs in LRC format for DiffRhythm music generation.
+
+You write a complete song of ~90 seconds in LRC format with [verse] and [chorus] sections.
+
+=== CRITICAL: CONTENT MUST MATCH THE ERA ===
+The lyrics must CONCRETELY reference recognizable events, trends and memories from the ${eraLabel} (${startYear}-${endYear}).
+Use these examples as inspiration (incorporate at least 5 in the lyrics):
+${eventExamplesStr}
+
+IMPORTANT LRC FORMAT:
+- Each line starts with a timestamp in [mm:ss.cc] format
+- Sections are marked with [verse] or [chorus] on a separate line
+- Keep lines short (6-10 words), singable and rhythmic
+- The song must contain AT LEAST 20 lines spread across 90 seconds
+- Timestamps must increase from [00:00.00] to approximately [01:25.00]
+
+THEME: Nostalgia for the ${eraLabel} (${startYear}-${endYear})
+${city ? `CITY: ${city}` : ''}
+${subcultureName ? `SUBCULTURE: ${subcultureName}` : ''}
+${lrcLangInstruction}
+MUSIC STYLE: ${suggestedStyle}${moodTags ? `, ${moodTags}` : ''}${textureTags ? `, ${textureTags}` : ''}`
+          : `Je bent een getalenteerde Nederlandse songwriter die nostalgische liedjes schrijft in LRC-formaat voor DiffRhythm muziekgeneratie.
 
 Je schrijft een compleet lied van ~90 seconden in LRC-formaat met [verse] en [chorus] secties.
 
@@ -636,31 +834,35 @@ BELANGRIJK LRC-FORMAAT:
 THEMA: Nostalgie naar de ${eraLabel} (${startYear}-${endYear})
 ${city ? `STAD: ${city}` : ''}
 ${subcultureName ? `SUBCULTUUR: ${subcultureName}` : ''}
-TAAL: Nederlands — alle tekst MOET in het Nederlands zijn
+${lrcLangInstruction}
 MUZIEKSTIJL: ${suggestedStyle}${moodTags ? `, ${moodTags}` : ''}${textureTags ? `, ${textureTags}` : ''}`;
 
-        userPrompt = `Schrijf een nostalgisch Nederlands lied in LRC-formaat over opgroeien in de ${eraLabel}${city ? ` in ${city}` : ''}.
+        const writeVerb = lang.langCode === 'en' ? 'Write a nostalgic English song' : 'Schrijf een nostalgisch Nederlands lied';
+        const inCity = lang.langCode === 'en' ? 'in' : 'in';
+        const growingUp = lang.langCode === 'en' ? 'about growing up in the' : 'over opgroeien in de';
+        
+        userPrompt = `${writeVerb} in LRC format ${growingUp} ${eraLabel}${city ? ` ${inCity} ${city}` : ''}.
 
-Het lied moet:
-- Minimaal 20 regels bevatten
-- Timestamps verspreid over 90 seconden ([00:00.00] tot [01:25.00])
-- [verse] en [chorus] sectie-markers bevatten
-- Kort, zingbaar en emotioneel zijn
-- CONCREET verwijzen naar herkenbare gebeurtenissen en trends uit de ${eraLabel}:
+The song must:
+- Contain at least 20 lines
+- Timestamps spread across 90 seconds ([00:00.00] to [01:25.00])
+- Contain [verse] and [chorus] section markers
+- Be short, singable and emotional
+- CONCRETELY reference recognizable events and trends from the ${eraLabel}:
 ${eventExamplesStr}
-${subcultureName ? `- De sfeer van de ${subcultureName} subcultuur ademen` : ''}
+${subcultureName ? `- Breathe the atmosphere of the ${subcultureName} subculture` : ''}
 
-Hier is de structuur met timestamps die je EXACT moet overnemen:
+Here is the structure with timestamps you must copy EXACTLY:
 
 ${templatePrompt}
 
-Vervang "(regel X)" door je eigen zingbare tekst die AANSLUIT bij herkenbare gebeurtenissen uit de ${eraLabel}. Behoud de timestamps en sectie-markers EXACT.
+Replace "(line X)" with your own singable text that MATCHES recognizable events from the ${eraLabel}. Keep timestamps and section markers EXACT.
 
-Format je output als JSON:
+Format your output as JSON:
 {
-  "lyrics": "De volledige LRC tekst met [verse]/[chorus] markers en timestamps...",
+  "lyrics": "The full LRC text with [verse]/[chorus] markers and timestamps...",
   "style": "${suggestedStyle}",
-  "title": "Korte titel (max 3 woorden)"
+  "title": "Short title (max 3 words)"
 }`;
       }
     }
@@ -682,7 +884,7 @@ Format je output als JSON:
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
           ],
-          temperature: 0.8 + (attempt - 1) * 0.1, // Slightly increase temperature on retry
+          temperature: 0.8 + (attempt - 1) * 0.1,
           max_tokens: 2000,
         }),
       });
@@ -692,13 +894,13 @@ Format je output als JSON:
         console.error(`AI gateway error: ${response.status}`, errorText);
         
         if (response.status === 429) {
-          return new Response(JSON.stringify({ error: "Te veel verzoeken. Probeer het later opnieuw." }), {
+          return new Response(JSON.stringify({ error: "Too many requests. Please try again later." }), {
             status: 429,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
         if (response.status === 402) {
-          return new Response(JSON.stringify({ error: "Credits op. Voeg credits toe aan je workspace." }), {
+          return new Response(JSON.stringify({ error: "Credits exhausted. Please add credits." }), {
             status: 402,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
@@ -716,7 +918,6 @@ Format je output als JSON:
 
       console.log(`AI Response received (attempt ${attempt}), parsing...`);
 
-      // Parse JSON from response (handle markdown code blocks)
       try {
         const cleanedContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         parsedContent = JSON.parse(cleanedContent);
@@ -725,11 +926,10 @@ Format je output als JSON:
         parsedContent = {
           lyrics: content,
           style: suggestedStyle,
-          title: `Mijn ${startYear}-${endYear}`,
+          title: lang.songTitleFallback(startYear, endYear),
         };
       }
 
-      // Validate lyrics length (minimum 100 chars for a proper song)
       const lyricsLength = parsedContent!.lyrics?.length || 0;
       if (lyricsLength >= 100) {
         console.log(`Lyrics length OK: ${lyricsLength} chars (attempt ${attempt})`);
@@ -747,7 +947,7 @@ Format je output als JSON:
 
     console.log(`Generated song: "${parsedContent!.title}" in style "${finalStyle}"`);
     console.log(`Lyrics length: ${parsedContent!.lyrics?.length || 0} chars`);
-    console.log(`Mode used: ${isQuickMode ? 'QUICK (V1)' : 'FULL (V2)'}`);
+    console.log(`Mode used: ${isQuickMode ? 'QUICK (V1)' : 'FULL (V2)'}, Language: ${lang.langName}`);
 
     return new Response(JSON.stringify({
       success: true,
@@ -766,7 +966,7 @@ Format je output als JSON:
     console.error("generate-song-lyrics error:", error);
     return new Response(JSON.stringify({
       success: false,
-      error: error instanceof Error ? error.message : "Onbekende fout bij het genereren van songtekst",
+      error: error instanceof Error ? error.message : "Error generating lyrics",
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

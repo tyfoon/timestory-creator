@@ -222,7 +222,7 @@ const callAceStep = async (
  * Start V1 (quick) soundtrack generation - fire and forget
  * Called from homepage when user clicks "Start"
  */
-export const startQuickSoundtrackGeneration = async (formData: FormData, events?: TimelineEvent[]): Promise<void> => {
+export const startQuickSoundtrackGeneration = async (formData: FormData, events?: TimelineEvent[], language?: string): Promise<void> => {
   const startYear = formData.type === 'birthdate' && formData.birthDate 
     ? formData.birthDate.year 
     : formData.yearRange?.startYear || 1980;
@@ -264,6 +264,7 @@ export const startQuickSoundtrackGeneration = async (formData: FormData, events?
       startYear,
       endYear,
       provider,
+      language: language || 'nl',
     };
     
     // When events are available, include them so lyrics are synchronized per-event
@@ -552,7 +553,7 @@ export const useSoundtrackGeneration = () => {
   }, []);
 
   // Regenerate V1 (quick) soundtrack - reset and re-trigger with events
-  const regenerateQuick = useCallback(async (formData: FormData, events?: TimelineEvent[]) => {
+  const regenerateQuick = useCallback(async (formData: FormData, events?: TimelineEvent[], language?: string) => {
     clearSoundtrackState();
     setState({ ...initialState, status: 'generating_lyrics', version: 'v1', startedAt: Date.now() });
 
@@ -587,6 +588,7 @@ export const useSoundtrackGeneration = () => {
         startYear,
         endYear,
         provider,
+        language: language || 'nl',
       };
 
       if (hasEvents) {
@@ -709,6 +711,7 @@ export const useSoundtrackGeneration = () => {
       nightlife?: string;
     },
     providerOverride?: MusicProvider,
+    language?: string,
   ) => {
     const startYear = formData.type === 'birthdate' && formData.birthDate 
       ? formData.birthDate.year 
@@ -752,7 +755,8 @@ export const useSoundtrackGeneration = () => {
           gender: formData.optionalData.gender,
           startYear,
           endYear,
-          provider, // Pass provider so lyrics function can generate LRC format for diffrhythm
+          provider,
+          language: language || 'nl',
         }),
       });
 

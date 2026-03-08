@@ -40,7 +40,7 @@ export const SoundtrackSection = ({
   onOpenPersonalizeDialog,
 }: SoundtrackSectionProps) => {
   const soundtrack = useSoundtrackGeneration();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [enableVhsEffect, setEnableVhsEffect] = useState(false);
 
@@ -78,7 +78,7 @@ export const SoundtrackSection = ({
 
   const handleReset = () => {
     if (formData) {
-      soundtrack.regenerateQuick(formData, events);
+      soundtrack.regenerateQuick(formData, events, language);
     } else {
       clearSoundtrackState();
       soundtrack.reset();

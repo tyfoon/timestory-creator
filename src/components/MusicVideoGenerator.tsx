@@ -12,6 +12,7 @@ import { VideoDialog } from '@/components/video/VideoDialog';
 import { ShareDialog } from '@/components/video/ShareDialog';
 import { SubcultureSelector } from '@/components/SubcultureSelector';
 import { VideoEvent } from '@/remotion/types';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvZW9ib3lnc3NzeWFqcGRzdGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNTY2NjEsImV4cCI6MjA4NDgzMjY2MX0.KuFaWF4r_cxZRiOumPGMChLVmwgyhT9vR5s7L52zr5s';
@@ -33,7 +34,7 @@ interface GenerationResult {
   style?: string;
   title?: string;
   audioUrl?: string;
-  originalUrl?: string; // Original Suno URL before proxying
+  originalUrl?: string;
   duration?: number;
 }
 
@@ -46,6 +47,7 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
   startYear,
   endYear,
 }) => {
+  const { t, language } = useLanguage();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [step, setStep] = useState<GenerationStep>('customize');
   const [progress, setProgress] = useState(0);
@@ -55,14 +57,12 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   
-  // Local state for customization (editable copy of personal details only)
   const [localOptionalData, setLocalOptionalData] = useState<OptionalData>(optionalData);
 
-  // Check if we have enough personal data
   const hasPersonalData = localOptionalData.friends || localOptionalData.school || localOptionalData.nightlife;
 
   const generateLyrics = async (): Promise<{ lyrics: string; style: string; title: string }> => {
-    setStatusMessage('Songtekst schrijven...');
+    setStatusMessage(t('writingLyrics') as string);
     setProgress(10);
 
     const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-song-lyrics`, {
@@ -82,21 +82,22 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
           firstName: localOptionalData.firstName,
           city: localOptionalData.city,
         },
-        subculture: localOptionalData.subculture, // Pass subculture data for music style
-        gender: localOptionalData.gender, // Pass gender for voice selection
+        subculture: localOptionalData.subculture,
+        gender: localOptionalData.gender,
         startYear: startYear,
         endYear: endYear,
+        language,
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Fout bij genereren songtekst: ${response.status}`);
+      throw new Error(errorData.error || `Error generating lyrics: ${response.status}`);
     }
 
     const data = await response.json();
     if (!data.success) {
-      throw new Error(data.error || 'Onbekende fout bij genereren songtekst');
+      throw new Error(data.error || 'Unknown error generating lyrics');
     }
 
     setProgress(30);
@@ -108,11 +109,11 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
   };
 
   const pollForSunoCompletion = async (taskId: string): Promise<{ audioUrl: string; duration: number }> => {
-    const maxAttempts = 60; // 5 minutes max (60 * 5s)
+    const maxAttempts = 60;
     const pollInterval = 5000;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      setStatusMessage(`Muziek componeren... (${Math.floor(attempt * 5 / 60)}:${String((attempt * 5) % 60).padStart(2, '0')} verstreken)`);
+      setStatusMessage(`${t('composingMusic') as string}... (${Math.floor(attempt * 5 / 60)}:${String((attempt * 5) % 60).padStart(2, '0')})`);
       
       const response = await fetch(`${SUPABASE_URL}/functions/v1/check-suno-status`, {
         method: 'POST',
@@ -126,13 +127,13 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Fout bij ophalen status: ${response.status}`);
+        throw new Error(errorData.error || `Error checking status: ${response.status}`);
       }
 
       const data = await response.json();
       
       if (!data.success) {
-        throw new Error(data.error || 'Fout bij genereren muziek');
+        throw new Error(data.error || t('somethingWentWrong') as string);
       }
 
       if (data.data.ready) {
@@ -142,7 +143,6 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
         };
       }
 
-      // Update progress based on status
       if (data.data.status === 'TEXT_SUCCESS') {
         setProgress(50);
       } else if (data.data.status === 'FIRST_SUCCESS') {
@@ -152,14 +152,13 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
       await new Promise(resolve => setTimeout(resolve, pollInterval));
     }
 
-    throw new Error('Muziek generatie duurde te lang. Probeer het opnieuw.');
+    throw new Error(t('musicGenerationTimeout') as string);
   };
 
   const generateMusic = async (lyrics: string, style: string, title: string): Promise<{ audioUrl: string; originalUrl?: string; duration: number }> => {
-    setStatusMessage('Muziek starten...');
+    setStatusMessage(t('startingMusic') as string);
     setProgress(40);
 
-    // Step 1: Start the generation
     const startResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-suno-track`, {
       method: 'POST',
       headers: {
@@ -172,24 +171,22 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
 
     if (!startResponse.ok) {
       const errorData = await startResponse.json().catch(() => ({}));
-      throw new Error(errorData.error || `Fout bij starten muziek: ${startResponse.status}`);
+      throw new Error(errorData.error || `Error starting music: ${startResponse.status}`);
     }
 
     const startData = await startResponse.json();
     if (!startData.success || !startData.data?.taskId) {
-      throw new Error(startData.error || 'Geen taskId ontvangen');
+      throw new Error(startData.error || 'No taskId received');
     }
 
     const taskId = startData.data.taskId;
     console.log(`Suno task started: ${taskId}`);
 
-    // Step 2: Poll for completion (client-side)
     const result = await pollForSunoCompletion(taskId);
     
     setProgress(90);
-    setStatusMessage('Audio voorbereiden...');
+    setStatusMessage(t('loading') as string);
 
-    // Proxy the audio URL to avoid CORS issues
     const proxyResponse = await fetch(`${SUPABASE_URL}/functions/v1/proxy-audio`, {
       method: 'POST',
       headers: {
@@ -201,7 +198,7 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
     });
 
     if (!proxyResponse.ok) {
-      console.warn('Audio proxy failed, using direct URL (may have CORS issues)');
+      console.warn('Audio proxy failed, using direct URL');
       return {
         audioUrl: result.audioUrl,
         originalUrl: result.audioUrl,
@@ -209,7 +206,6 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
       };
     }
 
-    // Convert proxied audio to blob URL for reliable playback
     const audioBlob = await proxyResponse.blob();
     const blobUrl = URL.createObjectURL(audioBlob);
 
@@ -227,45 +223,42 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
     setProgress(0);
 
     try {
-      // Step 1: Generate lyrics
       const lyricsResult = await generateLyrics();
       setResult(prev => ({ ...prev, ...lyricsResult }));
       
       setStep('music');
       
-      // Step 2: Generate music with Suno
       const musicResult = await generateMusic(lyricsResult.lyrics, lyricsResult.style, lyricsResult.title);
       
       setResult(prev => ({
         ...prev,
         audioUrl: musicResult.audioUrl,
-        originalUrl: musicResult.originalUrl, // Keep original Suno URL for reference
+        originalUrl: musicResult.originalUrl,
         duration: musicResult.duration,
       }));
 
       setProgress(100);
       setStep('complete');
-      setStatusMessage('Je persoonlijke hit is klaar!');
+      setStatusMessage(t('listenToHit') as string);
       
     } catch (err) {
       console.error('Music generation error:', err);
-      setError(err instanceof Error ? err.message : 'Er ging iets mis');
+      setError(err instanceof Error ? err.message : t('somethingWentWrong') as string);
       setStep('error');
     }
-  }, [events, summary, localOptionalData, startYear, endYear]);
+  }, [events, summary, localOptionalData, startYear, endYear, language]);
 
   const handleOpenDialog = () => {
-    // Reset local optional data from props
     setLocalOptionalData(optionalData);
     setIsDialogOpen(true);
-    setStep('customize'); // Start with customize step
+    setStep('customize');
     setError(null);
     setResult(null);
     setProgress(0);
   };
 
   const handleConfirmCustomize = () => {
-    setStep('idle'); // Move to ready-to-generate state
+    setStep('idle');
   };
 
   const getStepIcon = (targetStep: GenerationStep, currentStep: GenerationStep) => {
@@ -294,7 +287,7 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
         disabled={events.length === 0}
       >
         <Film className="h-4 w-4" />
-        🎬 Persoonlijke video clip
+        {t('personalVideoClipButton') as string}
       </Button>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -302,12 +295,12 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
           <DialogHeader className="pb-2">
             <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
               <Film className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-              {step === 'customize' ? 'Aanpassen' : 'Persoonlijke Video Clip'}
+              {step === 'customize' ? t('customizeTitle') as string : t('personalVideoClip') as string}
             </DialogTitle>
             <DialogDescription className="text-xs sm:text-sm">
               {step === 'customize' 
-                ? 'Pas je gegevens aan voor een persoonlijker resultaat.'
-                : 'Genereer een unieke video clip met muziek.'}
+                ? t('adjustForPersonal') as string
+                : t('generateVideoClip') as string}
             </DialogDescription>
           </DialogHeader>
 
@@ -319,17 +312,17 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
                     <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-                    Naam
+                    {t('nameLabel') as string}
                   </Label>
                   <div className="grid gap-2 sm:grid-cols-2">
                     <Input
-                      placeholder="Voornaam"
+                      placeholder={t('firstNameLabel') as string}
                       value={localOptionalData.firstName || ''}
                       onChange={(e) => setLocalOptionalData(prev => ({ ...prev, firstName: e.target.value }))}
                       className="bg-card h-10 sm:h-9 text-sm"
                     />
                     <Input
-                      placeholder="Achternaam"
+                      placeholder={t('lastNameLabel') as string}
                       value={localOptionalData.lastName || ''}
                       onChange={(e) => setLocalOptionalData(prev => ({ ...prev, lastName: e.target.value }))}
                       className="bg-card h-10 sm:h-9 text-sm"
@@ -341,10 +334,10 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                 <div className="space-y-1">
                   <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
                     <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-                    Woonplaats
+                    {t('cityLabelShort') as string}
                   </Label>
                   <Input
-                    placeholder="Bijv. Amsterdam"
+                    placeholder={t('cityPlaceholder') as string}
                     value={localOptionalData.city || ''}
                     onChange={(e) => setLocalOptionalData(prev => ({ ...prev, city: e.target.value }))}
                     className="bg-card h-10 sm:h-9 text-sm"
@@ -355,7 +348,7 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
                     <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-                    Geslacht
+                    {t('genderLabel') as string}
                   </Label>
                   <RadioGroup
                     value={localOptionalData.gender || 'none'}
@@ -363,9 +356,9 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                     className="grid grid-cols-3 gap-2"
                   >
                     {([
-                      { value: 'male', label: 'Man' },
-                      { value: 'female', label: 'Vrouw' },
-                      { value: 'none', label: 'Geen voorkeur' }
+                      { value: 'male', label: t('genderMale') as string },
+                      { value: 'female', label: t('genderFemale') as string },
+                      { value: 'none', label: t('genderNone') as string }
                     ] as const).map((option) => (
                       <Label
                         key={option.value}
@@ -389,10 +382,10 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                 <div className="space-y-1">
                   <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
                     <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-                    Interesses
+                    {t('interestsLabel') as string}
                   </Label>
                   <Input
-                    placeholder="Bijv. voetbal, muziek, reizen"
+                    placeholder={t('interestsPlaceholder') as string}
                     value={localOptionalData.interests || ''}
                     onChange={(e) => setLocalOptionalData(prev => ({ ...prev, interests: e.target.value }))}
                     className="bg-card h-10 sm:h-9 text-sm"
@@ -402,17 +395,17 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                 {/* Personal details section */}
                 <div className="space-y-3 pt-2 border-t border-border">
                   <p className="text-xs sm:text-sm text-muted-foreground">
-                    Persoonlijke herinneringen voor een unieker lied:
+                    {t('personalMemoriesForSong') as string}
                   </p>
                   
                   {/* Friends */}
                   <div className="space-y-1">
                     <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
                       <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-                      Top 3 vrienden van toen
+                      {t('top3Friends') as string}
                     </Label>
                     <Input
-                      placeholder="Namen gescheiden door komma's"
+                      placeholder={t('friendsPlaceholder') as string}
                       value={localOptionalData.friends || ''}
                       onChange={(e) => setLocalOptionalData(prev => ({ ...prev, friends: e.target.value }))}
                       className="bg-card h-10 sm:h-9 text-sm"
@@ -423,10 +416,10 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                   <div className="space-y-1">
                     <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
                       <GraduationCap className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-                      Middelbare School
+                      {t('highSchool') as string}
                     </Label>
                     <Input
-                      placeholder="Bijv. Christelijk Lyceum"
+                      placeholder={t('schoolPlaceholder') as string}
                       value={localOptionalData.school || ''}
                       onChange={(e) => setLocalOptionalData(prev => ({ ...prev, school: e.target.value }))}
                       className="bg-card h-10 sm:h-9 text-sm"
@@ -437,10 +430,10 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                   <div className="space-y-1">
                     <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
                       <PartyPopper className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-                      Favoriete uitgaansplekken
+                      {t('favoriteVenues') as string}
                     </Label>
                     <Input
-                      placeholder="Discotheken/kroegen"
+                      placeholder={t('venuesPlaceholder') as string}
                       value={localOptionalData.nightlife || ''}
                       onChange={(e) => setLocalOptionalData(prev => ({ ...prev, nightlife: e.target.value }))}
                       className="bg-card h-10 sm:h-9 text-sm"
@@ -452,7 +445,7 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
                     <Compass className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-                    Geografische focus
+                    {t('geographicFocusLabel') as string}
                   </Label>
                   <RadioGroup
                     value={localOptionalData.focus || 'netherlands'}
@@ -460,9 +453,9 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                     className="grid grid-cols-3 gap-2"
                   >
                     {([
-                      { value: 'netherlands', label: 'Nederland' },
-                      { value: 'europe', label: 'Europa' },
-                      { value: 'world', label: 'Wereld' }
+                      { value: 'netherlands', label: t('netherlandsLabel') as string },
+                      { value: 'europe', label: t('europeLabel') as string },
+                      { value: 'world', label: t('worldLabel') as string }
                     ] as const).map((option) => (
                       <Label
                         key={option.value}
@@ -487,7 +480,7 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                   <div className="p-2 sm:p-3 bg-accent/10 rounded-lg">
                     <p className="text-xs sm:text-sm text-muted-foreground">
                       <Music className="h-3 w-3 sm:h-4 sm:w-4 inline mr-1 text-accent" />
-                      <strong>Muziekstijl:</strong> Subcultuur bepaalt de stijl.
+                      <strong>{t('musicStyleLabel') as string}</strong> {t('musicStyleInfo') as string}
                     </p>
                   </div>
                   <SubcultureSelector
@@ -502,14 +495,14 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                   />
                 </div>
 
-                {/* Confirm Button - larger touch target on mobile */}
+                {/* Confirm Button */}
                 <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3">
                   <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="h-11 sm:h-9">
-                    Annuleren
+                    {t('cancelButton') as string}
                   </Button>
                   <Button onClick={handleConfirmCustomize} className="h-11 sm:h-9 gap-2">
                     <Check className="h-4 w-4" />
-                    Doorgaan
+                    {t('continueButton') as string}
                   </Button>
                 </div>
               </div>
@@ -518,16 +511,16 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
             {/* Generation Steps (shown after customize) */}
             {step !== 'customize' && (
               <>
-                {/* Tip if no personal data - compact on mobile */}
+                {/* Tip if no personal data */}
                 {!hasPersonalData && step === 'idle' && (
                   <div className="p-3 sm:p-4 bg-muted border border-border rounded-lg">
                     <p className="text-xs sm:text-sm text-muted-foreground">
-                      <strong>Tip:</strong> Vul je details in voor een persoonlijker lied!
+                      <strong>{t('tipLabel') as string}</strong> {t('tipPersonalDetails') as string}
                     </p>
                   </div>
                 )}
 
-                {/* Progress Steps - more compact on mobile */}
+                {/* Progress Steps */}
                 <div className="space-y-3 sm:space-y-4">
                   {/* Step 1: Lyrics */}
                   <div className="flex items-start gap-2 sm:gap-3">
@@ -535,10 +528,10 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 sm:gap-2">
                         <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-                        <span className="font-medium text-sm sm:text-base">Songtekst schrijven</span>
+                        <span className="font-medium text-sm sm:text-base">{t('writingLyricsStep') as string}</span>
                       </div>
                       <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                        AI schrijft een nostalgisch lied
+                        {t('aiWritingLyrics') as string}
                       </p>
                     </div>
                   </div>
@@ -549,10 +542,10 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 sm:gap-2">
                         <RadioIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-                        <span className="font-medium text-sm sm:text-base">Muziek componeren</span>
+                        <span className="font-medium text-sm sm:text-base">{t('composingMusic') as string}</span>
                       </div>
                       <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                        Suno AI maakt een unieke track
+                        {t('aiComposingTrack') as string}
                       </p>
                     </div>
                   </div>
@@ -563,10 +556,10 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 sm:gap-2">
                         <Video className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-                        <span className="font-medium text-sm sm:text-base">Klaar!</span>
+                        <span className="font-medium text-sm sm:text-base">{t('readyLabel') as string}</span>
                       </div>
                       <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                        Beluister je persoonlijke hit
+                        {t('listenToHit') as string}
                       </p>
                     </div>
                   </div>
@@ -599,20 +592,19 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                       <p className="text-xs sm:text-sm text-muted-foreground">{result.style}</p>
                     </div>
 
-                    {/* Audio Player - native controls are already touch-friendly */}
+                    {/* Audio Player */}
                     {result.audioUrl && (
                       <div className="space-y-2">
                         <audio controls className="w-full h-12" src={result.audioUrl}>
-                          Je browser ondersteunt geen audio.
+                          {t('browserNoAudio') as string}
                         </audio>
                         <p className="text-xs text-muted-foreground text-center">
-                          Duur: {result.duration ? Math.round(result.duration / 60) : '~3'} minuten
+                          {t('durationLabel') as string} {result.duration ? Math.round(result.duration / 60) : '~3'} {t('minutesLabel') as string}
                         </p>
-                        {/* Show original Suno URL for reference - collapsible on mobile */}
                         {result.originalUrl && (
                           <details className="mt-2">
                             <summary className="text-xs text-muted-foreground cursor-pointer">
-                              Toon Suno URL
+                              {t('showSunoUrl') as string}
                             </summary>
                             <div className="mt-1 p-2 bg-muted rounded text-xs">
                               <a 
@@ -633,7 +625,7 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                     {result.lyrics && (
                       <details className="group">
                         <summary className="cursor-pointer text-xs sm:text-sm font-medium text-primary hover:underline">
-                          Bekijk songtekst
+                          {t('viewLyrics') as string}
                         </summary>
                         <pre className="mt-2 p-3 sm:p-4 bg-muted rounded-lg text-xs sm:text-sm whitespace-pre-wrap font-sans max-h-48 sm:max-h-60 overflow-y-auto">
                           {result.lyrics}
@@ -641,7 +633,7 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                       </details>
                     )}
 
-                    {/* Action buttons - larger touch targets */}
+                    {/* Action buttons */}
                     <div className="flex flex-col sm:flex-row gap-2">
                       <Button 
                         onClick={() => {
@@ -652,7 +644,7 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                         variant="secondary"
                       >
                         <Film className="h-4 w-4" />
-                        🎬 Bekijk Video
+                        🎬 {t('watchVideo') as string}
                       </Button>
                       <Button 
                         onClick={() => {
@@ -663,20 +655,20 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                         variant="default"
                       >
                         <Share2 className="h-4 w-4" />
-                        Delen
+                        {t('shareButton') as string}
                       </Button>
                     </div>
                   </div>
                 )}
 
-                {/* Action Button - larger touch targets */}
+                {/* Action Button */}
                 {step === 'idle' && (
                   <Button 
                     onClick={handleGenerate} 
                     className="w-full h-12 sm:h-11 gap-2 text-sm sm:text-base"
                   >
                     <Play className="h-4 w-4 sm:h-5 sm:w-5" />
-                    Start Generatie
+                    {t('startGeneration') as string}
                   </Button>
                 )}
 
@@ -687,7 +679,7 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
                     className="w-full h-11 sm:h-10 gap-2"
                   >
                     <Loader2 className="h-4 w-4" />
-                    Probeer opnieuw
+                    {t('retryButton') as string}
                   </Button>
                 )}
               </>
@@ -696,25 +688,22 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Video Dialog - Uses Remotion with the generated Suno audio as background music */}
-      {/* Use the SAME storyTitle and storyIntroduction as the regular video */}
       <VideoDialog
         open={isVideoDialogOpen}
         onOpenChange={setIsVideoDialogOpen}
         events={events}
-        storyTitle={storyTitle || `Jouw jaren ${startYear}-${endYear}`}
+        storyTitle={storyTitle || `${t('yourYears') as string} ${startYear}-${endYear}`}
         storyIntroduction={storyIntroduction || summary}
         backgroundMusicUrl={result?.audioUrl}
         backgroundMusicDuration={result?.duration}
       />
 
-      {/* Direct Share Dialog for music video */}
       <ShareDialog
         open={isShareDialogOpen}
         onOpenChange={setIsShareDialogOpen}
         content={{
           events: events.map(e => ({ ...e, audioDurationFrames: 150 })) as VideoEvent[],
-          storyTitle: storyTitle || `Jouw jaren ${startYear}-${endYear}`,
+          storyTitle: storyTitle || `${t('yourYears') as string} ${startYear}-${endYear}`,
           storyIntroduction: storyIntroduction || summary,
         }}
         settings={{

@@ -43,7 +43,7 @@ export const PersonalizeSoundtrackDialog = ({
   endYear,
 }: PersonalizeSoundtrackDialogProps) => {
   const soundtrack = useSoundtrackGeneration();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   
   // Provider selection
   const [selectedProvider, setSelectedProvider] = useState<MusicProvider>('acestep');
@@ -76,7 +76,7 @@ export const PersonalizeSoundtrackDialog = ({
       friends: localData.friends,
       school: localData.school,
       nightlife: localData.nightlife,
-    }, selectedProvider);
+    }, selectedProvider, language);
   };
 
   const updateField = <K extends keyof OptionalData>(key: K, value: OptionalData[K]) => {
