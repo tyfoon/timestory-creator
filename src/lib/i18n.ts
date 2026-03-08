@@ -346,6 +346,7 @@ export const translations = {
     accountNoSavedEvents: "Nog geen opgeslagen gebeurtenissen",
     accountNoSavedEventsDesc: "Sla individuele gebeurtenissen op vanuit je tijdlijn",
     eventDeleted: "Gebeurtenis verwijderd",
+    eventShared: "Gebeurtenis gekopieerd naar klembord",
   },
   en: {
     heroTitle: "Your Story in Time",
@@ -678,6 +679,7 @@ export const translations = {
     accountNoSavedEvents: "No saved events yet",
     accountNoSavedEventsDesc: "Save individual events from your timeline",
     eventDeleted: "Event deleted",
+    eventShared: "Event copied to clipboard",
   },
   de: {
     heroTitle: "Deine Geschichte in der Zeit",
@@ -902,6 +904,7 @@ export const translations = {
     accountNoSavedEvents: "Noch keine gespeicherten Ereignisse",
     accountNoSavedEventsDesc: "Speichere einzelne Ereignisse aus deiner Zeitleiste",
     eventDeleted: "Ereignis gelöscht",
+    eventShared: "Ereignis in die Zwischenablage kopiert",
   },
   fr: {
     heroTitle: "Votre Histoire dans le Temps",
@@ -1126,6 +1129,7 @@ export const translations = {
     accountNoSavedEvents: "Pas encore d'événements sauvegardés",
     accountNoSavedEventsDesc: "Sauvegardez des événements individuels depuis votre chronologie",
     eventDeleted: "Événement supprimé",
+    eventShared: "Événement copié dans le presse-papiers",
   },
 } as const;
 
