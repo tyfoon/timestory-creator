@@ -122,6 +122,17 @@ const AccountPage = () => {
     }
   };
 
+  const handleDeleteEvent = async (eventId: string) => {
+    const { error } = await (supabase
+      .from('saved_events' as any)
+      .delete() as any)
+      .eq('id', eventId);
+    if (!error) {
+      setSavedEvents(prev => prev.filter(e => e.id !== eventId));
+      toast({ title: String(t('eventDeleted')) });
+    }
+  };
+
   const handleShare = (storyId: string) => {
     const url = `${window.location.origin}/s/${storyId}`;
     navigator.clipboard.writeText(url);
