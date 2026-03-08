@@ -169,10 +169,10 @@ export const SoundtrackSection = ({
                 </div>
                 <div>
                   <h2 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
-                    Jouw Muziekvideo
+                    {t('yourMusicVideo') as string}
                   </h2>
                   <p className="text-sm text-muted-foreground">
-                    {soundtrack.version === 'v1' ? 'Preview versie' : 'Gepersonaliseerde versie'}
+                    {soundtrack.version === 'v1' ? t('previewVersion') as string : t('personalizedVersion') as string}
                   </p>
                 </div>
               </div>
