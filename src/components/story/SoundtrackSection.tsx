@@ -142,8 +142,8 @@ export const SoundtrackSection = ({
 
   // Derive display title from formData if not provided
   const displayTitle = storyTitle || (formData?.birthDate 
-    ? `Jouw jaren ${formData.birthDate.year}-${formData.birthDate.year + 25}`
-    : 'Jouw Verhaal');
+    ? `${t('yourYears') as string} ${formData.birthDate.year}-${formData.birthDate.year + 25}`
+    : t('yourStory') as string);
 
   return (
     <>
