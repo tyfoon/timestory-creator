@@ -936,8 +936,25 @@ export const translations = {
       "Novembre",
       "Décembre",
     ],
+
+    // Error messages
+    tooManyRequests: "Trop de requêtes. Veuillez réessayer plus tard.",
+    creditsExhausted: "Crédits épuisés. Veuillez ajouter des crédits.",
+    generationInterrupted: "Génération interrompue",
+    musicGenerationTimeout: "La génération de musique a pris trop de temps",
+    connectionLost: "Connexion perdue avant l'arrivée des résultats. Veuillez réessayer.",
+    defaultSummary: "Un aperçu des événements importants.",
+    loadingTooLong: "Le chargement a pris trop de temps et a été arrêté. Veuillez réessayer.",
+    unknownError: "Erreur inconnue",
+    fetchingEvents: "Chargement des événements...",
+    scrollToBegin: "Faites défiler pour commencer",
+    blacklistTooltip: "Blacklister la photo (global) et chercher une nouvelle",
+    blacklistAriaLabel: "Blacklister l'image",
+    timelineOf: "Chronologie de",
+    to: "à",
+    serverError: "Erreur serveur",
+    pollingFailed: "Vérification du statut échouée",
   },
-} as const;
 
 export type TranslationKey = keyof typeof translations.nl;
 export type TranslationValue = string | readonly string[];
