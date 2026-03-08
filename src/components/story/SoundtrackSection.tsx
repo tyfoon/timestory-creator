@@ -237,7 +237,7 @@ export const SoundtrackSection = ({
                 <div className="p-4 bg-accent/5 border border-accent/20 rounded-xl">
                   <p className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                     <Music className="h-4 w-4 text-accent" />
-                    Preview: Je nummer speelt af terwijl we de volledige versie afmaken
+                    {t('previewPlaying') as string}
                   </p>
                   <audio
                     controls
