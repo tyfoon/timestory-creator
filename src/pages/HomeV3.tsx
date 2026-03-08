@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useUserSettings } from "@/hooks/useUserSettings";
 import { Header } from "@/components/Header";
 import { DateInput } from "@/components/DateInput";
 import { OptionalInfoForm } from "@/components/OptionalInfoForm";
