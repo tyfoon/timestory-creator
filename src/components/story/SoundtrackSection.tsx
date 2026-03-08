@@ -313,7 +313,7 @@ export const SoundtrackSection = ({
                   </span>
                   <span className="flex items-center gap-1">
                     <Music className="h-3 w-3" />
-                    AI Muziekvideo
+                    {t('aiMusicVideo') as string}
                   </span>
                 </div>
 
