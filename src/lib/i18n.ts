@@ -904,6 +904,7 @@ export const translations = {
     accountNoSavedEvents: "Noch keine gespeicherten Ereignisse",
     accountNoSavedEventsDesc: "Speichere einzelne Ereignisse aus deiner Zeitleiste",
     eventDeleted: "Ereignis gelöscht",
+    eventShared: "Ereignis in die Zwischenablage kopiert",
   },
   fr: {
     heroTitle: "Votre Histoire dans le Temps",
