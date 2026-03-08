@@ -924,6 +924,15 @@ export const translations = {
 export type TranslationKey = keyof typeof translations.nl;
 export type TranslationValue = string | readonly string[];
 
+/**
+ * Lightweight translation helper for non-React files (API utils, hooks).
+ * Use useTranslation() or useLanguage() inside React components instead.
+ */
+export function getTranslation(key: TranslationKey, language: Language): string {
+  const value = (translations[language] as Record<string, unknown>)?.[key] ?? (translations.nl as Record<string, unknown>)?.[key] ?? key;
+  return typeof value === 'string' ? value : key;
+}
+
 export const useTranslation = (lang: Language = "nl") => {
   const t = (key: TranslationKey): TranslationValue => {
     return translations[lang][key] || translations.nl[key] || key;
