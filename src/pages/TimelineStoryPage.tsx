@@ -859,7 +859,7 @@ const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading, targetYe
           ) : (
             <>
               <span className={`${theme.fontMono} text-xs uppercase tracking-widest text-muted-foreground`}>
-                Scroll to begin
+                {t('scrollToBegin') as string}
               </span>
               <motion.div
                 animate={{ y: [0, 8, 0] }}
