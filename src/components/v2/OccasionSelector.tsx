@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Cake, Heart, Sparkles } from "lucide-react";
 import { type EraTheme } from "@/lib/eraThemes";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type Occasion = "birthday" | "anniversary" | "fun";
 
@@ -10,23 +11,23 @@ interface OccasionSelectorProps {
   eraTheme: EraTheme;
 }
 
-const occasions: { id: Occasion; icon: React.ReactNode; label: string; emoji: string }[] = [
+const getOccasions = (t: (key: any) => any): { id: Occasion; icon: React.ReactNode; label: string; emoji: string }[] => [
   {
     id: "birthday",
     icon: <Cake className="w-8 h-8" />,
-    label: "Verjaardag",
+    label: t("occasionBirthday") as string,
     emoji: "🎂",
   },
   {
     id: "anniversary",
     icon: <Heart className="w-8 h-8" />,
-    label: "Jubileum",
+    label: t("occasionAnniversary") as string,
     emoji: "💕",
   },
   {
     id: "fun",
     icon: <Sparkles className="w-8 h-8" />,
-    label: "Gewoon voor de lol",
+    label: t("occasionFun") as string,
     emoji: "✨",
   },
 ];
