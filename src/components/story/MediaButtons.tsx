@@ -116,7 +116,7 @@ export const MediaButtons = ({
     );
   }
 
-  // Default: show media buttons
+  // Default: show media buttons + save button
   return (
     <div className="flex items-center gap-2 flex-wrap">
       {/* Spotify Player */}
@@ -142,6 +142,16 @@ export const MediaButtons = ({
           )}
         </button>
       )}
+
+      {/* Save Event Button */}
+      <SaveEventButton
+        eventTitle={eventTitle}
+        eventDate={eventDate}
+        eventYear={eventYear}
+        eventDescription={eventDescription}
+        eventCategory={eventCategory}
+        imageUrl={imageUrl}
+      />
     </div>
   );
 };
