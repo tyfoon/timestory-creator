@@ -753,6 +753,7 @@ interface HeroSectionProps {
 }
 
 const HeroSection = ({ storyTitle, storyIntroduction, theme, isLoading, targetYear, onTimeTravelComplete, timeTravelComplete }: HeroSectionProps) => {
+  const { t } = useLanguage();
   const { scrollY } = useScroll();
   const opacity = useTransform(scrollY, [0, 400], [1, 0]);
   const y = useTransform(scrollY, [0, 400], [0, 100]);
