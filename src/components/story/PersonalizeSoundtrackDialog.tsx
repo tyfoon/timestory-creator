@@ -216,7 +216,7 @@ export const PersonalizeSoundtrackDialog = ({
                 {t('top3Friends') as string}
               </Label>
               <Input
-                placeholder="Namen gescheiden door komma's"
+                placeholder={t('friendsPlaceholder') as string}
                 value={localData.friends || ''}
                 onChange={(e) => updateField('friends', e.target.value)}
                 className="bg-card h-10 sm:h-9 text-sm"
