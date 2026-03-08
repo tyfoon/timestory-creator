@@ -740,7 +740,7 @@ const HomeV3 = () => {
                   className="w-full btn-vintage h-14 text-lg font-bold text-primary-foreground rounded-xl shadow-xl"
                 >
                   <BookOpen className="mr-2 h-6 w-6" />
-                  <span>Start mijn Tijdreis</span>
+                  <span>{t('startTimeJourney') as string}</span>
                   <ArrowRight className="ml-2 h-6 w-6" />
                 </Button>
               </motion.div>
