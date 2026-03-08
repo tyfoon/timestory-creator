@@ -184,7 +184,7 @@ const AccountPage = () => {
             {subscribed ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
+                  <span className="inline-block w-2 h-2 rounded-full bg-accent" />
                   <span className="text-sm font-medium text-foreground">Premium</span>
                   {subscriptionEnd && (
                     <span className="text-xs text-muted-foreground">
