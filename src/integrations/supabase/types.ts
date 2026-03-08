@@ -65,6 +65,30 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       saved_stories: {
         Row: {
           content: Json
@@ -89,6 +113,30 @@ export type Database = {
           is_public?: boolean
           settings?: Json
           view_count?: number
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          form_data: Json | null
+          id: string
+          preferences: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          form_data?: Json | null
+          id?: string
+          preferences?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          form_data?: Json | null
+          id?: string
+          preferences?: Json | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
