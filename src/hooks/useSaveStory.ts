@@ -207,15 +207,20 @@ export const useSaveStory = (): UseSaveStoryReturn => {
         backgroundMusicUrl: finalBackgroundMusicUrl,
       };
 
-      // 5. Insert into database
+      // 5. Insert into database - link to user if authenticated
+      const { data: { session } } = await supabase.auth.getSession();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const insertPayload: any = {
+        content: finalContent as any,
+        settings: finalSettings as any,
+        is_public: true,
+      };
+      if (session?.user?.id) {
+        insertPayload.user_id = session.user.id;
+      }
       const { data: insertData, error: insertError } = await supabase
         .from('saved_stories')
-        .insert({
-          content: finalContent as any,
-          settings: finalSettings as any,
-          is_public: true,
-        })
+        .insert(insertPayload)
         .select('id')
         .single();
 
