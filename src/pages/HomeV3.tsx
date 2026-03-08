@@ -209,7 +209,20 @@ const HomeV3 = () => {
     sessionStorage.setItem("homepageFormState", JSON.stringify(formState));
   }, [birthDate, selectedPeriod, customStartYear, customEndYear, timelineLength, optionalData]);
 
-  // Determine which background to use based on birth year
+  // Load saved settings from user account when logged in (and no sessionStorage state)
+  useEffect(() => {
+    if (!user || initialState) return;
+    loadSettings().then((settings) => {
+      if (!settings) return;
+      const { formData, preferences } = settings;
+      if (formData.birthDate) setBirthDate(formData.birthDate as any);
+      if (formData.selectedPeriod) setSelectedPeriod(formData.selectedPeriod as any);
+      if (formData.customStartYear) setCustomStartYear(formData.customStartYear);
+      if (formData.customEndYear) setCustomEndYear(formData.customEndYear);
+      if (formData.optionalData) setOptionalData(prev => ({ ...prev, ...formData.optionalData as any }));
+      if (preferences.timelineLength) setTimelineLength(preferences.timelineLength);
+    });
+  }, [user]);
   const getBackgroundImage = () => {
     if (birthDate.year >= 1969 && birthDate.year <= 1979) return heroBg70s;
     if (birthDate.year >= 1980 && birthDate.year <= 1989) return heroBg80s;
