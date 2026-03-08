@@ -102,7 +102,7 @@ export const PersonalizeSoundtrackDialog = ({
           {/* Current song info */}
           {soundtrack.title && (
             <div className="p-3 bg-muted/30 rounded-lg">
-              <p className="text-xs text-muted-foreground mb-1">Huidige versie (V1):</p>
+              <p className="text-xs text-muted-foreground mb-1">{t('currentVersionV1') as string}</p>
               <p className="text-sm font-medium text-foreground">{soundtrack.title}</p>
             </div>
           )}
