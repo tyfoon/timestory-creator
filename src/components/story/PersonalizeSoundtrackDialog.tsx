@@ -213,7 +213,7 @@ export const PersonalizeSoundtrackDialog = ({
             <div className="space-y-1">
               <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
                 <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-                Top 3 vrienden van toen
+                {t('top3Friends') as string}
               </Label>
               <Input
                 placeholder="Namen gescheiden door komma's"
