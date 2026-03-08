@@ -181,7 +181,7 @@ export const PersonalizeSoundtrackDialog = ({
           <div className="space-y-1">
             <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
               <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-              Interesses
+              {t('interestsLabel') as string}
             </Label>
             <Input
               placeholder="Bijv. voetbal, muziek, reizen"
