@@ -81,12 +81,29 @@ const AccountPage = () => {
     }
   }, [user]);
 
+  // Load user's saved events
+  const loadEvents = useCallback(async () => {
+    if (!user) return;
+    setLoadingEvents(true);
+    const { data, error } = await (supabase
+      .from('saved_events' as any)
+      .select('*') as any)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      setSavedEvents(data as SavedEvent[]);
+    }
+    setLoadingEvents(false);
+  }, [user]);
+
   useEffect(() => {
     if (user) {
       loadStories();
+      loadEvents();
       checkSubscription();
     }
-  }, [user, loadStories, checkSubscription]);
+  }, [user, loadStories, loadEvents, checkSubscription]);
 
   const handleSignOut = async () => {
     await signOut();
