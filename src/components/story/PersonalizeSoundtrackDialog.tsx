@@ -155,9 +155,9 @@ export const PersonalizeSoundtrackDialog = ({
               className="grid grid-cols-3 gap-2"
             >
               {([
-                { value: 'male', label: 'Man' },
-                { value: 'female', label: 'Vrouw' },
-                { value: 'none', label: 'Geen voorkeur' }
+                { value: 'male', label: t('genderMale') as string },
+                { value: 'female', label: t('genderFemale') as string },
+                { value: 'none', label: t('genderNone') as string }
               ] as const).map((option) => (
                 <Label
                   key={option.value}
