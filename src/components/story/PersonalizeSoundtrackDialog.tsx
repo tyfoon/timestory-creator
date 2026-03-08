@@ -111,7 +111,7 @@ export const PersonalizeSoundtrackDialog = ({
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-xs sm:text-sm font-medium text-foreground">
               <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
-              Naam
+              {t('nameLabel') as string}
             </Label>
             <div className="grid gap-2 sm:grid-cols-2">
               <Input
