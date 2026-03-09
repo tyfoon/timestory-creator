@@ -371,6 +371,7 @@ export const StoryEndCarousel = ({
       actionLabel: 'Bekijk polaroids',
       gradient: 'from-sky-500/20 via-blue-500/10 to-transparent',
       accentColor: 'text-sky-400',
+      previewImage: polaroidPreview,
     },
     {
       id: 'presentation',
