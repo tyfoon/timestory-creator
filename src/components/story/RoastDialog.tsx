@@ -98,12 +98,29 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
 
   const handleShare = async () => {
     const shareText = `🔥 Roast van mijn leven (${intensityLabels[intensity]}):\n\n${roastText}`;
-    if (navigator.share) {
-      try {
+    
+    try {
+      if (navigator.share) {
         await navigator.share({ title: 'Roast mijn leven', text: shareText });
-      } catch { /* user cancelled */ }
-    } else {
+        return;
+      }
+    } catch {
+      // share cancelled or failed, fall through to clipboard
+    }
+    
+    try {
       await navigator.clipboard.writeText(shareText);
+      toast({ title: 'Gekopieerd!', description: 'De roast is gekopieerd naar je klembord.' });
+    } catch {
+      // Clipboard API also blocked (e.g. iframe) – manual fallback
+      const textarea = document.createElement('textarea');
+      textarea.value = shareText;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
       toast({ title: 'Gekopieerd!', description: 'De roast is gekopieerd naar je klembord.' });
     }
   };
