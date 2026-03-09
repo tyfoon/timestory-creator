@@ -232,13 +232,24 @@ async function generateEventImage(event: SavedEvent): Promise<Blob> {
   });
 }
 
-export const SavedEventDialog = ({ event, open, onOpenChange }: SavedEventDialogProps) => {
+export const SavedEventDialog = ({ event, open, onOpenChange, startInShareMode }: SavedEventDialogProps) => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const [showSharePanel, setShowSharePanel] = useState(false);
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [shareBlob, setShareBlob] = useState<Blob | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [autoStarted, setAutoStarted] = useState(false);
+
+  // Auto-start share mode when opened via share button
+  if (open && startInShareMode && !showSharePanel && !isGenerating && !autoStarted) {
+    setAutoStarted(true);
+    // Trigger share generation on next tick
+    setTimeout(() => handleStartShare(), 0);
+  }
+  if (!open && autoStarted) {
+    setAutoStarted(false);
+  }
 
   const handleStartShare = async () => {
     setIsGenerating(true);
