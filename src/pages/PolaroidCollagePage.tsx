@@ -48,10 +48,14 @@ const PolaroidCollagePage = () => {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [famousBirthdays, setFamousBirthdays] = useState<FamousBirthday[]>([]);
   const [summary, setSummary] = useState<string>('');
+  const [storyTitle, setStoryTitle] = useState<string>('');
+  const [storyIntroduction, setStoryIntroduction] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [streamingProgress, setStreamingProgress] = useState(0);
   const [canShare, setCanShare] = useState(false);
+  const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
+  const [isPersonalizeDialogOpen, setIsPersonalizeDialogOpen] = useState(false);
   const [isGeneratingTikTok, setIsGeneratingTikTok] = useState(false);
   const [tikTokProgress, setTikTokProgress] = useState({ current: 0, total: 0 });
   const [generatedTikTokFiles, setGeneratedTikTokFiles] = useState<File[] | null>(null);
