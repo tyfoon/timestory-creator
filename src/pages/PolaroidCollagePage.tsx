@@ -232,6 +232,8 @@ const PolaroidCollagePage = () => {
           });
           
           setSummary(completeData.summary);
+          setStoryTitle(completeData.storyTitle || '');
+          setStoryIntroduction(completeData.storyIntroduction || '');
           setFamousBirthdays(completeData.famousBirthdays || []);
           setIsLoading(false);
           
