@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -75,12 +75,17 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
     }
   }, [events, formData, language, toast]);
 
-  // Generate on first open
+  // Generate on first open - use ref to prevent double-fire
+  const hasTriggered = useRef(false);
   useEffect(() => {
-    if (open && !hasGenerated && events.length > 0) {
+    if (open && !hasTriggered.current && events.length > 0) {
+      hasTriggered.current = true;
       generateRoast(intensity);
     }
-  }, [open, hasGenerated, events.length, generateRoast, intensity]);
+    if (!open) {
+      hasTriggered.current = false;
+    }
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Regenerate when slider changes (after initial generation)
   const handleIntensityChange = (value: number[]) => {
