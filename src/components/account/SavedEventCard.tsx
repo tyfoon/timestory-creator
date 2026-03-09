@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Share2, Trash2, ExternalLink } from 'lucide-react';
+import { Share2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useToast } from '@/hooks/use-toast';
 import { SavedEventDialog } from './SavedEventDialog';
 
 interface SavedEvent {
@@ -23,29 +22,25 @@ interface SavedEventCardProps {
 
 export const SavedEventCard = ({ event, onDelete }: SavedEventCardProps) => {
   const { t } = useLanguage();
-  const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [startInShareMode, setStartInShareMode] = useState(false);
 
-  const handleShare = (e: React.MouseEvent) => {
+  const handleShareClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const text = `${event.event_title}${event.event_date ? ` (${event.event_date})` : ''}${event.event_description ? `\n${event.event_description}` : ''}`;
+    setStartInShareMode(true);
+    setDialogOpen(true);
+  };
 
-    if (navigator.share) {
-      navigator.share({ title: event.event_title, text }).catch(() => {
-        navigator.clipboard.writeText(text);
-        toast({ title: String(t('eventShared')) });
-      });
-    } else {
-      navigator.clipboard.writeText(text);
-      toast({ title: String(t('eventShared')) });
-    }
+  const handleCardClick = () => {
+    setStartInShareMode(false);
+    setDialogOpen(true);
   };
 
   return (
     <>
       <div
         className="rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors flex gap-3 cursor-pointer"
-        onClick={() => setDialogOpen(true)}
+        onClick={handleCardClick}
       >
         {event.image_url && (
           <div className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden">
@@ -76,7 +71,7 @@ export const SavedEventCard = ({ event, onDelete }: SavedEventCardProps) => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleShare}
+                onClick={handleShareClick}
                 title={String(t('accountShareStory'))}
               >
                 <Share2 className="h-4 w-4" />
@@ -94,7 +89,12 @@ export const SavedEventCard = ({ event, onDelete }: SavedEventCardProps) => {
           </div>
         </div>
       </div>
-      <SavedEventDialog event={event} open={dialogOpen} onOpenChange={setDialogOpen} onShare={handleShare} />
+      <SavedEventDialog
+        event={event}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        startInShareMode={startInShareMode}
+      />
     </>
   );
 };

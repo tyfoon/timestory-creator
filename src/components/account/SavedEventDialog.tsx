@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Share2, Calendar, Tag, Download, MessageCircle, Send, Facebook, Twitter, Mail, Loader2, Copy, ArrowLeft } from 'lucide-react';
@@ -22,7 +22,7 @@ interface SavedEventDialogProps {
   event: SavedEvent;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onShare: (e: React.MouseEvent) => void;
+  startInShareMode?: boolean;
 }
 
 const categoryColors: Record<string, { bg: string; accent: string }> = {
@@ -232,13 +232,24 @@ async function generateEventImage(event: SavedEvent): Promise<Blob> {
   });
 }
 
-export const SavedEventDialog = ({ event, open, onOpenChange }: SavedEventDialogProps) => {
+export const SavedEventDialog = ({ event, open, onOpenChange, startInShareMode }: SavedEventDialogProps) => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const [showSharePanel, setShowSharePanel] = useState(false);
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [shareBlob, setShareBlob] = useState<Blob | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const hasAutoStarted = useRef(false);
+
+  useEffect(() => {
+    if (open && startInShareMode && !showSharePanel && !isGenerating && !hasAutoStarted.current) {
+      hasAutoStarted.current = true;
+      handleStartShare();
+    }
+    if (!open) {
+      hasAutoStarted.current = false;
+    }
+  }, [open, startInShareMode]);
 
   const handleStartShare = async () => {
     setIsGenerating(true);
