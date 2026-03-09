@@ -492,8 +492,8 @@ export const StoryEndCarousel = ({
                   {/* Badge */}
                   <div className="absolute top-3 right-3 z-10">
                     {card.isPremium ? (
-                      <Badge variant="secondary" className="bg-amber-500/15 text-amber-400 border-amber-500/30 gap-1 text-[10px] font-semibold uppercase tracking-wide">
-                        <Crown className="h-3 w-3" />
+                      <Badge variant="secondary" className="bg-amber-500/90 text-white border-amber-400 gap-1 text-[11px] font-bold uppercase tracking-wide shadow-md shadow-amber-900/30 px-3 py-1">
+                        <Crown className="h-3.5 w-3.5" />
                         Premium
                       </Badge>
                     ) : (
