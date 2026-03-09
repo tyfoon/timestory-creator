@@ -23,6 +23,7 @@ import { FormData } from '@/types/form';
 import { useSoundtrackGeneration, clearSoundtrackState } from '@/hooks/useSoundtrackGeneration';
 import { TimelineVideoComponent, VideoEvent } from '@/remotion';
 import { ShareDialog } from '@/components/video/ShareDialog';
+import polaroidPreview from '@/assets/polaroid-preview.png';
 
 const FPS = 30;
 
