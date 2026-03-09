@@ -300,6 +300,8 @@ const PolaroidCollagePage = () => {
 
         setEvents(normalizedCachedEvents);
         setSummary(cached.summary);
+        setStoryTitle(cached.storyTitle || '');
+        setStoryIntroduction(cached.storyIntroduction || '');
         setFamousBirthdays(cached.famousBirthdays);
         setIsLoading(false);
 
