@@ -12,9 +12,13 @@ import { ArrowLeft, Clock, Loader2, RefreshCw, Share2, Check, Image, X, Download
 import { AccountLink } from '@/components/AccountLink';
 import { generateTikTokSlides, shareGeneratedFiles, canShareToTikTok } from '@/lib/tiktokGenerator';
 import { downloadPolaroidCollage } from '@/lib/collageGenerator';
+import { generateStoryBookPdf } from '@/lib/pdfStoryBookGenerator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { PolaroidCard } from '@/components/PolaroidCard';
+import { StoryEndCarousel } from '@/components/story/StoryEndCarousel';
+import { VideoDialog } from '@/components/video/VideoDialog';
+import { PersonalizeSoundtrackDialog } from '@/components/story/PersonalizeSoundtrackDialog';
 
 // Era-themed background images (same as ResultPage)
 import heroBg from '@/assets/hero-bg-new.png';
@@ -44,10 +48,14 @@ const PolaroidCollagePage = () => {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [famousBirthdays, setFamousBirthdays] = useState<FamousBirthday[]>([]);
   const [summary, setSummary] = useState<string>('');
+  const [storyTitle, setStoryTitle] = useState<string>('');
+  const [storyIntroduction, setStoryIntroduction] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [streamingProgress, setStreamingProgress] = useState(0);
   const [canShare, setCanShare] = useState(false);
+  const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
+  const [isPersonalizeDialogOpen, setIsPersonalizeDialogOpen] = useState(false);
   const [isGeneratingTikTok, setIsGeneratingTikTok] = useState(false);
   const [tikTokProgress, setTikTokProgress] = useState({ current: 0, total: 0 });
   const [generatedTikTokFiles, setGeneratedTikTokFiles] = useState<File[] | null>(null);
@@ -224,6 +232,8 @@ const PolaroidCollagePage = () => {
           });
           
           setSummary(completeData.summary);
+          setStoryTitle(completeData.storyTitle || '');
+          setStoryIntroduction(completeData.storyIntroduction || '');
           setFamousBirthdays(completeData.famousBirthdays || []);
           setIsLoading(false);
           
@@ -292,6 +302,8 @@ const PolaroidCollagePage = () => {
 
         setEvents(normalizedCachedEvents);
         setSummary(cached.summary);
+        setStoryTitle(cached.storyTitle || '');
+        setStoryIntroduction(cached.storyIntroduction || '');
         setFamousBirthdays(cached.famousBirthdays);
         setIsLoading(false);
 
@@ -673,6 +685,61 @@ const PolaroidCollagePage = () => {
           )}
         </div>
       </section>
+
+      {/* Story End Carousel */}
+      {!isLoading && events.length > 0 && (
+        <div className="relative z-10">
+          <StoryEndCarousel
+            events={events}
+            formData={formData}
+            storyTitle={storyTitle}
+            storyIntroduction={storyIntroduction}
+            onOpenPersonalize={() => setIsPersonalizeDialogOpen(true)}
+            onOpenSpokenVideo={() => setIsVideoDialogOpen(true)}
+            onOpenPolaroids={() => {/* already on polaroid page */}}
+            onDownloadPDF={async () => {
+              if (!formData) return;
+              try {
+                await generateStoryBookPdf({
+                  events,
+                  formData,
+                  summary: storyIntroduction || summary || '',
+                  storyTitle,
+                  storyIntroduction,
+                });
+              } catch (err) {
+                toast({ title: 'PDF generatie mislukt', variant: 'destructive' });
+              }
+            }}
+          />
+        </div>
+      )}
+
+      {/* Video Dialog */}
+      <VideoDialog
+        open={isVideoDialogOpen}
+        onOpenChange={setIsVideoDialogOpen}
+        events={events}
+        storyTitle={storyTitle}
+        storyIntroduction={storyIntroduction}
+      />
+
+      {/* Personalize Dialog */}
+      {formData && (
+        <PersonalizeSoundtrackDialog
+          open={isPersonalizeDialogOpen}
+          onOpenChange={setIsPersonalizeDialogOpen}
+          events={events}
+          summary={storyIntroduction || summary}
+          formData={formData}
+          startYear={formData.type === 'birthdate' && formData.birthDate 
+            ? formData.birthDate.year 
+            : formData.yearRange?.startYear || 1980}
+          endYear={formData.type === 'birthdate' && formData.birthDate 
+            ? formData.birthDate.year + 25 
+            : formData.yearRange?.endYear || 2000}
+        />
+      )}
     </div>
   );
 };
