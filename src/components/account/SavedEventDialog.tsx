@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Share2, Calendar, Tag, Download, MessageCircle, Send, Facebook, Twitter, Mail, Loader2, Copy, ArrowLeft } from 'lucide-react';
