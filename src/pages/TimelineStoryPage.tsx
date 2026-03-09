@@ -1408,41 +1408,41 @@ const TimelineStoryPage = () => {
               />
             )}
 
-            {/* Story End Carousel - replaces old footer */}
-            {!isLoading && events.length > 0 && (
-              <StoryEndCarousel
-                events={events}
-                formData={formData}
-                storyTitle={storyTitle}
-                storyIntroduction={storyIntroduction}
-                onOpenMusicVideo={() => {
-                  // Scroll to SoundtrackSection if visible, otherwise it's already shown above
-                  const soundtrackEl = document.querySelector('[data-soundtrack-section]');
-                  if (soundtrackEl) {
-                    soundtrackEl.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }}
-                onOpenPersonalize={() => setIsPersonalizeDialogOpen(true)}
-                onOpenSpokenVideo={() => setIsVideoDialogOpen(true)}
-                onOpenPolaroids={() => navigate('/polaroid')}
-                onDownloadPDF={async () => {
-                  if (!formData) return;
-                  try {
-                    await generateStoryBookPdf({
-                      events,
-                      formData,
-                      summary: storyIntroduction || '',
-                      storyTitle,
-                      storyIntroduction,
-                    });
-                  } catch (err) {
-                    toast({ title: 'PDF generatie mislukt', variant: 'destructive' });
-                  }
-                }}
-              />
-            )}
           </div>
         </div>
+
+        {/* Story End Carousel - full width, outside sidebar margin */}
+        {!isLoading && events.length > 0 && (
+          <StoryEndCarousel
+            events={events}
+            formData={formData}
+            storyTitle={storyTitle}
+            storyIntroduction={storyIntroduction}
+            onOpenMusicVideo={() => {
+              const soundtrackEl = document.querySelector('[data-soundtrack-section]');
+              if (soundtrackEl) {
+                soundtrackEl.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            onOpenPersonalize={() => setIsPersonalizeDialogOpen(true)}
+            onOpenSpokenVideo={() => setIsVideoDialogOpen(true)}
+            onOpenPolaroids={() => navigate('/polaroid')}
+            onDownloadPDF={async () => {
+              if (!formData) return;
+              try {
+                await generateStoryBookPdf({
+                  events,
+                  formData,
+                  summary: storyIntroduction || '',
+                  storyTitle,
+                  storyIntroduction,
+                });
+              } catch (err) {
+                toast({ title: 'PDF generatie mislukt', variant: 'destructive' });
+              }
+            }}
+          />
+        )}
 
         {/* Right: Parallax Music Sidebar - sticky, no own background, no scrollbar */}
         {!isLoading && events.length > 0 && formData && (
