@@ -630,6 +630,14 @@ export const StoryEndCarousel = ({
           introDurationFrames: 0,
         }}
       />
+
+      {/* Roast Dialog */}
+      <RoastDialog
+        open={isRoastOpen}
+        onOpenChange={setIsRoastOpen}
+        events={events}
+        formData={formData}
+      />
     </>
   );
 };
