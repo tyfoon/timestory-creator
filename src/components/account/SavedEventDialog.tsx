@@ -152,6 +152,7 @@ async function generateEventImage(event: SavedEvent): Promise<Blob> {
       ctx.fillRect(imgX, imgY + imgH + 8, imgW, 4);
 
       imageLoaded = true;
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
     } catch {
       // Image load failed, continue without it
     }
