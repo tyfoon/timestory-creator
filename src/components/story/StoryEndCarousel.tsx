@@ -24,6 +24,7 @@ import { useSoundtrackGeneration, clearSoundtrackState } from '@/hooks/useSoundt
 import { TimelineVideoComponent, VideoEvent } from '@/remotion';
 import { ShareDialog } from '@/components/video/ShareDialog';
 import polaroidPreview from '@/assets/polaroid-preview.png';
+import { RoastDialog } from '@/components/story/RoastDialog';
 
 const FPS = 30;
 
