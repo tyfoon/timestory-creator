@@ -8,6 +8,8 @@ import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents } from '@/lib/timelineCache';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ArrowLeft, ChevronDown, Loader2, AlertCircle, RefreshCw, Clock, Ban, Video, Music } from 'lucide-react';
+import { StoryEndCarousel } from '@/components/story/StoryEndCarousel';
+import { generateStoryBookPdf } from '@/lib/pdfStoryBookGenerator';
 import { AccountLink } from '@/components/AccountLink';
 import { TimeTravelCounter } from '@/components/TimeTravelCounter';
 import { Button } from '@/components/ui/button';
@@ -1406,27 +1408,38 @@ const TimelineStoryPage = () => {
               />
             )}
 
-            {/* Footer */}
+            {/* Story End Carousel - replaces old footer */}
             {!isLoading && events.length > 0 && (
-              <footer className="py-16 text-center space-y-8">
-                <Reveal>
-                  <p className={`${theme.fontMono} text-sm uppercase tracking-widest text-muted-foreground`}>
-                    Einde van je tijdreis
-                  </p>
-                </Reveal>
-                
-                <Reveal delay={0.2}>
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={() => setIsVideoDialogOpen(true)}
-                    className="gap-2"
-                  >
-                    <Video className="h-5 w-5" />
-                    Bekijk als Video
-                  </Button>
-                </Reveal>
-              </footer>
+              <StoryEndCarousel
+                events={events}
+                formData={formData}
+                storyTitle={storyTitle}
+                storyIntroduction={storyIntroduction}
+                onOpenMusicVideo={() => {
+                  // Scroll to SoundtrackSection if visible, otherwise it's already shown above
+                  const soundtrackEl = document.querySelector('[data-soundtrack-section]');
+                  if (soundtrackEl) {
+                    soundtrackEl.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                onOpenPersonalize={() => setIsPersonalizeDialogOpen(true)}
+                onOpenSpokenVideo={() => setIsVideoDialogOpen(true)}
+                onOpenPolaroids={() => navigate('/polaroids')}
+                onDownloadPDF={async () => {
+                  if (!formData) return;
+                  try {
+                    await generateStoryBookPdf({
+                      events,
+                      formData,
+                      summary: storyIntroduction || '',
+                      storyTitle,
+                      storyIntroduction,
+                    });
+                  } catch (err) {
+                    toast({ title: 'PDF generatie mislukt', variant: 'destructive' });
+                  }
+                }}
+              />
             )}
           </div>
         </div>

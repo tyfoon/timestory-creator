@@ -148,6 +148,7 @@ export const SoundtrackSection = ({
   return (
     <>
       <motion.section
+        data-soundtrack-section
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
