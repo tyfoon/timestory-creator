@@ -8,7 +8,7 @@ import {
   Music, Mic, Image, FileText, 
   Share2, Sparkles, ChevronLeft, ChevronRight, 
   Crown, Gift, Lock, Download, Loader2, AlertCircle,
-  RefreshCw, Film, Tv, Play, X, Maximize2
+  RefreshCw, Film, Tv, Play, X, Maximize2, Flame
 } from 'lucide-react';
 import { Player } from '@remotion/player';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ import { useSoundtrackGeneration, clearSoundtrackState } from '@/hooks/useSoundt
 import { TimelineVideoComponent, VideoEvent } from '@/remotion';
 import { ShareDialog } from '@/components/video/ShareDialog';
 import polaroidPreview from '@/assets/polaroid-preview.png';
+import { RoastDialog } from '@/components/story/RoastDialog';
 
 const FPS = 30;
 
@@ -58,6 +59,7 @@ export const StoryEndCarousel = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [enableVhsEffect, setEnableVhsEffect] = useState(false);
+  const [isRoastOpen, setIsRoastOpen] = useState(false);
 
   const soundtrack = useSoundtrackGeneration();
 
@@ -129,7 +131,7 @@ export const StoryEndCarousel = ({
     }
   };
 
-  const CARD_COUNT = 5;
+  const CARD_COUNT = 6;
 
   const updateScrollState = useCallback(() => {
     if (!scrollRef.current) return;
@@ -347,6 +349,18 @@ export const StoryEndCarousel = ({
       actionLabel: 'Personaliseer',
       gradient: 'from-amber-500/20 via-orange-500/10 to-transparent',
       accentColor: 'text-amber-400',
+    },
+    {
+      id: 'roast',
+      title: 'Roast Mijn Leven',
+      subtitle: 'AI-humor • Deelbaar',
+      description: 'Laat AI je leven genadeloos (of mild) roasten op basis van jouw tijdlijn. Van liefdevol tot brutaal.',
+      icon: <Flame className="h-6 w-6" />,
+      isPremium: false,
+      action: () => setIsRoastOpen(true),
+      actionLabel: 'Roast mij!',
+      gradient: 'from-orange-500/20 via-red-500/10 to-transparent',
+      accentColor: 'text-orange-400',
     },
     {
       id: 'spoken-story',
@@ -615,6 +629,14 @@ export const StoryEndCarousel = ({
           introAudioUrl: undefined,
           introDurationFrames: 0,
         }}
+      />
+
+      {/* Roast Dialog */}
+      <RoastDialog
+        open={isRoastOpen}
+        onOpenChange={setIsRoastOpen}
+        events={events}
+        formData={formData}
       />
     </>
   );
