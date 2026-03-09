@@ -3,7 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Share2, Bookmark, Flame, Thermometer, Download } from 'lucide-react';
+import { 
+  Loader2, Share2, Bookmark, Flame, Thermometer, Download,
+  MessageCircle, Send, Facebook, Twitter, Mail, Copy, Check
+} from 'lucide-react';
 import { TimelineEvent } from '@/types/timeline';
 import { FormData } from '@/types/form';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,6 +16,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvZW9ib3lnc3NzeWFqcGRzdGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNTY2NjEsImV4cCI6MjA4NDgzMjY2MX0.KuFaWF4r_cxZRiOumPGMChLVmwgyhT9vR5s7L52zr5s';
+
+const SITE_URL = 'https://www.hetjaarvan.nl';
 
 interface RoastDialogProps {
   open: boolean;
@@ -37,7 +42,7 @@ const generateRoastImage = async (
   canvas.height = H;
   const ctx = canvas.getContext('2d')!;
 
-  // --- Background gradient based on intensity ---
+  // Background gradient based on intensity
   const gradients: Record<number, [string, string, string]> = {
     1: ['#1a1a2e', '#16213e', '#0f3460'],
     2: ['#1a1a2e', '#2d1b3d', '#4a1942'],
@@ -53,7 +58,7 @@ const generateRoastImage = async (
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
 
-  // --- Subtle texture overlay ---
+  // Subtle texture overlay
   ctx.globalAlpha = 0.03;
   for (let i = 0; i < 8000; i++) {
     const x = Math.random() * W;
@@ -63,18 +68,18 @@ const generateRoastImage = async (
   }
   ctx.globalAlpha = 1;
 
-  // --- Decorative fire emoji top ---
+  // Decorative fire emoji top
   ctx.font = '80px serif';
   ctx.textAlign = 'center';
   ctx.fillText('🔥', W / 2, 120);
 
-  // --- Title ---
+  // Title
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 56px Georgia, serif';
   ctx.textAlign = 'center';
   ctx.fillText('ROAST MIJN LEVEN', W / 2, 210);
 
-  // --- Intensity badge ---
+  // Intensity badge
   const badgeText = `${intensityEmojis[intensity]} ${intensityLabels[intensity]}`.trim();
   ctx.font = 'bold 28px sans-serif';
   const badgeWidth = ctx.measureText(badgeText).width + 40;
@@ -88,14 +93,14 @@ const generateRoastImage = async (
   ctx.textAlign = 'center';
   ctx.fillText(badgeText, W / 2, badgeY + 30);
 
-  // --- Period label ---
+  // Period label
   if (periodLabel) {
     ctx.font = '22px sans-serif';
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
     ctx.fillText(periodLabel, W / 2, badgeY + 72);
   }
 
-  // --- Roast text with word wrap ---
+  // Roast text with word wrap
   const textMarginX = 80;
   const textStartY = 370;
   const maxTextWidth = W - textMarginX * 2;
@@ -118,12 +123,11 @@ const generateRoastImage = async (
   }
   if (currentLine) lines.push(currentLine);
 
-  // Center text block vertically in available space
   const totalTextHeight = lines.length * lineHeight;
-  const availableSpace = H - textStartY - 180; // leave room for footer
+  const availableSpace = H - textStartY - 180;
   const textY = textStartY + Math.max(0, (availableSpace - totalTextHeight) / 2);
 
-  // Opening quote mark
+  // Opening quote
   ctx.font = 'bold 120px Georgia, serif';
   ctx.fillStyle = 'rgba(255,170,68,0.25)';
   ctx.textAlign = 'left';
@@ -142,7 +146,7 @@ const generateRoastImage = async (
   ctx.textAlign = 'right';
   ctx.fillText('"', W - textMarginX + 20, textY + 40 + lines.length * lineHeight + 30);
 
-  // --- Divider line ---
+  // Divider line
   const footerY = H - 120;
   ctx.strokeStyle = 'rgba(255,255,255,0.15)';
   ctx.lineWidth = 1;
@@ -151,14 +155,14 @@ const generateRoastImage = async (
   ctx.lineTo(W - textMarginX, footerY);
   ctx.stroke();
 
-  // --- Branding footer ---
-  ctx.fillStyle = 'rgba(255,255,255,0.4)';
-  ctx.font = '22px sans-serif';
+  // Branding footer
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = 'bold 24px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('timestory-creator.lovable.app', W / 2, footerY + 35);
+  ctx.fillText('www.hetjaarvan.nl', W / 2, footerY + 35);
 
-  ctx.fillStyle = 'rgba(255,255,255,0.25)';
-  ctx.font = '18px sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.font = '20px sans-serif';
   ctx.fillText('Ontdek jouw tijdreis • Gratis', W / 2, footerY + 65);
 
   return new Promise<Blob>((resolve, reject) => {
@@ -173,7 +177,10 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
   const [intensity, setIntensity] = useState(3);
   const [roastText, setRoastText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSharing, setIsSharing] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
+  const [showSharePanel, setShowSharePanel] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -185,8 +192,12 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
       ? `Geboren in ${formData.birthDate.year}`
       : '';
 
+  const shareText = `🔥 Roast mijn leven (${intensityLabels[intensity]}) - Ontdek jouw tijdreis op ${SITE_URL}`;
+
   const generateRoast = useCallback(async (level: number) => {
     setIsLoading(true);
+    setShowSharePanel(false);
+    setShareImageUrl(null);
     try {
       const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-roast`, {
         method: 'POST',
@@ -242,52 +253,78 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
   const handleIntensityChange = (value: number[]) => {
     const newIntensity = value[0];
     setIntensity(newIntensity);
+    setShowSharePanel(false);
+    setShareImageUrl(null);
     if (hasGenerated) {
       generateRoast(newIntensity);
     }
   };
 
-  const handleShare = async () => {
+  const handleShareClick = async () => {
     if (!roastText) return;
-    setIsSharing(true);
+    setIsGeneratingImage(true);
 
     try {
       const blob = await generateRoastImage(roastText, intensity, periodLabel);
+      const url = URL.createObjectURL(blob);
+      setShareImageUrl(url);
+      setShowSharePanel(true);
+    } catch (err) {
+      console.error('Image generation error:', err);
+      toast({ title: 'Oeps', description: 'Kon de afbeelding niet genereren.', variant: 'destructive' });
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
+  const handleNativeShare = async () => {
+    if (!shareImageUrl) return;
+    try {
+      const resp = await fetch(shareImageUrl);
+      const blob = await resp.blob();
       const file = new File([blob], 'roast-mijn-leven.png', { type: 'image/png' });
 
-      // Try native share with image
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           title: 'Roast mijn leven',
-          text: `🔥 Roast mijn leven (${intensityLabels[intensity]})`,
+          text: shareText,
           files: [file],
         });
-        setIsSharing(false);
         return;
       }
-
-      // Fallback: download the image
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'roast-mijn-leven.png';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast({ title: 'Gedownload!', description: 'De roast-afbeelding is gedownload. Deel hem op social media!' });
-    } catch (err) {
-      console.error('Share image error:', err);
-      // Ultimate fallback: copy text
-      try {
-        await navigator.clipboard.writeText(`🔥 Roast van mijn leven (${intensityLabels[intensity]}):\n\n${roastText}`);
-        toast({ title: 'Gekopieerd!', description: 'De roast-tekst is gekopieerd naar je klembord.' });
-      } catch {
-        toast({ title: 'Oeps', description: 'Kon niet delen. Probeer een screenshot te maken.', variant: 'destructive' });
-      }
-    } finally {
-      setIsSharing(false);
+    } catch {
+      // fallthrough
     }
+    handleDownloadImage();
+  };
+
+  const handleDownloadImage = () => {
+    if (!shareImageUrl) return;
+    const a = document.createElement('a');
+    a.href = shareImageUrl;
+    a.download = 'roast-mijn-leven.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast({ title: 'Gedownload!', description: 'Deel de afbeelding op social media!' });
+  };
+
+  const handleCopyText = async () => {
+    const text = `🔥 Roast van mijn leven (${intensityLabels[intensity]}):\n\n${roastText}\n\n${SITE_URL}`;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleSave = async () => {
@@ -311,13 +348,22 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
     }
   };
 
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
       setHasGenerated(false);
       setRoastText('');
+      setShowSharePanel(false);
+      if (shareImageUrl) {
+        URL.revokeObjectURL(shareImageUrl);
+        setShareImageUrl(null);
+      }
     }
-    onOpenChange(open);
+    onOpenChange(nextOpen);
   };
+
+  // Share links (text-only, image is shared separately)
+  const encodedShareText = encodeURIComponent(shareText);
+  const encodedUrl = encodeURIComponent(SITE_URL);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -329,11 +375,11 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
           </div>
         </DialogHeader>
 
-        <div className="space-y-6 pt-2">
+        <div className="space-y-5 pt-2">
           {/* Roast text */}
-          <div className="min-h-[160px] relative">
+          <div className="min-h-[120px] relative">
             {isLoading ? (
-              <div className="flex flex-col items-center justify-center h-40 gap-3">
+              <div className="flex flex-col items-center justify-center h-32 gap-3">
                 <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
                 <p className="text-sm text-muted-foreground">
                   {intensityLabels[intensity]} roast wordt geschreven...
@@ -378,9 +424,15 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
 
           {/* Action buttons */}
           <div className="flex gap-2">
-            <Button onClick={handleShare} variant="outline" size="sm" className="flex-1 gap-1.5 text-xs" disabled={!roastText || isLoading || isSharing}>
-              {isSharing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Share2 className="h-3.5 w-3.5" />}
-              {isSharing ? 'Afbeelding maken...' : 'Deel als afbeelding'}
+            <Button 
+              onClick={handleShareClick} 
+              variant="outline" 
+              size="sm" 
+              className="flex-1 gap-1.5 text-xs" 
+              disabled={!roastText || isLoading || isGeneratingImage}
+            >
+              {isGeneratingImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Share2 className="h-3.5 w-3.5" />}
+              {isGeneratingImage ? 'Afbeelding maken...' : 'Delen'}
             </Button>
             {user && (
               <Button onClick={handleSave} variant="outline" size="sm" className="flex-1 gap-1.5 text-xs" disabled={!roastText || isLoading}>
@@ -389,6 +441,103 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
               </Button>
             )}
           </div>
+
+          {/* Share panel - shown after image is generated */}
+          {showSharePanel && shareImageUrl && (
+            <div className="space-y-4 pt-2 border-t border-border">
+              {/* Preview of generated image */}
+              <div className="rounded-lg overflow-hidden border border-border/50 shadow-md">
+                <img 
+                  src={shareImageUrl} 
+                  alt="Roast afbeelding" 
+                  className="w-full h-auto"
+                />
+              </div>
+
+              {/* Native share button (mobile) */}
+              {'share' in navigator && (
+                <Button 
+                  onClick={handleNativeShare} 
+                  className="w-full gap-2"
+                  variant="default"
+                >
+                  <Share2 className="h-4 w-4" />
+                  Delen...
+                </Button>
+              )}
+
+              {/* Share buttons grid */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Deel via</label>
+                <div className="grid grid-cols-5 gap-2">
+                  {/* WhatsApp */}
+                  <a 
+                    href={`https://wa.me/?text=${encodedShareText}`}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-1 p-3 rounded-lg bg-[#25D366]/10 hover:bg-[#25D366]/20 transition-colors"
+                  >
+                    <MessageCircle className="h-6 w-6 text-[#25D366]" />
+                    <span className="text-[10px] text-muted-foreground">WhatsApp</span>
+                  </a>
+
+                  {/* Telegram */}
+                  <a 
+                    href={`https://t.me/share/url?url=${encodedUrl}&text=${encodedShareText}`}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-1 p-3 rounded-lg bg-[#0088cc]/10 hover:bg-[#0088cc]/20 transition-colors"
+                  >
+                    <Send className="h-6 w-6 text-[#0088cc]" />
+                    <span className="text-[10px] text-muted-foreground">Telegram</span>
+                  </a>
+
+                  {/* Facebook */}
+                  <a 
+                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-1 p-3 rounded-lg bg-[#1877F2]/10 hover:bg-[#1877F2]/20 transition-colors"
+                  >
+                    <Facebook className="h-6 w-6 text-[#1877F2]" />
+                    <span className="text-[10px] text-muted-foreground">Facebook</span>
+                  </a>
+
+                  {/* Twitter/X */}
+                  <a 
+                    href={`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedShareText}`}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-1 p-3 rounded-lg bg-foreground/10 hover:bg-foreground/20 transition-colors"
+                  >
+                    <Twitter className="h-6 w-6" />
+                    <span className="text-[10px] text-muted-foreground">X</span>
+                  </a>
+
+                  {/* Email */}
+                  <a 
+                    href={`mailto:?subject=${encodeURIComponent('🔥 Roast mijn leven')}&body=${encodeURIComponent(`Bekijk mijn roast:\n\n${roastText}\n\nMaak je eigen tijdreis op ${SITE_URL}`)}`}
+                    className="flex flex-col items-center gap-1 p-3 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
+                  >
+                    <Mail className="h-6 w-6 text-primary" />
+                    <span className="text-[10px] text-muted-foreground">E-mail</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Copy text + Download image */}
+              <div className="flex gap-2">
+                <Button onClick={handleCopyText} variant="outline" size="sm" className="flex-1 gap-1.5 text-xs">
+                  {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied ? 'Gekopieerd!' : 'Kopieer tekst'}
+                </Button>
+                <Button onClick={handleDownloadImage} variant="outline" size="sm" className="flex-1 gap-1.5 text-xs">
+                  <Download className="h-3.5 w-3.5" />
+                  Download afbeelding
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
