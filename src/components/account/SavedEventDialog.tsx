@@ -87,12 +87,26 @@ async function generateEventImage(event: SavedEvent): Promise<Blob> {
   let imageLoaded = false;
   if (event.image_url) {
     try {
+      // Fetch as blob to avoid CORS canvas tainting issues
+      const response = await fetch(event.image_url, { mode: 'cors' }).catch(() => null);
+      let blobUrl: string | null = null;
       const img = new Image();
-      img.crossOrigin = 'anonymous';
+
+      if (response?.ok) {
+        const blob = await response.blob();
+        blobUrl = URL.createObjectURL(blob);
+        img.src = blobUrl;
+      } else {
+        // Fallback: try loading directly
+        img.crossOrigin = 'anonymous';
+        img.src = event.image_url!;
+      }
+
       await new Promise<void>((resolve, reject) => {
         img.onload = () => resolve();
         img.onerror = () => reject();
-        img.src = event.image_url!;
+        // If src already set above, and already loaded
+        if (img.complete && img.naturalWidth > 0) resolve();
       });
 
       // Draw image with rounded corners at top
@@ -138,6 +152,7 @@ async function generateEventImage(event: SavedEvent): Promise<Blob> {
       ctx.fillRect(imgX, imgY + imgH + 8, imgW, 4);
 
       imageLoaded = true;
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
     } catch {
       // Image load failed, continue without it
     }
