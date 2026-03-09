@@ -129,11 +129,14 @@ async function generateEventImage(event: SavedEvent): Promise<Blob> {
         if (img.complete && img.naturalWidth > 0) resolve();
       });
 
-      // Draw image with rounded corners at top
+      // Draw image with rounded corners — adapt height to aspect ratio
       const imgY = 100;
-      const imgW = W - 120;
-      const imgH = 500;
       const imgX = 60;
+      const imgW = W - 120;
+      const imgAspect = img.naturalWidth / img.naturalHeight;
+      // Contain-fit: scale to fill width, cap height between 350-600
+      const rawH = imgW / imgAspect;
+      const imgH = Math.max(350, Math.min(600, rawH));
       const radius = 24;
 
       ctx.save();
@@ -150,13 +153,15 @@ async function generateEventImage(event: SavedEvent): Promise<Blob> {
       ctx.closePath();
       ctx.clip();
 
-      // Cover-fit the image
-      const scale = Math.max(imgW / img.width, imgH / img.height);
-      const sw = imgW / scale;
-      const sh = imgH / scale;
-      const sx = (img.width - sw) / 2;
-      const sy = (img.height - sh) / 2;
-      ctx.drawImage(img, sx, sy, sw, sh, imgX, imgY, imgW, imgH);
+      // Soft cover: only crop minimally by using contain-leaning scale
+      const scaleX = imgW / img.naturalWidth;
+      const scaleY = imgH / img.naturalHeight;
+      const scale = Math.max(scaleX, scaleY);
+      const drawW = img.naturalWidth * scale;
+      const drawH = img.naturalHeight * scale;
+      const drawX = imgX + (imgW - drawW) / 2;
+      const drawY = imgY + (imgH - drawH) / 2;
+      ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, drawX, drawY, drawW, drawH);
 
       // Gradient overlay on image bottom
       const imgOverlay = ctx.createLinearGradient(0, imgY + imgH - 150, 0, imgY + imgH);
