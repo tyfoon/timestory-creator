@@ -12,9 +12,13 @@ import { ArrowLeft, Clock, Loader2, RefreshCw, Share2, Check, Image, X, Download
 import { AccountLink } from '@/components/AccountLink';
 import { generateTikTokSlides, shareGeneratedFiles, canShareToTikTok } from '@/lib/tiktokGenerator';
 import { downloadPolaroidCollage } from '@/lib/collageGenerator';
+import { generateStoryBookPdf } from '@/lib/pdfStoryBookGenerator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { PolaroidCard } from '@/components/PolaroidCard';
+import { StoryEndCarousel } from '@/components/story/StoryEndCarousel';
+import { VideoDialog } from '@/components/video/VideoDialog';
+import { PersonalizeSoundtrackDialog } from '@/components/story/PersonalizeSoundtrackDialog';
 
 // Era-themed background images (same as ResultPage)
 import heroBg from '@/assets/hero-bg-new.png';
