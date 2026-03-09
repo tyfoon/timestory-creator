@@ -22,7 +22,7 @@ interface SavedEventDialogProps {
   event: SavedEvent;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onShare: (e: React.MouseEvent) => void;
+  startInShareMode?: boolean;
 }
 
 const categoryColors: Record<string, { bg: string; accent: string }> = {
