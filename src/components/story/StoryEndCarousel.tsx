@@ -59,6 +59,7 @@ export const StoryEndCarousel = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [enableVhsEffect, setEnableVhsEffect] = useState(false);
+  const [isRoastOpen, setIsRoastOpen] = useState(false);
 
   const soundtrack = useSoundtrackGeneration();
 
