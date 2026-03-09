@@ -1407,12 +1407,6 @@ const TimelineStoryPage = () => {
             formData={formData}
             storyTitle={storyTitle}
             storyIntroduction={storyIntroduction}
-            onOpenMusicVideo={() => {
-              const soundtrackEl = document.querySelector('[data-soundtrack-section]');
-              if (soundtrackEl) {
-                soundtrackEl.scrollIntoView({ behavior: 'smooth' });
-              }
-            }}
             onOpenPersonalize={() => setIsPersonalizeDialogOpen(true)}
             onOpenSpokenVideo={() => setIsVideoDialogOpen(true)}
             onOpenPolaroids={() => navigate('/polaroid')}
