@@ -351,6 +351,18 @@ export const StoryEndCarousel = ({
       accentColor: 'text-amber-400',
     },
     {
+      id: 'roast',
+      title: 'Roast Mijn Leven',
+      subtitle: 'AI-humor • Deelbaar',
+      description: 'Laat AI je leven genadeloos (of mild) roasten op basis van jouw tijdlijn. Van liefdevol tot brutaal.',
+      icon: <Flame className="h-6 w-6" />,
+      isPremium: false,
+      action: () => setIsRoastOpen(true),
+      actionLabel: 'Roast mij!',
+      gradient: 'from-orange-500/20 via-red-500/10 to-transparent',
+      accentColor: 'text-orange-400',
+    },
+    {
       id: 'spoken-story',
       title: 'Gesproken Verhaal',
       subtitle: 'AI-stem • Vertelling',
