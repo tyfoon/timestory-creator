@@ -8,6 +8,8 @@ import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents } from '@/lib/timelineCache';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ArrowLeft, ChevronDown, Loader2, AlertCircle, RefreshCw, Clock, Ban, Video, Music } from 'lucide-react';
+import { StoryEndCarousel } from '@/components/story/StoryEndCarousel';
+import { generateStoryBookPdf } from '@/lib/pdfStoryBookGenerator';
 import { AccountLink } from '@/components/AccountLink';
 import { TimeTravelCounter } from '@/components/TimeTravelCounter';
 import { Button } from '@/components/ui/button';
