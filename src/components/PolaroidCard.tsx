@@ -4,6 +4,7 @@ import { Loader2, RotateCcw, Play, X, Ban } from 'lucide-react';
 import { searchYouTube } from '@/lib/api/youtube';
 import { SpotifyPlayer } from './SpotifyPlayer';
 import { addToBlacklist } from '@/hooks/useImageBlacklist';
+import { SaveEventButton } from '@/components/story/SaveEventButton';
 
 // Import category placeholder images
 import placeholderBirthday from '@/assets/placeholders/birthday.jpg';
