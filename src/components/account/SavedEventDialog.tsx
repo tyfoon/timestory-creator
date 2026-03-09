@@ -185,7 +185,7 @@ async function generateEventImage(event: SavedEvent): Promise<Blob> {
     }
   }
 
-  const textStartY = imageLoaded ? 660 : 200;
+  const textStartY = imageLoaded ? 100 + actualImgH + 30 : 200;
 
   // Category badge
   if (event.event_category) {
