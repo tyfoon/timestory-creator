@@ -4,6 +4,7 @@ import { Loader2, RotateCcw, Play, X, Ban } from 'lucide-react';
 import { searchYouTube } from '@/lib/api/youtube';
 import { SpotifyPlayer } from './SpotifyPlayer';
 import { addToBlacklist } from '@/hooks/useImageBlacklist';
+import { SaveEventButton } from '@/components/story/SaveEventButton';
 
 // Import category placeholder images
 import placeholderBirthday from '@/assets/placeholders/birthday.jpg';
@@ -352,9 +353,19 @@ export const PolaroidCard = ({
             {/* Polaroid imperfections */}
             <div className="polaroid-scratches" />
             
-            {/* Flip icon hint - positioned in caption area */}
-            <div className="absolute bottom-0.5 right-1 text-polaroid-dark/30 group-hover:text-polaroid-dark/50 transition-colors">
-              <RotateCcw className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+            {/* Save / Flip hint row */}
+            <div className="absolute bottom-0.5 right-1 flex items-center gap-1">
+              <span onClick={(e) => e.stopPropagation()}>
+                <SaveEventButton
+                  eventTitle={event.title}
+                  eventDate={event.date}
+                  eventYear={event.year}
+                  eventDescription={event.description}
+                  eventCategory={event.category}
+                  imageUrl={event.imageUrl}
+                />
+              </span>
+              <RotateCcw className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-polaroid-dark/30 group-hover:text-polaroid-dark/50 transition-colors" />
             </div>
           </div>
         </div>
