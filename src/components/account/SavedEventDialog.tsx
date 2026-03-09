@@ -117,6 +117,7 @@ async function generateEventImage(event: SavedEvent): Promise<Blob> {
 
   // Load and draw event image if available
   let imageLoaded = false;
+  let actualImgH = 0;
   if (event.image_url) {
     try {
       const blobUrl = await fetchImageAsBlob(event.image_url);
