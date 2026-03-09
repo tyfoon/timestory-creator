@@ -1396,17 +1396,6 @@ const TimelineStoryPage = () => {
               </div>
             )}
 
-            {/* Soundtrack Section - inline at bottom */}
-            {!isLoading && events.length > 0 && (
-              <SoundtrackSection
-                events={events}
-                summary={storyIntroduction}
-                formData={formData}
-                storyTitle={storyTitle}
-                storyIntroduction={storyIntroduction}
-                onOpenPersonalizeDialog={() => setIsPersonalizeDialogOpen(true)}
-              />
-            )}
 
           </div>
         </div>
@@ -1418,12 +1407,6 @@ const TimelineStoryPage = () => {
             formData={formData}
             storyTitle={storyTitle}
             storyIntroduction={storyIntroduction}
-            onOpenMusicVideo={() => {
-              const soundtrackEl = document.querySelector('[data-soundtrack-section]');
-              if (soundtrackEl) {
-                soundtrackEl.scrollIntoView({ behavior: 'smooth' });
-              }
-            }}
             onOpenPersonalize={() => setIsPersonalizeDialogOpen(true)}
             onOpenSpokenVideo={() => setIsVideoDialogOpen(true)}
             onOpenPolaroids={() => navigate('/polaroid')}
