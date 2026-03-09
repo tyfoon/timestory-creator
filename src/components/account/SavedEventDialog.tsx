@@ -239,17 +239,17 @@ export const SavedEventDialog = ({ event, open, onOpenChange, startInShareMode }
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [shareBlob, setShareBlob] = useState<Blob | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [autoStarted, setAutoStarted] = useState(false);
+  const hasAutoStarted = useRef(false);
 
-  // Auto-start share mode when opened via share button
-  if (open && startInShareMode && !showSharePanel && !isGenerating && !autoStarted) {
-    setAutoStarted(true);
-    // Trigger share generation on next tick
-    setTimeout(() => handleStartShare(), 0);
-  }
-  if (!open && autoStarted) {
-    setAutoStarted(false);
-  }
+  useEffect(() => {
+    if (open && startInShareMode && !showSharePanel && !isGenerating && !hasAutoStarted.current) {
+      hasAutoStarted.current = true;
+      handleStartShare();
+    }
+    if (!open) {
+      hasAutoStarted.current = false;
+    }
+  }, [open, startInShareMode]);
 
   const handleStartShare = async () => {
     setIsGenerating(true);
