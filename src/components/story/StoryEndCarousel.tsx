@@ -8,7 +8,7 @@ import {
   Music, Mic, Image, FileText, 
   Share2, Sparkles, ChevronLeft, ChevronRight, 
   Crown, Gift, Lock, Download, Loader2, AlertCircle,
-  RefreshCw, Film, Tv, Play, X, Maximize2
+  RefreshCw, Film, Tv, Play, X, Maximize2, Flame
 } from 'lucide-react';
 import { Player } from '@remotion/player';
 import { Button } from '@/components/ui/button';
