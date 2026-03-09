@@ -497,8 +497,8 @@ export const StoryEndCarousel = ({
                         Premium
                       </Badge>
                     ) : (
-                      <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 gap-1 text-[10px] font-semibold uppercase tracking-wide">
-                        <Gift className="h-3 w-3" />
+                      <Badge variant="secondary" className="bg-emerald-500/90 text-white border-emerald-400 gap-1 text-[11px] font-bold uppercase tracking-wide shadow-md shadow-emerald-900/30 px-3 py-1">
+                        <Gift className="h-3.5 w-3.5" />
                         Gratis
                       </Badge>
                     )}
