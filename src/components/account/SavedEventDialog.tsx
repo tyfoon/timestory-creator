@@ -154,10 +154,10 @@ async function generateEventImage(event: SavedEvent): Promise<Blob> {
       ctx.closePath();
       ctx.clip();
 
-      // Soft cover: only crop minimally by using contain-leaning scale
+      // Contain-fit: show the full image without cropping
       const scaleX = imgW / img.naturalWidth;
       const scaleY = imgH / img.naturalHeight;
-      const scale = Math.max(scaleX, scaleY);
+      const scale = Math.min(scaleX, scaleY);
       const drawW = img.naturalWidth * scale;
       const drawH = img.naturalHeight * scale;
       const drawX = imgX + (imgW - drawW) / 2;
