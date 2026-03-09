@@ -1396,17 +1396,6 @@ const TimelineStoryPage = () => {
               </div>
             )}
 
-            {/* Soundtrack Section - inline at bottom */}
-            {!isLoading && events.length > 0 && (
-              <SoundtrackSection
-                events={events}
-                summary={storyIntroduction}
-                formData={formData}
-                storyTitle={storyTitle}
-                storyIntroduction={storyIntroduction}
-                onOpenPersonalizeDialog={() => setIsPersonalizeDialogOpen(true)}
-              />
-            )}
 
           </div>
         </div>
