@@ -1424,7 +1424,7 @@ const TimelineStoryPage = () => {
                 }}
                 onOpenPersonalize={() => setIsPersonalizeDialogOpen(true)}
                 onOpenSpokenVideo={() => setIsVideoDialogOpen(true)}
-                onOpenPolaroids={() => navigate('/polaroids')}
+                onOpenPolaroids={() => navigate('/polaroid')}
                 onDownloadPDF={async () => {
                   if (!formData) return;
                   try {
