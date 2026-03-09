@@ -23,6 +23,7 @@ import { FormData } from '@/types/form';
 import { useSoundtrackGeneration, clearSoundtrackState } from '@/hooks/useSoundtrackGeneration';
 import { TimelineVideoComponent, VideoEvent } from '@/remotion';
 import { ShareDialog } from '@/components/video/ShareDialog';
+import polaroidPreview from '@/assets/polaroid-preview.png';
 
 const FPS = 30;
 
@@ -370,6 +371,7 @@ export const StoryEndCarousel = ({
       actionLabel: 'Bekijk polaroids',
       gradient: 'from-sky-500/20 via-blue-500/10 to-transparent',
       accentColor: 'text-sky-400',
+      previewImage: polaroidPreview,
     },
     {
       id: 'presentation',
@@ -499,9 +501,18 @@ export const StoryEndCarousel = ({
                     <p className="text-xs text-muted-foreground font-mono mb-3">
                       {card.subtitle}
                     </p>
-                    <p className="text-sm text-muted-foreground leading-relaxed flex-1">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
                       {card.description}
                     </p>
+
+                    {/* Preview image */}
+                    {card.previewImage && (
+                      <div className="rounded-lg overflow-hidden shadow-md border border-border/50 my-3 flex-1">
+                        <img src={card.previewImage} alt={card.title} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+
+                    {!card.previewImage && <div className="flex-1" />}
 
                     <div className="flex gap-2 mt-6">
                       <Button
