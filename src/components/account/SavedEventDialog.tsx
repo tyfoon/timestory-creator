@@ -56,6 +56,38 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   return lines;
 }
 
+async function fetchImageAsBlob(imageUrl: string): Promise<string> {
+  // Try direct CORS fetch first
+  try {
+    const response = await fetch(imageUrl, { mode: 'cors' });
+    if (response.ok) {
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
+    }
+  } catch { /* fall through */ }
+
+  // Fallback: proxy through edge function
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const response = await fetch(`${supabaseUrl}/functions/v1/proxy-image`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+      },
+      body: JSON.stringify({ url: imageUrl }),
+    });
+    if (response.ok) {
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
+    }
+  } catch { /* fall through */ }
+
+  throw new Error('Could not load image');
+}
+
 async function generateEventImage(event: SavedEvent): Promise<Blob> {
   const W = 1080;
   const H = 1350;
@@ -87,25 +119,13 @@ async function generateEventImage(event: SavedEvent): Promise<Blob> {
   let imageLoaded = false;
   if (event.image_url) {
     try {
-      // Fetch as blob to avoid CORS canvas tainting issues
-      const response = await fetch(event.image_url, { mode: 'cors' }).catch(() => null);
-      let blobUrl: string | null = null;
+      const blobUrl = await fetchImageAsBlob(event.image_url);
       const img = new Image();
-
-      if (response?.ok) {
-        const blob = await response.blob();
-        blobUrl = URL.createObjectURL(blob);
-        img.src = blobUrl;
-      } else {
-        // Fallback: try loading directly
-        img.crossOrigin = 'anonymous';
-        img.src = event.image_url!;
-      }
+      img.src = blobUrl;
 
       await new Promise<void>((resolve, reject) => {
         img.onload = () => resolve();
         img.onerror = () => reject();
-        // If src already set above, and already loaded
         if (img.complete && img.naturalWidth > 0) resolve();
       });
 
@@ -152,7 +172,7 @@ async function generateEventImage(event: SavedEvent): Promise<Blob> {
       ctx.fillRect(imgX, imgY + imgH + 8, imgW, 4);
 
       imageLoaded = true;
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
+      URL.revokeObjectURL(blobUrl);
     } catch {
       // Image load failed, continue without it
     }
