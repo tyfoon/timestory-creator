@@ -305,7 +305,7 @@ const MusicOverviewPage = () => {
   }, [toast]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* Sticky header */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
@@ -382,8 +382,8 @@ const MusicOverviewPage = () => {
 
             {/* Horizontal scroll of tracks */}
             <div 
-              className="flex gap-4 overflow-x-auto pb-2"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6"
+              style={{ scrollbarWidth: 'thin' }}
             >
               {hits.map((rh, idx) => (
                 <TrackCard
@@ -473,7 +473,7 @@ const TrackCard = ({ resolvedHit, isFavorite, isSaved, isEmbedActive, isLoggedIn
   const { hit, spotify, loading, isLocal } = resolvedHit;
 
   return (
-    <div className="flex-shrink-0 w-[160px] sm:w-[180px] group">
+    <div className="flex-shrink-0 w-[120px] sm:w-[160px] md:w-[180px] group">
       {/* Album art */}
       <div
         className={`relative aspect-square overflow-hidden rounded-xl shadow-lg bg-muted cursor-pointer mb-2 ${
