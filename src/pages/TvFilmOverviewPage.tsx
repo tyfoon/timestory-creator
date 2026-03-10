@@ -179,6 +179,37 @@ const TvFilmOverviewPage = () => {
 
   const totalItems = resolvedItems.length;
 
+  // Collect all YouTube video IDs
+  const allVideoIds = useMemo(() =>
+    resolvedItems.filter(ri => ri.youtube?.videoId).map(ri => ri.youtube!.videoId),
+    [resolvedItems]
+  );
+
+  const favoriteVideoIds = useMemo(() =>
+    resolvedItems
+      .filter(ri => ri.youtube?.videoId && favorites.has(`${ri.year}-${ri.item.title}`))
+      .map(ri => ri.youtube!.videoId),
+    [resolvedItems, favorites]
+  );
+
+  const handleOpenYouTubePlaylist = useCallback((videoIds: string[], label: string) => {
+    if (videoIds.length === 0) {
+      toast({ title: 'Geen video\'s', description: 'Er zijn geen trailers beschikbaar.' });
+      return;
+    }
+    // YouTube watch_videos URL plays multiple videos in sequence
+    const url = `https://www.youtube.com/watch_videos?video_ids=${videoIds.join(',')}`;
+    const opened = window.open(url, '_blank');
+    if (!opened) {
+      const links = videoIds.map(id => `https://youtu.be/${id}`).join('\n');
+      navigator.clipboard.writeText(links);
+      toast({
+        title: 'Links gekopieerd!',
+        description: `${videoIds.length} YouTube-links gekopieerd naar je klembord.`
+      });
+    }
+  }, [toast]);
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* Sticky header */}
