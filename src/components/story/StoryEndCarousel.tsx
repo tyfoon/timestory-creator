@@ -343,7 +343,7 @@ export const StoryEndCarousel = ({
     {
       id: 'music-overview',
       title: 'Mijn Leven in Muziek',
-      subtitle: `${startYear}–${endYear} • Alle hits`,
+      subtitle: `${events.length > 0 ? events[0].year : '?'}–${events.length > 0 ? events[events.length - 1].year : '?'} • Alle hits`,
       description: 'Ontdek alle iconische #1 hits uit jouw tijdlijn, sla je favorieten op en deel je playlist.',
       icon: <ListMusic className="h-6 w-6" />,
       isPremium: false,
