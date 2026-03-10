@@ -153,7 +153,7 @@ export const getSubculturesForPeriod = (
   const targetGroup = periodToTargetGroup[periodType] || 'Pubers';
   
   // Get countries to search for based on geographic focus
-  const countries = getCountryForFocus(focus);
+  const countries = getCountryForFocus(focus, city);
   
   // Find matching entries - prioritize Netherlands first, then other countries
   for (const country of countries) {

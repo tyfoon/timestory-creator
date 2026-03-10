@@ -45,7 +45,7 @@ export const SubcultureSelector = ({
     // Add neutral option
     subcultureOptions.push({
       value: 'neutral',
-      label: 'Geen voorkeur',
+      label: t('subcultureNoPreference') as string,
       isNeutral: true
     });
     
