@@ -1427,7 +1427,8 @@ const TimelineStoryPage = () => {
             onOpenMusic={() => {
               const start = events.length > 0 ? events[0].year : 1980;
               const end = events.length > 0 ? events[events.length - 1].year : new Date().getFullYear();
-              navigate(`/muziek?start=${start}&end=${end}`);
+              const city = formData?.optionalData?.city || formData?.city || '';
+              navigate(`/muziek?start=${start}&end=${end}${city ? `&city=${encodeURIComponent(String(city))}` : ''}`);
             }}
           />
         )}
