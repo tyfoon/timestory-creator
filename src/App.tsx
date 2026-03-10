@@ -35,6 +35,7 @@ const App = () => (
               <Route path="/resultaat" element={<ResultPage />} />
               <Route path="/polaroid" element={<PolaroidCollagePage />} />
               <Route path="/story" element={<TimelineStoryPage />} />
+              <Route path="/muziek" element={<MusicOverviewPage />} />
               <Route path="/s/:id" element={<SharedStoryPage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/account" element={<AccountPage />} />
