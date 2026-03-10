@@ -382,8 +382,8 @@ const MusicOverviewPage = () => {
 
             {/* Horizontal scroll of tracks */}
             <div 
-              className="flex gap-4 overflow-x-auto pb-2"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6"
+              style={{ scrollbarWidth: 'thin' }}
             >
               {hits.map((rh, idx) => (
                 <TrackCard
