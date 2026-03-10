@@ -2,11 +2,12 @@
  * MusicOverviewPage - "Mijn Leven in Muziek"
  * Shows a year-by-year horizontal grid of #1 hits with Spotify embeds,
  * favorites, bookmark-to-account, and playlist export.
+ * Includes country-specific local hits based on user's city.
  */
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Heart, Loader2, Music, Play, Pause, X, ListMusic, Bookmark, BookmarkCheck } from 'lucide-react';
+import { ArrowLeft, Heart, Loader2, Music, Play, Pause, X, ListMusic, Bookmark, BookmarkCheck, Globe, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,6 +31,7 @@ interface ResolvedHit {
   hit: NumberOneHit;
   spotify: SpotifyTrackResult | null;
   loading: boolean;
+  isLocal?: boolean; // true = country-specific hit
 }
 
 const MusicOverviewPage = () => {
@@ -40,6 +42,7 @@ const MusicOverviewPage = () => {
 
   const startYear = parseInt(searchParams.get('start') || '1980', 10);
   const endYear = parseInt(searchParams.get('end') || String(new Date().getFullYear()), 10);
+  const city = searchParams.get('city') || '';
 
   const [resolvedHits, setResolvedHits] = useState<ResolvedHit[]>([]);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -47,20 +50,120 @@ const MusicOverviewPage = () => {
   const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadedCount, setLoadedCount] = useState(0);
+  const [localHitsCountry, setLocalHitsCountry] = useState<string | null>(null);
+  const [localHitsLoading, setLocalHitsLoading] = useState(false);
 
-  // Build the list of all hits for the year range
-  const allHits = useMemo(() => {
+  // Build the list of global hits for the year range
+  const globalHits = useMemo(() => {
     const currentYear = new Date().getFullYear();
     const end = Math.min(endYear, currentYear);
-    const result: { year: number; hit: NumberOneHit }[] = [];
+    const result: { year: number; hit: NumberOneHit; isLocal: boolean }[] = [];
     for (let yr = startYear; yr <= end; yr++) {
       const hits = numberOneHits[yr];
       if (hits) {
-        hits.forEach(hit => result.push({ year: yr, hit }));
+        hits.forEach(hit => result.push({ year: yr, hit, isLocal: false }));
       }
     }
     return result;
   }, [startYear, endYear]);
+
+  // Fetch local hits from AI based on city
+  useEffect(() => {
+    if (!city) return;
+    let cancelled = false;
+
+    const fetchLocalHits = async () => {
+      setLocalHitsLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('generate-local-hits', {
+          body: { startYear, endYear, city }
+        });
+
+        if (cancelled || error || !data?.hits) return;
+
+        setLocalHitsCountry(data.country || null);
+
+        // Convert AI response to hit entries
+        const localEntries: { year: number; hit: NumberOneHit; isLocal: boolean }[] = [];
+        for (const [yearStr, hits] of Object.entries(data.hits)) {
+          const yr = parseInt(yearStr, 10);
+          if (Array.isArray(hits)) {
+            (hits as any[]).forEach((h: any) => {
+              if (h.artist && h.title) {
+                localEntries.push({
+                  year: yr,
+                  hit: { artist: h.artist, title: h.title },
+                  isLocal: true,
+                });
+              }
+            });
+          }
+        }
+
+        // Merge with global hits - add local hits that aren't already in global
+        setResolvedHits(prev => {
+          const existingKeys = new Set(prev.map(rh => `${rh.year}-${rh.hit.artist}-${rh.hit.title}`.toLowerCase()));
+          const newLocalHits: ResolvedHit[] = localEntries
+            .filter(e => !existingKeys.has(`${e.year}-${e.hit.artist}-${e.hit.title}`.toLowerCase()))
+            .map(e => ({ year: e.year, hit: e.hit, spotify: null, loading: true, isLocal: true }));
+          
+          if (newLocalHits.length === 0) return prev;
+          
+          const merged = [...prev, ...newLocalHits];
+          
+          // Fetch Spotify data for new local hits
+          fetchSpotifyForHits(newLocalHits, merged.length - newLocalHits.length);
+          
+          return merged;
+        });
+      } catch (err) {
+        console.error('[MusicOverview] Failed to fetch local hits:', err);
+      } finally {
+        if (!cancelled) setLocalHitsLoading(false);
+      }
+    };
+
+    fetchLocalHits();
+    return () => { cancelled = true; };
+  }, [city, startYear, endYear]);
+
+  // Fetch Spotify data for a batch of hits and update state at given offset
+  const fetchSpotifyForHits = useCallback(async (hits: ResolvedHit[], startOffset: number) => {
+    const batchSize = 5;
+    for (let i = 0; i < hits.length; i += batchSize) {
+      const batch = hits.slice(i, i + batchSize);
+      const results = await Promise.allSettled(
+        batch.map(async ({ hit }) => {
+          const query = `${hit.artist} - ${hit.title}`;
+          try {
+            const { data, error } = await supabase.functions.invoke('search-spotify', {
+              body: { query }
+            });
+            if (error || !data?.trackId) return null;
+            return data as SpotifyTrackResult;
+          } catch {
+            return null;
+          }
+        })
+      );
+
+      setResolvedHits(prev => {
+        const updated = [...prev];
+        for (let j = 0; j < batch.length; j++) {
+          const idx = startOffset + i + j;
+          if (idx < updated.length) {
+            const r = results[j];
+            updated[idx] = {
+              ...updated[idx],
+              spotify: r.status === 'fulfilled' ? r.value : null,
+              loading: false,
+            };
+          }
+        }
+        return updated;
+      });
+    }
+  }, []);
 
   // Group by year for rendering
   const hitsByYear = useMemo(() => {
@@ -69,27 +172,35 @@ const MusicOverviewPage = () => {
       if (!map.has(rh.year)) map.set(rh.year, []);
       map.get(rh.year)!.push(rh);
     }
+    // Sort each year's hits: local first, then global
+    for (const [, hits] of map) {
+      hits.sort((a, b) => {
+        if (a.isLocal && !b.isLocal) return -1;
+        if (!a.isLocal && b.isLocal) return 1;
+        return 0;
+      });
+    }
     return Array.from(map.entries()).sort((a, b) => a[0] - b[0]);
   }, [resolvedHits]);
 
-  // Fetch Spotify data in batches
+  // Fetch Spotify data for global hits in batches
   useEffect(() => {
     let cancelled = false;
 
     const fetchAll = async () => {
       setIsLoading(true);
       
-      const initial: ResolvedHit[] = allHits.map(({ year, hit }) => ({
-        year, hit, spotify: null, loading: true,
+      const initial: ResolvedHit[] = globalHits.map(({ year, hit, isLocal }) => ({
+        year, hit, spotify: null, loading: true, isLocal,
       }));
       setResolvedHits(initial);
 
       const batchSize = 5;
       let loaded = 0;
 
-      for (let i = 0; i < allHits.length; i += batchSize) {
+      for (let i = 0; i < globalHits.length; i += batchSize) {
         if (cancelled) return;
-        const batch = allHits.slice(i, i + batchSize);
+        const batch = globalHits.slice(i, i + batchSize);
         
         const results = await Promise.allSettled(
           batch.map(async ({ hit }) => {
@@ -131,7 +242,7 @@ const MusicOverviewPage = () => {
 
     fetchAll();
     return () => { cancelled = true; };
-  }, [allHits]);
+  }, [globalHits]);
 
   const toggleFavorite = useCallback((trackId: string) => {
     setFavorites(prev => {
@@ -181,11 +292,9 @@ const MusicOverviewPage = () => {
       toast({ title: 'Geen nummers', description: 'Er zijn geen nummers beschikbaar.' });
       return;
     }
-    // Try Spotify deep link with trackset
     const spotifyDeepLink = `spotify:trackset:${encodeURIComponent(label)}:${trackIds.join(',')}`;
     const opened = window.open(spotifyDeepLink, '_blank');
     if (!opened) {
-      // Fallback: copy all URLs
       const urls = trackIds.map(id => `https://open.spotify.com/track/${id}`).join('\n');
       navigator.clipboard.writeText(urls);
       toast({ 
@@ -209,10 +318,19 @@ const MusicOverviewPage = () => {
                 <Music className="h-5 w-5 text-[#1DB954]" />
                 Mijn Leven in Muziek
               </h1>
-              <p className="text-xs text-muted-foreground font-mono">{startYear} – {endYear}</p>
+              <p className="text-xs text-muted-foreground font-mono">
+                {startYear} – {endYear}
+                {city && <span className="ml-2 inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{city}</span>}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {localHitsCountry && (
+              <Badge variant="secondary" className="gap-1 text-xs">
+                <MapPin className="h-3 w-3" />
+                {localHitsCountry}
+              </Badge>
+            )}
             {favorites.size > 0 && (
               <Badge variant="secondary" className="bg-[#1DB954]/15 text-[#1DB954] border-[#1DB954]/30 gap-1">
                 <Heart className="h-3 w-3 fill-current" />
@@ -225,18 +343,21 @@ const MusicOverviewPage = () => {
       </header>
 
       {/* Loading progress */}
-      {isLoading && (
+      {(isLoading || localHitsLoading) && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             <span className="font-mono text-xs">
-              {loadedCount} / {allHits.length} nummers geladen...
+              {localHitsLoading 
+                ? `Lokale hits laden voor ${city}...` 
+                : `${loadedCount} / ${globalHits.length} nummers geladen...`
+              }
             </span>
           </div>
           <div className="mt-2 h-1 bg-muted rounded-full overflow-hidden">
             <div 
               className="h-full bg-[#1DB954] transition-all duration-300 rounded-full"
-              style={{ width: `${(loadedCount / allHits.length) * 100}%` }}
+              style={{ width: `${localHitsLoading ? 50 : (loadedCount / globalHits.length) * 100}%` }}
             />
           </div>
         </div>
@@ -266,7 +387,7 @@ const MusicOverviewPage = () => {
             >
               {hits.map((rh, idx) => (
                 <TrackCard
-                  key={`${rh.year}-${rh.hit.artist}-${rh.hit.title}`}
+                  key={`${rh.year}-${rh.hit.artist}-${rh.hit.title}-${rh.isLocal ? 'local' : 'global'}`}
                   resolvedHit={rh}
                   isFavorite={!!rh.spotify && favorites.has(rh.spotify.trackId)}
                   isSaved={!!rh.spotify && savedTracks.has(`${rh.year}-${rh.spotify.trackId}`)}
@@ -296,6 +417,7 @@ const MusicOverviewPage = () => {
               <h2 className="font-serif text-2xl font-bold mb-2">Jouw Muziek Overzicht</h2>
               <p className="text-sm text-muted-foreground">
                 {allTrackIds.length} nummers gevonden • {favorites.size} favorieten
+                {localHitsCountry && ` • incl. ${localHitsCountry} hits`}
               </p>
             </div>
 
@@ -348,13 +470,15 @@ interface TrackCardProps {
 }
 
 const TrackCard = ({ resolvedHit, isFavorite, isSaved, isEmbedActive, isLoggedIn, onToggleFavorite, onBookmark, onToggleEmbed, index }: TrackCardProps) => {
-  const { hit, spotify, loading } = resolvedHit;
+  const { hit, spotify, loading, isLocal } = resolvedHit;
 
   return (
     <div className="flex-shrink-0 w-[160px] sm:w-[180px] group">
       {/* Album art */}
       <div
-        className="relative aspect-square overflow-hidden rounded-xl shadow-lg bg-muted cursor-pointer mb-2"
+        className={`relative aspect-square overflow-hidden rounded-xl shadow-lg bg-muted cursor-pointer mb-2 ${
+          isLocal ? 'ring-2 ring-accent/40' : ''
+        }`}
         onClick={onToggleEmbed}
       >
         {loading ? (
@@ -371,6 +495,14 @@ const TrackCard = ({ resolvedHit, isFavorite, isSaved, isEmbedActive, isLoggedIn
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted">
             <Music className="h-8 w-8 text-muted-foreground/30" />
+          </div>
+        )}
+
+        {/* Local hit badge */}
+        {isLocal && !loading && (
+          <div className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded-md bg-accent/90 text-accent-foreground text-[9px] font-medium flex items-center gap-0.5">
+            <MapPin className="h-2.5 w-2.5" />
+            Lokaal
           </div>
         )}
 
