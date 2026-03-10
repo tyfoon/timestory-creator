@@ -16,6 +16,7 @@ import AuthPage from "./pages/AuthPage";
 import AccountPage from "./pages/AccountPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import MusicOverviewPage from "./pages/MusicOverviewPage";
+import TvFilmOverviewPage from "./pages/TvFilmOverviewPage";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
