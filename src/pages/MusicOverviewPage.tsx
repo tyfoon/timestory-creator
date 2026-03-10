@@ -173,9 +173,23 @@ const MusicOverviewPage = () => {
 
   const handleOpenSpotifyPlaylist = useCallback((trackIds: string[]) => {
     if (trackIds.length === 0) return;
-    // Open first track, user can queue rest. Best we can do without Spotify auth.
-    window.open(`https://open.spotify.com/track/${trackIds[0]}`, '_blank');
-  }, []);
+    // Spotify supports opening a "collection" via comma-separated URIs
+    // Best web approach: open a search with all track URIs copied
+    const uris = trackIds.map(id => `spotify:track:${id}`).join(',');
+    // Try the Spotify URI scheme which can queue multiple tracks
+    const spotifyDeepLink = `spotify:trackset:Mijn Leven in Muziek:${trackIds.join(',')}`;
+    
+    // Try deep link first, fallback to copying URLs
+    const opened = window.open(spotifyDeepLink, '_blank');
+    if (!opened) {
+      const urls = trackIds.map(id => `https://open.spotify.com/track/${id}`).join('\n');
+      navigator.clipboard.writeText(urls);
+      toast({ 
+        title: 'Links gekopieerd!', 
+        description: `${trackIds.length} Spotify-links gekopieerd. Maak een playlist in Spotify en plak ze erin.` 
+      });
+    }
+  }, [toast]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
