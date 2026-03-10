@@ -446,6 +446,9 @@ const TvFilmOverviewPage = () => {
             </div>
           </motion.div>
         )}
+
+        {/* Discover more carousel */}
+        <DiscoverMoreCarousel currentPage="tv-film" searchParams={searchParams} />
       </main>
     </div>
   );
