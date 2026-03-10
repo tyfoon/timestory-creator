@@ -135,7 +135,7 @@ export const StoryEndCarousel = ({
     }
   };
 
-  const CARD_COUNT = 7;
+  const CARD_COUNT = 8;
 
   const updateScrollState = useCallback(() => {
     if (!scrollRef.current) return;
