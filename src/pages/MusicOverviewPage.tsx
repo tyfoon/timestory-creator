@@ -450,6 +450,9 @@ const MusicOverviewPage = () => {
             </p>
           </motion.div>
         )}
+
+        {/* Discover more carousel */}
+        <DiscoverMoreCarousel currentPage="music" searchParams={searchParams} />
       </main>
     </div>
   );
