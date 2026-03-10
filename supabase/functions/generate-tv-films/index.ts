@@ -12,11 +12,14 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { startYear, endYear, city } = await req.json();
+    const { startYear, endYear, city, chunkStart, chunkEnd } = await req.json();
 
-    if (!startYear || !endYear) {
+    const actualStart = chunkStart || startYear;
+    const actualEnd = chunkEnd || endYear;
+
+    if (!actualStart || !actualEnd) {
       return new Response(
-        JSON.stringify({ error: "Missing startYear or endYear" }),
+        JSON.stringify({ error: "Missing startYear/endYear or chunkStart/chunkEnd" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -30,20 +33,20 @@ Deno.serve(async (req) => {
 
     const prompt = `Je bent een film- en TV-expert. ${cityContext}
 
-Geef per jaar van ${startYear} tot ${endYear} EXACT 5 items: een mix van TV-series en films die dat jaar populair/iconisch waren.
+Geef per jaar van ${actualStart} tot ${actualEnd} EXACT 5 items: een mix van TV-series en films die dat jaar populair/iconisch waren.
 
 Antwoord ALLEEN met een JSON object in dit exacte formaat, GEEN andere tekst:
 {
   "country": "${city ? 'bepaal het land' : 'Internationaal'}",
   "items": {
-    "${startYear}": [
+    "${actualStart}": [
       {"title": "Titel", "type": "film", "description": "Korte beschrijving in 1 zin"},
       {"title": "Titel", "type": "tv", "description": "Korte beschrijving in 1 zin"}
     ]
   }
 }
 
-type is "film" of "tv". Geef ALLE jaren van ${startYear} t/m ${endYear}. Exact 5 items per jaar. Alleen JSON, geen markdown.`;
+type is "film" of "tv". Geef ALLE jaren van ${actualStart} t/m ${actualEnd}. Exact 5 items per jaar. Alleen JSON, geen markdown.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
