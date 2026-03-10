@@ -1,4 +1,4 @@
-import { User, LogIn } from 'lucide-react';
+import { User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 

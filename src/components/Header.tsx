@@ -1,5 +1,5 @@
 import { LanguageSelector } from './LanguageSelector';
-import { Clock, User, LogIn } from 'lucide-react';
+import { Clock, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
