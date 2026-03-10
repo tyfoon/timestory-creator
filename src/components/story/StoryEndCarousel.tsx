@@ -51,6 +51,7 @@ export const StoryEndCarousel = ({
   onOpenPolaroids,
   onDownloadPDF,
   onOpenMusic,
+  onOpenTvFilm,
 }: StoryEndCarouselProps) => {
   const { t, language } = useLanguage();
   const scrollRef = useRef<HTMLDivElement>(null);
