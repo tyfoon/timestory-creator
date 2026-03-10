@@ -1,18 +1,19 @@
 /**
  * MusicOverviewPage - "Mijn Leven in Muziek"
  * Shows a year-by-year horizontal grid of #1 hits with Spotify embeds,
- * favorites, and playlist export.
+ * favorites, bookmark-to-account, and playlist export.
  */
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Heart, Loader2, Music, Share2, Download, Play, Pause, X, ListMusic } from 'lucide-react';
+import { ArrowLeft, Heart, Loader2, Music, Play, Pause, X, ListMusic, Bookmark, BookmarkCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { numberOneHits, NumberOneHit } from '@/data/numberOneHits';
 import { AccountLink } from '@/components/AccountLink';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SpotifyTrackResult {
   trackId: string;
@@ -35,12 +36,14 @@ const MusicOverviewPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const startYear = parseInt(searchParams.get('start') || '1980', 10);
   const endYear = parseInt(searchParams.get('end') || String(new Date().getFullYear()), 10);
 
   const [resolvedHits, setResolvedHits] = useState<ResolvedHit[]>([]);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [savedTracks, setSavedTracks] = useState<Set<string>>(new Set());
   const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadedCount, setLoadedCount] = useState(0);
@@ -76,7 +79,6 @@ const MusicOverviewPage = () => {
     const fetchAll = async () => {
       setIsLoading(true);
       
-      // Initialize all hits as loading
       const initial: ResolvedHit[] = allHits.map(({ year, hit }) => ({
         year, hit, spotify: null, loading: true,
       }));
@@ -140,6 +142,28 @@ const MusicOverviewPage = () => {
     });
   }, []);
 
+  const handleBookmarkTrack = useCallback(async (rh: ResolvedHit) => {
+    if (!user || !rh.spotify) return;
+    const key = `${rh.year}-${rh.spotify.trackId}`;
+    if (savedTracks.has(key)) return;
+
+    try {
+      const { error } = await (supabase.from('saved_events' as any) as any).insert({
+        user_id: user.id,
+        event_title: `${rh.spotify.trackName} – ${rh.spotify.artistName}`,
+        event_year: rh.year,
+        event_description: `#1 hit uit ${rh.year}. Album: ${rh.spotify.albumName}`,
+        event_category: 'music',
+        image_url: rh.spotify.albumImage,
+      });
+      if (error) throw error;
+      setSavedTracks(prev => new Set(prev).add(key));
+      toast({ title: 'Opgeslagen!', description: `${rh.spotify!.trackName} staat nu op je accountpagina.` });
+    } catch (err: any) {
+      toast({ title: 'Fout', description: err.message, variant: 'destructive' });
+    }
+  }, [user, savedTracks, toast]);
+
   const favoriteTrackIds = useMemo(() => {
     return resolvedHits
       .filter(rh => rh.spotify && favorites.has(rh.spotify.trackId))
@@ -152,41 +176,21 @@ const MusicOverviewPage = () => {
       .map(rh => rh.spotify!.trackId);
   }, [resolvedHits]);
 
-  const handleSharePlaylist = useCallback((trackIds: string[], label: string) => {
+  const handleOpenSpotifyPlaylist = useCallback((trackIds: string[], label: string) => {
     if (trackIds.length === 0) {
-      toast({ title: 'Geen nummers', description: 'Er zijn geen nummers om te delen.' });
+      toast({ title: 'Geen nummers', description: 'Er zijn geen nummers beschikbaar.' });
       return;
     }
-    // Spotify URI list - users can paste this in Spotify
-    const spotifyUris = trackIds.map(id => `spotify:track:${id}`);
-    const text = `🎵 ${label} (${startYear}-${endYear})\n\n${spotifyUris.join('\n')}`;
-    
-    if (navigator.share) {
-      navigator.share({ title: label, text });
-    } else {
-      // Copy track URLs for easy sharing
-      const urls = trackIds.map(id => `https://open.spotify.com/track/${id}`).join('\n');
-      navigator.clipboard.writeText(urls);
-      toast({ title: 'Gekopieerd!', description: `${trackIds.length} nummers gekopieerd naar klembord.` });
-    }
-  }, [startYear, endYear, toast]);
-
-  const handleOpenSpotifyPlaylist = useCallback((trackIds: string[]) => {
-    if (trackIds.length === 0) return;
-    // Spotify supports opening a "collection" via comma-separated URIs
-    // Best web approach: open a search with all track URIs copied
-    const uris = trackIds.map(id => `spotify:track:${id}`).join(',');
-    // Try the Spotify URI scheme which can queue multiple tracks
-    const spotifyDeepLink = `spotify:trackset:Mijn Leven in Muziek:${trackIds.join(',')}`;
-    
-    // Try deep link first, fallback to copying URLs
+    // Try Spotify deep link with trackset
+    const spotifyDeepLink = `spotify:trackset:${encodeURIComponent(label)}:${trackIds.join(',')}`;
     const opened = window.open(spotifyDeepLink, '_blank');
     if (!opened) {
+      // Fallback: copy all URLs
       const urls = trackIds.map(id => `https://open.spotify.com/track/${id}`).join('\n');
       navigator.clipboard.writeText(urls);
       toast({ 
         title: 'Links gekopieerd!', 
-        description: `${trackIds.length} Spotify-links gekopieerd. Maak een playlist in Spotify en plak ze erin.` 
+        description: `${trackIds.length} Spotify-links gekopieerd naar je klembord. Plak ze in een Spotify-playlist.` 
       });
     }
   }, [toast]);
@@ -265,8 +269,11 @@ const MusicOverviewPage = () => {
                   key={`${rh.year}-${rh.hit.artist}-${rh.hit.title}`}
                   resolvedHit={rh}
                   isFavorite={!!rh.spotify && favorites.has(rh.spotify.trackId)}
+                  isSaved={!!rh.spotify && savedTracks.has(`${rh.year}-${rh.spotify.trackId}`)}
                   isEmbedActive={activeTrackId === rh.spotify?.trackId}
+                  isLoggedIn={!!user}
                   onToggleFavorite={() => rh.spotify && toggleFavorite(rh.spotify.trackId)}
+                  onBookmark={() => handleBookmarkTrack(rh)}
                   onToggleEmbed={() => setActiveTrackId(prev => 
                     prev === rh.spotify?.trackId ? null : rh.spotify?.trackId || null
                   )}
@@ -293,37 +300,31 @@ const MusicOverviewPage = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              {/* Share all tracks */}
+              {/* Playlist: all tracks */}
               <Button
-                onClick={() => handleSharePlaylist(allTrackIds, 'Mijn Leven in Muziek')}
+                onClick={() => handleOpenSpotifyPlaylist(allTrackIds, 'Mijn Leven in Muziek')}
                 className="gap-2 bg-[#1DB954] hover:bg-[#1ed760] text-white"
               >
-                <Share2 className="h-4 w-4" />
-                Deel alle {allTrackIds.length} nummers
+                <ListMusic className="h-4 w-4" />
+                Playlist alle {allTrackIds.length} nummers
               </Button>
 
-              {/* Share favorites only */}
+              {/* Playlist: favorites only */}
               {favorites.size > 0 && (
                 <Button
-                  onClick={() => handleSharePlaylist(favoriteTrackIds, 'Mijn Favorieten')}
+                  onClick={() => handleOpenSpotifyPlaylist(favoriteTrackIds, 'Mijn Favorieten')}
                   variant="outline"
                   className="gap-2 border-[#1DB954]/30 text-[#1DB954] hover:bg-[#1DB954]/10"
                 >
                   <Heart className="h-4 w-4 fill-current" />
-                  Deel {favorites.size} favorieten
+                  Playlist {favorites.size} favorieten
                 </Button>
               )}
-
-              {/* Open in Spotify */}
-              <Button
-                onClick={() => handleOpenSpotifyPlaylist(favorites.size > 0 ? favoriteTrackIds : allTrackIds)}
-                variant="outline"
-                className="gap-2"
-              >
-                <ListMusic className="h-4 w-4" />
-                Open in Spotify
-              </Button>
             </div>
+
+            <p className="text-xs text-muted-foreground text-center mt-4">
+              Opent de nummers in Spotify. Als dat niet lukt, worden de links naar je klembord gekopieerd.
+            </p>
           </motion.div>
         )}
       </main>
@@ -337,13 +338,16 @@ const MusicOverviewPage = () => {
 interface TrackCardProps {
   resolvedHit: ResolvedHit;
   isFavorite: boolean;
+  isSaved: boolean;
   isEmbedActive: boolean;
+  isLoggedIn: boolean;
   onToggleFavorite: () => void;
+  onBookmark: () => void;
   onToggleEmbed: () => void;
   index: number;
 }
 
-const TrackCard = ({ resolvedHit, isFavorite, isEmbedActive, onToggleFavorite, onToggleEmbed, index }: TrackCardProps) => {
+const TrackCard = ({ resolvedHit, isFavorite, isSaved, isEmbedActive, isLoggedIn, onToggleFavorite, onBookmark, onToggleEmbed, index }: TrackCardProps) => {
   const { hit, spotify, loading } = resolvedHit;
 
   return (
@@ -387,7 +391,7 @@ const TrackCard = ({ resolvedHit, isFavorite, isEmbedActive, onToggleFavorite, o
           </div>
         )}
 
-        {/* Favorite button */}
+        {/* Top-right: Favorite (heart) button */}
         {spotify && (
           <button
             onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
@@ -396,8 +400,29 @@ const TrackCard = ({ resolvedHit, isFavorite, isEmbedActive, onToggleFavorite, o
                 ? 'bg-[#1DB954] text-white scale-110' 
                 : 'bg-black/40 text-white/70 opacity-0 group-hover:opacity-100 hover:bg-black/60'
             }`}
+            title={isFavorite ? 'Verwijder uit favorieten' : 'Voeg toe aan favorieten'}
           >
             <Heart className={`h-3.5 w-3.5 ${isFavorite ? 'fill-current' : ''}`} />
+          </button>
+        )}
+
+        {/* Top-left: Bookmark (save to account) button */}
+        {spotify && isLoggedIn && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onBookmark(); }}
+            disabled={isSaved}
+            className={`absolute top-2 left-2 p-1.5 rounded-full transition-all duration-200 ${
+              isSaved
+                ? 'bg-accent text-accent-foreground scale-110'
+                : 'bg-black/40 text-white/70 opacity-0 group-hover:opacity-100 hover:bg-black/60'
+            }`}
+            title={isSaved ? 'Opgeslagen op je account' : 'Opslaan op je account'}
+          >
+            {isSaved ? (
+              <BookmarkCheck className="h-3.5 w-3.5" />
+            ) : (
+              <Bookmark className="h-3.5 w-3.5" />
+            )}
           </button>
         )}
       </div>
