@@ -567,25 +567,23 @@ const TrackCard = ({ resolvedHit, isFavorite, isSaved, isEmbedActive, isLoggedIn
         {spotify?.artistName || hit.artist}
       </p>
 
-      {/* Spotify embed */}
+      {/* Spotify embed - rendered wider than card */}
       {isEmbedActive && spotify && (
-        <div className="relative mt-2" onClick={(e) => e.stopPropagation()}>
+        <div className="relative mt-2 w-[280px] sm:w-[300px]" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={onToggleEmbed}
-            className="absolute -top-1 right-0 z-20 p-0.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full shadow-lg transition-colors"
+            className="absolute -top-2 -right-1 z-20 p-1 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full shadow-lg transition-colors"
           >
-            <X className="h-2.5 w-2.5" />
+            <X className="h-3 w-3" />
           </button>
           <iframe
             src={`https://open.spotify.com/embed/track/${spotify.trackId}?utm_source=generator&theme=0&autoplay=1`}
             width="100%"
-            height="80"
+            height="152"
             frameBorder="0"
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
             loading="lazy"
             className="rounded-lg"
-            style={{ overflow: 'hidden' }}
-            scrolling="no"
             title={`${spotify.trackName} - ${spotify.artistName}`}
           />
         </div>
