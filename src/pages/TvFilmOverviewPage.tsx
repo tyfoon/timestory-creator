@@ -5,7 +5,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Heart, Loader2, Tv, Film, Play, X, Bookmark, BookmarkCheck, MapPin } from 'lucide-react';
+import { ArrowLeft, Heart, Loader2, Tv, Film, Play, X, Bookmark, BookmarkCheck, MapPin, ListVideo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
