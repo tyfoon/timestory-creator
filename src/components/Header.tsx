@@ -37,8 +37,7 @@ export const Header = () => {
             ) : (
               <a href="/auth">
                 <Button variant="ghost" size="sm" className="gap-2">
-                  <LogIn className="h-4 w-4" />
-                  <span className="hidden sm:inline">{String(t('authLogin'))}</span>
+                  <User className="h-4 w-4" />
                 </Button>
               </a>
             )

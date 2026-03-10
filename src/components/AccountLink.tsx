@@ -26,7 +26,7 @@ export const AccountLink = ({ className = '' }: { className?: string }) => {
       href="/auth"
       className={`p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50 ${className}`}
     >
-      <LogIn className="h-3.5 w-3.5" />
+      <User className="h-4 w-4" />
     </a>
   );
 };
