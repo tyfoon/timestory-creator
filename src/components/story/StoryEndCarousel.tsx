@@ -38,6 +38,7 @@ interface StoryEndCarouselProps {
   onOpenPolaroids: () => void;
   onDownloadPDF: () => void;
   onOpenMusic: () => void;
+  onOpenTvFilm: () => void;
 }
 
 export const StoryEndCarousel = ({
