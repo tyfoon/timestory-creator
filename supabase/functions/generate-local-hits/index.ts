@@ -52,7 +52,7 @@ Antwoord ALLEEN met een JSON object in dit exacte formaat, GEEN andere tekst:
 
 Geef ALLE jaren van ${startYear} t/m ${endYear}. Exact 5 hits per jaar. Alleen JSON, geen markdown.`;
 
-    const response = await fetch("https://api.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
