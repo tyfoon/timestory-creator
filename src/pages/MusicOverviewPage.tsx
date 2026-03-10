@@ -427,6 +427,8 @@ const TrackCard = ({ resolvedHit, isFavorite, isEmbedActive, onToggleFavorite, o
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
             loading="lazy"
             className="rounded-lg"
+            style={{ overflow: 'hidden' }}
+            scrolling="no"
             title={`${spotify.trackName} - ${spotify.artistName}`}
           />
         </div>
