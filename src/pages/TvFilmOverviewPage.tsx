@@ -5,7 +5,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Heart, Loader2, Tv, Film, Play, X, Bookmark, BookmarkCheck, MapPin } from 'lucide-react';
+import { ArrowLeft, Heart, Loader2, Tv, Film, Play, X, Bookmark, BookmarkCheck, MapPin, ListVideo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
@@ -178,6 +178,37 @@ const TvFilmOverviewPage = () => {
   }, [user, savedItems, toast]);
 
   const totalItems = resolvedItems.length;
+
+  // Collect all YouTube video IDs
+  const allVideoIds = useMemo(() =>
+    resolvedItems.filter(ri => ri.youtube?.videoId).map(ri => ri.youtube!.videoId),
+    [resolvedItems]
+  );
+
+  const favoriteVideoIds = useMemo(() =>
+    resolvedItems
+      .filter(ri => ri.youtube?.videoId && favorites.has(`${ri.year}-${ri.item.title}`))
+      .map(ri => ri.youtube!.videoId),
+    [resolvedItems, favorites]
+  );
+
+  const handleOpenYouTubePlaylist = useCallback((videoIds: string[], label: string) => {
+    if (videoIds.length === 0) {
+      toast({ title: 'Geen video\'s', description: 'Er zijn geen trailers beschikbaar.' });
+      return;
+    }
+    // YouTube watch_videos URL plays multiple videos in sequence
+    const url = `https://www.youtube.com/watch_videos?video_ids=${videoIds.join(',')}`;
+    const opened = window.open(url, '_blank');
+    if (!opened) {
+      const links = videoIds.map(id => `https://youtu.be/${id}`).join('\n');
+      navigator.clipboard.writeText(links);
+      toast({
+        title: 'Links gekopieerd!',
+        description: `${videoIds.length} YouTube-links gekopieerd naar je klembord.`
+      });
+    }
+  }, [toast]);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -380,19 +411,42 @@ const TvFilmOverviewPage = () => {
           </motion.section>
         ))}
 
-        {/* Summary */}
+        {/* Summary + playlist actions */}
         {!isLoading && resolvedItems.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="rounded-2xl border border-border bg-card p-6 sm:p-8 text-center"
+            className="rounded-2xl border border-border bg-card p-6 sm:p-8 text-center space-y-4"
           >
             <h2 className="font-serif text-2xl font-bold mb-2">Jouw TV & Film Overzicht</h2>
             <p className="text-sm text-muted-foreground">
               {resolvedItems.length} titels gevonden • {favorites.size} favorieten
               {country && ` • ${country}`}
             </p>
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button
+                onClick={() => handleOpenYouTubePlaylist(allVideoIds, 'Mijn Leven in TV & Film')}
+                className="gap-2 bg-[#FF0000] hover:bg-[#cc0000] text-white"
+                disabled={allVideoIds.length === 0}
+              >
+                <ListVideo className="h-4 w-4" />
+                Alle {allVideoIds.length} trailers afspelen
+              </Button>
+
+              {favorites.size > 0 && (
+                <Button
+                  onClick={() => handleOpenYouTubePlaylist(favoriteVideoIds, 'Mijn Favorieten')}
+                  variant="outline"
+                  className="gap-2 border-[#FF0000]/30 text-[#FF0000] hover:bg-[#FF0000]/10"
+                  disabled={favoriteVideoIds.length === 0}
+                >
+                  <Heart className="h-4 w-4 fill-current" />
+                  {favoriteVideoIds.length} favorieten afspelen
+                </Button>
+              )}
+            </div>
           </motion.div>
         )}
       </main>
