@@ -38,6 +38,7 @@ interface StoryEndCarouselProps {
   onOpenPolaroids: () => void;
   onDownloadPDF: () => void;
   onOpenMusic: () => void;
+  onOpenTvFilm: () => void;
 }
 
 export const StoryEndCarousel = ({
@@ -50,6 +51,7 @@ export const StoryEndCarousel = ({
   onOpenPolaroids,
   onDownloadPDF,
   onOpenMusic,
+  onOpenTvFilm,
 }: StoryEndCarouselProps) => {
   const { t, language } = useLanguage();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -133,7 +135,7 @@ export const StoryEndCarousel = ({
     }
   };
 
-  const CARD_COUNT = 7;
+  const CARD_COUNT = 8;
 
   const updateScrollState = useCallback(() => {
     if (!scrollRef.current) return;
@@ -351,6 +353,18 @@ export const StoryEndCarousel = ({
       actionLabel: 'Ontdek hits',
       gradient: 'from-[#1DB954]/20 via-emerald-500/10 to-transparent',
       accentColor: 'text-[#1DB954]',
+    },
+    {
+      id: 'tv-film-overview',
+      title: 'Mijn Leven in TV & Film',
+      subtitle: `${events.length > 0 ? events[0].year : '?'}–${events.length > 0 ? events[events.length - 1].year : '?'} • Series & films`,
+      description: 'Herleef de iconische TV-series en blockbusters uit jouw leven met trailers op YouTube.',
+      icon: <Tv className="h-6 w-6" />,
+      isPremium: false,
+      action: onOpenTvFilm,
+      actionLabel: 'Ontdek titels',
+      gradient: 'from-red-500/20 via-rose-500/10 to-transparent',
+      accentColor: 'text-red-400',
     },
     {
       id: 'personalized',
