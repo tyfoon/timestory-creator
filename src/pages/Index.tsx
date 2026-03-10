@@ -435,6 +435,7 @@ const Index = () => {
                     endYear={customEndYear}
                     periodType={selectedPeriod}
                     focus={optionalData.focus}
+                    city={optionalData.city}
                     value={optionalData.subculture}
                     onChange={(subculture: SubcultureData) => setOptionalData({ ...optionalData, subculture })}
                   />

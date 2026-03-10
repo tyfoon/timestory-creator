@@ -3,12 +3,14 @@ import { Label } from '@/components/ui/label';
 import { Music } from 'lucide-react';
 import { SubcultureData } from '@/types/form';
 import { getSubculturesForPeriod } from '@/lib/subcultureData';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SubcultureSelectorProps {
   startYear: number;
   endYear: number;
   periodType: string;
   focus: string;
+  city?: string;
   value: SubcultureData | undefined;
   onChange: (value: SubcultureData) => void;
 }
@@ -18,14 +20,17 @@ export const SubcultureSelector = ({
   endYear,
   periodType,
   focus,
+  city,
   value,
   onChange
 }: SubcultureSelectorProps) => {
-  // Get subcultures for this era
+  const { t } = useLanguage();
+  
+  // Get subcultures for this era, using city for country detection
   const subcultureResult = useMemo(() => {
     if (!startYear || !endYear || !periodType) return null;
-    return getSubculturesForPeriod(startYear, endYear, periodType, focus);
-  }, [startYear, endYear, periodType, focus]);
+    return getSubculturesForPeriod(startYear, endYear, periodType, focus, city);
+  }, [startYear, endYear, periodType, focus, city]);
 
   // Build the options: 5 subcultures + 1 neutral
   const options = useMemo(() => {
@@ -40,7 +45,7 @@ export const SubcultureSelector = ({
     // Add neutral option
     subcultureOptions.push({
       value: 'neutral',
-      label: 'Geen voorkeur',
+      label: t('subcultureNoPreference') as string,
       isNeutral: true
     });
     
@@ -77,7 +82,7 @@ export const SubcultureSelector = ({
     <div className="space-y-2">
       <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
         <Music className="h-4 w-4 text-accent" />
-        Subcultuur
+        {t('subcultureLabel') as string}
         <span className="text-xs text-muted-foreground font-normal">
           ({subcultureResult.period}, {subcultureResult.country})
         </span>

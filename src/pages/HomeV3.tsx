@@ -742,6 +742,7 @@ const HomeV3 = () => {
                             endYear={customEndYear}
                             periodType={selectedPeriod}
                             focus={optionalData.focus}
+                            city={optionalData.city}
                             value={optionalData.subculture}
                             onChange={(subculture: SubcultureData) => setOptionalData({ ...optionalData, subculture })}
                           />
