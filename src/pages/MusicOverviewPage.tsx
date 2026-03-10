@@ -473,7 +473,7 @@ const TrackCard = ({ resolvedHit, isFavorite, isSaved, isEmbedActive, isLoggedIn
   const { hit, spotify, loading, isLocal } = resolvedHit;
 
   return (
-    <div className="flex-shrink-0 w-[160px] sm:w-[180px] group">
+    <div className="flex-shrink-0 w-[120px] sm:w-[160px] md:w-[180px] group">
       {/* Album art */}
       <div
         className={`relative aspect-square overflow-hidden rounded-xl shadow-lg bg-muted cursor-pointer mb-2 ${
