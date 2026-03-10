@@ -711,6 +711,11 @@ const PolaroidCollagePage = () => {
                 toast({ title: 'PDF generatie mislukt', variant: 'destructive' });
               }
             }}
+            onOpenMusic={() => {
+              const start = events.length > 0 ? events[0].year : 1980;
+              const end = events.length > 0 ? events[events.length - 1].year : new Date().getFullYear();
+              navigate(`/muziek?start=${start}&end=${end}`);
+            }}
           />
         </div>
       )}
