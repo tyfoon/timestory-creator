@@ -15,6 +15,7 @@ import SharedStoryPage from "./pages/SharedStoryPage";
 import AuthPage from "./pages/AuthPage";
 import AccountPage from "./pages/AccountPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import MusicOverviewPage from "./pages/MusicOverviewPage";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/resultaat" element={<ResultPage />} />
               <Route path="/polaroid" element={<PolaroidCollagePage />} />
               <Route path="/story" element={<TimelineStoryPage />} />
+              <Route path="/muziek" element={<MusicOverviewPage />} />
               <Route path="/s/:id" element={<SharedStoryPage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/account" element={<AccountPage />} />

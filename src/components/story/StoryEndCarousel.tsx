@@ -8,7 +8,7 @@ import {
   Music, Mic, Image, FileText, 
   Share2, Sparkles, ChevronLeft, ChevronRight, 
   Crown, Gift, Lock, Download, Loader2, AlertCircle,
-  RefreshCw, Film, Tv, Play, X, Maximize2, Flame
+  RefreshCw, Film, Tv, Play, X, Maximize2, Flame, ListMusic
 } from 'lucide-react';
 import { Player } from '@remotion/player';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,7 @@ interface StoryEndCarouselProps {
   onOpenSpokenVideo: () => void;
   onOpenPolaroids: () => void;
   onDownloadPDF: () => void;
+  onOpenMusic: () => void;
 }
 
 export const StoryEndCarousel = ({
@@ -48,6 +49,7 @@ export const StoryEndCarousel = ({
   onOpenSpokenVideo,
   onOpenPolaroids,
   onDownloadPDF,
+  onOpenMusic,
 }: StoryEndCarouselProps) => {
   const { t, language } = useLanguage();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -131,7 +133,7 @@ export const StoryEndCarousel = ({
     }
   };
 
-  const CARD_COUNT = 6;
+  const CARD_COUNT = 7;
 
   const updateScrollState = useCallback(() => {
     if (!scrollRef.current) return;
@@ -338,6 +340,18 @@ export const StoryEndCarousel = ({
 
   // Generic cards (2-5)
   const genericCards = [
+    {
+      id: 'music-overview',
+      title: 'Mijn Leven in Muziek',
+      subtitle: `${events.length > 0 ? events[0].year : '?'}–${events.length > 0 ? events[events.length - 1].year : '?'} • Alle hits`,
+      description: 'Ontdek alle iconische #1 hits uit jouw tijdlijn, sla je favorieten op en deel je playlist.',
+      icon: <ListMusic className="h-6 w-6" />,
+      isPremium: false,
+      action: onOpenMusic,
+      actionLabel: 'Ontdek hits',
+      gradient: 'from-[#1DB954]/20 via-emerald-500/10 to-transparent',
+      accentColor: 'text-[#1DB954]',
+    },
     {
       id: 'personalized',
       title: 'Volledig Gepersonaliseerd',
