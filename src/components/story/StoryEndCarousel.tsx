@@ -341,6 +341,18 @@ export const StoryEndCarousel = ({
   // Generic cards (2-5)
   const genericCards = [
     {
+      id: 'music-overview',
+      title: 'Mijn Leven in Muziek',
+      subtitle: `${startYear}–${endYear} • Alle hits`,
+      description: 'Ontdek alle iconische #1 hits uit jouw tijdlijn, sla je favorieten op en deel je playlist.',
+      icon: <ListMusic className="h-6 w-6" />,
+      isPremium: false,
+      action: onOpenMusic,
+      actionLabel: 'Ontdek hits',
+      gradient: 'from-[#1DB954]/20 via-emerald-500/10 to-transparent',
+      accentColor: 'text-[#1DB954]',
+    },
+    {
       id: 'personalized',
       title: 'Volledig Gepersonaliseerd',
       subtitle: '40 gebeurtenissen • Jouw details',
