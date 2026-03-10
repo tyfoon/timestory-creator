@@ -142,7 +142,8 @@ export const getSubculturesForPeriod = (
   startYear: number,
   endYear: number,
   periodType: string,
-  focus: string = 'netherlands'
+  focus: string = 'netherlands',
+  city?: string
 ): SubcultureResult | null => {
   // Calculate the middle year of the period to determine the decade
   const middleYear = Math.round((startYear + endYear) / 2);
