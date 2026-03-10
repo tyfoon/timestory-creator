@@ -448,7 +448,7 @@ const TvFilmOverviewPage = () => {
         )}
 
         {/* Discover more carousel */}
-        <DiscoverMoreCarousel currentPage="tv-film" searchParams={searchParams} />
+        <SharedExperienceCarousel excludeCards={['tv-film-overview']} searchParams={searchParams} />
       </main>
     </div>
   );

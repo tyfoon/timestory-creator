@@ -452,7 +452,7 @@ const MusicOverviewPage = () => {
         )}
 
         {/* Discover more carousel */}
-        <DiscoverMoreCarousel currentPage="music" searchParams={searchParams} />
+        <SharedExperienceCarousel excludeCards={['music-overview']} searchParams={searchParams} />
       </main>
     </div>
   );
