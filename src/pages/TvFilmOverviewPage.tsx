@@ -50,99 +50,77 @@ const TvFilmOverviewPage = () => {
   const [loadedCount, setLoadedCount] = useState(0);
   const [country, setCountry] = useState<string | null>(null);
 
-  // Fetch TV/films from AI in parallel chunks
+  // Fetch TV/films from AI
   useEffect(() => {
     let cancelled = false;
-
-    const fetchChunk = async (chunkStart: number, chunkEnd: number) => {
-      const { data, error } = await supabase.functions.invoke('generate-tv-films', {
-        body: { startYear, endYear, city, chunkStart, chunkEnd }
-      });
-      if (error || !data?.items) return { items: [], country: null };
-
-      const chunkItems: ResolvedItem[] = [];
-      for (const [yearStr, items] of Object.entries(data.items)) {
-        const yr = parseInt(yearStr, 10);
-        if (Array.isArray(items)) {
-          (items as TvFilmItem[]).forEach(item => {
-            if (item.title) {
-              chunkItems.push({ year: yr, item, youtube: null, loading: true });
-            }
-          });
-        }
-      }
-      return { items: chunkItems, country: data.country || null };
-    };
-
-    const fetchYouTubeForItems = async (items: ResolvedItem[], globalOffset: number) => {
-      const batchSize = 10;
-      for (let i = 0; i < items.length; i += batchSize) {
-        if (cancelled) return;
-        const batch = items.slice(i, i + batchSize);
-
-        const results = await Promise.allSettled(
-          batch.map(async ({ item }) => {
-            const query = `${item.title} ${item.type === 'film' ? 'official trailer' : 'trailer intro'}`;
-            try {
-              const { data, error } = await supabase.functions.invoke('search-youtube', { body: { query } });
-              if (error || !data?.videoId) return null;
-              return data as YouTubeResult;
-            } catch { return null; }
-          })
-        );
-
-        if (cancelled) return;
-        setLoadedCount(prev => prev + batch.length);
-
-        setResolvedItems(prev => {
-          const updated = [...prev];
-          for (let j = 0; j < batch.length; j++) {
-            const idx = globalOffset + i + j;
-            if (idx < updated.length) {
-              const r = results[j];
-              updated[idx] = {
-                ...updated[idx],
-                youtube: r.status === 'fulfilled' ? r.value : null,
-                loading: false,
-              };
-            }
-          }
-          return updated;
-        });
-      }
-    };
 
     const fetchItems = async () => {
       setIsLoading(true);
       try {
-        // Split into chunks of ~10 years, fetch in parallel
-        const chunkSize = 10;
-        const chunks: { start: number; end: number }[] = [];
-        for (let y = startYear; y <= endYear; y += chunkSize) {
-          chunks.push({ start: y, end: Math.min(y + chunkSize - 1, endYear) });
+        const { data, error } = await supabase.functions.invoke('generate-tv-films', {
+          body: { startYear, endYear, city }
+        });
+
+        if (cancelled || error || !data?.items) {
+          if (!cancelled) setIsLoading(false);
+          return;
         }
 
-        // Fetch all chunks in parallel
-        const chunkResults = await Promise.all(
-          chunks.map(c => fetchChunk(c.start, c.end))
-        );
+        setCountry(data.country || null);
 
-        if (cancelled) return;
-
-        // Merge results
-        let allItems: ResolvedItem[] = [];
-        let detectedCountry: string | null = null;
-        for (const cr of chunkResults) {
-          allItems = allItems.concat(cr.items);
-          if (cr.country) detectedCountry = cr.country;
+        const allItems: ResolvedItem[] = [];
+        for (const [yearStr, items] of Object.entries(data.items)) {
+          const yr = parseInt(yearStr, 10);
+          if (Array.isArray(items)) {
+            (items as TvFilmItem[]).forEach(item => {
+              if (item.title) {
+                allItems.push({ year: yr, item, youtube: null, loading: true });
+              }
+            });
+          }
         }
 
         allItems.sort((a, b) => a.year - b.year);
         setResolvedItems(allItems);
-        setCountry(detectedCountry);
 
-        // Now fetch YouTube in background
-        await fetchYouTubeForItems(allItems, 0);
+        // Fetch YouTube trailers in batches of 10
+        const batchSize = 10;
+        let loaded = 0;
+        for (let i = 0; i < allItems.length; i += batchSize) {
+          if (cancelled) return;
+          const batch = allItems.slice(i, i + batchSize);
+
+          const results = await Promise.allSettled(
+            batch.map(async ({ item }) => {
+              const query = `${item.title} ${item.type === 'film' ? 'official trailer' : 'trailer intro'}`;
+              try {
+                const { data, error } = await supabase.functions.invoke('search-youtube', { body: { query } });
+                if (error || !data?.videoId) return null;
+                return data as YouTubeResult;
+              } catch { return null; }
+            })
+          );
+
+          if (cancelled) return;
+          loaded += batch.length;
+          setLoadedCount(loaded);
+
+          setResolvedItems(prev => {
+            const updated = [...prev];
+            for (let j = 0; j < batch.length; j++) {
+              const idx = i + j;
+              if (idx < updated.length) {
+                const r = results[j];
+                updated[idx] = {
+                  ...updated[idx],
+                  youtube: r.status === 'fulfilled' ? r.value : null,
+                  loading: false,
+                };
+              }
+            }
+            return updated;
+          });
+        }
       } catch (err) {
         console.error('[TvFilmOverview] Failed to fetch:', err);
       } finally {
