@@ -5,8 +5,9 @@
 import { useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Music, Tv, Image, FileText, Flame, ChevronLeft, ChevronRight, Gift, Crown } from 'lucide-react';
+import { Music, Tv, Image, FileText, ChevronLeft, ChevronRight, Gift, Crown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface CardDef {
   id: string;
@@ -26,6 +27,7 @@ interface DiscoverMoreCarouselProps {
 
 export const DiscoverMoreCarousel = ({ currentPage, searchParams }: DiscoverMoreCarouselProps) => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -35,32 +37,32 @@ export const DiscoverMoreCarousel = ({ currentPage, searchParams }: DiscoverMore
   const allCards: CardDef[] = [
     {
       id: 'music',
-      title: 'Mijn Leven in Muziek',
-      description: 'Ontdek de #1 hits uit jouw jaren',
+      title: t('discoverMusicTitle') as string,
+      description: t('discoverMusicDesc') as string,
       icon: <Music className="h-6 w-6" />,
       badge: 'free',
       action: () => navigate(`/muziek${params}`),
     },
     {
       id: 'tv-film',
-      title: 'Mijn Leven in TV & Film',
-      description: 'Iconische films en series uit jouw tijd',
+      title: t('discoverTvFilmTitle') as string,
+      description: t('discoverTvFilmDesc') as string,
       icon: <Tv className="h-6 w-6" />,
       badge: 'free',
       action: () => navigate(`/tv-film${params}`),
     },
     {
       id: 'polaroid',
-      title: 'Mijn Leven in Polaroids',
-      description: 'Jouw verhaal als polaroid collage',
+      title: t('discoverPolaroidTitle') as string,
+      description: t('discoverPolaroidDesc') as string,
       icon: <Image className="h-6 w-6" />,
       badge: 'free',
       action: () => navigate(`/polaroid${params}`),
     },
     {
       id: 'story',
-      title: 'Mijn Tijdlijn Verhaal',
-      description: 'Het volledige verhaal van jouw leven',
+      title: t('discoverStoryTitle') as string,
+      description: t('discoverStoryDesc') as string,
       icon: <FileText className="h-6 w-6" />,
       badge: 'free',
       action: () => navigate(`/story${params}`),
@@ -80,7 +82,9 @@ export const DiscoverMoreCarousel = ({ currentPage, searchParams }: DiscoverMore
     const el = scrollRef.current;
     if (!el) return;
     el.scrollBy({ left: dir === 'left' ? -280 : 280, behavior: 'smooth' });
-  }, []);
+    // Update scroll state after animation completes
+    setTimeout(updateScroll, 350);
+  }, [updateScroll]);
 
   return (
     <motion.section
@@ -90,7 +94,7 @@ export const DiscoverMoreCarousel = ({ currentPage, searchParams }: DiscoverMore
       className="mt-12 mb-8"
     >
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-serif text-xl font-bold text-foreground">Ontdek meer</h2>
+        <h2 className="font-serif text-xl font-bold text-foreground">{t('discoverMore') as string}</h2>
         <div className="flex gap-1">
           <button
             onClick={() => scroll('left')}
@@ -131,9 +135,9 @@ export const DiscoverMoreCarousel = ({ currentPage, searchParams }: DiscoverMore
                 }`}
               >
                 {card.badge === 'free' ? (
-                  <><Gift className="h-2.5 w-2.5 mr-0.5" /> Gratis</>
+                  <><Gift className="h-2.5 w-2.5 mr-0.5" /> {t('badgeFree') as string}</>
                 ) : (
-                  <><Crown className="h-2.5 w-2.5 mr-0.5" /> Premium</>
+                  <><Crown className="h-2.5 w-2.5 mr-0.5" /> {t('badgePremium') as string}</>
                 )}
               </Badge>
 
