@@ -15,6 +15,7 @@ import SharedStoryPage from "./pages/SharedStoryPage";
 import AuthPage from "./pages/AuthPage";
 import AccountPage from "./pages/AccountPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import MusicOverviewPage from "./pages/MusicOverviewPage";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
