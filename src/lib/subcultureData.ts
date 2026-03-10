@@ -41,17 +41,91 @@ const getDecadeString = (year: number): string => {
   return `${decade}s`;
 };
 
-// Get the geographic region based on focus
-const getCountryForFocus = (focus: string): string[] => {
-  switch (focus) {
-    case 'netherlands':
-      return ['Nederland'];
-    case 'europe':
-      return ['Nederland', 'Duitsland', 'UK', 'Frankrijk', 'Italië', 'Zweden', 'Australië'];
-    case 'world':
-    default:
-      return ['Nederland', 'USA', 'UK', 'Global', 'Japan', 'Zuid-Korea', 'Brazilië', 'Duitsland', 'Frankrijk'];
+// City-to-country mapping for subculture detection
+const cityToCountry: Record<string, string> = {
+  // Nederland
+  amsterdam: 'Nederland', rotterdam: 'Nederland', utrecht: 'Nederland', denhaag: 'Nederland',
+  'den haag': 'Nederland', eindhoven: 'Nederland', groningen: 'Nederland', tilburg: 'Nederland',
+  almere: 'Nederland', breda: 'Nederland', nijmegen: 'Nederland', arnhem: 'Nederland',
+  haarlem: 'Nederland', enschede: 'Nederland', apeldoorn: 'Nederland', amersfoort: 'Nederland',
+  maastricht: 'Nederland', leiden: 'Nederland', dordrecht: 'Nederland', zoetermeer: 'Nederland',
+  zwolle: 'Nederland', deventer: 'Nederland', delft: 'Nederland', leeuwarden: 'Nederland',
+  // Duitsland
+  berlin: 'Duitsland', münchen: 'Duitsland', munich: 'Duitsland', hamburg: 'Duitsland',
+  köln: 'Duitsland', cologne: 'Duitsland', frankfurt: 'Duitsland', stuttgart: 'Duitsland',
+  düsseldorf: 'Duitsland', dortmund: 'Duitsland', essen: 'Duitsland', leipzig: 'Duitsland',
+  bremen: 'Duitsland', dresden: 'Duitsland', hannover: 'Duitsland', nürnberg: 'Duitsland',
+  // USA
+  'new york': 'USA', 'los angeles': 'USA', chicago: 'USA', houston: 'USA', phoenix: 'USA',
+  philadelphia: 'USA', 'san antonio': 'USA', 'san diego': 'USA', dallas: 'USA', austin: 'USA',
+  seattle: 'USA', denver: 'USA', boston: 'USA', nashville: 'USA', portland: 'USA',
+  'san francisco': 'USA', miami: 'USA', atlanta: 'USA', detroit: 'USA', minneapolis: 'USA',
+  // UK
+  london: 'UK', manchester: 'UK', birmingham: 'UK', leeds: 'UK', glasgow: 'UK',
+  liverpool: 'UK', edinburgh: 'UK', bristol: 'UK', sheffield: 'UK', cardiff: 'UK',
+  newcastle: 'UK', nottingham: 'UK', brighton: 'UK', oxford: 'UK', cambridge: 'UK',
+  // Frankrijk
+  paris: 'Frankrijk', marseille: 'Frankrijk', lyon: 'Frankrijk', toulouse: 'Frankrijk',
+  nice: 'Frankrijk', nantes: 'Frankrijk', strasbourg: 'Frankrijk', montpellier: 'Frankrijk',
+  bordeaux: 'Frankrijk', lille: 'Frankrijk', rennes: 'Frankrijk',
+  // Italië
+  rome: 'Italië', roma: 'Italië', milan: 'Italië', milano: 'Italië', napoli: 'Italië',
+  naples: 'Italië', turin: 'Italië', torino: 'Italië', florence: 'Italië', firenze: 'Italië',
+  venice: 'Italië', venezia: 'Italië', bologna: 'Italië', genova: 'Italië',
+  // Japan
+  tokyo: 'Japan', osaka: 'Japan', kyoto: 'Japan', yokohama: 'Japan', nagoya: 'Japan',
+  // Zuid-Korea
+  seoul: 'Zuid-Korea', busan: 'Zuid-Korea', incheon: 'Zuid-Korea',
+  // Brazilië
+  'são paulo': 'Brazilië', 'sao paulo': 'Brazilië', rio: 'Brazilië',
+  'rio de janeiro': 'Brazilië', brasilia: 'Brazilië', salvador: 'Brazilië',
+  // Australië
+  sydney: 'Australië', melbourne: 'Australië', brisbane: 'Australië', perth: 'Australië',
+  adelaide: 'Australië',
+  // Zweden
+  stockholm: 'Zweden', göteborg: 'Zweden', gothenburg: 'Zweden', malmö: 'Zweden',
+  // Rusland
+  moscow: 'Rusland', moskou: 'Rusland', 'st petersburg': 'Rusland',
+  'sint petersburg': 'Rusland',
+  // China
+  beijing: 'China', shanghai: 'China', guangzhou: 'China', shenzhen: 'China',
+  // Nigeria
+  lagos: 'Nigeria', abuja: 'Nigeria',
+};
+
+/**
+ * Detect country from city name
+ */
+export const detectCountryFromCity = (city: string): string | null => {
+  if (!city) return null;
+  const normalized = city.toLowerCase().trim();
+  return cityToCountry[normalized] || null;
+};
+
+// Get the geographic region based on focus and optional city
+const getCountryForFocus = (focus: string, city?: string): string[] => {
+  // If city is provided, try to detect country and prioritize it
+  const detectedCountry = city ? detectCountryFromCity(city) : null;
+  
+  const baseCountries = (() => {
+    switch (focus) {
+      case 'netherlands':
+        return ['Nederland'];
+      case 'europe':
+        return ['Nederland', 'Duitsland', 'UK', 'Frankrijk', 'Italië', 'Zweden', 'Australië'];
+      case 'world':
+      default:
+        return ['Nederland', 'USA', 'UK', 'Global', 'Japan', 'Zuid-Korea', 'Brazilië', 'Duitsland', 'Frankrijk'];
+    }
+  })();
+  
+  if (detectedCountry) {
+    // Put detected country first, then add remaining countries
+    const rest = baseCountries.filter(c => c !== detectedCountry);
+    return [detectedCountry, ...rest];
   }
+  
+  return baseCountries;
 };
 
 export interface SubcultureResult {
