@@ -163,8 +163,7 @@ export const getSubculturesForPeriod = (
       entry.country === country
     );
     
-    console.log('[Subculture Debug] Checking', country, '→', match ? match.subcultures : 'no match');
-    
+
     if (match && match.subcultures.length > 0) {
       return {
         subcultures: match.subcultures,
