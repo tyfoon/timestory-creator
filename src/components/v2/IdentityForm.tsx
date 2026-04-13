@@ -24,7 +24,7 @@ export const IdentityForm = ({
   const genderOptions: { value: Gender; label: string; iconMale: boolean }[] = [
     { value: 'male', label: t('genderHe') as string, iconMale: true },
     { value: 'female', label: t('genderShe') as string, iconMale: false },
-    { value: 'none', label: t('genderNoPreference') as string, iconMale: true },
+    { value: 'none', label: t('genderNone') as string, iconMale: true },
   ];
   
   const getInputStyle = () => {
