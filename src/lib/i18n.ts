@@ -810,6 +810,112 @@ export const translations: Record<Language, Record<TranslationKey, TranslationVa
 
     // Timeline Story button
     timelineStoryButton: "Timeline Story",
+
+    // ChapterIndicator
+    chapterBirthDate: "Birth Date",
+    chapterDestination: "Destination",
+    chapterIdentity: "Identity",
+
+    // IdentityForm
+    whoIsMainCharacter: "Who is the main character?",
+    lastDetailsForJourney: "The final details for your personal time journey",
+    friendsCalledYou: "What did your friends call you back then?",
+    namePlaceholder: "E.g. Johnny, Mary, DJ Pete...",
+    forStoryStyle: "For the right story style:",
+    genderHe: "He",
+    genderShe: "She",
+
+    // RetroDateInput
+    whenDidYourStoryBegin: "When did your story begin?",
+    fillBirthDateToStart: "Fill in your birth date to start the time machine",
+    legendaryDayToStart: "A legendary day to start with.",
+    daysOfWeek: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+
+    // NostalgicLoading
+    loadingArchives: "Browsing through the archives...",
+    loadingDustNewspapers: "Dusting off old newspapers...",
+    loadingMemories: "Retrieving memories...",
+    loadingCassette: "Rewinding the cassette tape...",
+    loadingVHS: "Searching through VHS tapes...",
+    loadingHitsOf: "Looking up the hits of {year}...",
+    loadingDialUp: "Dialing up via modem... beep boop...",
+    loadingWindows: "Starting Windows 95...",
+    loadingBackTo: "Back to {year}...",
+    loadingSearchArchives: "Searching the archives of {year}...",
+    loadingCollectMemories: "Collecting memories...",
+    loadingPrepareJourney: "Preparing your time journey...",
+
+    // TimeTravelCounter
+    timeTravelComplete: "Time travel complete",
+    timeTravelInProgress: "Time travel in progress...",
+
+    // TimelineCarousel scope labels
+    scopeBirthday: "Birthday",
+    scopeOnBirthday: "On your birthday",
+    scopeInBirthMonth: "In your birth month",
+    scopeInBirthYear: "In your birth year",
+
+    // StoryEndCarousel / SharedExperienceCarousel
+    endOfJourney: "End of your time journey",
+    takeYourStory: "Take your story with you",
+    swipeToDiscover: "Swipe to discover all the ways you can relive and share your story",
+    myLifeInMusic: "My Life in Music",
+    allNumberOneHits: "All #1 hits",
+    discoverIconicHits: "Discover all iconic #1 hits from your timeline, save your favorites and share your playlist.",
+    discoverHits: "Discover hits",
+    myLifeInTvFilm: "My Life in TV & Film",
+    seriesAndFilms: "Series & films",
+    reliveIconicTv: "Relive the iconic TV series and blockbusters from your life with trailers on YouTube.",
+    discoverTitles: "Discover titles",
+    fullyPersonalized: "Fully Personalized",
+    fortyEvents: "40 events • Your details",
+    makeStoryUnique: "Make your story unique with personal details, 40 events and a longer music video.",
+    personalize: "Personalize",
+    roastMyLife: "Roast My Life",
+    aiHumorShareable: "AI humor • Shareable",
+    letAiRoast: "Let AI roast your life mercilessly (or mildly) based on your timeline. From loving to brutal.",
+    roastMe: "Roast me!",
+    spokenStory: "Spoken Story",
+    aiVoiceNarration: "AI voice • Narration",
+    listenToStory: "Listen to your life story as a spoken narration with visuals and atmospheric music.",
+    myLifeInPolaroids: "My Life in Polaroids",
+    retroStyle: "Retro style",
+    relivePolaroids: "Relive your finest moments as a collection of nostalgic polaroid photos.",
+    viewPolaroids: "View polaroids",
+    myLifeAsPresentation: "My Life as Presentation",
+    pdfAlbum: "PDF • A4 Album",
+    downloadAlbumDesc: "Download a beautiful A4 album of your life story as PDF, ready to print or share.",
+    downloadPdf: "Download PDF",
+
+    // ShareDialog
+    shareTitle: "My TimeStory",
+    shareVideoText: "Check out my personal timeline video!",
+    shareWhatsapp: "Check out my TimeStory: {url}",
+    shareTelegram: "Check out my TimeStory!",
+    shareTwitter: "Check out my personal timeline video!",
+    shareEmailSubject: "Check out my TimeStory",
+    shareEmailBody: "I made a personal timeline video! Check it out here: {url}",
+    viewSharedVideo: "View your shared video",
+
+    // RoastDialog
+    bornIn: "Born in",
+    discoverYourJourneyFree: "Discover your time journey • Free",
+    roastShareText: "🔥 Roast my life ({intensity}) - Discover your time journey at {url}",
+    savedToast: "Saved!",
+    roastSavedDesc: "The roast has been saved to your account.",
+    errorToast: "Error",
+    roastSaveError: "Could not save the roast.",
+    creatingImage: "Creating image...",
+    share: "Share",
+    save: "Save",
+    roastEmailSubject: "🔥 Roast my life",
+    roastEmailBody: "Check out my roast:\n\n{text}\n\nCreate your own time journey at {url}",
+
+    // MusicOverviewPage
+    removeFromFavorites: "Remove from favorites",
+    addToFavorites: "Add to favorites",
+    savedToAccount: "Saved to your account",
+    saveToAccount: "Save to your account",
   },
   de: {
     siteTitle: "Das Jahr von",
