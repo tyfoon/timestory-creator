@@ -395,9 +395,6 @@ const nlTranslations = {
   // RetroDateInput
   whenDidYourStoryBegin: "Wanneer begon jouw verhaal?",
   fillBirthDateToStart: "Vul je geboortedatum in om de tijdmachine te starten",
-  dayLabel: "Dag",
-  monthLabel: "Maand",
-  yearLabel: "Jaar",
   legendaryDayToStart: "Een legendarische dag om mee te beginnen.",
   daysOfWeek: ["Zondag", "Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag"] as readonly string[],
 
@@ -448,7 +445,7 @@ const nlTranslations = {
   spokenStory: "Gesproken Verhaal",
   aiVoiceNarration: "AI-stem • Vertelling",
   listenToStory: "Luister naar je levensverhaal als gesproken vertelling met beelden en sfeervolle muziek.",
-  watchVideo: "Bekijk video",
+  
   myLifeInPolaroids: "Mijn Leven in Polaroids",
   retroStyle: "Retro stijl",
   relivePolaroids: "Herleef je mooiste momenten als een verzameling nostalgische polaroid foto's.",
