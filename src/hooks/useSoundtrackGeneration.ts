@@ -277,7 +277,7 @@ export const startQuickSoundtrackGeneration = async (formData: FormData, events?
         description: e.description,
         category: e.category,
       }));
-      lyricsBody.summary = `${getTranslation('timelineOf', (language || 'nl') as Language)} ${startYear} ${getTranslation('to', (language || 'nl') as Language)} ${endYear}`;
+      lyricsBody.summary = `${getTranslationString('timelineOf', (language || 'nl') as Language)} ${startYear} ${getTranslationString('to', (language || 'nl') as Language)} ${endYear}`;
     }
 
     const lyricsResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-song-lyrics`, {
@@ -596,7 +596,7 @@ export const useSoundtrackGeneration = () => {
         lyricsBody.events = events.map(e => ({
           id: e.id, year: e.year, title: e.title, description: e.description, category: e.category,
         }));
-        lyricsBody.summary = `${getTranslation('timelineOf', (language || 'nl') as Language)} ${startYear} ${getTranslation('to', (language || 'nl') as Language)} ${endYear}`;
+        lyricsBody.summary = `${getTranslationString('timelineOf', (language || 'nl') as Language)} ${startYear} ${getTranslationString('to', (language || 'nl') as Language)} ${endYear}`;
       }
 
       const lyricsResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-song-lyrics`, {
