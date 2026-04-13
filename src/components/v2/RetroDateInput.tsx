@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BirthDateData } from '@/types/form';
 import { EraTheme } from '@/lib/eraThemes';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface RetroDateInputProps {
   value: BirthDateData;
@@ -10,22 +11,8 @@ interface RetroDateInputProps {
   onComplete?: () => void;
 }
 
-// Get day of week in Dutch
-const getDayOfWeek = (day: number, month: number, year: number): string | null => {
-  if (!day || !month || !year || year < 1900) return null;
-  
-  try {
-    const date = new Date(year, month - 1, day);
-    if (isNaN(date.getTime())) return null;
-    
-    const days = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag'];
-    return days[date.getDay()];
-  } catch {
-    return null;
-  }
-};
-
 export const RetroDateInput = ({ value, onChange, eraTheme, onComplete }: RetroDateInputProps) => {
+  const { t } = useLanguage();
   const dayRef = useRef<HTMLInputElement>(null);
   const monthRef = useRef<HTMLInputElement>(null);
   const yearRef = useRef<HTMLInputElement>(null);
@@ -37,11 +24,24 @@ export const RetroDateInput = ({ value, onChange, eraTheme, onComplete }: RetroD
   
   const currentYear = new Date().getFullYear();
   
-  // Check if date is complete
+  const getDayOfWeek = (day: number, month: number, year: number): string | null => {
+    if (!day || !month || !year || year < 1900) return null;
+    try {
+      const date = new Date(year, month - 1, day);
+      if (isNaN(date.getTime())) return null;
+      const daysOfWeek = t('daysOfWeek');
+      if (Array.isArray(daysOfWeek)) {
+        return daysOfWeek[date.getDay()];
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
   const isComplete = value.day > 0 && value.month > 0 && value.year >= 1900 && value.year <= currentYear;
   const dayOfWeek = isComplete ? getDayOfWeek(value.day, value.month, value.year) : null;
   
-  // Trigger celebration on complete
   useEffect(() => {
     if (isComplete && dayOfWeek) {
       setShowCelebration(true);
@@ -55,15 +55,10 @@ export const RetroDateInput = ({ value, onChange, eraTheme, onComplete }: RetroD
   const handleDayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawVal = e.target.value.replace(/\D/g, '').slice(0, 2);
     setDayInput(rawVal);
-    
     const val = parseInt(rawVal) || 0;
     const day = Math.min(31, Math.max(0, val));
     onChange({ ...value, day: day || 0 });
-    
-    const shouldAdvance = 
-      (rawVal.length === 1 && val >= 4 && val <= 9) ||
-      (rawVal.length >= 2);
-    
+    const shouldAdvance = (rawVal.length === 1 && val >= 4 && val <= 9) || (rawVal.length >= 2);
     if (shouldAdvance && day >= 1 && day <= 31) {
       setDayInput(String(day).padStart(2, '0'));
       monthRef.current?.focus();
@@ -74,15 +69,10 @@ export const RetroDateInput = ({ value, onChange, eraTheme, onComplete }: RetroD
   const handleMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawVal = e.target.value.replace(/\D/g, '').slice(0, 2);
     setMonthInput(rawVal);
-    
     const val = parseInt(rawVal) || 0;
     const month = Math.min(12, Math.max(0, val));
     onChange({ ...value, month: month || 0 });
-    
-    const shouldAdvance = 
-      (rawVal.length === 1 && val >= 2 && val <= 9) ||
-      (rawVal.length >= 2);
-    
+    const shouldAdvance = (rawVal.length === 1 && val >= 2 && val <= 9) || (rawVal.length >= 2);
     if (shouldAdvance && month >= 1 && month <= 12) {
       setMonthInput(String(month).padStart(2, '0'));
       yearRef.current?.focus();
@@ -93,28 +83,20 @@ export const RetroDateInput = ({ value, onChange, eraTheme, onComplete }: RetroD
   const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawVal = e.target.value.replace(/\D/g, '').slice(0, 4);
     setYearInput(rawVal);
-    
     const val = parseInt(rawVal) || 0;
     onChange({ ...value, year: val });
-    
     if (rawVal.length >= 4 && val >= 1900 && val <= currentYear) {
       yearRef.current?.blur();
     }
   };
 
   const handleDayBlur = () => {
-    if (dayInput && value.day) {
-      setDayInput(String(value.day).padStart(2, '0'));
-    }
+    if (dayInput && value.day) setDayInput(String(value.day).padStart(2, '0'));
   };
-
   const handleMonthBlur = () => {
-    if (monthInput && value.month) {
-      setMonthInput(String(value.month).padStart(2, '0'));
-    }
+    if (monthInput && value.month) setMonthInput(String(value.month).padStart(2, '0'));
   };
   
-  // Retro digit display styling based on era
   const getDigitStyle = () => {
     if (eraTheme.era === '80s') {
       return {
@@ -134,7 +116,6 @@ export const RetroDateInput = ({ value, onChange, eraTheme, onComplete }: RetroD
         textShadow: '0 0 5px rgba(255, 215, 0, 0.6)',
       };
     }
-    // Pre-70s / default - Flip clock style
     return {
       background: 'linear-gradient(180deg, #2d2d2d 0%, #1a1a1a 50%, #0a0a0a 100%)',
       border: '2px solid #444',
@@ -148,23 +129,18 @@ export const RetroDateInput = ({ value, onChange, eraTheme, onComplete }: RetroD
 
   return (
     <div className="space-y-4">
-      {/* Title */}
       <div className="text-center">
         <h2 
           className="text-xl sm:text-2xl font-bold mb-1"
-          style={{ 
-            color: 'var(--era-primary)',
-            fontFamily: eraTheme.fontFamily,
-          }}
+          style={{ color: 'var(--era-primary)', fontFamily: eraTheme.fontFamily }}
         >
-          Wanneer begon jouw verhaal?
+          {t('whenDidYourStoryBegin')}
         </h2>
         <p className="text-sm text-muted-foreground">
-          Vul je geboortedatum in om de tijdmachine te starten
+          {t('fillBirthDateToStart')}
         </p>
       </div>
       
-      {/* Retro scoreboard display */}
       <div 
         className="relative mx-auto p-6 rounded-xl"
         style={{
@@ -177,7 +153,6 @@ export const RetroDateInput = ({ value, onChange, eraTheme, onComplete }: RetroD
           boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
         }}
       >
-        {/* LED indicator lights */}
         <div className="absolute top-3 right-3 flex gap-1.5">
           <div 
             className="w-2 h-2 rounded-full animate-pulse"
@@ -188,11 +163,9 @@ export const RetroDateInput = ({ value, onChange, eraTheme, onComplete }: RetroD
           />
         </div>
         
-        {/* Date inputs in scoreboard style */}
         <div className="flex items-center justify-center gap-2 sm:gap-4">
-          {/* Day */}
           <div className="flex flex-col items-center">
-            <span className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Dag</span>
+            <span className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">{t('dayLabel')}</span>
             <input
               ref={dayRef}
               type="text"
@@ -204,24 +177,14 @@ export const RetroDateInput = ({ value, onChange, eraTheme, onComplete }: RetroD
               onChange={handleDayChange}
               onBlur={handleDayBlur}
               className="w-16 sm:w-20 h-14 sm:h-16 text-center text-3xl sm:text-4xl font-mono font-bold rounded-lg outline-none focus:ring-2 focus:ring-offset-2"
-              style={{
-                ...digitStyle,
-                fontFamily: "'Courier New', monospace",
-              }}
+              style={{ ...digitStyle, fontFamily: "'Courier New', monospace" }}
             />
           </div>
           
-          {/* Separator */}
-          <div 
-            className="text-3xl sm:text-4xl font-bold mt-5"
-            style={{ color: digitStyle.color }}
-          >
-            /
-          </div>
+          <div className="text-3xl sm:text-4xl font-bold mt-5" style={{ color: digitStyle.color }}>/</div>
           
-          {/* Month */}
           <div className="flex flex-col items-center">
-            <span className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Maand</span>
+            <span className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">{t('monthLabel')}</span>
             <input
               ref={monthRef}
               type="text"
@@ -233,43 +196,29 @@ export const RetroDateInput = ({ value, onChange, eraTheme, onComplete }: RetroD
               onChange={handleMonthChange}
               onBlur={handleMonthBlur}
               className="w-16 sm:w-20 h-14 sm:h-16 text-center text-3xl sm:text-4xl font-mono font-bold rounded-lg outline-none focus:ring-2 focus:ring-offset-2"
-              style={{
-                ...digitStyle,
-                fontFamily: "'Courier New', monospace",
-              }}
+              style={{ ...digitStyle, fontFamily: "'Courier New', monospace" }}
             />
           </div>
           
-          {/* Separator */}
-          <div 
-            className="text-3xl sm:text-4xl font-bold mt-5"
-            style={{ color: digitStyle.color }}
-          >
-            /
-          </div>
+          <div className="text-3xl sm:text-4xl font-bold mt-5" style={{ color: digitStyle.color }}>/</div>
           
-          {/* Year */}
           <div className="flex flex-col items-center">
-            <span className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Jaar</span>
+            <span className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">{t('yearLabel')}</span>
             <input
               ref={yearRef}
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
               maxLength={4}
-              placeholder="JJJJ"
+              placeholder="YYYY"
               value={yearInput}
               onChange={handleYearChange}
               className="w-20 sm:w-28 h-14 sm:h-16 text-center text-3xl sm:text-4xl font-mono font-bold rounded-lg outline-none focus:ring-2 focus:ring-offset-2"
-              style={{
-                ...digitStyle,
-                fontFamily: "'Courier New', monospace",
-              }}
+              style={{ ...digitStyle, fontFamily: "'Courier New', monospace" }}
             />
           </div>
         </div>
         
-        {/* Decorative bottom strip */}
         <div 
           className="mt-4 h-1 rounded-full"
           style={{ 
@@ -282,7 +231,6 @@ export const RetroDateInput = ({ value, onChange, eraTheme, onComplete }: RetroD
         />
       </div>
       
-      {/* Day of week celebration */}
       <AnimatePresence>
         {showCelebration && dayOfWeek && (
           <motion.div
@@ -310,7 +258,7 @@ export const RetroDateInput = ({ value, onChange, eraTheme, onComplete }: RetroD
                 className="text-sm opacity-90"
                 style={{ color: eraTheme.era === 'pre70s' || eraTheme.era === '80s' ? '#fff' : '#000' }}
               >
-                Een legendarische dag om mee te beginnen.
+                {t('legendaryDayToStart')}
               </p>
             </div>
           </motion.div>

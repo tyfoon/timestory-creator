@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import Tick from '@pqina/flip';
 import '@pqina/flip/dist/flip.min.css';
 
@@ -13,6 +14,7 @@ interface TimeTravelCounterProps {
  * After arriving, waits 2 seconds then fades out before calling onComplete.
  */
 export function TimeTravelCounter({ targetYear, onComplete }: TimeTravelCounterProps) {
+  const { t } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
   const tickRef = useRef<ReturnType<typeof Tick.DOM.create> | null>(null);
   const [currentDisplayYear, setCurrentDisplayYear] = useState(2026);
@@ -148,7 +150,7 @@ export function TimeTravelCounter({ targetYear, onComplete }: TimeTravelCounterP
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4">
         <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
         <p className="text-xs uppercase tracking-wider text-white/40 font-mono">
-          {isComplete ? 'Tijdreis voltooid' : 'Tijdreis in uitvoering...'}
+          {isComplete ? t('timeTravelComplete') : t('timeTravelInProgress')}
         </p>
         <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
       </div>

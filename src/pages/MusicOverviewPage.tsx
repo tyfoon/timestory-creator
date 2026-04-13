@@ -16,6 +16,7 @@ import { numberOneHits, NumberOneHit } from '@/data/numberOneHits';
 import { AccountLink } from '@/components/AccountLink';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SpotifyTrackResult {
   trackId: string;
@@ -474,6 +475,7 @@ interface TrackCardProps {
 }
 
 const TrackCard = ({ resolvedHit, isFavorite, isSaved, isEmbedActive, isLoggedIn, onToggleFavorite, onBookmark, onToggleEmbed, index }: TrackCardProps) => {
+  const { t } = useLanguage();
   const { hit, spotify, loading, isLocal } = resolvedHit;
 
   return (
@@ -536,7 +538,7 @@ const TrackCard = ({ resolvedHit, isFavorite, isSaved, isEmbedActive, isLoggedIn
                 ? 'bg-[#1DB954] text-white scale-110' 
                 : 'bg-black/40 text-white/70 opacity-0 group-hover:opacity-100 hover:bg-black/60'
             }`}
-            title={isFavorite ? 'Verwijder uit favorieten' : 'Voeg toe aan favorieten'}
+            title={isFavorite ? t('removeFromFavorites') as string : t('addToFavorites') as string}
           >
             <Heart className={`h-3.5 w-3.5 ${isFavorite ? 'fill-current' : ''}`} />
           </button>
@@ -552,7 +554,7 @@ const TrackCard = ({ resolvedHit, isFavorite, isSaved, isEmbedActive, isLoggedIn
                 ? 'bg-accent text-accent-foreground scale-110'
                 : 'bg-black/40 text-white/70 opacity-0 group-hover:opacity-100 hover:bg-black/60'
             }`}
-            title={isSaved ? 'Opgeslagen op je account' : 'Opslaan op je account'}
+            title={isSaved ? t('savedToAccount') as string : t('saveToAccount') as string}
           >
             {isSaved ? (
               <BookmarkCheck className="h-3.5 w-3.5" />

@@ -311,11 +311,11 @@ export const StoryEndCarousel = ({
             <div className="flex gap-2 mt-auto">
               <Button onClick={() => setIsFullscreen(true)} size="sm" className="flex-1 gap-1.5 text-xs font-semibold">
                 <Maximize2 className="h-3 w-3" />
-                Bekijk video
+                {t('watchVideo')}
               </Button>
               <Button onClick={() => setIsShareDialogOpen(true)} size="sm" variant="outline" className="gap-1.5 text-xs">
                 <Share2 className="h-3 w-3" />
-                Delen
+                {t('share')}
               </Button>
             </div>
 
@@ -344,86 +344,86 @@ export const StoryEndCarousel = ({
   const genericCards = [
     {
       id: 'music-overview',
-      title: 'Mijn Leven in Muziek',
-      subtitle: `${events.length > 0 ? events[0].year : '?'}–${events.length > 0 ? events[events.length - 1].year : '?'} • Alle hits`,
-      description: 'Ontdek alle iconische #1 hits uit jouw tijdlijn, sla je favorieten op en deel je playlist.',
+      title: t('myLifeInMusic') as string,
+      subtitle: `${events.length > 0 ? events[0].year : '?'}–${events.length > 0 ? events[events.length - 1].year : '?'} • ${t('allNumberOneHits')}`,
+      description: t('discoverIconicHits') as string,
       icon: <ListMusic className="h-6 w-6" />,
       isPremium: false,
       action: onOpenMusic,
-      actionLabel: 'Ontdek hits',
+      actionLabel: t('discoverHits') as string,
       gradient: 'from-[#1DB954]/20 via-emerald-500/10 to-transparent',
       accentColor: 'text-[#1DB954]',
     },
     {
       id: 'tv-film-overview',
-      title: 'Mijn Leven in TV & Film',
-      subtitle: `${events.length > 0 ? events[0].year : '?'}–${events.length > 0 ? events[events.length - 1].year : '?'} • Series & films`,
-      description: 'Herleef de iconische TV-series en blockbusters uit jouw leven met trailers op YouTube.',
+      title: t('myLifeInTvFilm') as string,
+      subtitle: `${events.length > 0 ? events[0].year : '?'}–${events.length > 0 ? events[events.length - 1].year : '?'} • ${t('seriesAndFilms')}`,
+      description: t('reliveIconicTv') as string,
       icon: <Tv className="h-6 w-6" />,
       isPremium: false,
       action: onOpenTvFilm,
-      actionLabel: 'Ontdek titels',
+      actionLabel: t('discoverTitles') as string,
       gradient: 'from-red-500/20 via-rose-500/10 to-transparent',
       accentColor: 'text-red-400',
     },
     {
       id: 'personalized',
-      title: 'Volledig Gepersonaliseerd',
-      subtitle: '40 gebeurtenissen • Jouw details',
-      description: 'Maak je verhaal uniek met persoonlijke details, 40 gebeurtenissen en een langere muziekvideo.',
+      title: t('fullyPersonalized') as string,
+      subtitle: t('fortyEvents') as string,
+      description: t('makeStoryUnique') as string,
       icon: <Sparkles className="h-6 w-6" />,
       isPremium: true,
       action: onOpenPersonalize,
-      actionLabel: 'Personaliseer',
+      actionLabel: t('personalize') as string,
       gradient: 'from-amber-500/20 via-orange-500/10 to-transparent',
       accentColor: 'text-amber-400',
     },
     {
       id: 'roast',
-      title: 'Roast Mijn Leven',
-      subtitle: 'AI-humor • Deelbaar',
-      description: 'Laat AI je leven genadeloos (of mild) roasten op basis van jouw tijdlijn. Van liefdevol tot brutaal.',
+      title: t('roastMyLife') as string,
+      subtitle: t('aiHumorShareable') as string,
+      description: t('letAiRoast') as string,
       icon: <Flame className="h-6 w-6" />,
       isPremium: false,
       action: () => setIsRoastOpen(true),
-      actionLabel: 'Roast mij!',
+      actionLabel: t('roastMe') as string,
       gradient: 'from-orange-500/20 via-red-500/10 to-transparent',
       accentColor: 'text-orange-400',
     },
     {
       id: 'spoken-story',
-      title: 'Gesproken Verhaal',
-      subtitle: 'AI-stem • Vertelling',
-      description: 'Luister naar je levensverhaal als gesproken vertelling met beelden en sfeervolle muziek.',
+      title: t('spokenStory') as string,
+      subtitle: t('aiVoiceNarration') as string,
+      description: t('listenToStory') as string,
       icon: <Mic className="h-6 w-6" />,
       isPremium: true,
       action: onOpenSpokenVideo,
-      actionLabel: 'Bekijk video',
+      actionLabel: t('watchVideo') as string,
       gradient: 'from-emerald-500/20 via-teal-500/10 to-transparent',
       accentColor: 'text-emerald-400',
     },
     {
       id: 'polaroids',
-      title: 'Mijn Leven in Polaroids',
-      subtitle: `${events.length} foto's • Retro stijl`,
-      description: 'Herleef je mooiste momenten als een verzameling nostalgische polaroid foto\'s.',
+      title: t('myLifeInPolaroids') as string,
+      subtitle: `${events.length} foto's • ${t('retroStyle')}`,
+      description: t('relivePolaroids') as string,
       icon: <Image className="h-6 w-6" />,
       isPremium: false,
       action: onOpenPolaroids,
-      actionLabel: 'Bekijk polaroids',
+      actionLabel: t('viewPolaroids') as string,
       gradient: 'from-sky-500/20 via-blue-500/10 to-transparent',
       accentColor: 'text-sky-400',
       previewImage: polaroidPreview,
     },
     {
       id: 'presentation',
-      title: 'Mijn Leven als Presentatie',
-      subtitle: 'PDF • A4 Album',
-      description: 'Download een prachtig A4 album van je levensverhaal als PDF, klaar om te printen of te delen.',
+      title: t('myLifeAsPresentation') as string,
+      subtitle: t('pdfAlbum') as string,
+      description: t('downloadAlbumDesc') as string,
       icon: <FileText className="h-6 w-6" />,
       isPremium: true,
       action: onDownloadPDF,
-      actionLabel: 'Download PDF',
+      actionLabel: t('downloadPdf') as string,
       gradient: 'from-rose-500/20 via-pink-500/10 to-transparent',
       accentColor: 'text-rose-400',
     },
@@ -441,13 +441,13 @@ export const StoryEndCarousel = ({
         {/* Section header */}
         <div className="text-center mb-8 px-4">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">
-            Einde van je tijdreis
+            {t('endOfJourney')}
           </p>
           <h2 className="font-serif text-2xl sm:text-3xl font-bold text-foreground mb-2">
-            Neem je verhaal mee
+            {t('takeYourStory')}
           </h2>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            Swipe om alle manieren te ontdekken waarop je jouw verhaal kunt herbeleven en delen
+            {t('swipeToDiscover')}
           </p>
           <motion.div 
             className="flex items-center justify-center gap-1 mt-3 text-muted-foreground/60"
