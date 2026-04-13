@@ -398,7 +398,7 @@ const Index = () => {
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
                     <Users className="h-4 w-4 text-accent" />
-                    Geslacht
+                    {t('genderLabel') as string}
                   </Label>
                   <RadioGroup
                     value={optionalData.gender || 'none'}
@@ -406,9 +406,9 @@ const Index = () => {
                     className="grid grid-cols-3 gap-2"
                   >
                     {([
-                      { value: 'male', label: 'Man' },
-                      { value: 'female', label: 'Vrouw' },
-                      { value: 'none', label: 'Geen voorkeur' }
+                      { value: 'male', label: t('genderMale') as string },
+                      { value: 'female', label: t('genderFemale') as string },
+                      { value: 'none', label: t('genderNone') as string }
                     ] as const).map((option) => (
                       <Label
                         key={option.value}
@@ -490,7 +490,7 @@ const Index = () => {
                 disabled={!isBirthDateComplete || !selectedPeriod}
               >
                 <BookOpen className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                <span>Timeline Story</span>
+                <span>{t("timelineStoryButton") as string}</span>
                 <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
 
