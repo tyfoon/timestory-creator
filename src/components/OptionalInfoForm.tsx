@@ -15,7 +15,7 @@ export const OptionalInfoForm = ({ value, onChange }: OptionalInfoFormProps) => 
 
   return (
     <div className="space-y-4">
-      {/* Name - same style as other fields */}
+      {/* Name */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
           <User className="h-4 w-4 text-accent" />
@@ -37,13 +37,7 @@ export const OptionalInfoForm = ({ value, onChange }: OptionalInfoFormProps) => 
         </div>
       </div>
 
-      {/* Note: City has been moved to the main form */}
-
-      {/* Note: Gender selection has been moved to the main form */}
-
-      {/* Note: Attitude selection has been moved to SubcultureSelector on the main form */}
-
-      {/* Interests - compact */}
+      {/* Interests */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
           <Sparkles className="h-4 w-4 text-accent" />
@@ -57,16 +51,16 @@ export const OptionalInfoForm = ({ value, onChange }: OptionalInfoFormProps) => 
         />
       </div>
 
-      {/* Personal Details Section - no header */}
+      {/* Personal Details Section */}
       <div className="space-y-3">
         {/* Friends */}
         <div className="space-y-2">
           <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
             <Users className="h-4 w-4 text-accent" />
-            Top 3 vrienden van toen
+            {t('friendsLabel') as string}
           </Label>
           <Input
-            placeholder="Namen gescheiden door komma's (bijv. Jan, Piet, Klaas)"
+            placeholder={t('friendsInputPlaceholder') as string}
             value={value.friends || ''}
             onChange={(e) => onChange({ ...value, friends: e.target.value })}
             className="bg-card h-9"
@@ -77,10 +71,10 @@ export const OptionalInfoForm = ({ value, onChange }: OptionalInfoFormProps) => 
         <div className="space-y-2">
           <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
             <GraduationCap className="h-4 w-4 text-accent" />
-            Middelbare School
+            {t('schoolLabel') as string}
           </Label>
           <Input
-            placeholder="Bijv. Christelijk Lyceum Veenendaal"
+            placeholder={t('schoolInputPlaceholder') as string}
             value={value.school || ''}
             onChange={(e) => onChange({ ...value, school: e.target.value })}
             className="bg-card h-9"
@@ -91,10 +85,10 @@ export const OptionalInfoForm = ({ value, onChange }: OptionalInfoFormProps) => 
         <div className="space-y-2">
           <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
             <PartyPopper className="h-4 w-4 text-accent" />
-            Favoriete uitgaansplekken
+            {t('nightlifeLabel') as string}
           </Label>
           <Input
-            placeholder="Discotheken/kroegen gescheiden door komma's"
+            placeholder={t('nightlifeInputPlaceholder') as string}
             value={value.nightlife || ''}
             onChange={(e) => onChange({ ...value, nightlife: e.target.value })}
             className="bg-card h-9"
@@ -102,7 +96,7 @@ export const OptionalInfoForm = ({ value, onChange }: OptionalInfoFormProps) => 
         </div>
       </div>
 
-      {/* Geographic Focus - moved to bottom */}
+      {/* Geographic Focus */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
           <Compass className="h-4 w-4 text-accent" />

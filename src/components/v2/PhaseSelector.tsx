@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { PeriodType } from '@/types/form';
 import { EraTheme } from '@/lib/eraThemes';
 import { Baby, Bike, Headphones, Car } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PhaseSelectorProps {
   birthYear: number;
@@ -19,52 +20,49 @@ interface PhaseOption {
   description: string;
 }
 
-const getPhaseOptions = (birthYear: number): PhaseOption[] => {
+export const PhaseSelector = ({ birthYear, selected, onSelect, eraTheme }: PhaseSelectorProps) => {
+  const { t } = useLanguage();
   const currentYear = new Date().getFullYear();
   
   const formatYears = (start: number, end: number) => {
     const endCapped = Math.min(end, currentYear);
     return `${start} - ${endCapped}`;
   };
-  
-  return [
+
+  const phases: PhaseOption[] = [
     {
       id: 'birthyear',
-      title: 'Geboortejaar',
+      title: t('periodBirthyear') as string,
       subtitle: String(birthYear),
       ageRange: null,
       icon: <Baby className="w-8 h-8" />,
-      description: 'Ontdek de wereld waarin je geboren werd',
+      description: t('phaseBirthyearDesc') as string,
     },
     {
       id: 'childhood',
-      title: 'Kindertijd',
+      title: t('phaseChildhoodTitle') as string,
       subtitle: formatYears(birthYear + 6, birthYear + 12),
       ageRange: [6, 12],
       icon: <Bike className="w-8 h-8" />,
-      description: 'Herbeleef je zorgeloze buitenspeeltijd',
+      description: t('phaseChildhoodDesc') as string,
     },
     {
       id: 'puberty',
-      title: 'Pubertijd',
+      title: t('periodPuberty') as string,
       subtitle: formatYears(birthYear + 12, birthYear + 17),
       ageRange: [12, 17],
       icon: <Headphones className="w-8 h-8" />,
-      description: 'Terug naar je eerste verliefdheid',
+      description: t('phasePubertyDesc') as string,
     },
     {
       id: 'young-adult',
-      title: 'Jong Volwassen',
+      title: t('phaseYoungAdultTitle') as string,
       subtitle: formatYears(birthYear + 18, birthYear + 25),
       ageRange: [18, 25],
       icon: <Car className="w-8 h-8" />,
-      description: 'De tijd van vrijheid en avontuur',
+      description: t('phaseYoungAdultDesc') as string,
     },
   ];
-};
-
-export const PhaseSelector = ({ birthYear, selected, onSelect, eraTheme }: PhaseSelectorProps) => {
-  const phases = getPhaseOptions(birthYear);
   
   return (
     <div className="space-y-6">
@@ -77,10 +75,10 @@ export const PhaseSelector = ({ birthYear, selected, onSelect, eraTheme }: Phase
             fontFamily: eraTheme.fontFamily,
           }}
         >
-          Kies je bestemming
+          {t('chooseDestination') as string}
         </h2>
         <p className="text-sm text-muted-foreground">
-          Welke versie van jezelf wil je bezoeken?
+          {t('whichVersionToVisit') as string}
         </p>
       </div>
       

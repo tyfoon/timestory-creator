@@ -242,7 +242,7 @@ const HomeV2 = () => {
                         color: eraTheme.era === 'pre70s' || eraTheme.era === '80s' ? '#fff' : '#000',
                       }}
                     >
-                      <span>Kies je bestemming</span>
+                      <span>{t('chooseDestination')}</span>
                       <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </motion.div>
@@ -275,7 +275,7 @@ const HomeV2 = () => {
                     className="text-muted-foreground"
                   >
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    Terug naar geboortedatum
+                    {t('backToBirthDate')}
                   </Button>
                 </div>
               </motion.div>
@@ -316,12 +316,12 @@ const HomeV2 = () => {
                     }}
                   >
                     <Rocket className="mr-2 h-5 w-5" />
-                    <span>Start mijn Tijdreis</span>
+                    <span>{t('startMyTimeJourney')}</span>
                     <Sparkles className="ml-2 h-5 w-5" />
                   </Button>
                   
                   <p className="text-center text-xs text-muted-foreground mt-3">
-                    Je gaat terug naar {calculateYearRange().startYear}
+                     Je gaat terug naar {calculateYearRange().startYear}
                     {calculateYearRange().startYear !== calculateYearRange().endYear && 
                       ` - ${calculateYearRange().endYear}`
                     }
@@ -336,7 +336,7 @@ const HomeV2 = () => {
                     className="text-muted-foreground"
                   >
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    Kies andere bestemming
+                    {t('chooseOtherDestination')}
                   </Button>
                 </div>
               </motion.div>
