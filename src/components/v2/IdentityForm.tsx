@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Gender } from '@/types/form';
 import { EraTheme } from '@/lib/eraThemes';
 import { User, UserCircle } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface IdentityFormProps {
   name: string;
@@ -11,12 +12,6 @@ interface IdentityFormProps {
   eraTheme: EraTheme;
 }
 
-const genderOptions: { value: Gender; label: string; iconMale: boolean }[] = [
-  { value: 'male', label: 'Hij', iconMale: true },
-  { value: 'female', label: 'Zij', iconMale: false },
-  { value: 'none', label: 'Geen voorkeur', iconMale: true },
-];
-
 export const IdentityForm = ({ 
   name, 
   gender, 
@@ -24,8 +19,14 @@ export const IdentityForm = ({
   onGenderChange, 
   eraTheme 
 }: IdentityFormProps) => {
+  const { t } = useLanguage();
+
+  const genderOptions: { value: Gender; label: string; iconMale: boolean }[] = [
+    { value: 'male', label: t('genderHe') as string, iconMale: true },
+    { value: 'female', label: t('genderShe') as string, iconMale: false },
+    { value: 'none', label: t('genderNoPreference') as string, iconMale: true },
+  ];
   
-  // Get era-specific styling for the input
   const getInputStyle = () => {
     if (eraTheme.era === '80s') {
       return {
@@ -43,7 +44,6 @@ export const IdentityForm = ({
         color: '#000',
       };
     }
-    // Pre-70s - Typewriter / label maker style
     return {
       background: '#fffef5',
       border: '2px solid #8b4513',
@@ -56,7 +56,6 @@ export const IdentityForm = ({
 
   return (
     <div className="space-y-6">
-      {/* Title */}
       <div className="text-center">
         <h2 
           className="text-xl sm:text-2xl font-bold mb-1"
@@ -65,14 +64,13 @@ export const IdentityForm = ({
             fontFamily: eraTheme.fontFamily,
           }}
         >
-          Wie is de hoofdrolspeler?
+          {t('whoIsMainCharacter')}
         </h2>
         <p className="text-sm text-muted-foreground">
-          De laatste details voor jouw persoonlijke tijdreis
+          {t('lastDetailsForJourney')}
         </p>
       </div>
       
-      {/* Name input - storytelling style */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -84,7 +82,7 @@ export const IdentityForm = ({
         >
           <span className="flex items-center gap-2">
             <User className="w-4 h-4" />
-            Hoe noemden je vrienden je in die tijd?
+            {t('friendsCalledYou')}
           </span>
         </label>
         
@@ -93,7 +91,7 @@ export const IdentityForm = ({
             type="text"
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
-            placeholder="Bijv. Johnny, Marieke, DJ Piet..."
+            placeholder={t('namePlaceholder') as string}
             className="w-full px-4 py-3 rounded-lg text-lg font-medium outline-none focus:ring-2 focus:ring-offset-2 transition-all"
             style={{
               ...inputStyle,
@@ -101,14 +99,12 @@ export const IdentityForm = ({
             }}
           />
           
-          {/* Decorative element based on era */}
           {eraTheme.era === 'pre70s' && (
             <div className="absolute -right-2 -top-2 w-4 h-4 bg-[#8b4513] rounded-sm transform rotate-12" />
           )}
         </div>
       </motion.div>
       
-      {/* Gender selection - visual icons */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -121,7 +117,7 @@ export const IdentityForm = ({
         >
           <span className="flex items-center gap-2">
             <UserCircle className="w-4 h-4" />
-            Voor de juiste verhaalstijl:
+            {t('forStoryStyle')}
           </span>
         </label>
         
@@ -147,10 +143,8 @@ export const IdentityForm = ({
                     : 'rgba(255,255,255,0.9)',
                 }}
               >
-                {/* Icon based on era */}
                 <div className="flex justify-center mb-2">
                   {eraTheme.era === '80s' ? (
-                    // 80s neon style
                     <div 
                       className="text-2xl"
                       style={{
@@ -161,7 +155,6 @@ export const IdentityForm = ({
                       {option.value === 'male' ? '♂' : option.value === 'female' ? '♀' : '◈'}
                     </div>
                   ) : eraTheme.era === '90s' ? (
-                    // 90s bold geometric
                     <div 
                       className="w-8 h-8 rounded-lg flex items-center justify-center text-xl font-bold"
                       style={{
@@ -172,7 +165,6 @@ export const IdentityForm = ({
                       {option.value === 'male' ? '♂' : option.value === 'female' ? '♀' : '◇'}
                     </div>
                   ) : (
-                    // Pre-70s elegant
                     <div 
                       className="text-2xl"
                       style={{
@@ -198,7 +190,6 @@ export const IdentityForm = ({
                   {option.label}
                 </span>
                 
-                {/* Selected check */}
                 {isSelected && (
                   <motion.div
                     initial={{ scale: 0 }}

@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ChapterIndicatorProps {
   currentChapter: 1 | 2 | 3;
@@ -6,17 +7,19 @@ interface ChapterIndicatorProps {
   completedChapters: boolean[];
 }
 
-const chapters = [
-  { number: 1, label: "Geboortedatum" },
-  { number: 2, label: "Bestemming" },
-  { number: 3, label: "Identiteit" },
-] as const;
-
 export const ChapterIndicator = ({ 
   currentChapter, 
   onChapterClick, 
   completedChapters 
 }: ChapterIndicatorProps) => {
+  const { t } = useLanguage();
+
+  const chapters = [
+    { number: 1, label: t('chapterBirthDate') as string },
+    { number: 2, label: t('chapterDestination') as string },
+    { number: 3, label: t('chapterIdentity') as string },
+  ];
+
   return (
     <div className="flex items-center justify-center gap-2 sm:gap-4 mb-8">
       {chapters.map((chapter, index) => {
@@ -26,7 +29,6 @@ export const ChapterIndicator = ({
         
         return (
           <div key={chapter.number} className="flex items-center">
-            {/* Chapter dot/number */}
             <button
               onClick={() => canClick && onChapterClick(chapter.number)}
               disabled={!canClick}
@@ -41,7 +43,6 @@ export const ChapterIndicator = ({
                 }
               `}
             >
-              {/* Number circle */}
               <span 
                 className={`
                   w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
@@ -62,12 +63,10 @@ export const ChapterIndicator = ({
                 )}
               </span>
               
-              {/* Label - hide on very small screens */}
               <span className="text-sm font-medium hidden xs:inline">
                 {chapter.label}
               </span>
               
-              {/* Active indicator pulse */}
               {isActive && (
                 <motion.span
                   initial={{ scale: 0.8, opacity: 0 }}
@@ -78,7 +77,6 @@ export const ChapterIndicator = ({
               )}
             </button>
             
-            {/* Connector line */}
             {index < chapters.length - 1 && (
               <div 
                 className={`

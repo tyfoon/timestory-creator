@@ -1,42 +1,45 @@
 import { motion } from "framer-motion";
 import { getEraTheme } from "@/lib/eraThemes";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface NostalgicLoadingProps {
   year: number;
 }
 
-const getLoadingMessages = (year: number): string[] => {
-  if (year < 1970) {
-    return [
-      "Bladeren door de archieven...",
-      "Stof van oude kranten blazen...",
-      "Herinneringen aan het ophalen...",
-    ];
-  }
-  if (year < 1990) {
-    return [
-      "De cassetteband terugspoelen...",
-      "VHS banden doorzoeken...",
-      `De hits van ${year} opzoeken...`,
-    ];
-  }
-  if (year < 2000) {
-    return [
-      "Inbellen via de modem... beep boop...",
-      "Windows 95 opstarten...",
-      `Terug naar ${year}...`,
-    ];
-  }
-  return [
-    `De archieven van ${year} doorzoeken...`,
-    "Herinneringen verzamelen...",
-    "Je tijdreis voorbereiden...",
-  ];
-};
-
 export const NostalgicLoading = ({ year }: NostalgicLoadingProps) => {
+  const { t } = useLanguage();
   const eraTheme = getEraTheme(year);
-  const messages = getLoadingMessages(year);
+
+  const getLoadingMessages = (): string[] => {
+    if (year < 1970) {
+      return [
+        t('loadingArchives') as string,
+        t('loadingDustNewspapers') as string,
+        t('loadingMemories') as string,
+      ];
+    }
+    if (year < 1990) {
+      return [
+        t('loadingCassette') as string,
+        t('loadingVHS') as string,
+        (t('loadingHitsOf') as string).replace('{year}', String(year)),
+      ];
+    }
+    if (year < 2000) {
+      return [
+        t('loadingDialUp') as string,
+        t('loadingWindows') as string,
+        (t('loadingBackTo') as string).replace('{year}', String(year)),
+      ];
+    }
+    return [
+      (t('loadingSearchArchives') as string).replace('{year}', String(year)),
+      t('loadingCollectMemories') as string,
+      t('loadingPrepareJourney') as string,
+    ];
+  };
+
+  const messages = getLoadingMessages();
   
   return (
     <motion.div
@@ -52,27 +55,19 @@ export const NostalgicLoading = ({ year }: NostalgicLoadingProps) => {
             : 'linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%)',
       }}
     >
-      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {eraTheme.era === '80s' && (
           <>
             <motion.div
-              animate={{ 
-                x: [0, 100, 0],
-                y: [0, -50, 0],
-              }}
+              animate={{ x: [0, 100, 0], y: [0, -50, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
               className="absolute top-20 left-10 w-4 h-4 bg-[#ff1493]"
             />
             <motion.div
-              animate={{ 
-                x: [0, -80, 0],
-                y: [0, 60, 0],
-              }}
+              animate={{ x: [0, -80, 0], y: [0, 60, 0] }}
               transition={{ duration: 3.5, repeat: Infinity, ease: "linear" }}
               className="absolute bottom-32 right-20 w-6 h-6 bg-[#00ced1]"
             />
-            {/* Scanlines */}
             <div 
               className="absolute inset-0 opacity-10"
               style={{
@@ -84,9 +79,7 @@ export const NostalgicLoading = ({ year }: NostalgicLoadingProps) => {
       </div>
       
       <div className="text-center space-y-8 p-8">
-        {/* Spinning loader */}
         <div className="relative mx-auto w-24 h-24">
-          {/* Outer ring */}
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
@@ -96,8 +89,6 @@ export const NostalgicLoading = ({ year }: NostalgicLoadingProps) => {
               borderRightColor: 'var(--era-secondary)',
             }}
           />
-          
-          {/* Inner ring - opposite direction */}
           <motion.div
             animate={{ rotate: -360 }}
             transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
@@ -107,8 +98,6 @@ export const NostalgicLoading = ({ year }: NostalgicLoadingProps) => {
               borderLeftColor: 'var(--era-primary)',
             }}
           />
-          
-          {/* Center year */}
           <div className="absolute inset-0 flex items-center justify-center">
             <motion.span
               animate={{ scale: [1, 1.1, 1] }}
@@ -121,7 +110,6 @@ export const NostalgicLoading = ({ year }: NostalgicLoadingProps) => {
           </div>
         </div>
         
-        {/* Animated message */}
         <motion.div
           key={year}
           initial={{ opacity: 0, y: 10 }}
@@ -139,7 +127,6 @@ export const NostalgicLoading = ({ year }: NostalgicLoadingProps) => {
             {messages[0]}
           </motion.p>
           
-          {/* Progress dots */}
           <div className="flex justify-center gap-2 pt-4">
             {[0, 1, 2].map((i) => (
               <motion.div
