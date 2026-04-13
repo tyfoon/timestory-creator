@@ -59,6 +59,7 @@ Periode,Doelgroep,Land,Stroming 1,Stroming 2,Stroming 3,Stroming 4,Stroming 5
 1990s,Jong volwassen,USA,Grunge,Ravers,Hip-hop heads,Riot Grrrl,Indie-rockers
 1990s,Pubers,Zuid-Korea,Seo Taiji-sedae,Hiphoppers,PC Bang-gamers,Early Idols,Fashion-kids
 1990s,Pubers,Frankrijk,French Touch,Banlieue-rap,Ravers,Skaters,Grunge
+1990s,Jong volwassen,Frankrijk,French Touch DJs,Ravers,Altermondialistes,Hip-hop,Cinéphiles
 1990s,Jong volwassen,Japan,Gyaru,Visual Kei,Otaku,Shibuya-kei,Ura-Harajuku
 2000s,Pubers,Nederland,Breezers,MSN-generatie,Emo,Jumpstyle,Skaters
 2000s,Jong volwassen,Nederland,Urban/R&B,Indie-sleaze,Hipsters,Trance-fans,Alternatievelingen
@@ -67,6 +68,8 @@ Periode,Doelgroep,Land,Stroming 1,Stroming 2,Stroming 3,Stroming 4,Stroming 5
 2000s,Pubers,USA,Emo,Scene-kids,Pop-punk,Hip-hop,Gamers
 2000s,Pubers,Rusland,Gopniki,Emo,Glamurnye,Nu-Metallisty,Rejvery
 2000s,Pubers,China,Shanzhai,Shamate,Wangba-generatie,K-pop fans,Mangaka
+2000s,Pubers,Frankrijk,Tecktonik,Emo,Skateurs,Cailleras,Pop-punk
+2000s,Jong volwassen,Frankrijk,Bobos,Electro,Altermondialistes,Hipsters,Banlieue-rap
 2010s,Pubers,Nederland,Vlog-volgers,Fandoms,VSCO-girls,K-pop fans,Tumblr-kids
 2010s,Jong volwassen,Nederland,Hipsters,EDM-fans,Influencers,Klimaat-activisten,Veganisten
 2010s,Pubers,Duitsland,YouTuber,Fandoms,Tumblr-style,K-pop,Skater
@@ -74,9 +77,13 @@ Periode,Doelgroep,Land,Stroming 1,Stroming 2,Stroming 3,Stroming 4,Stroming 5
 2010s,Pubers,Global,YouTuber,Fandoms,Tumblr-kids,K-pop,VSCO-girls
 2010s,Pubers,Zuid-Korea,Idols,Gaming (LoL),Ulzzang,Studygrams,Hiphop
 2010s,Pubers,Nigeria,Afrobeats,Tech-kids,Fashion-bloggers,Nollywood-fans,Gospel-youth
+2010s,Pubers,Frankrijk,YouTubeurs,Fandoms,VSCO-girls,K-pop,Gamers
+2010s,Jong volwassen,Frankrijk,Hipsters,Bobos,Gilets Jaunes,Influenceurs,Start-uppers
 2020s,Pubers,Nederland,TikTok-aesthetic,Gym-bros,Drill-rap,K-pop,Anime-fans
 2020s,Jong volwassen,Nederland,Woke/SJW,Gym-cultuur,Crypto-traders,Minimalisten,Ravers
 2020s,Pubers,Duitsland,TikTok-Aesthetic,Gaming,FFF-Jugend,K-pop,Drill
 2020s,Jong volwassen,Duitsland,Klima-Aktivisten,Nachhaltigkeit,Minimalisten,Club-Kultur,Remote Workers
 2020s,Pubers,Japan,Jirai Kei,VTubers,Kawaii-metal,Gacha-gamers,TikTok-dance
 2020s,Jong volwassen,Global,Woke,Gym-culture,Crypto-traders,Minimalists,Sustainability
+2020s,Pubers,Frankrijk,TikTok-aesthetic,Gamers,Drill français,K-pop,Anime-fans
+2020s,Jong volwassen,Frankrijk,Éco-activistes,Gym-culture,Crypto-traders,Minimalistes,Ravers
