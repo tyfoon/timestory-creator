@@ -13,27 +13,23 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 const getInitialLanguage = (): Language => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    const referrer = document.referrer;
-    
-    // If visiting from seemyyear.com domain, default to English
-    if (hostname.includes('seemyyear.com')) {
-      return 'en';
-    }
-    
-    // If referred from seemyyear.com, default to English
-    if (referrer && referrer.includes('seemyyear.com')) {
-      return 'en';
-    }
-    
-    // Check URL parameter for language override (e.g., ?lang=en)
     const urlParams = new URLSearchParams(window.location.search);
     const langParam = urlParams.get('lang') as Language;
     const supportedLanguages: Language[] = ['nl', 'en', 'de', 'fr'];
+
+    // 1. Priority: URL Parameter (?lang=en)
     if (langParam && supportedLanguages.includes(langParam)) {
       return langParam;
     }
+
+    // 2. Domain-based default: seemyyear.com always defaults to English
+    if (hostname.includes('seemyyear.com')) {
+      return 'en';
+    }
+
+    // 3. Fallback for hetjaarvan.nl or other environments
+    return 'nl';
   }
-  // Default to Dutch for other cases
   return 'nl';
 };
 
