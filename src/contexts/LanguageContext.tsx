@@ -22,8 +22,8 @@ const getInitialLanguage = (): Language => {
       return langParam;
     }
 
-    // 2. Domain-based default: seemyyear.com always defaults to English
-    if (hostname.includes('seemyyear.com')) {
+    // 2. Domain-based default: seemyyear.com and rewindmyera.com default to English
+    if (hostname.includes('seemyyear.com') || hostname.includes('rewindmyera.com')) {
       return 'en';
     }
 
