@@ -155,13 +155,17 @@ export const getSubculturesForPeriod = (
   // Get countries to search for based on geographic focus
   const countries = getCountryForFocus(focus, city);
   
-  // Find matching entries - prioritize Netherlands first, then other countries
+  console.log('[Subculture Debug]', { city, focus, decade, targetGroup, countries, detectedCountry: city ? detectCountryFromCity(city) : null });
+  
+  // Find matching entries - prioritize detected country first
   for (const country of countries) {
     const match = subcultureData.find(entry => 
       entry.period === decade && 
       entry.targetGroup === targetGroup &&
       entry.country === country
     );
+    
+    console.log('[Subculture Debug] Checking', country, '→', match ? match.subcultures : 'no match');
     
     if (match && match.subcultures.length > 0) {
       return {
