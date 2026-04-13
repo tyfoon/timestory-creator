@@ -33,6 +33,7 @@ export const TimelineCarousel = ({
   onToggleSelection,
   onBlacklistImage,
 }: TimelineCarouselProps) => {
+  const { t } = useLanguage();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const currentIndexRef = useRef(currentEventIndex);
