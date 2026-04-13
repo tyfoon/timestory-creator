@@ -321,7 +321,7 @@ const HomeV2 = () => {
                   </Button>
                   
                   <p className="text-center text-xs text-muted-foreground mt-3">
-                     Je gaat terug naar {calculateYearRange().startYear}
+                     {t('goingBackTo')} {calculateYearRange().startYear}
                     {calculateYearRange().startYear !== calculateYearRange().endYear && 
                       ` - ${calculateYearRange().endYear}`
                     }
