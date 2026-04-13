@@ -658,7 +658,7 @@ export const translations = {
     scrollToBegin: "Scroll to begin",
     blacklistTooltip: "Blacklist photo (global) and search new",
     blacklistAriaLabel: "Blacklist image",
-    timelineOf: "Timeline from",
+    timelineOf: "Timeline of",
     to: "to",
     serverError: "Server error",
     pollingFailed: "Status check failed",
@@ -1183,7 +1183,7 @@ export const translations = {
     eventDeleted: "Événement supprimé",
     eventShared: "Événement copié dans le presse-papiers",
   },
-} as const;
+} as const satisfies Record<Language, Record<TranslationKey, TranslationValue>>;
 
 export type TranslationKey = keyof typeof translations.nl;
 export type TranslationValue = string | readonly string[];
@@ -1192,9 +1192,9 @@ export type TranslationValue = string | readonly string[];
  * Lightweight translation helper for non-React files (API utils, hooks).
  * Use useTranslation() or useLanguage() inside React components instead.
  */
-export function getTranslation(key: TranslationKey, language: Language): string {
+export function getTranslation(key: TranslationKey, language: Language): TranslationValue {
   const value = (translations[language] as Record<string, unknown>)?.[key] ?? (translations.nl as Record<string, unknown>)?.[key] ?? key;
-  return typeof value === 'string' ? value : key;
+  return (typeof value === 'string' || Array.isArray(value)) ? (value as TranslationValue) : key;
 }
 
 export const useTranslation = (lang: Language = "nl") => {
