@@ -1183,18 +1183,24 @@ export const translations = {
     eventDeleted: "Événement supprimé",
     eventShared: "Événement copié dans le presse-papiers",
   },
-} as const satisfies Record<Language, Record<TranslationKey, TranslationValue>>;
+} as const;
 
 export type TranslationKey = keyof typeof translations.nl;
 export type TranslationValue = string | readonly string[];
 
 /**
  * Lightweight translation helper for non-React files (API utils, hooks).
- * Use useTranslation() or useLanguage() inside React components instead.
+ * Returns TranslationValue (string or string[]). Use getTranslationString() when you need a string.
  */
 export function getTranslation(key: TranslationKey, language: Language): TranslationValue {
   const value = (translations[language] as Record<string, unknown>)?.[key] ?? (translations.nl as Record<string, unknown>)?.[key] ?? key;
   return (typeof value === 'string' || Array.isArray(value)) ? (value as TranslationValue) : key;
+}
+
+/** Same as getTranslation but always returns a string (for keys known to be strings). */
+export function getTranslationString(key: TranslationKey, language: Language): string {
+  const value = getTranslation(key, language);
+  return typeof value === 'string' ? value : key;
 }
 
 export const useTranslation = (lang: Language = "nl") => {
