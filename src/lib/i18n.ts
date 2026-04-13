@@ -1340,7 +1340,7 @@ export const translations: Record<Language, Record<TranslationKey, TranslationVa
   },
 };
 
-export type { TranslationKey, TranslationValue };
+
 
 /**
  * Lightweight translation helper for non-React files (API utils, hooks).
