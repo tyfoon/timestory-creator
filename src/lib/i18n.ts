@@ -377,6 +377,116 @@ const nlTranslations = {
 
   // Timeline Story button
   timelineStoryButton: "Timeline Story",
+
+  // ChapterIndicator
+  chapterBirthDate: "Geboortedatum",
+  chapterDestination: "Bestemming",
+  chapterIdentity: "Identiteit",
+
+  // IdentityForm
+  whoIsMainCharacter: "Wie is de hoofdrolspeler?",
+  lastDetailsForJourney: "De laatste details voor jouw persoonlijke tijdreis",
+  friendsCalledYou: "Hoe noemden je vrienden je in die tijd?",
+  namePlaceholder: "Bijv. Johnny, Marieke, DJ Piet...",
+  forStoryStyle: "Voor de juiste verhaalstijl:",
+  genderHe: "Hij",
+  genderShe: "Zij",
+
+  // RetroDateInput
+  whenDidYourStoryBegin: "Wanneer begon jouw verhaal?",
+  fillBirthDateToStart: "Vul je geboortedatum in om de tijdmachine te starten",
+  dayLabel: "Dag",
+  monthLabel: "Maand",
+  yearLabel: "Jaar",
+  legendaryDayToStart: "Een legendarische dag om mee te beginnen.",
+  daysOfWeek: ["Zondag", "Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag"] as readonly string[],
+
+  // NostalgicLoading
+  loadingArchives: "Bladeren door de archieven...",
+  loadingDustNewspapers: "Stof van oude kranten blazen...",
+  loadingMemories: "Herinneringen aan het ophalen...",
+  loadingCassette: "De cassetteband terugspoelen...",
+  loadingVHS: "VHS banden doorzoeken...",
+  loadingHitsOf: "De hits van {year} opzoeken...",
+  loadingDialUp: "Inbellen via de modem... beep boop...",
+  loadingWindows: "Windows 95 opstarten...",
+  loadingBackTo: "Terug naar {year}...",
+  loadingSearchArchives: "De archieven van {year} doorzoeken...",
+  loadingCollectMemories: "Herinneringen verzamelen...",
+  loadingPrepareJourney: "Je tijdreis voorbereiden...",
+
+  // TimeTravelCounter
+  timeTravelComplete: "Tijdreis voltooid",
+  timeTravelInProgress: "Tijdreis in uitvoering...",
+
+  // TimelineCarousel scope labels
+  scopeBirthday: "Jarige",
+  scopeOnBirthday: "Op je geboortedag",
+  scopeInBirthMonth: "In je geboortemaand",
+  scopeInBirthYear: "In je geboortejaar",
+
+  // StoryEndCarousel / SharedExperienceCarousel
+  endOfJourney: "Einde van je tijdreis",
+  takeYourStory: "Neem je verhaal mee",
+  swipeToDiscover: "Swipe om alle manieren te ontdekken waarop je jouw verhaal kunt herbeleven en delen",
+  myLifeInMusic: "Mijn Leven in Muziek",
+  allNumberOneHits: "Alle #1 hits",
+  discoverIconicHits: "Ontdek alle iconische #1 hits uit jouw tijdlijn, sla je favorieten op en deel je playlist.",
+  discoverHits: "Ontdek hits",
+  myLifeInTvFilm: "Mijn Leven in TV & Film",
+  seriesAndFilms: "Series & films",
+  reliveIconicTv: "Herleef de iconische TV-series en blockbusters uit jouw leven met trailers op YouTube.",
+  discoverTitles: "Ontdek titels",
+  fullyPersonalized: "Volledig Gepersonaliseerd",
+  fortyEvents: "40 gebeurtenissen • Jouw details",
+  makeStoryUnique: "Maak je verhaal uniek met persoonlijke details, 40 gebeurtenissen en een langere muziekvideo.",
+  personalize: "Personaliseer",
+  roastMyLife: "Roast Mijn Leven",
+  aiHumorShareable: "AI-humor • Deelbaar",
+  letAiRoast: "Laat AI je leven genadeloos (of mild) roasten op basis van jouw tijdlijn. Van liefdevol tot brutaal.",
+  roastMe: "Roast mij!",
+  spokenStory: "Gesproken Verhaal",
+  aiVoiceNarration: "AI-stem • Vertelling",
+  listenToStory: "Luister naar je levensverhaal als gesproken vertelling met beelden en sfeervolle muziek.",
+  watchVideo: "Bekijk video",
+  myLifeInPolaroids: "Mijn Leven in Polaroids",
+  retroStyle: "Retro stijl",
+  relivePolaroids: "Herleef je mooiste momenten als een verzameling nostalgische polaroid foto's.",
+  viewPolaroids: "Bekijk polaroids",
+  myLifeAsPresentation: "Mijn Leven als Presentatie",
+  pdfAlbum: "PDF • A4 Album",
+  downloadAlbumDesc: "Download een prachtig A4 album van je levensverhaal als PDF, klaar om te printen of te delen.",
+  downloadPdf: "Download PDF",
+
+  // ShareDialog
+  shareTitle: "Mijn TimeStory",
+  shareVideoText: "Bekijk mijn persoonlijke tijdlijn video!",
+  shareWhatsapp: "Bekijk mijn TimeStory: {url}",
+  shareTelegram: "Bekijk mijn TimeStory!",
+  shareTwitter: "Bekijk mijn persoonlijke tijdlijn video!",
+  shareEmailSubject: "Bekijk mijn TimeStory",
+  shareEmailBody: "Ik heb een persoonlijke tijdlijn video gemaakt! Bekijk hem hier: {url}",
+  viewSharedVideo: "Bekijk je gedeelde video",
+
+  // RoastDialog
+  bornIn: "Geboren in",
+  discoverYourJourneyFree: "Ontdek jouw tijdreis • Gratis",
+  roastShareText: "🔥 Roast mijn leven ({intensity}) - Ontdek jouw tijdreis op {url}",
+  savedToast: "Opgeslagen!",
+  roastSavedDesc: "De roast is opgeslagen in je account.",
+  errorToast: "Fout",
+  roastSaveError: "Kon de roast niet opslaan.",
+  creatingImage: "Afbeelding maken...",
+  share: "Delen",
+  save: "Opslaan",
+  roastEmailSubject: "🔥 Roast mijn leven",
+  roastEmailBody: "Bekijk mijn roast:\n\n{text}\n\nMaak je eigen tijdreis op {url}",
+
+  // MusicOverviewPage
+  removeFromFavorites: "Verwijder uit favorieten",
+  addToFavorites: "Voeg toe aan favorieten",
+  savedToAccount: "Opgeslagen op je account",
+  saveToAccount: "Opslaan op je account",
 } as const;
 
 export type TranslationKey = keyof typeof nlTranslations;
