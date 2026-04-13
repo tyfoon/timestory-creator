@@ -20,7 +20,7 @@ export const Header = () => {
           <div className="w-10 h-10 rounded-full bg-gradient-gold flex items-center justify-center shadow-soft group-hover:shadow-card transition-shadow">
             <Clock className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-serif text-xl font-semibold text-primary">Het jaar van</span>
+          <span className="font-serif text-xl font-semibold text-primary">{t('siteTitle')}</span>
         </a>
         <div className="flex items-center gap-3">
           <LanguageSelector />

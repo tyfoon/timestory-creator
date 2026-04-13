@@ -2,6 +2,7 @@ export type Language = "nl" | "en" | "de" | "fr";
 
 const nlTranslations = {
   // Landing page
+  siteTitle: "Het jaar van",
   heroTitle: "Jouw verhaal door de tijd",
   heroSubtitle:
     "Ontdek wat er gebeurde op de dag dat jij geboren werd, of reis door de jaren heen met een persoonlijk historisch overzicht.",
@@ -385,6 +386,7 @@ export type TranslationValue = string | readonly string[];
 export const translations: Record<Language, Record<TranslationKey, TranslationValue>> = {
   nl: nlTranslations,
   en: {
+    siteTitle: "See My Year",
     heroTitle: "Your Story in Time",
     heroSubtitle: "Discover what happened on the day you were born, or journey through the years with a personal historical overview.",
     startButton: "Start Your Journey",
@@ -703,6 +705,7 @@ export const translations: Record<Language, Record<TranslationKey, TranslationVa
     timelineStoryButton: "Timeline Story",
   },
   de: {
+    siteTitle: "Das Jahr von",
     heroTitle: "Deine Geschichte in der Zeit",
     heroSubtitle: "Entdecke, was am Tag deiner Geburt geschah, oder reise durch die Jahre mit einem persönlichen historischen Überblick.",
     startButton: "Starte Deine Reise",
@@ -1021,6 +1024,7 @@ export const translations: Record<Language, Record<TranslationKey, TranslationVa
     timelineStoryButton: "Timeline Story",
   },
   fr: {
+    siteTitle: "L'année de",
     heroTitle: "Votre Histoire dans le Temps",
     heroSubtitle: "Découvrez ce qui s'est passé le jour de votre naissance, ou voyagez à travers les années avec un aperçu historique personnel.",
     startButton: "Commencez Votre Voyage",
