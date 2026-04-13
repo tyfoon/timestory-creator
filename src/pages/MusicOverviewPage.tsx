@@ -16,6 +16,7 @@ import { numberOneHits, NumberOneHit } from '@/data/numberOneHits';
 import { AccountLink } from '@/components/AccountLink';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SpotifyTrackResult {
   trackId: string;
