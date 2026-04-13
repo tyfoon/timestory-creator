@@ -215,11 +215,11 @@ export const TimelineCarousel = ({
 
   // Get scope label for event
   const getScopeLabel = (event: TimelineEvent) => {
-    if (event.isCelebrityBirthday) return 'Jarige';
+    if (event.isCelebrityBirthday) return t('scopeBirthday') as string;
     switch (event.eventScope) {
-      case 'birthdate': return 'Op je geboortedag';
-      case 'birthmonth': return 'In je geboortemaand';
-      case 'birthyear': return 'In je geboortejaar';
+      case 'birthdate': return t('scopeOnBirthday') as string;
+      case 'birthmonth': return t('scopeInBirthMonth') as string;
+      case 'birthyear': return t('scopeInBirthYear') as string;
       default: return null;
     }
   };
