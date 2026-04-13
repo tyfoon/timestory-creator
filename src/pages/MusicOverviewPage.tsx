@@ -474,6 +474,7 @@ interface TrackCardProps {
 }
 
 const TrackCard = ({ resolvedHit, isFavorite, isSaved, isEmbedActive, isLoggedIn, onToggleFavorite, onBookmark, onToggleEmbed, index }: TrackCardProps) => {
+  const { t } = useLanguage();
   const { hit, spotify, loading, isLocal } = resolvedHit;
 
   return (
