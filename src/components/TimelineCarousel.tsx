@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { TimelineEvent } from '@/types/timeline';
 import { TimelineCard } from './TimelineCard';
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
