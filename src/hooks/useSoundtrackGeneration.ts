@@ -13,7 +13,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { FormData } from '@/types/form';
 import { TimelineEvent } from '@/types/timeline';
 import { MUSIC_GENERATION_PROVIDER, MusicProvider } from '@/lib/promptConstants';
-import { getTranslation, Language } from '@/lib/i18n';
+import { getTranslationString, Language } from '@/lib/i18n';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvZW9ib3lnc3NzeWFqcGRzdGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNTY2NjEsImV4cCI6MjA4NDgzMjY2MX0.KuFaWF4r_cxZRiOumPGMChLVmwgyhT9vR5s7L52zr5s';
@@ -277,7 +277,7 @@ export const startQuickSoundtrackGeneration = async (formData: FormData, events?
         description: e.description,
         category: e.category,
       }));
-      lyricsBody.summary = `${getTranslation('timelineOf', (language || 'nl') as Language)} ${startYear} ${getTranslation('to', (language || 'nl') as Language)} ${endYear}`;
+      lyricsBody.summary = `${getTranslationString('timelineOf', (language || 'nl') as Language)} ${startYear} ${getTranslationString('to', (language || 'nl') as Language)} ${endYear}`;
     }
 
     const lyricsResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-song-lyrics`, {
@@ -596,7 +596,7 @@ export const useSoundtrackGeneration = () => {
         lyricsBody.events = events.map(e => ({
           id: e.id, year: e.year, title: e.title, description: e.description, category: e.category,
         }));
-        lyricsBody.summary = `${getTranslation('timelineOf', (language || 'nl') as Language)} ${startYear} ${getTranslation('to', (language || 'nl') as Language)} ${endYear}`;
+        lyricsBody.summary = `${getTranslationString('timelineOf', (language || 'nl') as Language)} ${startYear} ${getTranslationString('to', (language || 'nl') as Language)} ${endYear}`;
       }
 
       const lyricsResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-song-lyrics`, {

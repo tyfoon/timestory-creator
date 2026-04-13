@@ -27,9 +27,10 @@ const getInitialLanguage = (): Language => {
     
     // Check URL parameter for language override (e.g., ?lang=en)
     const urlParams = new URLSearchParams(window.location.search);
-    const langParam = urlParams.get('lang');
-    if (langParam === 'en') {
-      return 'en';
+    const langParam = urlParams.get('lang') as Language;
+    const supportedLanguages: Language[] = ['nl', 'en', 'de', 'fr'];
+    if (langParam && supportedLanguages.includes(langParam)) {
+      return langParam;
     }
   }
   // Default to Dutch for other cases

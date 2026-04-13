@@ -658,7 +658,7 @@ export const translations = {
     scrollToBegin: "Scroll to begin",
     blacklistTooltip: "Blacklist photo (global) and search new",
     blacklistAriaLabel: "Blacklist image",
-    timelineOf: "Timeline from",
+    timelineOf: "Timeline of",
     to: "to",
     serverError: "Server error",
     pollingFailed: "Status check failed",
@@ -1190,10 +1190,16 @@ export type TranslationValue = string | readonly string[];
 
 /**
  * Lightweight translation helper for non-React files (API utils, hooks).
- * Use useTranslation() or useLanguage() inside React components instead.
+ * Returns TranslationValue (string or string[]). Use getTranslationString() when you need a string.
  */
-export function getTranslation(key: TranslationKey, language: Language): string {
+export function getTranslation(key: TranslationKey, language: Language): TranslationValue {
   const value = (translations[language] as Record<string, unknown>)?.[key] ?? (translations.nl as Record<string, unknown>)?.[key] ?? key;
+  return (typeof value === 'string' || Array.isArray(value)) ? (value as TranslationValue) : key;
+}
+
+/** Same as getTranslation but always returns a string (for keys known to be strings). */
+export function getTranslationString(key: TranslationKey, language: Language): string {
+  const value = getTranslation(key, language);
   return typeof value === 'string' ? value : key;
 }
 
