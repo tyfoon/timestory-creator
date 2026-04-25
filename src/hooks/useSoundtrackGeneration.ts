@@ -811,6 +811,7 @@ export const useSoundtrackGeneration = () => {
               lyrics: lyricsData.data.lyrics,
               style: lyricsData.data.style,
               title: lyricsData.data.title,
+              language: language || 'nl',
             }),
           });
 
@@ -849,6 +850,7 @@ export const useSoundtrackGeneration = () => {
           () => {
             setState(prev => ({ ...prev, status: 'warming_up' }));
           },
+          language || 'nl',
         );
 
         setState(prev => ({
