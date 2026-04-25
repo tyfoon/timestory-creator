@@ -187,6 +187,8 @@ const callAceStep = async (
   const warmupTimer = setTimeout(() => {
     onWarmingUp();
   }, 10_000);
+  const abortController = new AbortController();
+  const abortTimer = setTimeout(() => abortController.abort(), 30_000);
 
   try {
     const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-acestep-track`, {
@@ -197,9 +199,11 @@ const callAceStep = async (
         'apikey': SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({ lyrics, style, title, language: language || 'nl' }),
+      signal: abortController.signal,
     });
 
     clearTimeout(warmupTimer);
+    clearTimeout(abortTimer);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -217,6 +221,7 @@ const callAceStep = async (
     };
   } catch (error) {
     clearTimeout(warmupTimer);
+    clearTimeout(abortTimer);
     throw error;
   }
 };
