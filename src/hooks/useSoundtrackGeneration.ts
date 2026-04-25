@@ -324,6 +324,8 @@ export const startQuickSoundtrackGeneration = async (formData: FormData, events?
         lyricsData.data.lyrics,
         lyricsData.data.style,
         lyricsData.data.title,
+        undefined,
+        language || 'nl',
       );
 
       const completedState: SoundtrackState = {
@@ -350,6 +352,7 @@ export const startQuickSoundtrackGeneration = async (formData: FormData, events?
           };
           saveState(warmupState);
         },
+        language || 'nl',
       );
 
       const completedState: SoundtrackState = {
@@ -375,6 +378,7 @@ export const startQuickSoundtrackGeneration = async (formData: FormData, events?
           lyrics: lyricsData.data.lyrics,
           style: lyricsData.data.style,
           title: lyricsData.data.title,
+          language: language || 'nl',
         }),
       });
 
