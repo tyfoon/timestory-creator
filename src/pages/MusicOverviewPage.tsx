@@ -87,7 +87,7 @@ const MusicOverviewPage = () => {
 
   // Fetch local hits from AI based on city
   useEffect(() => {
-    if (!city) return;
+    if (!city || hasCache) return;
     let cancelled = false;
 
     const fetchLocalHits = async () => {
