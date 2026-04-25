@@ -457,6 +457,8 @@ export const useSoundtrackGeneration = () => {
     let cancelled = false;
     const pollInterval = 5000;
     const maxAttempts = 60; // 5 minutes max
+    let consecutiveErrors = 0;
+    const maxConsecutiveErrors = 4;
 
     const poll = async (attempt: number) => {
       if (cancelled || attempt >= maxAttempts) {
@@ -481,15 +483,23 @@ export const useSoundtrackGeneration = () => {
           body: JSON.stringify({ taskId: state.taskId }),
         });
 
-        if (!response.ok) {
-          throw new Error(`Status check failed: ${response.status}`);
+        const data = await response.json().catch(() => ({}));
+        
+        if (!response.ok || !data.success) {
+          if (data?.data?.errorMessage) {
+            throw new Error(data.error || data.data.errorMessage);
+          }
+
+          consecutiveErrors++;
+          console.warn(`[Soundtrack] Poll transient error (${consecutiveErrors}/${maxConsecutiveErrors}):`, response.status, data?.error);
+          if (consecutiveErrors >= maxConsecutiveErrors) {
+            throw new Error(data?.error || `Status check failed: ${response.status}`);
+          }
+          setTimeout(() => poll(attempt + 1), pollInterval);
+          return;
         }
 
-        const data = await response.json();
-        
-        if (!data.success) {
-          throw new Error(data.error || 'Status check failed');
-        }
+        consecutiveErrors = 0;
 
         // Check for streaming preview (FIRST_SUCCESS)
         if (data.data.streamAudioUrl && !state.streamAudioUrl && !state.isStreaming) {
@@ -543,11 +553,16 @@ export const useSoundtrackGeneration = () => {
         setTimeout(() => poll(attempt + 1), pollInterval);
       } catch (error) {
         console.error('[Soundtrack] Poll error:', error);
-        setState(prev => ({
-          ...prev,
-          status: 'error',
-          error: error instanceof Error ? error.message : 'pollingFailed',
-        }));
+        consecutiveErrors++;
+        if (consecutiveErrors >= maxConsecutiveErrors) {
+          setState(prev => ({
+            ...prev,
+            status: 'error',
+            error: error instanceof Error ? error.message : 'pollingFailed',
+          }));
+          return;
+        }
+        setTimeout(() => poll(attempt + 1), pollInterval);
       }
     };
 
