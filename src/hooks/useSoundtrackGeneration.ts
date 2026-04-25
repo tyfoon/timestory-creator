@@ -110,6 +110,7 @@ const callDiffRhythm = async (
   style: string,
   title: string,
   onPolling?: () => void,
+  language?: string,
 ): Promise<{ audioUrl: string; duration: number }> => {
   // Step 1: Submit to queue (fast, <2s)
   const submitResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-diffrhythm-track`, {
@@ -119,7 +120,7 @@ const callDiffRhythm = async (
       'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       'apikey': SUPABASE_ANON_KEY,
     },
-    body: JSON.stringify({ action: 'submit', lyrics, style, title }),
+    body: JSON.stringify({ action: 'submit', lyrics, style, title, language: language || 'nl' }),
   });
 
   if (!submitResponse.ok) {
