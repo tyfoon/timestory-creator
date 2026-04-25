@@ -8,7 +8,7 @@ import { motion, useInView } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   Music, Mic, Image, FileText, Sparkles, ChevronLeft, ChevronRight,
-  Crown, Gift, Lock, Download, Flame, ListMusic, Tv,
+  Crown, Gift, Lock, Download, Flame, ListMusic, Tv, Film,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -56,6 +56,17 @@ export const SharedExperienceCarousel = ({
   const params = searchParams?.toString() ? `?${searchParams.toString()}` : '';
 
   const allCards: CardDef[] = [
+    {
+      id: 'music-video',
+      title: 'Mijn Muziekvideo',
+      subtitle: t('aiMusicVideo') as string,
+      description: t('listenToStory') as string,
+      icon: <Film className="h-6 w-6" />,
+      isPremium: false,
+      actionLabel: t('watchVideo') as string,
+      gradient: 'from-violet-500/20 via-purple-500/10 to-transparent',
+      accentColor: 'text-violet-400',
+    },
     {
       id: 'music-overview',
       title: t('myLifeInMusic') as string,
