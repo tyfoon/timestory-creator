@@ -11,6 +11,7 @@ interface RequestBody {
   lyrics: string;
   style: string;
   title: string;
+  language?: string; // 'nl' | 'en' (defaults to 'nl' for backwards compat)
 }
 
 interface AceStepResponse {
@@ -35,7 +36,7 @@ serve(async (req) => {
     }
 
     const body: RequestBody = await req.json();
-    const { lyrics, style, title } = body;
+    const { lyrics, style, title, language } = body;
 
     if (!lyrics || !style || !title) {
       return new Response(JSON.stringify({
@@ -47,13 +48,25 @@ serve(async (req) => {
       });
     }
 
-    console.log(`[AceStep] Starting generation: "${title}" | style: "${style}"`);
+    // Inject explicit language tag so vocals are pronounced in the right language
+    const langTag = language === 'en'
+      ? 'English language, English vocals'
+      : language === 'de'
+      ? 'German language, German vocals'
+      : language === 'fr'
+      ? 'French language, French vocals'
+      : 'Dutch language, Dutch vocals';
+    const styleLower = style.toLowerCase();
+    const alreadyHasLang = ['english', 'dutch', 'german', 'french'].some(l => styleLower.includes(l));
+    const finalStyle = alreadyHasLang ? style : `${langTag}, ${style}`;
+
+    console.log(`[AceStep] Starting generation: "${title}" | language: "${language || 'nl'}" | style: "${finalStyle}"`);
     console.log(`[AceStep] Lyrics length: ${lyrics.length} chars`);
 
     // Transform app payload to Ace-Step API format
      // prompt = style description (identical to what Suno receives), lyrics = song lyrics
       const aceStepPayload = {
-       prompt: style,
+       prompt: finalStyle,
        lyrics: lyrics,
        duration: 90,
        guidance_scale: 5.0,

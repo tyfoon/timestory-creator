@@ -12,6 +12,7 @@ interface RequestBody {
   lyrics: string;
   style: string;
   title: string;
+  language?: string; // 'nl' | 'en' | 'de' | 'fr'
   // For polling mode
   action?: 'submit' | 'poll';
   requestId?: string;
@@ -106,7 +107,7 @@ serve(async (req) => {
 
     } else {
       // === SUBMIT MODE: Queue a new generation request ===
-      const { lyrics, style, title } = body;
+      const { lyrics, style, title, language } = body;
 
       if (!lyrics || !style || !title) {
         return new Response(JSON.stringify({
@@ -118,7 +119,7 @@ serve(async (req) => {
         });
       }
 
-      console.log(`[DiffRhythm] Submitting to queue: "${title}"`);
+      console.log(`[DiffRhythm] Submitting to queue: "${title}" | language: "${language || 'nl'}"`);
       console.log(`[DiffRhythm] Lyrics length: ${lyrics.length} chars`);
 
       // DiffRhythm style_prompt: keep short but MUST include language for correct pronunciation
@@ -129,10 +130,14 @@ serve(async (req) => {
         .replace(/^,\s*|,\s*$/g, '')
         .trim() || 'pop';
 
-      // Always ensure Dutch language is specified for correct vocal pronunciation
-      const finalStyle = cleanStyle.toLowerCase().includes('dutch')
-        ? cleanStyle
-        : `${cleanStyle}, Dutch language`;
+      // Resolve target language tag (default Dutch for backwards compat)
+      const langLabel = language === 'en' ? 'English'
+        : language === 'de' ? 'German'
+        : language === 'fr' ? 'French'
+        : 'Dutch';
+      const cleanLower = cleanStyle.toLowerCase();
+      const alreadyHasLang = ['english', 'dutch', 'german', 'french'].some(l => cleanLower.includes(l));
+      const finalStyle = alreadyHasLang ? cleanStyle : `${cleanStyle}, ${langLabel} language`;
 
       console.log(`[DiffRhythm] Original style: ${style}`);
       console.log(`[DiffRhythm] Final style for API: ${finalStyle}`);

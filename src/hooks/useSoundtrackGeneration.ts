@@ -110,6 +110,7 @@ const callDiffRhythm = async (
   style: string,
   title: string,
   onPolling?: () => void,
+  language?: string,
 ): Promise<{ audioUrl: string; duration: number }> => {
   // Step 1: Submit to queue (fast, <2s)
   const submitResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-diffrhythm-track`, {
@@ -119,7 +120,7 @@ const callDiffRhythm = async (
       'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       'apikey': SUPABASE_ANON_KEY,
     },
-    body: JSON.stringify({ action: 'submit', lyrics, style, title }),
+    body: JSON.stringify({ action: 'submit', lyrics, style, title, language: language || 'nl' }),
   });
 
   if (!submitResponse.ok) {
@@ -181,6 +182,7 @@ const callAceStep = async (
   style: string, 
   title: string,
   onWarmingUp: () => void,
+  language?: string,
 ): Promise<{ audioUrl: string; duration: number }> => {
   const warmupTimer = setTimeout(() => {
     onWarmingUp();
@@ -194,7 +196,7 @@ const callAceStep = async (
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         'apikey': SUPABASE_ANON_KEY,
       },
-      body: JSON.stringify({ lyrics, style, title }),
+      body: JSON.stringify({ lyrics, style, title, language: language || 'nl' }),
     });
 
     clearTimeout(warmupTimer);
@@ -322,6 +324,8 @@ export const startQuickSoundtrackGeneration = async (formData: FormData, events?
         lyricsData.data.lyrics,
         lyricsData.data.style,
         lyricsData.data.title,
+        undefined,
+        language || 'nl',
       );
 
       const completedState: SoundtrackState = {
@@ -348,6 +352,7 @@ export const startQuickSoundtrackGeneration = async (formData: FormData, events?
           };
           saveState(warmupState);
         },
+        language || 'nl',
       );
 
       const completedState: SoundtrackState = {
@@ -373,6 +378,7 @@ export const startQuickSoundtrackGeneration = async (formData: FormData, events?
           lyrics: lyricsData.data.lyrics,
           style: lyricsData.data.style,
           title: lyricsData.data.title,
+          language: language || 'nl',
         }),
       });
 
@@ -635,6 +641,8 @@ export const useSoundtrackGeneration = () => {
           lyricsData.data.lyrics,
           lyricsData.data.style,
           lyricsData.data.title,
+          undefined,
+          language || 'nl',
         );
 
         setState(prev => ({
@@ -652,6 +660,7 @@ export const useSoundtrackGeneration = () => {
           lyricsData.data.style,
           lyricsData.data.title,
           () => setState(prev => ({ ...prev, status: 'warming_up' })),
+          language || 'nl',
         );
 
         setState(prev => ({
@@ -674,6 +683,7 @@ export const useSoundtrackGeneration = () => {
             lyrics: lyricsData.data.lyrics,
             style: lyricsData.data.style,
             title: lyricsData.data.title,
+            language: language || 'nl',
           }),
         });
 
@@ -801,6 +811,7 @@ export const useSoundtrackGeneration = () => {
               lyrics: lyricsData.data.lyrics,
               style: lyricsData.data.style,
               title: lyricsData.data.title,
+              language: language || 'nl',
             }),
           });
 
@@ -839,6 +850,7 @@ export const useSoundtrackGeneration = () => {
           () => {
             setState(prev => ({ ...prev, status: 'warming_up' }));
           },
+          language || 'nl',
         );
 
         setState(prev => ({
@@ -864,6 +876,7 @@ export const useSoundtrackGeneration = () => {
             lyrics: lyricsData.data.lyrics,
             style: lyricsData.data.style,
             title: lyricsData.data.title,
+            language: language || 'nl',
           }),
         });
 
