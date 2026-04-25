@@ -14,6 +14,7 @@ import { AccountLink } from '@/components/AccountLink';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { readOverviewCache, writeOverviewCache } from '@/lib/overviewCache';
 
 interface YouTubeResult {
   videoId: string;
@@ -39,7 +40,7 @@ const TvFilmOverviewPage = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const tStr = (k: Parameters<typeof t>[0], vars?: Record<string, string | number>) => {
     let s = t(k) as string;
     if (vars) for (const [key, val] of Object.entries(vars)) s = s.replace(`{${key}}`, String(val));
@@ -50,13 +51,21 @@ const TvFilmOverviewPage = () => {
   const endYear = parseInt(searchParams.get('end') || String(new Date().getFullYear()), 10);
   const city = searchParams.get('city') || '';
 
-  const [resolvedItems, setResolvedItems] = useState<ResolvedItem[]>([]);
+  const cached = useMemo(
+    () => readOverviewCache<{ items: ResolvedItem[]; country: string | null }>(
+      'tvfilm-overview', startYear, endYear, city, language
+    ),
+    [startYear, endYear, city, language]
+  );
+
+  const [resolvedItems, setResolvedItems] = useState<ResolvedItem[]>(cached?.items || []);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [savedItems, setSavedItems] = useState<Set<string>>(new Set());
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadedCount, setLoadedCount] = useState(0);
-  const [country, setCountry] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(!cached);
+  const [loadedCount, setLoadedCount] = useState(cached ? cached.items.length : 0);
+  const [country, setCountry] = useState<string | null>(cached?.country || null);
+  const hasCache = !!cached;
 
   // Fetch TV/films from AI
   useEffect(() => {
