@@ -181,6 +181,7 @@ const callAceStep = async (
   style: string, 
   title: string,
   onWarmingUp: () => void,
+  language?: string,
 ): Promise<{ audioUrl: string; duration: number }> => {
   const warmupTimer = setTimeout(() => {
     onWarmingUp();
@@ -194,7 +195,7 @@ const callAceStep = async (
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         'apikey': SUPABASE_ANON_KEY,
       },
-      body: JSON.stringify({ lyrics, style, title }),
+      body: JSON.stringify({ lyrics, style, title, language: language || 'nl' }),
     });
 
     clearTimeout(warmupTimer);
