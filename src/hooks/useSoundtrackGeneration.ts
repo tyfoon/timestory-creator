@@ -641,6 +641,8 @@ export const useSoundtrackGeneration = () => {
           lyricsData.data.lyrics,
           lyricsData.data.style,
           lyricsData.data.title,
+          undefined,
+          language || 'nl',
         );
 
         setState(prev => ({
@@ -658,6 +660,7 @@ export const useSoundtrackGeneration = () => {
           lyricsData.data.style,
           lyricsData.data.title,
           () => setState(prev => ({ ...prev, status: 'warming_up' })),
+          language || 'nl',
         );
 
         setState(prev => ({
@@ -680,6 +683,7 @@ export const useSoundtrackGeneration = () => {
             lyrics: lyricsData.data.lyrics,
             style: lyricsData.data.style,
             title: lyricsData.data.title,
+            language: language || 'nl',
           }),
         });
 
