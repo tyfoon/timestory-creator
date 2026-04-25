@@ -17,6 +17,7 @@ import { AccountLink } from '@/components/AccountLink';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { readOverviewCache, writeOverviewCache } from '@/lib/overviewCache';
 
 interface SpotifyTrackResult {
   trackId: string;
@@ -41,7 +42,7 @@ const MusicOverviewPage = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const tStr = (k: Parameters<typeof t>[0], vars?: Record<string, string | number>) => {
     let s = t(k) as string;
     if (vars) for (const [key, val] of Object.entries(vars)) s = s.replace(`{${key}}`, String(val));
@@ -52,14 +53,23 @@ const MusicOverviewPage = () => {
   const endYear = parseInt(searchParams.get('end') || String(new Date().getFullYear()), 10);
   const city = searchParams.get('city') || '';
 
-  const [resolvedHits, setResolvedHits] = useState<ResolvedHit[]>([]);
+  // Try to hydrate from cache on first render
+  const cached = useMemo(
+    () => readOverviewCache<{ hits: ResolvedHit[]; country: string | null }>(
+      'music-overview', startYear, endYear, city, language
+    ),
+    [startYear, endYear, city, language]
+  );
+
+  const [resolvedHits, setResolvedHits] = useState<ResolvedHit[]>(cached?.hits || []);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [savedTracks, setSavedTracks] = useState<Set<string>>(new Set());
   const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadedCount, setLoadedCount] = useState(0);
-  const [localHitsCountry, setLocalHitsCountry] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(!cached);
+  const [loadedCount, setLoadedCount] = useState(cached ? cached.hits.length : 0);
+  const [localHitsCountry, setLocalHitsCountry] = useState<string | null>(cached?.country || null);
   const [localHitsLoading, setLocalHitsLoading] = useState(false);
+  const hasCache = !!cached;
 
   // Build the list of global hits for the year range
   const globalHits = useMemo(() => {
