@@ -203,11 +203,15 @@ const MusicOverviewPage = () => {
 
   // Fetch Spotify data for global hits in batches
   useEffect(() => {
+    if (hasCache) {
+      setIsLoading(false);
+      return;
+    }
     let cancelled = false;
 
     const fetchAll = async () => {
       setIsLoading(true);
-      
+
       const initial: ResolvedHit[] = globalHits.map(({ year, hit, isLocal }) => ({
         year, hit, spotify: null, loading: true, isLocal,
       }));
@@ -219,7 +223,7 @@ const MusicOverviewPage = () => {
       for (let i = 0; i < globalHits.length; i += batchSize) {
         if (cancelled) return;
         const batch = globalHits.slice(i, i + batchSize);
-        
+
         const results = await Promise.allSettled(
           batch.map(async ({ hit }) => {
             const query = `${hit.artist} - ${hit.title}`;
@@ -260,7 +264,19 @@ const MusicOverviewPage = () => {
 
     fetchAll();
     return () => { cancelled = true; };
-  }, [globalHits]);
+  }, [globalHits, hasCache]);
+
+  // Persist to cache once everything is fully loaded
+  useEffect(() => {
+    if (hasCache) return;
+    if (isLoading || localHitsLoading) return;
+    if (resolvedHits.length === 0) return;
+    if (resolvedHits.some(rh => rh.loading)) return;
+    writeOverviewCache('music-overview', startYear, endYear, city, language, {
+      hits: resolvedHits,
+      country: localHitsCountry,
+    });
+  }, [hasCache, isLoading, localHitsLoading, resolvedHits, startYear, endYear, city, language, localHitsCountry]);
 
   const toggleFavorite = useCallback((trackId: string) => {
     setFavorites(prev => {
