@@ -259,8 +259,8 @@ const TvFilmOverviewPage = () => {
             <Loader2 className="h-4 w-4 animate-spin" />
             <span className="font-mono text-xs">
               {loadedCount === 0
-                ? `TV-series en films laden${city ? ` voor ${city}` : ''}...`
-                : `${loadedCount} / ${totalItems} trailers gezocht...`
+                ? tStr('loadingTvFilms', { city: city ? ` ${city}` : '' })
+                : tStr('trailersSearched', { loaded: loadedCount, total: totalItems })
               }
             </span>
           </div>
@@ -423,9 +423,9 @@ const TvFilmOverviewPage = () => {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="rounded-2xl border border-border bg-card p-6 sm:p-8 text-center space-y-4"
           >
-            <h2 className="font-serif text-2xl font-bold mb-2">Jouw TV & Film Overzicht</h2>
+            <h2 className="font-serif text-2xl font-bold mb-2">{t('yourTvFilmOverviewTitle') as string}</h2>
             <p className="text-sm text-muted-foreground">
-              {resolvedItems.length} titels gevonden • {favorites.size} favorieten
+              {tStr('titlesFoundFavorites', { count: resolvedItems.length, fav: favorites.size })}
               {country && ` • ${country}`}
             </p>
 
@@ -436,7 +436,7 @@ const TvFilmOverviewPage = () => {
                 disabled={allVideoIds.length === 0}
               >
                 <ListVideo className="h-4 w-4" />
-                Alle {allVideoIds.length} trailers afspelen
+                {tStr('trailersAllPlay', { count: allVideoIds.length })}
               </Button>
 
               {favorites.size > 0 && (
@@ -447,7 +447,7 @@ const TvFilmOverviewPage = () => {
                   disabled={favoriteVideoIds.length === 0}
                 >
                   <Heart className="h-4 w-4 fill-current" />
-                  {favoriteVideoIds.length} favorieten afspelen
+                  {tStr('trailersFavoritesPlay', { count: favoriteVideoIds.length })}
                 </Button>
               )}
             </div>
