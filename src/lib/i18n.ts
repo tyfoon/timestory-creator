@@ -484,6 +484,23 @@ const nlTranslations = {
   addToFavorites: "Voeg toe aan favorieten",
   savedToAccount: "Opgeslagen op je account",
   saveToAccount: "Opslaan op je account",
+  loadingLocalHits: "Lokale hits laden voor {city}...",
+  tracksLoaded: "{loaded} / {total} nummers geladen...",
+  loadingTvFilms: "TV-series en films laden{city}...",
+  trailersSearched: "{loaded} / {total} trailers gezocht...",
+  yourMusicOverviewTitle: "Jouw Muziek Overzicht",
+  yourTvFilmOverviewTitle: "Jouw TV & Film Overzicht",
+  tracksFoundFavorites: "{count} nummers gevonden • {fav} favorieten",
+  titlesFoundFavorites: "{count} titels gevonden • {fav} favorieten",
+  inclLocalHitsSuffix: " • incl. {country} hits",
+  playlistAllTracks: "Playlist alle {count} nummers",
+  playlistFavoritesCount: "Playlist {count} favorieten",
+  spotifyOpenHint: "Opent de nummers in Spotify. Als dat niet lukt, worden de links naar je klembord gekopieerd.",
+  trailersAllPlay: "Alle {count} trailers afspelen",
+  trailersFavoritesPlay: "{count} favorieten afspelen",
+  myMusicVideoTitle: "Mijn Muziekvideo",
+  eventsAiMusic: "{count} gebeurtenissen • AI-muziek",
+  preparingMusicVideo: "Je muziekvideo wordt voorbereid...",
 } as const;
 
 export type TranslationKey = keyof typeof nlTranslations;
