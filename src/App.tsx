@@ -19,6 +19,7 @@ import MusicOverviewPage from "./pages/MusicOverviewPage";
 import TvFilmOverviewPage from "./pages/TvFilmOverviewPage";
 import NotFound from "./pages/NotFound";
 import ScrollToTop from "./components/ScrollToTop";
+import MusicVideoReadyNotifier from "./components/MusicVideoReadyNotifier";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -30,6 +31,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <ScrollToTop />
+            <MusicVideoReadyNotifier />
             <Routes>
               <Route path="/" element={<HomeV3 />} />
               <Route path="/home-v2" element={<HomeV2 />} />
