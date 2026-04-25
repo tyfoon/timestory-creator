@@ -69,6 +69,7 @@ const TvFilmOverviewPage = () => {
 
   // Fetch TV/films from AI
   useEffect(() => {
+    if (hasCache) return;
     let cancelled = false;
 
     const fetchItems = async () => {
