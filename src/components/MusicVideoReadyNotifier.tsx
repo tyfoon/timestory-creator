@@ -10,7 +10,7 @@
  * Mounted once inside <BrowserRouter> in App.tsx.
  */
 import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Music, X, Play, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ const DISMISSED_KEY = 'soundtrack_notify_dismissed'; // value = audioUrl (collap
 export const MusicVideoReadyNotifier = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const [searchParams] = useSearchParams();
   const soundtrack = useSoundtrackGeneration();
 
   // visible = full toast; minimized = small floating badge
@@ -70,7 +71,8 @@ export const MusicVideoReadyNotifier = () => {
     setVisible(false);
     setMinimized(false);
     if (audioUrl) sessionStorage.setItem(DISMISSED_KEY, audioUrl);
-    navigate('/muziek-video');
+    const qs = searchParams.toString();
+    navigate(qs ? `/muziek-video?${qs}` : '/muziek-video');
   };
 
   const handleDismiss = () => {

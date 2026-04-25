@@ -17,6 +17,7 @@ import { AccountLink } from '@/components/AccountLink';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { readOverviewCache, writeOverviewCache } from '@/lib/overviewCache';
 
 interface SpotifyTrackResult {
   trackId: string;
@@ -41,7 +42,7 @@ const MusicOverviewPage = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const tStr = (k: Parameters<typeof t>[0], vars?: Record<string, string | number>) => {
     let s = t(k) as string;
     if (vars) for (const [key, val] of Object.entries(vars)) s = s.replace(`{${key}}`, String(val));
@@ -52,14 +53,23 @@ const MusicOverviewPage = () => {
   const endYear = parseInt(searchParams.get('end') || String(new Date().getFullYear()), 10);
   const city = searchParams.get('city') || '';
 
-  const [resolvedHits, setResolvedHits] = useState<ResolvedHit[]>([]);
+  // Try to hydrate from cache on first render
+  const cached = useMemo(
+    () => readOverviewCache<{ hits: ResolvedHit[]; country: string | null }>(
+      'music-overview', startYear, endYear, city, language
+    ),
+    [startYear, endYear, city, language]
+  );
+
+  const [resolvedHits, setResolvedHits] = useState<ResolvedHit[]>(cached?.hits || []);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [savedTracks, setSavedTracks] = useState<Set<string>>(new Set());
   const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadedCount, setLoadedCount] = useState(0);
-  const [localHitsCountry, setLocalHitsCountry] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(!cached);
+  const [loadedCount, setLoadedCount] = useState(cached ? cached.hits.length : 0);
+  const [localHitsCountry, setLocalHitsCountry] = useState<string | null>(cached?.country || null);
   const [localHitsLoading, setLocalHitsLoading] = useState(false);
+  const hasCache = !!cached;
 
   // Build the list of global hits for the year range
   const globalHits = useMemo(() => {
@@ -77,7 +87,7 @@ const MusicOverviewPage = () => {
 
   // Fetch local hits from AI based on city
   useEffect(() => {
-    if (!city) return;
+    if (!city || hasCache) return;
     let cancelled = false;
 
     const fetchLocalHits = async () => {
@@ -193,11 +203,15 @@ const MusicOverviewPage = () => {
 
   // Fetch Spotify data for global hits in batches
   useEffect(() => {
+    if (hasCache) {
+      setIsLoading(false);
+      return;
+    }
     let cancelled = false;
 
     const fetchAll = async () => {
       setIsLoading(true);
-      
+
       const initial: ResolvedHit[] = globalHits.map(({ year, hit, isLocal }) => ({
         year, hit, spotify: null, loading: true, isLocal,
       }));
@@ -209,7 +223,7 @@ const MusicOverviewPage = () => {
       for (let i = 0; i < globalHits.length; i += batchSize) {
         if (cancelled) return;
         const batch = globalHits.slice(i, i + batchSize);
-        
+
         const results = await Promise.allSettled(
           batch.map(async ({ hit }) => {
             const query = `${hit.artist} - ${hit.title}`;
@@ -250,7 +264,19 @@ const MusicOverviewPage = () => {
 
     fetchAll();
     return () => { cancelled = true; };
-  }, [globalHits]);
+  }, [globalHits, hasCache]);
+
+  // Persist to cache once everything is fully loaded
+  useEffect(() => {
+    if (hasCache) return;
+    if (isLoading || localHitsLoading) return;
+    if (resolvedHits.length === 0) return;
+    if (resolvedHits.some(rh => rh.loading)) return;
+    writeOverviewCache('music-overview', startYear, endYear, city, language, {
+      hits: resolvedHits,
+      country: localHitsCountry,
+    });
+  }, [hasCache, isLoading, localHitsLoading, resolvedHits, startYear, endYear, city, language, localHitsCountry]);
 
   const toggleFavorite = useCallback((trackId: string) => {
     setFavorites(prev => {
