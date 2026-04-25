@@ -76,7 +76,7 @@ const TvFilmOverviewPage = () => {
       setIsLoading(true);
       try {
         const { data, error } = await supabase.functions.invoke('generate-tv-films', {
-          body: { startYear, endYear, city }
+          body: { startYear, endYear, city, language }
         });
 
         if (cancelled || error || !data?.items) {
@@ -197,11 +197,11 @@ const TvFilmOverviewPage = () => {
       });
       if (error) throw error;
       setSavedItems(prev => new Set(prev).add(key));
-      toast({ title: 'Opgeslagen!', description: `${ri.item.title} staat nu op je accountpagina.` });
+      toast({ title: t('savedToast') as string, description: tStr('savedDescriptionItem', { title: ri.item.title }) });
     } catch (err: any) {
-      toast({ title: 'Fout', description: err.message, variant: 'destructive' });
+      toast({ title: t('errorLabel') as string, description: err.message, variant: 'destructive' });
     }
-  }, [user, savedItems, toast]);
+  }, [user, savedItems, toast, t, tStr]);
 
   const totalItems = resolvedItems.length;
 
@@ -220,7 +220,7 @@ const TvFilmOverviewPage = () => {
 
   const handleOpenYouTubePlaylist = useCallback((videoIds: string[], label: string) => {
     if (videoIds.length === 0) {
-      toast({ title: 'Geen video\'s', description: 'Er zijn geen trailers beschikbaar.' });
+      toast({ title: t('noTrailersAvailable') as string });
       return;
     }
     // YouTube watch_videos URL plays multiple videos in sequence
@@ -230,11 +230,11 @@ const TvFilmOverviewPage = () => {
       const links = videoIds.map(id => `https://youtu.be/${id}`).join('\n');
       navigator.clipboard.writeText(links);
       toast({
-        title: 'Links gekopieerd!',
-        description: `${videoIds.length} YouTube-links gekopieerd naar je klembord.`
+        title: t('linksCopiedTitle') as string,
+        description: tStr('youtubeLinksCopiedDesc', { count: videoIds.length })
       });
     }
-  }, [toast]);
+  }, [toast, t, tStr]);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -248,7 +248,7 @@ const TvFilmOverviewPage = () => {
             <div>
               <h1 className="font-serif text-lg font-bold flex items-center gap-2">
                 <Tv className="h-5 w-5 text-primary" />
-                Mijn Leven in TV & Film
+                {t('myLifeInTvFilm') as string}
               </h1>
               <p className="text-xs text-muted-foreground font-mono">
                 {startYear} – {endYear}
@@ -453,7 +453,7 @@ const TvFilmOverviewPage = () => {
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button
-                onClick={() => handleOpenYouTubePlaylist(allVideoIds, 'Mijn Leven in TV & Film')}
+                onClick={() => handleOpenYouTubePlaylist(allVideoIds, t('myLifeInTvFilm') as string)}
                 className="gap-2 bg-[#FF0000] hover:bg-[#cc0000] text-white"
                 disabled={allVideoIds.length === 0}
               >
@@ -463,7 +463,7 @@ const TvFilmOverviewPage = () => {
 
               {favorites.size > 0 && (
                 <Button
-                  onClick={() => handleOpenYouTubePlaylist(favoriteVideoIds, 'Mijn Favorieten')}
+                  onClick={() => handleOpenYouTubePlaylist(favoriteVideoIds, t('myFavoritesPlaylistLabel') as string)}
                   variant="outline"
                   className="gap-2 border-[#FF0000]/30 text-[#FF0000] hover:bg-[#FF0000]/10"
                   disabled={favoriteVideoIds.length === 0}
