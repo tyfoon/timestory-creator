@@ -6,13 +6,20 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const LANG_NAME: Record<string, string> = {
+  nl: "Dutch",
+  en: "English",
+  de: "German",
+  fr: "French",
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { startYear, endYear, city } = await req.json();
+    const { startYear, endYear, city, language } = await req.json();
 
     if (!startYear || !endYear || !city) {
       return new Response(
@@ -24,33 +31,40 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const prompt = `Je bent een muziekexpert. Geef voor de stad "${city}" de populairste hits per jaar van ${startYear} tot ${endYear}.
+    const lang = (language as string) || "nl";
+    const langName = LANG_NAME[lang] || "Dutch";
 
-Bepaal eerst het land op basis van de stad. Geef dan per jaar EXACT 5 hits die in DAT LAND populair waren (niet alleen internationale hits, maar juist ook lokale artiesten uit dat land).
+    const prompt = `You are a music expert. For the city "${city}", provide the most popular hits per year from ${startYear} to ${endYear}.
 
-Voorbeelden:
-- Voor Nederlandse steden: André Hazes, Marco Borsato, Doe Maar, Golden Earring, Volumia!, etc.
-- Voor Duitse steden: Nena, Die Ärzte, Falco, Herbert Grönemeyer, etc.
-- Voor Franse steden: Serge Gainsbourg, Édith Piaf, MC Solaar, etc.
-- Voor Belgische steden: Clouseau, K3, Helmut Lotti, etc.
+First determine the country based on the city. Then for each year provide EXACTLY 5 hits that were popular IN THAT COUNTRY (not only international hits, but especially local artists from that country).
 
-Mix lokale artiesten met internationale hits die in dat land populair waren.
+Examples:
+- Dutch cities: André Hazes, Marco Borsato, Doe Maar, Golden Earring, Volumia!, etc.
+- German cities: Nena, Die Ärzte, Falco, Herbert Grönemeyer, etc.
+- French cities: Serge Gainsbourg, Édith Piaf, MC Solaar, Mylène Farmer, Indochine, etc.
+- Belgian cities: Clouseau, K3, Helmut Lotti, etc.
+- US cities: Madonna, Michael Jackson, Beyoncé, Taylor Swift, etc.
+- UK cities: The Beatles, Oasis, Adele, Coldplay, etc.
 
-Antwoord ALLEEN met een JSON object in dit exacte formaat, GEEN andere tekst:
+Mix local artists with international hits popular in that country.
+
+CRITICAL: The "country" field MUST be written in ${langName} (e.g. for nl=Frankrijk, en=France, de=Frankreich, fr=France). Artist names and song titles stay in their original form.
+
+Respond ONLY with a JSON object in this exact format, NO other text:
 {
-  "country": "Nederland",
+  "country": "country name in ${langName}",
   "hits": {
     "${startYear}": [
-      {"artist": "Artiest", "title": "Titel"},
-      {"artist": "Artiest", "title": "Titel"},
-      {"artist": "Artiest", "title": "Titel"},
-      {"artist": "Artiest", "title": "Titel"},
-      {"artist": "Artiest", "title": "Titel"}
+      {"artist": "Artist", "title": "Title"},
+      {"artist": "Artist", "title": "Title"},
+      {"artist": "Artist", "title": "Title"},
+      {"artist": "Artist", "title": "Title"},
+      {"artist": "Artist", "title": "Title"}
     ]
   }
 }
 
-Geef ALLE jaren van ${startYear} t/m ${endYear}. Exact 5 hits per jaar. Alleen JSON, geen markdown.`;
+All years from ${startYear} to ${endYear}. Exactly 5 hits per year. JSON only, no markdown.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -74,7 +88,6 @@ Geef ALLE jaren van ${startYear} t/m ${endYear}. Exact 5 hits per jaar. Alleen J
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || "";
 
-    // Extract JSON from response (might be wrapped in markdown)
     let jsonStr = content;
     const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (jsonMatch) {
