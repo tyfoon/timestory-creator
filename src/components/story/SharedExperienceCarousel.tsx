@@ -150,7 +150,7 @@ export const SharedExperienceCarousel = ({
   const cards = allCards.filter(c => !excludeCards.includes(c.id));
 
   const defaultActions: Record<ExperiencePage, () => void> = {
-    'music-video': () => navigate(`/story${params}`),
+    'music-video': () => navigate(`/muziek-video${params}`),
     'music-overview': () => navigate(`/muziek${params}`),
     'tv-film-overview': () => navigate(`/tv-film${params}`),
     'personalized': () => navigate(`/story${params}`),
