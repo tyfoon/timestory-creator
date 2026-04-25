@@ -77,7 +77,17 @@ type is "film" or "tv". All years from ${startYear} to ${endYear}. Exactly 5 ite
       jsonStr = jsonMatch[1].trim();
     }
 
-    const parsed = JSON.parse(jsonStr);
+    // Sanitize: strip raw control characters (newlines/tabs inside strings) that break JSON.parse
+    const sanitize = (s: string) =>
+      s.replace(/[\u0000-\u001F]+/g, (m) => (m.includes("\n") || m.includes("\r") || m.includes("\t") ? " " : ""));
+
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch (e) {
+      console.warn("Initial JSON.parse failed, retrying after sanitize:", (e as Error).message);
+      parsed = JSON.parse(sanitize(jsonStr));
+    }
 
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
