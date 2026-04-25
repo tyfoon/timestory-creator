@@ -148,7 +148,19 @@ const TvFilmOverviewPage = () => {
 
     fetchItems();
     return () => { cancelled = true; };
-  }, [startYear, endYear, city]);
+  }, [startYear, endYear, city, hasCache]);
+
+  // Persist to cache once fully loaded
+  useEffect(() => {
+    if (hasCache) return;
+    if (isLoading) return;
+    if (resolvedItems.length === 0) return;
+    if (resolvedItems.some(ri => ri.loading)) return;
+    writeOverviewCache('tvfilm-overview', startYear, endYear, city, language, {
+      items: resolvedItems,
+      country,
+    });
+  }, [hasCache, isLoading, resolvedItems, startYear, endYear, city, language, country]);
 
   // Group by year
   const itemsByYear = useMemo(() => {
