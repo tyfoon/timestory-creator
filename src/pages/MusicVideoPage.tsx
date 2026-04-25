@@ -54,11 +54,7 @@ const MusicVideoPage = () => {
         setEvents(cached.events);
         setStoryTitle(cached.storyTitle || '');
         setStoryIntroduction(cached.storyIntroduction || '');
-        // Auto-VHS for 80s-dominant content
-        const eightyEvents = cached.events.filter(e => e.year >= 1980 && e.year < 1990).length;
-        if (cached.events.length > 0 && eightyEvents / cached.events.length > 0.5) {
-          setEnableVhsEffect(true);
-        }
+        // VHS effect is opt-in only (default off)
       }
     } catch (e) {
       console.error('[MusicVideoPage] Failed to load timeline data', e);
@@ -142,14 +138,14 @@ const MusicVideoPage = () => {
             className="gap-1.5"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Terug</span>
+            <span className="hidden sm:inline">{t('backButton') as string}</span>
           </Button>
           <div className="flex-1 min-w-0">
             <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
               {t('aiMusicVideo') as string}
             </p>
             <h1 className="font-serif text-base sm:text-lg font-bold text-foreground truncate">
-              Mijn Muziekvideo
+              {t('myMusicVideoTitle') as string}
             </h1>
           </div>
         </div>
@@ -175,7 +171,7 @@ const MusicVideoPage = () => {
                     {displayTitle}
                   </h2>
                   <p className="text-xs text-muted-foreground font-mono">
-                    {events.length} gebeurtenissen • AI-muziek
+                    {(t('eventsAiMusic') as string).replace('{count}', String(events.length))}
                   </p>
                 </div>
               </div>
@@ -184,7 +180,7 @@ const MusicVideoPage = () => {
               {isIdle && (
                 <div className="py-12 text-center">
                   <p className="text-sm text-muted-foreground">
-                    Je muziekvideo wordt voorbereid...
+                    {t('preparingMusicVideo') as string}
                   </p>
                 </div>
               )}

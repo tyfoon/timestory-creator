@@ -41,6 +41,12 @@ const MusicOverviewPage = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { t } = useLanguage();
+  const tStr = (k: Parameters<typeof t>[0], vars?: Record<string, string | number>) => {
+    let s = t(k) as string;
+    if (vars) for (const [key, val] of Object.entries(vars)) s = s.replace(`{${key}}`, String(val));
+    return s;
+  };
 
   const startYear = parseInt(searchParams.get('start') || '1980', 10);
   const endYear = parseInt(searchParams.get('end') || String(new Date().getFullYear()), 10);
@@ -351,8 +357,8 @@ const MusicOverviewPage = () => {
             <Loader2 className="h-4 w-4 animate-spin" />
             <span className="font-mono text-xs">
               {localHitsLoading 
-                ? `Lokale hits laden voor ${city}...` 
-                : `${loadedCount} / ${globalHits.length} nummers geladen...`
+                ? tStr('loadingLocalHits', { city }) 
+                : tStr('tracksLoaded', { loaded: loadedCount, total: globalHits.length })
               }
             </span>
           </div>
@@ -416,10 +422,10 @@ const MusicOverviewPage = () => {
             className="rounded-2xl border border-border bg-card p-6 sm:p-8"
           >
             <div className="text-center mb-6">
-              <h2 className="font-serif text-2xl font-bold mb-2">Jouw Muziek Overzicht</h2>
+              <h2 className="font-serif text-2xl font-bold mb-2">{t('yourMusicOverviewTitle') as string}</h2>
               <p className="text-sm text-muted-foreground">
-                {allTrackIds.length} nummers gevonden • {favorites.size} favorieten
-                {localHitsCountry && ` • incl. ${localHitsCountry} hits`}
+                {tStr('tracksFoundFavorites', { count: allTrackIds.length, fav: favorites.size })}
+                {localHitsCountry && tStr('inclLocalHitsSuffix', { country: localHitsCountry })}
               </p>
             </div>
 
@@ -430,7 +436,7 @@ const MusicOverviewPage = () => {
                 className="gap-2 bg-[#1DB954] hover:bg-[#1ed760] text-white"
               >
                 <ListMusic className="h-4 w-4" />
-                Playlist alle {allTrackIds.length} nummers
+                {tStr('playlistAllTracks', { count: allTrackIds.length })}
               </Button>
 
               {/* Playlist: favorites only */}
@@ -441,13 +447,13 @@ const MusicOverviewPage = () => {
                   className="gap-2 border-[#1DB954]/30 text-[#1DB954] hover:bg-[#1DB954]/10"
                 >
                   <Heart className="h-4 w-4 fill-current" />
-                  Playlist {favorites.size} favorieten
+                  {tStr('playlistFavoritesCount', { count: favorites.size })}
                 </Button>
               )}
             </div>
 
             <p className="text-xs text-muted-foreground text-center mt-4">
-              Opent de nummers in Spotify. Als dat niet lukt, worden de links naar je klembord gekopieerd.
+              {t('spotifyOpenHint') as string}
             </p>
           </motion.div>
         )}
