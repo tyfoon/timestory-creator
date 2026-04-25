@@ -22,7 +22,6 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSoundtrackGeneration, clearSoundtrackState } from '@/hooks/useSoundtrackGeneration';
 import { TimelineVideoComponent, VideoEvent } from '@/remotion';
-import { ShareDialog } from '@/components/video/ShareDialog';
 import { SharedExperienceCarousel } from '@/components/story/SharedExperienceCarousel';
 import { getCachedTimeline } from '@/lib/timelineCache';
 import { TimelineEvent } from '@/types/timeline';
@@ -41,7 +40,6 @@ const MusicVideoPage = () => {
   const [storyTitle, setStoryTitle] = useState('');
   const [storyIntroduction, setStoryIntroduction] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [enableVhsEffect, setEnableVhsEffect] = useState(false);
 
   // Load timeline data from sessionStorage cache
@@ -144,7 +142,7 @@ const MusicVideoPage = () => {
             className="gap-1.5"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">{t('backToStory') as string || 'Terug'}</span>
+            <span className="hidden sm:inline">Terug</span>
           </Button>
           <div className="flex-1 min-w-0">
             <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -177,7 +175,7 @@ const MusicVideoPage = () => {
                     {displayTitle}
                   </h2>
                   <p className="text-xs text-muted-foreground font-mono">
-                    {events.length} {t('events') as string || 'gebeurtenissen'} • AI-muziek
+                    {events.length} gebeurtenissen • AI-muziek
                   </p>
                 </div>
               </div>
@@ -186,7 +184,7 @@ const MusicVideoPage = () => {
               {isIdle && (
                 <div className="py-12 text-center">
                   <p className="text-sm text-muted-foreground">
-                    {t('musicVideoBeingPrepared') as string || 'Je muziekvideo wordt voorbereid...'}
+                    Je muziekvideo wordt voorbereid...
                   </p>
                 </div>
               )}
@@ -286,10 +284,6 @@ const MusicVideoPage = () => {
                       <Maximize2 className="h-4 w-4" />
                       {t('watchVideo') as string}
                     </Button>
-                    <Button onClick={() => setIsShareDialogOpen(true)} variant="outline" className="gap-1.5">
-                      <Share2 className="h-4 w-4" />
-                      {t('share') as string}
-                    </Button>
                   </div>
 
                   {soundtrack.lyrics && (
@@ -350,15 +344,6 @@ const MusicVideoPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Share dialog */}
-      {isComplete && formData && (
-        <ShareDialog
-          open={isShareDialogOpen}
-          onOpenChange={setIsShareDialogOpen}
-          videoUrl={soundtrack.audioUrl || ''}
-          title={soundtrack.title || displayTitle}
-        />
-      )}
     </div>
   );
 };
