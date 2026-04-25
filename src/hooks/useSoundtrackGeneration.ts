@@ -374,19 +374,21 @@ export const startQuickSoundtrackGeneration = async (formData: FormData, events?
     } else if (provider === 'acestep') {
       // AceStep: Direct synchronous call
       console.log('[Soundtrack V1] Using AceStep provider...');
-      const result = await callAceStep(
-        lyricsData.data.lyrics,
-        lyricsData.data.style,
-        lyricsData.data.title,
-        () => {
-          const warmupState: SoundtrackState = {
-            ...lyricsState,
-            status: 'warming_up',
-          };
-          saveState(warmupState);
-        },
-        language || 'nl',
-      );
+      let result: { audioUrl: string; duration: number } | null = null;
+      try {
+        result = await callAceStep(
+          lyricsData.data.lyrics,
+          lyricsData.data.style,
+          lyricsData.data.title,
+          () => saveState({ ...lyricsState, status: 'warming_up' }),
+          language || 'nl',
+        );
+      } catch (aceStepError) {
+        console.warn('[Soundtrack V1] AceStep failed, falling back to Suno:', aceStepError);
+        const taskId = await startSunoGeneration(lyricsData.data.lyrics, lyricsData.data.style, lyricsData.data.title, language || 'nl');
+        saveState(startSunoPollingState(lyricsState, taskId));
+        return;
+      }
 
       const completedState: SoundtrackState = {
         ...lyricsState,
