@@ -221,6 +221,30 @@ const callAceStep = async (
   }
 };
 
+const startSunoGeneration = async (
+  lyrics: string,
+  style: string,
+  title: string,
+  language?: string,
+): Promise<string> => {
+  const sunoResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-suno-track`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'apikey': SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify({ lyrics, style, title, language: language || 'nl' }),
+  });
+
+  const sunoData = await sunoResponse.json().catch(() => ({}));
+  if (!sunoResponse.ok || !sunoData.success || !sunoData.data?.taskId) {
+    throw new Error(sunoData.error || `Suno error: ${sunoResponse.status}`);
+  }
+
+  return sunoData.data.taskId;
+};
+
 /**
  * Start V1 (quick) soundtrack generation - fire and forget
  * Called from homepage when user clicks "Start"
