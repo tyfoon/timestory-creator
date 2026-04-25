@@ -111,42 +111,62 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
   const pollForSunoCompletion = async (taskId: string): Promise<{ audioUrl: string; duration: number }> => {
     const maxAttempts = 60;
     const pollInterval = 5000;
+    let consecutiveErrors = 0;
+    const maxConsecutiveErrors = 4;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       setStatusMessage(`${t('composingMusic') as string}... (${Math.floor(attempt * 5 / 60)}:${String((attempt * 5) % 60).padStart(2, '0')})`);
-      
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/check-suno-status`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'apikey': SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({ taskId }),
-      });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Error checking status: ${response.status}`);
-      }
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/check-suno-status`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ taskId }),
+        });
 
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.error || t('somethingWentWrong') as string);
-      }
+        const data = await response.json().catch(() => ({} as any));
 
-      if (data.data.ready) {
-        return {
-          audioUrl: data.data.audioUrl || data.data.streamAudioUrl,
-          duration: data.data.duration || 180,
-        };
-      }
+        // Hard fail only for clear failure responses (e.g. SENSITIVE_WORD_ERROR)
+        if (data && data.success === false && data.data?.errorMessage) {
+          throw new Error(data.error || data.data.errorMessage);
+        }
 
-      if (data.data.status === 'TEXT_SUCCESS') {
-        setProgress(50);
-      } else if (data.data.status === 'FIRST_SUCCESS') {
-        setProgress(75);
+        if (!response.ok || !data?.success) {
+          // Transient: count and continue polling
+          consecutiveErrors++;
+          console.warn(`check-suno-status transient error (${consecutiveErrors}/${maxConsecutiveErrors}):`, response.status, data?.error);
+          if (consecutiveErrors >= maxConsecutiveErrors) {
+            throw new Error(data?.error || `Status check failed (${response.status})`);
+          }
+          await new Promise(resolve => setTimeout(resolve, pollInterval));
+          continue;
+        }
+
+        consecutiveErrors = 0;
+
+        if (data.data.ready) {
+          return {
+            audioUrl: data.data.audioUrl || data.data.streamAudioUrl,
+            duration: data.data.duration || 180,
+          };
+        }
+
+        if (data.data.status === 'TEXT_SUCCESS') {
+          setProgress(50);
+        } else if (data.data.status === 'FIRST_SUCCESS') {
+          setProgress(75);
+        }
+      } catch (err) {
+        // Network blip → retry unless we've exceeded the threshold
+        consecutiveErrors++;
+        console.warn(`Poll attempt ${attempt} failed (${consecutiveErrors}/${maxConsecutiveErrors}):`, err);
+        if (consecutiveErrors >= maxConsecutiveErrors) {
+          throw err;
+        }
       }
 
       await new Promise(resolve => setTimeout(resolve, pollInterval));
