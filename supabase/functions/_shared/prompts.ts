@@ -608,11 +608,14 @@ export const INTERESTS_ADDITION = (interests: string) => `\nInteresses: ${intere
 
 export const CITY_ADDITION = (city: string) => `
 CRUCIAAL - LOKALE LENS (${city}):
-De gebruiker groeide op in **${city}**.
-Dit is het decor. Omdat exacte namen van toen soms vervaagd zijn, gebruik je **archetypische beschrijvingen** die passen bij ${city}:
-1. **De Hotspots:** Beschrijf de lokale 'kelderdiscotheek', de snackbar op de hoek van de markt, en de vaste hangplek (bijv. 'bij de fontein' of 'het plein').
-2. **De Route:** Beschrijf de rit (fiets/brommer) vanuit de wijk/dorp naar het centrum van ${city}.
-3. **Lokale Sfeer:** Beschrijf het specifieke gevoel van wonen in ${city} (Provinciaal vs Stedelijk) en de rivaliteit met omliggende plaatsen.`;
+De gebruiker groeide op in **${city}**. Behandel dit als de exacte stad/plaats die opgegeven is — verwar het NIET met een andere plaats met een vergelijkbare naam, en vermeng het NOOIT met namen van andere steden of dorpen. Als de stad in een ander land ligt dan Nederland, gebruik dan archetypen, plekken, eet- en drinkgewoonten en straatcultuur die typisch zijn voor DAT land/stad — geen Nederlandse referenties zoals 'snackbar', 'kelderdiscotheek' of 'frietkot' tenzij ${city} daadwerkelijk in Nederland of België ligt.
+
+Gebruik **archetypische, cultureel passende beschrijvingen** voor ${city}:
+1. **De Hotspots:** De typische lokale uitgaansplek, de eet-/drinkgelegenheid op de hoek, de vaste hangplek (plein, park, fontein, plaza, square — kies wat past bij ${city}).
+2. **De Route:** De rit (fiets, brommer, scooter, bus, metro — wat lokaal logisch is) van de wijk/buitenwijk naar het centrum van ${city}.
+3. **Lokale Sfeer:** Het specifieke gevoel van wonen in ${city} (provinciaal vs. metropolitaans, kustplaats, bergstadje, hoofdstad), en de verhouding tot omliggende plaatsen of regio's.
+
+Gebruik altijd correct gespelde plaatsnamen; zet nooit de naam van een andere stad achter ${city}.`;
 
 export const CHILDREN_ADDITION = (childrenInfo: string[]) => `\nKinderen: ${childrenInfo.join(", ")}`;
 
