@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AccountLink } from '@/components/AccountLink';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface YouTubeResult {
   videoId: string;
@@ -38,6 +39,12 @@ const TvFilmOverviewPage = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { t } = useLanguage();
+  const tStr = (k: Parameters<typeof t>[0], vars?: Record<string, string | number>) => {
+    let s = t(k) as string;
+    if (vars) for (const [key, val] of Object.entries(vars)) s = s.replace(`{${key}}`, String(val));
+    return s;
+  };
 
   const startYear = parseInt(searchParams.get('start') || '1980', 10);
   const endYear = parseInt(searchParams.get('end') || String(new Date().getFullYear()), 10);
