@@ -245,6 +245,15 @@ const startSunoGeneration = async (
   return sunoData.data.taskId;
 };
 
+const startSunoPollingState = (
+  lyricsState: SoundtrackState,
+  taskId: string,
+): SoundtrackState => ({
+  ...lyricsState,
+  status: 'polling',
+  taskId,
+});
+
 /**
  * Start V1 (quick) soundtrack generation - fire and forget
  * Called from homepage when user clicks "Start"
