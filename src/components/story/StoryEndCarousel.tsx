@@ -67,13 +67,7 @@ export const StoryEndCarousel = ({
 
   const soundtrack = useSoundtrackGeneration();
 
-  // Auto-enable VHS for 80s-dominant content
-  useEffect(() => {
-    if (events.length > 0) {
-      const eightyEvents = events.filter(e => e.year >= 1980 && e.year < 1990).length;
-      if (eightyEvents / events.length > 0.5) setEnableVhsEffect(true);
-    }
-  }, [events]);
+  // VHS effect is opt-in only (default off)
 
   const videoEvents: VideoEvent[] = useMemo(() => {
     return events.map(e => ({ ...e, audioDurationFrames: Math.round(5 * FPS) }));
