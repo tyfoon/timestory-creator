@@ -12,6 +12,7 @@ interface RequestBody {
   lyrics: string;
   style: string;
   title: string;
+  language?: string; // 'nl' | 'en' | 'de' | 'fr'
 }
 
 interface SunoGenerateResponse {
@@ -35,7 +36,7 @@ serve(async (req) => {
     }
 
     const body: RequestBody = await req.json();
-    const { lyrics, style, title } = body;
+    const { lyrics, style, title, language } = body;
 
     if (!lyrics || !style || !title) {
       return new Response(JSON.stringify({
@@ -47,7 +48,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Starting Suno track generation: "${title}" in style "${style}"`);
+    console.log(`Starting Suno track generation: "${title}" | language: "${language || 'nl'}" | style "${style}"`);
     console.log(`Lyrics length: ${lyrics.length} characters`);
 
     // Truncate lyrics if too long (Suno V4_5ALL limit is 5000 chars)
@@ -56,12 +57,24 @@ serve(async (req) => {
       ? lyrics.substring(0, maxLyricsLength) + "..."
       : lyrics;
 
+    // Inject explicit language tag so vocals are pronounced in the right language
+    const langTag = language === 'en'
+      ? 'English vocals'
+      : language === 'de'
+      ? 'German vocals'
+      : language === 'fr'
+      ? 'French vocals'
+      : 'Dutch vocals';
+    const styleLowerForLang = style.toLowerCase();
+    const alreadyHasLang = ['english', 'dutch', 'german', 'french'].some(l => styleLowerForLang.includes(l));
+    const styleWithLang = alreadyHasLang ? style : `${langTag}, ${style}`;
+
     // Truncate style if too long (max 1000 chars for V4_5ALL)
     // Also ensure "short song" and "fast tempo" are included for length control
     const maxStyleLength = 200;
-    let enhancedStyle = style;
-    if (!style.toLowerCase().includes('short song')) {
-      enhancedStyle = `${style}, short song, fast tempo`;
+    let enhancedStyle = styleWithLang;
+    if (!styleWithLang.toLowerCase().includes('short song')) {
+      enhancedStyle = `${styleWithLang}, short song, fast tempo`;
     }
     const truncatedStyle = enhancedStyle.length > maxStyleLength
       ? enhancedStyle.substring(0, maxStyleLength)
