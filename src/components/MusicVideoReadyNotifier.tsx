@@ -2,15 +2,14 @@
  * Global notifier that watches the soundtrack-generation state.
  *
  * When the user's personalised music video finishes generating AND they are
- * currently NOT looking at the music-video card (either on a different route
- * or scrolled past it on /story), a sticky toast appears bottom-right with:
- *   - "Bekijk nu" → navigates to /story and scrolls to #music-video-card
+ * NOT currently on /muziek-video, a sticky toast appears bottom-right with:
+ *   - "Bekijk nu" → navigates to /muziek-video
  *   - "✕"        → dismisses, but leaves a small floating badge so the user
  *                   can come back to it later.
  *
  * Mounted once inside <BrowserRouter> in App.tsx.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Music, X, Play, Sparkles } from 'lucide-react';
@@ -28,48 +27,10 @@ export const MusicVideoReadyNotifier = () => {
   // visible = full toast; minimized = small floating badge
   const [visible, setVisible] = useState(false);
   const [minimized, setMinimized] = useState(false);
-  const [cardInView, setCardInView] = useState(false);
-  const observerRef = useRef<IntersectionObserver | null>(null);
 
   const audioUrl = soundtrack.audioUrl;
   const isComplete = soundtrack.isComplete && !!audioUrl;
-
-  // Watch the music-video card on /story for visibility
-  useEffect(() => {
-    // Clear any previous observer
-    observerRef.current?.disconnect();
-    observerRef.current = null;
-    setCardInView(false);
-
-    if (pathname !== '/story') return;
-
-    // Card may not be mounted yet (still loading); poll briefly until found
-    let cancelled = false;
-    const attach = () => {
-      if (cancelled) return;
-      const el = document.getElementById('music-video-card');
-      if (!el) {
-        setTimeout(attach, 500);
-        return;
-      }
-      const obs = new IntersectionObserver(
-        (entries) => {
-          const entry = entries[0];
-          setCardInView(entry.isIntersecting && entry.intersectionRatio > 0.3);
-        },
-        { threshold: [0, 0.3, 0.6, 1] }
-      );
-      obs.observe(el);
-      observerRef.current = obs;
-    };
-    attach();
-
-    return () => {
-      cancelled = true;
-      observerRef.current?.disconnect();
-      observerRef.current = null;
-    };
-  }, [pathname]);
+  const onMusicVideoPage = pathname === '/muziek-video';
 
   // Decide when to surface the toast
   useEffect(() => {
@@ -82,9 +43,8 @@ export const MusicVideoReadyNotifier = () => {
     const seen = sessionStorage.getItem(SEEN_KEY);
     const dismissed = sessionStorage.getItem(DISMISSED_KEY);
 
-    // If the user is currently focused on the music video card, don't bother them.
-    if (pathname === '/story' && cardInView) {
-      // Mark as seen so we don't pop up later if they navigate away
+    // Already on the music video page → no notification needed
+    if (onMusicVideoPage) {
       sessionStorage.setItem(SEEN_KEY, audioUrl);
       setVisible(false);
       setMinimized(false);
@@ -98,30 +58,19 @@ export const MusicVideoReadyNotifier = () => {
       return;
     }
 
-    // First time seeing this completed track in a context where the card isn't focused
+    // First time seeing this completed track on a different page
     if (seen !== audioUrl) {
       sessionStorage.setItem(SEEN_KEY, audioUrl);
       setVisible(true);
       setMinimized(false);
     }
-  }, [isComplete, audioUrl, pathname, cardInView]);
+  }, [isComplete, audioUrl, onMusicVideoPage]);
 
   const handleWatch = () => {
     setVisible(false);
     setMinimized(false);
     if (audioUrl) sessionStorage.setItem(DISMISSED_KEY, audioUrl);
-    if (pathname === '/story') {
-      const el = document.getElementById('music-video-card');
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else {
-      navigate('/story#music-video-card');
-      // Scroll after route change
-      setTimeout(() => {
-        document
-          .getElementById('music-video-card')
-          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 400);
-    }
+    navigate('/muziek-video');
   };
 
   const handleDismiss = () => {
@@ -135,15 +84,15 @@ export const MusicVideoReadyNotifier = () => {
     setVisible(true);
   };
 
-  // If user comes back to the card on /story, retire the badge entirely
+  // Hide everything when user lands on the music video page
   useEffect(() => {
-    if (pathname === '/story' && cardInView) {
+    if (onMusicVideoPage) {
       setVisible(false);
       setMinimized(false);
     }
-  }, [pathname, cardInView]);
+  }, [onMusicVideoPage]);
 
-  if (!isComplete) return null;
+  if (!isComplete || onMusicVideoPage) return null;
 
   return (
     <AnimatePresence>
