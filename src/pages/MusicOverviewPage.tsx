@@ -94,7 +94,7 @@ const MusicOverviewPage = () => {
       setLocalHitsLoading(true);
       try {
         const { data, error } = await supabase.functions.invoke('generate-local-hits', {
-          body: { startYear, endYear, city }
+          body: { startYear, endYear, city, language }
         });
 
         if (cancelled || error || !data?.hits) return;
@@ -297,17 +297,17 @@ const MusicOverviewPage = () => {
         user_id: user.id,
         event_title: `${rh.spotify.trackName} – ${rh.spotify.artistName}`,
         event_year: rh.year,
-        event_description: `#1 hit uit ${rh.year}. Album: ${rh.spotify.albumName}`,
+        event_description: tStr('numberOneHitDesc', { year: rh.year, album: rh.spotify.albumName }),
         event_category: 'music',
         image_url: rh.spotify.albumImage,
       });
       if (error) throw error;
       setSavedTracks(prev => new Set(prev).add(key));
-      toast({ title: 'Opgeslagen!', description: `${rh.spotify!.trackName} staat nu op je accountpagina.` });
+      toast({ title: t('savedToast') as string, description: tStr('savedDescriptionTrack', { name: rh.spotify!.trackName }) });
     } catch (err: any) {
-      toast({ title: 'Fout', description: err.message, variant: 'destructive' });
+      toast({ title: t('errorLabel') as string, description: err.message, variant: 'destructive' });
     }
-  }, [user, savedTracks, toast]);
+  }, [user, savedTracks, toast, t, tStr]);
 
   const favoriteTrackIds = useMemo(() => {
     return resolvedHits
@@ -323,7 +323,7 @@ const MusicOverviewPage = () => {
 
   const handleOpenSpotifyPlaylist = useCallback((trackIds: string[], label: string) => {
     if (trackIds.length === 0) {
-      toast({ title: 'Geen nummers', description: 'Er zijn geen nummers beschikbaar.' });
+      toast({ title: t('noTracksAvailable') as string });
       return;
     }
     const spotifyDeepLink = `spotify:trackset:${encodeURIComponent(label)}:${trackIds.join(',')}`;
@@ -331,12 +331,12 @@ const MusicOverviewPage = () => {
     if (!opened) {
       const urls = trackIds.map(id => `https://open.spotify.com/track/${id}`).join('\n');
       navigator.clipboard.writeText(urls);
-      toast({ 
-        title: 'Links gekopieerd!', 
-        description: `${trackIds.length} Spotify-links gekopieerd naar je klembord. Plak ze in een Spotify-playlist.` 
+      toast({
+        title: t('linksCopiedTitle') as string,
+        description: tStr('spotifyLinksCopiedDesc', { count: trackIds.length })
       });
     }
-  }, [toast]);
+  }, [toast, t, tStr]);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -350,7 +350,7 @@ const MusicOverviewPage = () => {
             <div>
               <h1 className="font-serif text-lg font-bold flex items-center gap-2">
                 <Music className="h-5 w-5 text-[#1DB954]" />
-                Mijn Leven in Muziek
+                {t('myLifeInMusic') as string}
               </h1>
               <p className="text-xs text-muted-foreground font-mono">
                 {startYear} – {endYear}
@@ -458,7 +458,7 @@ const MusicOverviewPage = () => {
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               {/* Playlist: all tracks */}
               <Button
-                onClick={() => handleOpenSpotifyPlaylist(allTrackIds, 'Mijn Leven in Muziek')}
+                onClick={() => handleOpenSpotifyPlaylist(allTrackIds, t('myLifeInMusic') as string)}
                 className="gap-2 bg-[#1DB954] hover:bg-[#1ed760] text-white"
               >
                 <ListMusic className="h-4 w-4" />
@@ -468,7 +468,7 @@ const MusicOverviewPage = () => {
               {/* Playlist: favorites only */}
               {favorites.size > 0 && (
                 <Button
-                  onClick={() => handleOpenSpotifyPlaylist(favoriteTrackIds, 'Mijn Favorieten')}
+                  onClick={() => handleOpenSpotifyPlaylist(favoriteTrackIds, t('myFavoritesPlaylistLabel') as string)}
                   variant="outline"
                   className="gap-2 border-[#1DB954]/30 text-[#1DB954] hover:bg-[#1DB954]/10"
                 >
@@ -540,7 +540,7 @@ const TrackCard = ({ resolvedHit, isFavorite, isSaved, isEmbedActive, isLoggedIn
         {isLocal && !loading && (
           <div className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded-md bg-accent/90 text-accent-foreground text-[9px] font-medium flex items-center gap-0.5">
             <MapPin className="h-2.5 w-2.5" />
-            Lokaal
+            {t('localHitBadge') as string}
           </div>
         )}
 

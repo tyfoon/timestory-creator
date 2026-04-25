@@ -166,7 +166,7 @@ export const MusicVideoGenerator: React.FC<MusicVideoGeneratorProps> = ({
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         'apikey': SUPABASE_ANON_KEY,
       },
-      body: JSON.stringify({ lyrics, style, title }),
+      body: JSON.stringify({ lyrics, style, title, language }),
     });
 
     if (!startResponse.ok) {
