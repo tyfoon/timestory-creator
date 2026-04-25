@@ -58,9 +58,9 @@ export const SharedExperienceCarousel = ({
   const allCards: CardDef[] = [
     {
       id: 'music-video',
-      title: t('myMusicVideo') as string || 'Mijn Muziekvideo',
+      title: 'Mijn Muziekvideo',
       subtitle: t('aiMusicVideo') as string,
-      description: t('watchMusicVideoDesc') as string || (t('listenToStory') as string),
+      description: t('listenToStory') as string,
       icon: <Film className="h-6 w-6" />,
       isPremium: false,
       actionLabel: t('watchVideo') as string,
