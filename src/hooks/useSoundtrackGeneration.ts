@@ -402,39 +402,9 @@ export const startQuickSoundtrackGeneration = async (formData: FormData, events?
 
     } else {
       // Suno: Async polling-based
-      const sunoResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-suno-track`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'apikey': SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({
-          lyrics: lyricsData.data.lyrics,
-          style: lyricsData.data.style,
-          title: lyricsData.data.title,
-          language: language || 'nl',
-        }),
-      });
-
-      if (!sunoResponse.ok) {
-        const errorData = await sunoResponse.json().catch(() => ({}));
-        throw new Error(errorData.error || `Suno error: ${sunoResponse.status}`);
-      }
-
-      const sunoData = await sunoResponse.json();
-      if (!sunoData.success || !sunoData.data?.taskId) {
-        throw new Error(sunoData.error || 'No taskId received');
-      }
-
-      console.log('[Soundtrack V1] Suno task started:', sunoData.data.taskId);
-
-      const pollingState: SoundtrackState = {
-        ...lyricsState,
-        status: 'polling',
-        taskId: sunoData.data.taskId,
-      };
-      saveState(pollingState);
+      const taskId = await startSunoGeneration(lyricsData.data.lyrics, lyricsData.data.style, lyricsData.data.title, language || 'nl');
+      console.log('[Soundtrack V1] Suno task started:', taskId);
+      saveState(startSunoPollingState(lyricsState, taskId));
     }
 
   } catch (error) {
