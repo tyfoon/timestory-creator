@@ -835,15 +835,23 @@ export const useSoundtrackGeneration = () => {
 
       } else if (provider === 'acestep') {
         console.log('[Soundtrack V2] Using AceStep provider...');
-        const result = await callAceStep(
-          lyricsData.data.lyrics,
-          lyricsData.data.style,
-          lyricsData.data.title,
-          () => {
-            setState(prev => ({ ...prev, status: 'warming_up' }));
-          },
-          language || 'nl',
-        );
+        let result: { audioUrl: string; duration: number } | null = null;
+        try {
+          result = await callAceStep(
+            lyricsData.data.lyrics,
+            lyricsData.data.style,
+            lyricsData.data.title,
+            () => {
+              setState(prev => ({ ...prev, status: 'warming_up' }));
+            },
+            language || 'nl',
+          );
+        } catch (aceStepError) {
+          console.warn('[Soundtrack V2] AceStep failed, falling back to Suno:', aceStepError);
+          const taskId = await startSunoGeneration(lyricsData.data.lyrics, lyricsData.data.style, lyricsData.data.title, language || 'nl');
+          setState(prev => ({ ...prev, status: 'polling', taskId }));
+          return;
+        }
 
         setState(prev => ({
           ...prev,
@@ -857,37 +865,13 @@ export const useSoundtrackGeneration = () => {
 
       } else {
         // Suno: Async polling-based
-        const sunoResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-suno-track`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'apikey': SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({
-            lyrics: lyricsData.data.lyrics,
-            style: lyricsData.data.style,
-            title: lyricsData.data.title,
-            language: language || 'nl',
-          }),
-        });
-
-        if (!sunoResponse.ok) {
-          const errorData = await sunoResponse.json().catch(() => ({}));
-          throw new Error(errorData.error || `Suno error: ${sunoResponse.status}`);
-        }
-
-        const sunoData = await sunoResponse.json();
-        if (!sunoData.success || !sunoData.data?.taskId) {
-          throw new Error(sunoData.error || 'No taskId received');
-        }
-
-        console.log('[Soundtrack V2] Suno task started:', sunoData.data.taskId);
+        const taskId = await startSunoGeneration(lyricsData.data.lyrics, lyricsData.data.style, lyricsData.data.title, language || 'nl');
+        console.log('[Soundtrack V2] Suno task started:', taskId);
 
         setState(prev => ({
           ...prev,
           status: 'polling',
-          taskId: sunoData.data.taskId,
+          taskId,
         }));
       }
 
