@@ -492,10 +492,11 @@ export const StoryEndCarousel = ({
           >
             {/* Card 1: Music Video - special large card */}
             <motion.div
+              id="music-video-card"
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
               animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
               transition={{ duration: 0.5 }}
-              className="flex-shrink-0 w-[340px] sm:w-[400px] snap-center"
+              className="flex-shrink-0 w-[340px] sm:w-[400px] snap-center scroll-mt-24"
             >
               <div className="relative h-full rounded-2xl border border-border bg-card overflow-hidden group hover:border-primary/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5">
                 <div className="absolute inset-0 bg-gradient-to-br from-violet-500/20 via-fuchsia-500/10 to-transparent opacity-60 group-hover:opacity-100 transition-opacity" />
