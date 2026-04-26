@@ -127,7 +127,22 @@ export const MusicVideoReadyNotifier = () => {
     setMinimized(false);
     if (audioUrl) sessionStorage.setItem(DISMISSED_KEY, audioUrl);
     const qs = searchParams.toString();
-    navigate(qs ? `/muziek-video?${qs}` : '/muziek-video');
+    const target = qs ? `/muziek-video?${qs}` : '/muziek-video';
+
+    // Try the SPA-friendly route first (preserves react-router state).
+    navigate(target);
+
+    // Defense in depth: if `navigate()` somehow doesn't take effect
+    // (dev-tool overlay swallowing the SPA route change, an in-flight
+    // re-render, or any other edge case), force a hard navigation
+    // 150ms later. The check first verifies the URL didn't already
+    // change, so we don't double-navigate when navigate() worked.
+    setTimeout(() => {
+      if (typeof window !== 'undefined' &&
+          !window.location.pathname.startsWith('/muziek-video')) {
+        window.location.assign(target);
+      }
+    }, 150);
   };
 
   const handleDismiss = () => {
