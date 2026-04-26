@@ -213,10 +213,18 @@ export const StoryEndDiscover = ({
   ], [t]);
 
   // Filter rules:
-  //   - Hide music-video tile if it's currently the hero (not viewed yet).
-  //   - Hide the current-page tile (you're already there).
-  //   - Hide music-video tile if not ready (pill handles in-progress state).
-  //   - Hide the back-to-story tile when already on /story.
+  //   - Hide the current-page tile (you're already there) — applies to
+  //     story, music-overview, tv-film-overview, polaroid, music-video.
+  //
+  // The music-video tile is intentionally ALWAYS shown (when not on
+  // /muziek-video itself) regardless of generation state or hero
+  // visibility. Reason: navigation consistency — the tile is a stable
+  // anchor at the same position in the row whether the video is being
+  // generated, ready and not yet viewed, or already viewed. Yes, this
+  // means brief duplication when the hero is also shown, but the
+  // benefit of "user always knows where to find their music video"
+  // outweighs the minor redundancy. During generation the tile takes
+  // the user to /muziek-video where they see the progress UI.
   const tiles = useMemo(() => {
     const currentPageToTileId: Partial<Record<DiscoverPage, DiscoverTileId>> = {
       'story': 'story',
@@ -226,16 +234,8 @@ export const StoryEndDiscover = ({
       'music-video': 'music-video',
     };
     const hideId = currentPageToTileId[currentPage];
-
-    return allTiles.filter((tile) => {
-      if (tile.id === hideId) return false;
-      if (tile.id === 'music-video') {
-        if (!isMusicVideoReady) return false;  // not made yet → no tile
-        if (showHero) return false;            // it's the hero → not also a tile
-      }
-      return true;
-    });
-  }, [allTiles, currentPage, isMusicVideoReady, showHero]);
+    return allTiles.filter((tile) => tile.id !== hideId);
+  }, [allTiles, currentPage]);
 
   // ─── Default click actions ────────────────────────────────────────────
   const defaultActions: Record<DiscoverTileId, () => void> = {
