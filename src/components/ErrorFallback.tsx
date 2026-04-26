@@ -13,7 +13,8 @@ export const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
   // fall back to NL strings so the boundary itself never throws.
   let t: (k: string) => string;
   try {
-    t = useLanguage().t;
+    const lang = useLanguage();
+    t = (k: string) => String(lang.t(k as never) ?? k);
   } catch {
     const fallbacks: Record<string, string> = {
       errorBoundaryTitle: "Er ging iets mis",
