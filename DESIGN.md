@@ -67,16 +67,66 @@ color:
     polaroid-orange: "hsl(25, 100%, 55%)"
     polaroid-mint: "hsl(160, 100%, 45%)"
     polaroid-bg-dark: "hsl(260, 30%, 8%)"
+  # Adaptive era themes — drive homepage background, accents and font choice
+  # based on the user's birth year. Applied as ambient tinting, never as raw UI chrome.
+  era-themes:
+    pre70s:    # < 1970 — sepia parchment
+      primary:    "hsl(16, 25%, 30%)"   # sepia brown
+      secondary:  "hsl(19, 25%, 47%)"   # warm brown
+      accent:     "hsl(46, 65%, 52%)"   # vintage gold
+      background: "hsl(40, 50%, 93%)"   # parchment
+      font:       "'Playfair Display', serif"
+      pattern:    "noise"
+    "70s":     # 1970–1979 — burnt orange & goldenrod
+      primary:    "hsl(33, 100%, 37%)"  # burnt orange
+      secondary:  "hsl(28, 53%, 36%)"   # saddle brown
+      accent:     "hsl(43, 74%, 49%)"   # goldenrod
+      background: "hsl(39, 86%, 95%)"   # old lace
+      font:       "'Playfair Display', serif"
+      pattern:    "none"
+    "80s":     # 1980–1989 — neon on dark
+      primary:    "hsl(328, 100%, 54%)" # deep neon pink
+      secondary:  "hsl(181, 100%, 41%)" # cyan / turquoise
+      accent:     "hsl(51, 100%, 50%)"  # gold
+      background: "hsl(235, 40%, 14%)"  # dark blue-black
+      font:       "'VT323', monospace"
+      pattern:    "grid"
+    "90s":     # 1990–1999 — Memphis pop
+      primary:    "hsl(210, 100%, 40%)" # primary blue
+      secondary:  "hsl(48, 100%, 50%)"  # yellow
+      accent:     "hsl(345, 100%, 60%)" # hot pink
+      background: "hsl(0, 0%, 100%)"    # white
+      font:       "'Anton', sans-serif"
+      pattern:    "memphis"
+    "2000s":   # 2000–2009 — early-web confidence
+      primary:    "hsl(0, 0%, 20%)"
+      secondary:  "hsl(204, 100%, 50%)" # bright blue
+      accent:     "hsl(84, 100%, 40%)"  # lime
+      background: "hsl(0, 0%, 94%)"
+      font:       "'Source Sans 3', sans-serif"
+      pattern:    "dots"
+    "2010s":   # 2010–2019 — flat design
+      primary:    "hsl(210, 29%, 24%)"
+      secondary:  "hsl(6, 78%, 57%)"    # flat red
+      accent:     "hsl(168, 76%, 42%)"  # turquoise
+      background: "hsl(0, 0%, 98%)"
+      font:       "'Source Sans 3', sans-serif"
+      pattern:    "none"
+    modern:    # ≥ 2020 — contemporary
+      primary:    "hsl(239, 84%, 67%)"  # indigo
+      secondary:  "hsl(330, 81%, 60%)"  # pink
+      accent:     "hsl(160, 84%, 39%)"  # emerald
+      background: "hsl(0, 0%, 98%)"
+      font:       "'Source Sans 3', sans-serif"
+      pattern:    "none"
+
+  # Cinematic video module — three full-screen decade theatres applied
+  # only inside the Remotion player, never to the surrounding UI.
   video-eras:
-    "70s-bg": "#3e2723"
-    "70s-text": "#fff3e0"
-    "70s-accent": "#ff6f00"
-    "80s-bg": "#0a0a0a"
-    "80s-text": "#00ffcc"
-    "80s-accent": "#ff00ff"
-    "90s-bg": "#212121"
-    "90s-text": "#ffffff"
-    "90s-accent": "#ff0000"
+    "70s":  { bg: "hsl(15, 47%, 19%)",  text: "hsl(36, 100%, 95%)", accent: "hsl(26, 100%, 50%)",  font: "'Cooper Black', serif",      filter: "sepia(0.4) contrast(1.1) brightness(0.9)" }
+    "80s":  { bg: "hsl(0, 0%, 4%)",     text: "hsl(168, 100%, 50%)", accent: "hsl(300, 100%, 50%)", font: "'Orbitron', sans-serif",    filter: "saturate(1.5) contrast(1.2) hue-rotate(-10deg)" }
+    "90s":  { bg: "hsl(0, 0%, 13%)",    text: "hsl(0, 0%, 100%)",    accent: "hsl(0, 100%, 50%)",   font: "Impact, sans-serif",        filter: "contrast(1.3) grayscale(0.2)" }
+    modern: { bg: "hsl(0, 0%, 100%)",   text: "hsl(0, 0%, 0%)",      accent: "hsl(217, 91%, 60%)",  font: "Inter, sans-serif",         filter: "none" }
 
 gradient:
   warm: "linear-gradient(135deg, hsl(39, 45%, 96%) 0%, hsl(35, 40%, 90%) 100%)"
