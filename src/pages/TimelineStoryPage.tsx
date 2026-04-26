@@ -1301,20 +1301,18 @@ const TimelineStoryPage = () => {
                 {getTitle()}
               </h1>
               
-              {/* Debug dialogs - dev-only; refresh button below stays user-visible */}
+              {/* Debug dialogs - currently visible to all users.
+                  TODO: gate behind useIsAdmin() once admin-role infrastructure
+                  lands. See ADMIN_ROLE_PLAN.md for the project plan. */}
               {events.length > 0 && !isLoading && (
                 <>
-                  {import.meta.env.DEV && (
-                    <>
-                      <PromptViewerDialog formData={formData} language={language} maxEvents={currentMaxEvents} />
-                      <DebugInfoDialog
-                        events={events}
-                        onRefreshImages={handleRefreshAllImages}
-                        isRefreshing={isLoadingImages}
-                        onBlacklistImage={handleBlacklistImage}
-                      />
-                    </>
-                  )}
+                  <PromptViewerDialog formData={formData} language={language} maxEvents={currentMaxEvents} />
+                  <DebugInfoDialog
+                    events={events}
+                    onRefreshImages={handleRefreshAllImages}
+                    isRefreshing={isLoadingImages}
+                    onBlacklistImage={handleBlacklistImage}
+                  />
                   <button
                     onClick={() => handleClearCache(20)}
                     className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"

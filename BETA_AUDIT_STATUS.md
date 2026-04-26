@@ -134,6 +134,17 @@ Niet blokkerend voor closed beta, wel belangrijk voor open beta:
 
 ---
 
+## Geparkeerde projecten
+
+- **Admin-role + debug-UI gating** — zie [ADMIN_ROLE_PLAN.md](ADMIN_ROLE_PLAN.md).
+  Tijdens Sprint A item 2 hebben we de debug-dialogs achter
+  `import.meta.env.DEV` gegated, maar dat sluit de eigenaar zelf uit
+  in productie. Echte oplossing: `is_admin` op profiles + RPC's voor
+  promote/demote + admin-UI in AccountPage. Geparkeerd omdat scope te
+  groot werd binnen Sprint A; wordt opgepakt na de UI/React
+  optimalisatie sprint. Tussentijds: de DEV-gate is teruggedraaid en
+  debug-dialogs zijn weer zichtbaar voor iedereen.
+
 ## Volgende potentiële aanvalsvectoren voor audit
 
 De gebruiker heeft aangegeven dat de UI in de tijd via veel Lovable-iteraties is
