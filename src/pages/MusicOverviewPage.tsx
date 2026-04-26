@@ -154,11 +154,11 @@ const MusicOverviewPage = () => {
         batch.map(async ({ hit }) => {
           const query = `${hit.artist} - ${hit.title}`;
           try {
-            const { data, error } = await supabase.functions.invoke('search-spotify', {
+            const { data, error } = await invokeWithRetry<SpotifyTrackResult>('search-spotify', {
               body: { query }
             });
             if (error || !data?.trackId) return null;
-            return data as SpotifyTrackResult;
+            return data;
           } catch {
             return null;
           }
@@ -228,11 +228,11 @@ const MusicOverviewPage = () => {
           batch.map(async ({ hit }) => {
             const query = `${hit.artist} - ${hit.title}`;
             try {
-              const { data, error } = await supabase.functions.invoke('search-spotify', {
+              const { data, error } = await invokeWithRetry<SpotifyTrackResult>('search-spotify', {
                 body: { query }
               });
               if (error || !data?.trackId) return null;
-              return data as SpotifyTrackResult;
+              return data;
             } catch {
               return null;
             }

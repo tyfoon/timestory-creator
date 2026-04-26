@@ -159,7 +159,7 @@ async function searchSpotifyAlbumArt(
 
     console.log(`[Tol/Spotify] Searching album art for: "${spotifyQuery}"`);
 
-    const response = await fetch(`${supabaseUrl}/functions/v1/search-spotify`, {
+    const response = await fetchWithRetry(`${supabaseUrl}/functions/v1/search-spotify`, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json", 
