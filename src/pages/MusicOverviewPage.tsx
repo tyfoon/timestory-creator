@@ -127,16 +127,34 @@ const MusicOverviewPage = () => {
             .map(e => ({ year: e.year, hit: e.hit, spotify: null, loading: true, isLocal: true }));
           
           if (newLocalHits.length === 0) return prev;
-          
+
           const merged = [...prev, ...newLocalHits];
-          
-          // Fetch Spotify data for new local hits
-          fetchSpotifyForHits(newLocalHits, merged.length - newLocalHits.length);
-          
+
+          // Fetch Spotify data for new local hits; surface a toast if any
+          // calls actually errored out (errorCount excludes "no match" results).
+          fetchSpotifyForHits(newLocalHits, merged.length - newLocalHits.length)
+            .then(({ errorCount }) => {
+              if (errorCount > 0 && !cancelled) {
+                toast({
+                  variant: 'destructive',
+                  title: t('errorLabel') as string,
+                  description: tStr('spotifyFailedSummary', { count: errorCount, total: newLocalHits.length }),
+                });
+              }
+            })
+            .catch(() => { /* fetchSpotifyForHits already swallows internal errors */ });
+
           return merged;
         });
       } catch (err) {
         console.error('[MusicOverview] Failed to fetch local hits:', err);
+        if (!cancelled) {
+          toast({
+            variant: 'destructive',
+            title: t('errorLabel') as string,
+            description: t('localHitsFetchError') as string,
+          });
+        }
       } finally {
         if (!cancelled) setLocalHitsLoading(false);
       }
@@ -146,25 +164,31 @@ const MusicOverviewPage = () => {
     return () => { cancelled = true; };
   }, [city, startYear, endYear]);
 
-  // Fetch Spotify data for a batch of hits and update state at given offset
-  const fetchSpotifyForHits = useCallback(async (hits: ResolvedHit[], startOffset: number) => {
+  // Fetch Spotify data for a batch of hits and update state at given offset.
+  // Real upstream errors throw (counted as rejected by Promise.allSettled);
+  // a successful response with no trackId resolves to null (= no Spotify
+  // match for that song, not a failure). Caller can use `errorCount` to
+  // surface a toast when the upstream is genuinely flaky.
+  const fetchSpotifyForHits = useCallback(async (hits: ResolvedHit[], startOffset: number): Promise<{ errorCount: number }> => {
     const batchSize = 5;
+    let errorCount = 0;
     for (let i = 0; i < hits.length; i += batchSize) {
       const batch = hits.slice(i, i + batchSize);
       const results = await Promise.allSettled(
         batch.map(async ({ hit }) => {
           const query = `${hit.artist} - ${hit.title}`;
-          try {
-            const { data, error } = await invokeWithRetry<SpotifyTrackResult>('search-spotify', {
-              body: { query }
-            });
-            if (error || !data?.trackId) return null;
-            return data;
-          } catch {
-            return null;
-          }
+          const { data, error } = await invokeWithRetry<SpotifyTrackResult>('search-spotify', {
+            body: { query },
+          });
+          if (error) throw error;             // real failure
+          if (!data?.trackId) return null;    // no match (not a failure)
+          return data;
         })
       );
+
+      for (const r of results) {
+        if (r.status === 'rejected') errorCount++;
+      }
 
       setResolvedHits(prev => {
         const updated = [...prev];
@@ -182,6 +206,7 @@ const MusicOverviewPage = () => {
         return updated;
       });
     }
+    return { errorCount };
   }, []);
 
   // Group by year for rendering
@@ -220,6 +245,7 @@ const MusicOverviewPage = () => {
 
       const batchSize = 5;
       let loaded = 0;
+      let errorCount = 0;
 
       for (let i = 0; i < globalHits.length; i += batchSize) {
         if (cancelled) return;
@@ -228,15 +254,12 @@ const MusicOverviewPage = () => {
         const results = await Promise.allSettled(
           batch.map(async ({ hit }) => {
             const query = `${hit.artist} - ${hit.title}`;
-            try {
-              const { data, error } = await invokeWithRetry<SpotifyTrackResult>('search-spotify', {
-                body: { query }
-              });
-              if (error || !data?.trackId) return null;
-              return data;
-            } catch {
-              return null;
-            }
+            const { data, error } = await invokeWithRetry<SpotifyTrackResult>('search-spotify', {
+              body: { query },
+            });
+            if (error) throw error;             // real failure → rejected
+            if (!data?.trackId) return null;    // no Spotify match (OK)
+            return data;
           })
         );
 
@@ -244,6 +267,10 @@ const MusicOverviewPage = () => {
 
         loaded += batch.length;
         setLoadedCount(loaded);
+
+        for (const r of results) {
+          if (r.status === 'rejected') errorCount++;
+        }
 
         setResolvedHits(prev => {
           const updated = [...prev];
@@ -260,7 +287,16 @@ const MusicOverviewPage = () => {
         });
       }
 
-      if (!cancelled) setIsLoading(false);
+      if (!cancelled) {
+        setIsLoading(false);
+        if (errorCount > 0) {
+          toast({
+            variant: 'destructive',
+            title: t('errorLabel') as string,
+            description: tStr('spotifyFailedSummary', { count: errorCount, total: globalHits.length }),
+          });
+        }
+      }
     };
 
     fetchAll();

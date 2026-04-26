@@ -101,9 +101,12 @@ const TvFilmOverviewPage = () => {
         allItems.sort((a, b) => a.year - b.year);
         setResolvedItems(allItems);
 
-        // Fetch YouTube trailers in batches of 10
+        // Fetch YouTube trailers in batches of 10. Real upstream errors
+        // throw and are counted as rejected; "no videoId" results resolve to
+        // null and are not counted as failures (just no trailer found).
         const batchSize = 10;
         let loaded = 0;
+        let errorCount = 0;
         for (let i = 0; i < allItems.length; i += batchSize) {
           if (cancelled) return;
           const batch = allItems.slice(i, i + batchSize);
@@ -111,17 +114,20 @@ const TvFilmOverviewPage = () => {
           const results = await Promise.allSettled(
             batch.map(async ({ item }) => {
               const query = `${item.title} ${item.type === 'film' ? 'official trailer' : 'trailer intro'}`;
-              try {
-                const { data, error } = await supabase.functions.invoke('search-youtube', { body: { query } });
-                if (error || !data?.videoId) return null;
-                return data as YouTubeResult;
-              } catch { return null; }
+              const { data, error } = await supabase.functions.invoke('search-youtube', { body: { query } });
+              if (error) throw error;             // real failure
+              if (!data?.videoId) return null;    // no trailer found (OK)
+              return data as YouTubeResult;
             })
           );
 
           if (cancelled) return;
           loaded += batch.length;
           setLoadedCount(loaded);
+
+          for (const r of results) {
+            if (r.status === 'rejected') errorCount++;
+          }
 
           setResolvedItems(prev => {
             const updated = [...prev];
@@ -139,8 +145,26 @@ const TvFilmOverviewPage = () => {
             return updated;
           });
         }
+
+        if (!cancelled && errorCount > 0) {
+          const description = (t('youtubeFailedSummary') as string)
+            .replace('{count}', String(errorCount))
+            .replace('{total}', String(allItems.length));
+          toast({
+            variant: 'destructive',
+            title: t('errorLabel') as string,
+            description,
+          });
+        }
       } catch (err) {
         console.error('[TvFilmOverview] Failed to fetch:', err);
+        if (!cancelled) {
+          toast({
+            variant: 'destructive',
+            title: t('errorLabel') as string,
+            description: err instanceof Error ? err.message : (t('localHitsFetchError') as string),
+          });
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
