@@ -19,7 +19,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Music, X, Play, Sparkles, Loader2 } from 'lucide-react';
+import { Music, X, Play, Sparkles, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSoundtrackGeneration } from '@/hooks/useSoundtrackGeneration';
 
@@ -56,6 +56,14 @@ export const MusicVideoReadyNotifier = () => {
   // the floating chip keeps the "something is being made for you" cue
   // visible during the scroll.
   const showInProgressChip = isGenerating && !isComplete && !onMusicVideoPage;
+
+  // Error variant: when soundtrack generation fails (Suno down, rate-limited,
+  // SUPABASE_EDGE_RUNTIME_ERROR, etc.) the pill should NOT silently disappear
+  // — user has no idea what happened. Show a destructive-styled pill with a
+  // retry CTA that takes them to /muziek-video where the existing retry
+  // button hooks up formData + events for the actual regeneration.
+  const hasError = soundtrack.hasError;
+  const showErrorPill = hasError && !onMusicVideoPage;
 
   // Indicative progress derived from generation stage. Not exact %, but
   // gives the user a sense of "we're making progress" rather than just a
@@ -224,9 +232,9 @@ export const MusicVideoReadyNotifier = () => {
   }, [onMusicVideoPage]);
 
   // The /muziek-video page has its own player and doesn't need any overlay.
-  // Otherwise: render the in-progress chip OR the ready toast/badge.
+  // Otherwise: render the in-progress chip, error pill, ready toast, or badge.
   if (onMusicVideoPage) return null;
-  if (!isComplete && !showInProgressChip) return null;
+  if (!isComplete && !showInProgressChip && !showErrorPill) return null;
 
   return (
     <AnimatePresence>
@@ -287,6 +295,41 @@ export const MusicVideoReadyNotifier = () => {
             <X className="h-3 w-3" />
           </button>
         </motion.div>
+      )}
+
+      {showErrorPill && (
+        <motion.button
+          key="error-pill"
+          type="button"
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 20, scale: 0.95 }}
+          transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+          onClick={() => {
+            const qs = searchParams.toString();
+            navigate(qs ? `/muziek-video?${qs}` : '/muziek-video');
+          }}
+          aria-label="Muziekvideo mislukt — tik om opnieuw te proberen"
+          title="Tik voor opnieuw proberen"
+          style={{
+            bottom: 'max(1rem, env(safe-area-inset-bottom))',
+            right: 'max(1rem, env(safe-area-inset-right))',
+          }}
+          className="fixed z-[100] group flex items-center gap-2.5 h-9 pl-2 pr-3 rounded-full border border-destructive/40 bg-card/95 backdrop-blur-md shadow-lg shadow-destructive/10 hover:border-destructive/70 hover:shadow-destructive/20 transition-colors text-left"
+        >
+          <span className="relative flex-shrink-0 w-6 h-6 rounded-full bg-destructive/15 border border-destructive/40 flex items-center justify-center text-destructive">
+            <AlertCircle className="h-3.5 w-3.5" />
+          </span>
+          <span className="flex flex-col leading-tight min-w-0">
+            <span className="text-[11px] font-medium text-foreground truncate">
+              Muziekvideo mislukt
+            </span>
+            <span className="flex items-center gap-1 mt-0.5 text-[10px] text-muted-foreground">
+              <RefreshCw className="h-2.5 w-2.5" />
+              <span>Opnieuw proberen</span>
+            </span>
+          </span>
+        </motion.button>
       )}
 
       {showInProgressChip && chipDismissed && (
