@@ -257,7 +257,7 @@ export const searchImages = async (
   options?: { mode?: 'fast' | 'full' }
 ): Promise<{ success: boolean; images?: { eventId: string; imageUrl: string | null; source: string | null }[] }> => {
   try {
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/search-images`, {
+    const response = await fetchWithRetry(`${SUPABASE_URL}/functions/v1/search-images`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

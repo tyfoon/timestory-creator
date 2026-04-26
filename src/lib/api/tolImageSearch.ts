@@ -81,7 +81,7 @@ async function searchTMDB(
     const cleanedQuery = cleanQueryForTMDB(query);
     console.log(`[Tol/TMDB] Searching ${type} for: "${cleanedQuery}" (year: ${year})`);
 
-    const response = await fetch(`${supabaseUrl}/functions/v1/search-images`, {
+    const response = await fetchWithRetry(`${supabaseUrl}/functions/v1/search-images`, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json", 
