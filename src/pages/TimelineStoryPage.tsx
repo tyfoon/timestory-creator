@@ -8,7 +8,8 @@ import { useClientImageSearch } from '@/hooks/useClientImageSearch';
 import { getCachedTimeline, cacheTimeline, updateCachedEvents } from '@/lib/timelineCache';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ArrowLeft, ChevronDown, Loader2, AlertCircle, RefreshCw, Clock, Ban, Video, Music } from 'lucide-react';
-import { StoryEndCarousel } from '@/components/story/StoryEndCarousel';
+import { StoryEndDiscover } from '@/components/story/StoryEndDiscover';
+import { RoastDialog } from '@/components/story/RoastDialog';
 import { generateStoryBookPdf } from '@/lib/pdfStoryBookGenerator';
 import { AccountLink } from '@/components/AccountLink';
 import { TimeTravelCounter } from '@/components/TimeTravelCounter';
@@ -940,6 +941,10 @@ const TimelineStoryPage = () => {
   const [currentMaxEvents, setCurrentMaxEvents] = useState<number | undefined>(undefined);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [isPersonalizeDialogOpen, setIsPersonalizeDialogOpen] = useState(false);
+  // Hoisted out of StoryEndCarousel during carousel harmonization — the new
+  // StoryEndDiscover doesn't render the RoastDialog itself, so the page owns
+  // its open-state and triggers the dialog via a tileActions callback.
+  const [isRoastOpen, setIsRoastOpen] = useState(false);
   const formDataRef = useRef<FormData | null>(null);
   const receivedEventsRef = useRef<TimelineEvent[]>([]);
   const eventRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -1422,44 +1427,47 @@ const TimelineStoryPage = () => {
           </div>
         </div>
 
-        {/* Story End Carousel - full width, outside sidebar margin */}
-        {!isLoading && events.length > 0 && (
-          <StoryEndCarousel
-            events={events}
-            formData={formData}
-            storyTitle={storyTitle}
-            storyIntroduction={storyIntroduction}
-            onOpenPersonalize={() => setIsPersonalizeDialogOpen(true)}
-            onOpenSpokenVideo={() => setIsVideoDialogOpen(true)}
-            onOpenPolaroids={() => navigate('/polaroid')}
-            onDownloadPDF={async () => {
-              if (!formData) return;
-              try {
-                await generateStoryBookPdf({
-                  events,
-                  formData,
-                  summary: storyIntroduction || '',
-                  storyTitle,
-                  storyIntroduction,
-                });
-              } catch (err) {
-                toast({ title: 'PDF generatie mislukt', variant: 'destructive' });
-              }
-            }}
-            onOpenMusic={() => {
-              const start = events.length > 0 ? events[0].year : 1980;
-              const end = events.length > 0 ? events[events.length - 1].year : new Date().getFullYear();
-              const city = formData?.optionalData?.city || '';
-              navigate(`/muziek?start=${start}&end=${end}${city ? `&city=${encodeURIComponent(String(city))}` : ''}`);
-            }}
-            onOpenTvFilm={() => {
-              const start = events.length > 0 ? events[0].year : 1980;
-              const end = events.length > 0 ? events[events.length - 1].year : new Date().getFullYear();
-              const city = formData?.optionalData?.city || '';
-              navigate(`/tv-film?start=${start}&end=${end}${city ? `&city=${encodeURIComponent(String(city))}` : ''}`);
-            }}
-          />
-        )}
+        {/* Story End Discover — hero (state-aware music video) + tiles row.
+            Replaces the old StoryEndCarousel; year-range and city are passed
+            via searchParams so navigation to /muziek and /tv-film preserves
+            them. Page-specific actions (open the various dialogs, download
+            the PDF) are wired through tileActions; the StoryEndDiscover
+            component stays generic. */}
+        {!isLoading && events.length > 0 && (() => {
+          const start = events.length > 0 ? events[0].year : 1980;
+          const end = events.length > 0 ? events[events.length - 1].year : new Date().getFullYear();
+          const city = formData?.optionalData?.city || '';
+          const discoverParams = new URLSearchParams();
+          discoverParams.set('start', String(start));
+          discoverParams.set('end', String(end));
+          if (city) discoverParams.set('city', String(city));
+          return (
+            <StoryEndDiscover
+              currentPage="story"
+              searchParams={discoverParams}
+              tileActions={{
+                personalized: () => setIsPersonalizeDialogOpen(true),
+                'spoken-story': () => setIsVideoDialogOpen(true),
+                roast: () => setIsRoastOpen(true),
+                polaroids: () => navigate('/polaroid'),
+                presentation: async () => {
+                  if (!formData) return;
+                  try {
+                    await generateStoryBookPdf({
+                      events,
+                      formData,
+                      summary: storyIntroduction || '',
+                      storyTitle,
+                      storyIntroduction,
+                    });
+                  } catch (err) {
+                    toast({ title: 'PDF generatie mislukt', variant: 'destructive' });
+                  }
+                },
+              }}
+            />
+          );
+        })()}
 
         {/* Right: Parallax Music Sidebar - sticky, no own background, no scrollbar */}
         {!isLoading && events.length > 0 && formData && (
@@ -1498,14 +1506,23 @@ const TimelineStoryPage = () => {
           events={events}
           summary={storyIntroduction}
           formData={formData}
-          startYear={formData.type === 'birthdate' && formData.birthDate 
-            ? formData.birthDate.year 
+          startYear={formData.type === 'birthdate' && formData.birthDate
+            ? formData.birthDate.year
             : formData.yearRange?.startYear || 1980}
-          endYear={formData.type === 'birthdate' && formData.birthDate 
-            ? formData.birthDate.year + 25 
+          endYear={formData.type === 'birthdate' && formData.birthDate
+            ? formData.birthDate.year + 25
             : formData.yearRange?.endYear || 2000}
         />
       )}
+
+      {/* Roast Dialog — hoisted out of StoryEndCarousel during the carousel
+          harmonization. Opened via the roast tileAction in StoryEndDiscover. */}
+      <RoastDialog
+        open={isRoastOpen}
+        onOpenChange={setIsRoastOpen}
+        events={events}
+        formData={formData}
+      />
     </div>
   );
 };

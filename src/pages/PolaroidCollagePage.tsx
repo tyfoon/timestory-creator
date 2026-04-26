@@ -16,7 +16,8 @@ import { generateStoryBookPdf } from '@/lib/pdfStoryBookGenerator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { PolaroidCard } from '@/components/PolaroidCard';
-import { StoryEndCarousel } from '@/components/story/StoryEndCarousel';
+import { StoryEndDiscover } from '@/components/story/StoryEndDiscover';
+import { RoastDialog } from '@/components/story/RoastDialog';
 import { VideoDialog } from '@/components/video/VideoDialog';
 import { PersonalizeSoundtrackDialog } from '@/components/story/PersonalizeSoundtrackDialog';
 
@@ -56,6 +57,8 @@ const PolaroidCollagePage = () => {
   const [canShare, setCanShare] = useState(false);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [isPersonalizeDialogOpen, setIsPersonalizeDialogOpen] = useState(false);
+  // Hoisted out of StoryEndCarousel during carousel harmonization.
+  const [isRoastOpen, setIsRoastOpen] = useState(false);
   const [isGeneratingTikTok, setIsGeneratingTikTok] = useState(false);
   const [tikTokProgress, setTikTokProgress] = useState({ current: 0, total: 0 });
   const [generatedTikTokFiles, setGeneratedTikTokFiles] = useState<File[] | null>(null);
@@ -686,48 +689,48 @@ const PolaroidCollagePage = () => {
         </div>
       </section>
 
-      {/* Story End Carousel */}
-      {!isLoading && events.length > 0 && (
-        <div className="relative z-10">
-          <StoryEndCarousel
-            events={events}
-            formData={formData}
-            storyTitle={storyTitle}
-            storyIntroduction={storyIntroduction}
-            onOpenPersonalize={() => setIsPersonalizeDialogOpen(true)}
-            onOpenSpokenVideo={() => setIsVideoDialogOpen(true)}
-            onOpenPolaroids={() => {/* already on polaroid page */}}
-            onDownloadPDF={async () => {
-              if (!formData) return;
-              try {
-                await generateStoryBookPdf({
-                  events,
-                  formData,
-                  summary: storyIntroduction || summary || '',
-                  storyTitle,
-                  storyIntroduction,
-                });
-              } catch (err) {
-                toast({ title: 'PDF generatie mislukt', variant: 'destructive' });
-              }
-            }}
-            onOpenMusic={() => {
-              const start = events.length > 0 ? events[0].year : 1980;
-              const end = events.length > 0 ? events[events.length - 1].year : new Date().getFullYear();
-              const storedData = sessionStorage.getItem('timelineFormData');
-              const city = storedData ? (JSON.parse(storedData)?.optionalData?.city || JSON.parse(storedData)?.city || '') : '';
-              navigate(`/muziek?start=${start}&end=${end}${city ? `&city=${encodeURIComponent(String(city))}` : ''}`);
-            }}
-            onOpenTvFilm={() => {
-              const start = events.length > 0 ? events[0].year : 1980;
-              const end = events.length > 0 ? events[events.length - 1].year : new Date().getFullYear();
-              const storedData = sessionStorage.getItem('timelineFormData');
-              const city = storedData ? (JSON.parse(storedData)?.optionalData?.city || JSON.parse(storedData)?.city || '') : '';
-              navigate(`/tv-film?start=${start}&end=${end}${city ? `&city=${encodeURIComponent(String(city))}` : ''}`);
-            }}
-          />
-        </div>
-      )}
+      {/* Story End Discover — same component as /story, /muziek, /tv-film,
+          /muziek-video. Polaroid tile is automatically filtered because
+          currentPage="polaroid". Page-specific actions wired via tileActions. */}
+      {!isLoading && events.length > 0 && (() => {
+        const start = events.length > 0 ? events[0].year : 1980;
+        const end = events.length > 0 ? events[events.length - 1].year : new Date().getFullYear();
+        const storedData = sessionStorage.getItem('timelineFormData');
+        const city = storedData
+          ? (JSON.parse(storedData)?.optionalData?.city || JSON.parse(storedData)?.city || '')
+          : '';
+        const discoverParams = new URLSearchParams();
+        discoverParams.set('start', String(start));
+        discoverParams.set('end', String(end));
+        if (city) discoverParams.set('city', String(city));
+        return (
+          <div className="relative z-10">
+            <StoryEndDiscover
+              currentPage="polaroid"
+              searchParams={discoverParams}
+              tileActions={{
+                personalized: () => setIsPersonalizeDialogOpen(true),
+                'spoken-story': () => setIsVideoDialogOpen(true),
+                roast: () => setIsRoastOpen(true),
+                presentation: async () => {
+                  if (!formData) return;
+                  try {
+                    await generateStoryBookPdf({
+                      events,
+                      formData,
+                      summary: storyIntroduction || summary || '',
+                      storyTitle,
+                      storyIntroduction,
+                    });
+                  } catch (err) {
+                    toast({ title: 'PDF generatie mislukt', variant: 'destructive' });
+                  }
+                },
+              }}
+            />
+          </div>
+        );
+      })()}
 
       {/* Video Dialog */}
       <VideoDialog
@@ -746,14 +749,23 @@ const PolaroidCollagePage = () => {
           events={events}
           summary={storyIntroduction || summary}
           formData={formData}
-          startYear={formData.type === 'birthdate' && formData.birthDate 
-            ? formData.birthDate.year 
+          startYear={formData.type === 'birthdate' && formData.birthDate
+            ? formData.birthDate.year
             : formData.yearRange?.startYear || 1980}
-          endYear={formData.type === 'birthdate' && formData.birthDate 
-            ? formData.birthDate.year + 25 
+          endYear={formData.type === 'birthdate' && formData.birthDate
+            ? formData.birthDate.year + 25
             : formData.yearRange?.endYear || 2000}
         />
       )}
+
+      {/* Roast Dialog — hoisted out of StoryEndCarousel during the carousel
+          harmonization. Opened via the roast tileAction in StoryEndDiscover. */}
+      <RoastDialog
+        open={isRoastOpen}
+        onOpenChange={setIsRoastOpen}
+        events={events}
+        formData={formData}
+      />
     </div>
   );
 };
