@@ -10,6 +10,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { fetchWithRetry } from './invokeWithRetry';
 import { ImageResult, SearchTraceEntry } from './wikiImageSearch';
 
 // Get the image blacklist from the database
@@ -159,7 +160,7 @@ async function searchSpotifyAlbumArt(
 
     console.log(`[Tol/Spotify] Searching album art for: "${spotifyQuery}"`);
 
-    const response = await fetch(`${supabaseUrl}/functions/v1/search-spotify`, {
+    const response = await fetchWithRetry(`${supabaseUrl}/functions/v1/search-spotify`, {
       method: "POST",
       headers: { 
         "Content-Type": "application/json", 

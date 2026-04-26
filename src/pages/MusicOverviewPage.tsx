@@ -12,6 +12,7 @@ import { SharedExperienceCarousel } from '@/components/story/SharedExperienceCar
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { invokeWithRetry } from '@/lib/api/invokeWithRetry';
 import { numberOneHits, NumberOneHit } from '@/data/numberOneHits';
 import { AccountLink } from '@/components/AccountLink';
 import { useToast } from '@/hooks/use-toast';
@@ -154,11 +155,11 @@ const MusicOverviewPage = () => {
         batch.map(async ({ hit }) => {
           const query = `${hit.artist} - ${hit.title}`;
           try {
-            const { data, error } = await supabase.functions.invoke('search-spotify', {
+            const { data, error } = await invokeWithRetry<SpotifyTrackResult>('search-spotify', {
               body: { query }
             });
             if (error || !data?.trackId) return null;
-            return data as SpotifyTrackResult;
+            return data;
           } catch {
             return null;
           }
@@ -228,11 +229,11 @@ const MusicOverviewPage = () => {
           batch.map(async ({ hit }) => {
             const query = `${hit.artist} - ${hit.title}`;
             try {
-              const { data, error } = await supabase.functions.invoke('search-spotify', {
+              const { data, error } = await invokeWithRetry<SpotifyTrackResult>('search-spotify', {
                 body: { query }
               });
               if (error || !data?.trackId) return null;
-              return data as SpotifyTrackResult;
+              return data;
             } catch {
               return null;
             }

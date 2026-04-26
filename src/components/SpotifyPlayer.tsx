@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Play, Loader2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { invokeWithRetry } from '@/lib/api/invokeWithRetry';
 
 interface SpotifyTrack {
   trackId: string;
@@ -32,7 +33,7 @@ export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerPro
       setError(null);
       
       try {
-        const { data, error: fnError } = await supabase.functions.invoke('search-spotify', {
+        const { data, error: fnError } = await invokeWithRetry<any>('search-spotify', {
           body: { query: searchQuery }
         });
 

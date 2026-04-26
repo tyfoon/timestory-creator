@@ -8,6 +8,7 @@
 
 // Import blacklist checker (uses cached data, initialized on app load)
 import { getBlacklistedImages, initializeBlacklistCache } from '@/hooks/useImageBlacklist';
+import { fetchWithRetry } from './invokeWithRetry';
 
 // Initialize blacklist cache when this module loads
 initializeBlacklistCache();
@@ -386,7 +387,7 @@ async function searchSpotifyAlbumArt(eventId: string, spotifyQuery: string): Pro
 
     console.log(`[Spotify Art] Searching album art for: "${spotifyQuery}"`);
 
-    const response = await fetch(`${supabaseUrl}/functions/v1/search-spotify`, {
+    const response = await fetchWithRetry(`${supabaseUrl}/functions/v1/search-spotify`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${supabaseKey}`, apikey: supabaseKey },
       body: JSON.stringify({ query: spotifyQuery }),

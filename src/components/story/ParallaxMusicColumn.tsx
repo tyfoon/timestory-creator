@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, useScroll, useTransform, MotionValue } from 'framer-motion';
 import { Play, Pause, Loader2, Music, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { invokeWithRetry } from '@/lib/api/invokeWithRetry';
 import { numberOneHits } from '@/data/numberOneHits';
 
 interface HitTrack {
@@ -69,7 +70,7 @@ export const ParallaxMusicColumn = ({ startYear, endYear }: ParallaxMusicColumnP
         const batchResults = await Promise.allSettled(
           batch.map(async ({ year, query }) => {
             try {
-              const { data, error } = await supabase.functions.invoke('search-spotify', {
+              const { data, error } = await invokeWithRetry<any>('search-spotify', {
                 body: { query }
               });
               if (error || !data?.trackId) return null;
