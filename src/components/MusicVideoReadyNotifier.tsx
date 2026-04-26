@@ -37,6 +37,9 @@ export const MusicVideoReadyNotifier = () => {
   // visible = full toast; minimized = small floating badge
   const [visible, setVisible] = useState(false);
   const [minimized, setMinimized] = useState(false);
+  // In-progress chip can be collapsed to a tiny dot if it's in the way.
+  // Resets automatically when a new generation cycle starts (different taskId).
+  const [chipDismissed, setChipDismissed] = useState(false);
   // Tick to force re-render every few seconds during the polling phase so
   // the indicative progress percentage visibly moves.
   const [, setProgressTick] = useState(0);
@@ -155,6 +158,13 @@ export const MusicVideoReadyNotifier = () => {
     return () => clearInterval(id);
   }, [soundtrack.status]);
 
+  // Reset the dismissed flag whenever a new generation cycle begins, so the
+  // chip re-appears for the new track. Keyed on taskId — every fresh
+  // generation gets a fresh taskId.
+  useEffect(() => {
+    if (soundtrack.taskId) setChipDismissed(false);
+  }, [soundtrack.taskId]);
+
   // Document title pulse: while generating AND the tab is in the background,
   // alternate the page title so the browser tab-bar grabs the user's eye.
   // Also works on mobile Safari/Chrome (visibilitychange + document.title).
@@ -220,43 +230,107 @@ export const MusicVideoReadyNotifier = () => {
 
   return (
     <AnimatePresence>
-      {showInProgressChip && (
-        <motion.button
+      {showInProgressChip && !chipDismissed && (
+        <motion.div
           key="in-progress-chip"
           initial={{ opacity: 0, y: 20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.95 }}
           transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
-          onClick={handleResumeStory}
-          aria-label={`Persoonlijke muziekvideo wordt gemaakt — ${progressPct}%`}
-          title={
-            onStoryPage
-              ? 'Tik om naar je muziekvideo te scrollen'
-              : 'Tik om naar je muziekvideo te gaan'
-          }
-          className="fixed bottom-4 right-4 z-[100] group flex items-center gap-2.5 h-9 pl-2 pr-3 rounded-full border border-primary/30 bg-card/95 backdrop-blur-md shadow-lg shadow-primary/10 hover:border-primary/50 hover:shadow-primary/20 transition-colors text-left"
+          // Safe-area-aware positioning so the pill stays clear of the iOS
+          // home indicator and any device notch on the right side.
+          style={{
+            bottom: 'max(1rem, env(safe-area-inset-bottom))',
+            right: 'max(1rem, env(safe-area-inset-right))',
+          }}
+          className="fixed z-[100] flex items-stretch gap-1 rounded-full border border-primary/30 bg-card/95 backdrop-blur-md shadow-lg shadow-primary/10"
         >
-          <span className="relative flex-shrink-0 w-6 h-6 rounded-full bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-violet-300">
-            <Loader2 className="h-3 w-3 animate-spin" />
-          </span>
-          <span className="flex flex-col leading-tight min-w-0">
-            <span className="text-[11px] font-medium text-foreground truncate">
-              Persoonlijke muziekvideo
+          <button
+            type="button"
+            onClick={handleResumeStory}
+            aria-label={`Persoonlijke muziekvideo wordt gemaakt — ${progressPct}%`}
+            title={
+              onStoryPage
+                ? 'Tik om naar je muziekvideo te scrollen'
+                : 'Tik om naar je muziekvideo te gaan'
+            }
+            className="group flex items-center gap-2.5 h-9 pl-2 pr-2 rounded-l-full hover:bg-muted/40 transition-colors text-left"
+          >
+            <span className="relative flex-shrink-0 w-6 h-6 rounded-full bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-violet-300">
+              <Loader2 className="h-3 w-3 animate-spin" />
             </span>
-            {/* Progress: thin bar + numeric % */}
-            <span className="flex items-center gap-1.5 mt-0.5">
-              <span className="relative h-1 w-20 rounded-full bg-muted overflow-hidden">
-                <motion.span
-                  className="absolute inset-y-0 left-0 bg-violet-500 rounded-full"
-                  animate={{ width: `${progressPct}%` }}
-                  transition={{ duration: 0.4, ease: 'easeOut' }}
-                />
+            <span className="flex flex-col leading-tight min-w-0">
+              <span className="text-[11px] font-medium text-foreground truncate">
+                Persoonlijke muziekvideo
               </span>
-              <span className="text-[10px] font-mono tabular-nums text-muted-foreground">
-                {progressPct}%
+              <span className="flex items-center gap-1.5 mt-0.5">
+                <span className="relative h-1 w-20 rounded-full bg-muted overflow-hidden">
+                  <motion.span
+                    className="absolute inset-y-0 left-0 bg-violet-500 rounded-full"
+                    animate={{ width: `${progressPct}%` }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                  />
+                </span>
+                <span className="text-[10px] font-mono tabular-nums text-muted-foreground">
+                  {progressPct}%
+                </span>
               </span>
             </span>
-          </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setChipDismissed(true)}
+            aria-label="Melding inklappen"
+            title="Inklappen"
+            className="flex items-center justify-center w-7 h-9 rounded-r-full text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </motion.div>
+      )}
+
+      {showInProgressChip && chipDismissed && (
+        <motion.button
+          key="in-progress-dot"
+          type="button"
+          initial={{ opacity: 0, scale: 0.6 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.6 }}
+          transition={{ duration: 0.2 }}
+          onClick={() => setChipDismissed(false)}
+          aria-label={`Persoonlijke muziekvideo wordt gemaakt — ${progressPct}%, klik om te tonen`}
+          title="Voortgang muziekvideo"
+          style={{
+            bottom: 'max(1rem, env(safe-area-inset-bottom))',
+            right: 'max(1rem, env(safe-area-inset-right))',
+          }}
+          className="fixed z-[100] w-8 h-8 rounded-full bg-card/95 backdrop-blur-md border border-primary/30 shadow-lg shadow-primary/10 flex items-center justify-center text-violet-400 hover:scale-110 transition-transform"
+        >
+          {/* Tiny circular progress ring around a spinner. SVG ring uses
+              stroke-dasharray to show the % around its circumference. */}
+          <svg viewBox="0 0 32 32" className="absolute inset-0 w-full h-full -rotate-90">
+            <circle
+              cx="16"
+              cy="16"
+              r="14"
+              fill="none"
+              strokeWidth="2"
+              className="stroke-muted"
+            />
+            <motion.circle
+              cx="16"
+              cy="16"
+              r="14"
+              fill="none"
+              strokeWidth="2"
+              strokeLinecap="round"
+              className="stroke-violet-500"
+              strokeDasharray={2 * Math.PI * 14}
+              animate={{ strokeDashoffset: (1 - progressPct / 100) * 2 * Math.PI * 14 }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+            />
+          </svg>
+          <Loader2 className="h-3 w-3 animate-spin relative" />
         </motion.button>
       )}
 
