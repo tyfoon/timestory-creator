@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, useScroll, useTransform, useInView } from 'framer-motion';
+import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
 import { FormData, OptionalData } from '@/types/form';
 import { TimelineEvent, FamousBirthday, SearchTraceEntry } from '@/types/timeline';
 import { generateTimelineStreaming } from '@/lib/api/timeline';
@@ -945,6 +945,11 @@ const TimelineStoryPage = () => {
   // StoryEndDiscover doesn't render the RoastDialog itself, so the page owns
   // its open-state and triggers the dialog via a tileActions callback.
   const [isRoastOpen, setIsRoastOpen] = useState(false);
+  // Banner shown briefly when the timeline finishes loading: "{N} events
+  // geladen — scroll naar beneden". Replaces the previous top-right shadcn
+  // toast; positioned at bottom-center and auto-dismisses after 2.5s.
+  const [showEventsLoadedBanner, setShowEventsLoadedBanner] = useState(false);
+  const [eventsLoadedCount, setEventsLoadedCount] = useState(0);
   const formDataRef = useRef<FormData | null>(null);
   const receivedEventsRef = useRef<TimelineEvent[]>([]);
   const eventRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -1204,10 +1209,12 @@ const TimelineStoryPage = () => {
             console.error('[TimelineStoryPage] Soundtrack generation with events failed:', err);
           });
 
-          toast({
-            title: t('timelineLoaded') as string,
-            description: `${completeData.events.length} ${t('eventsFound') as string}`,
-          });
+          // Show a brief bottom-center banner instead of the previous
+          // top-right toast — more visible, doesn't fight the pill, and
+          // includes a subtle "scroll naar beneden" hint.
+          setEventsLoadedCount(completeData.events.length);
+          setShowEventsLoadedBanner(true);
+          setTimeout(() => setShowEventsLoadedBanner(false), 2500);
         },
         onError: (errorMsg) => {
           setError(errorMsg);
@@ -1488,6 +1495,36 @@ const TimelineStoryPage = () => {
           </div>
         )}
       </div>
+
+      {/* Events-loaded banner — fixed at bottom-center, auto-dismisses
+          after 2.5s. Replaces the old top-right toast with a more visible
+          inline announcement that includes a scroll hint. */}
+      <AnimatePresence>
+        {showEventsLoadedBanner && (
+          <motion.div
+            key="events-loaded-banner"
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 30, scale: 0.95 }}
+            transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+            style={{
+              bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+            }}
+            className="fixed left-1/2 -translate-x-1/2 z-[100] pointer-events-none"
+          >
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-card/95 backdrop-blur-md border border-primary/30 shadow-lg shadow-primary/10">
+              <span className="text-sm font-medium text-foreground">
+                {eventsLoadedCount} {t('eventsFound') as string}
+              </span>
+              <span className="text-muted-foreground/50">·</span>
+              <span className="text-sm text-muted-foreground">
+                {t('scrollDownHint') as string || 'scroll naar beneden'}
+              </span>
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground animate-bounce" />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Video Dialog */}
       <VideoDialog

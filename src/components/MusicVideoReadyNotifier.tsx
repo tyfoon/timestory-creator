@@ -57,26 +57,6 @@ export const MusicVideoReadyNotifier = () => {
   // visible during the scroll.
   const showInProgressChip = isGenerating && !isComplete && !onMusicVideoPage;
 
-  // ⚠ TEMPORARY DIAGNOSTIC LOGGING — remove after the disappearing-pill bug
-  // is identified. Logs every render decision so we can see exactly why the
-  // chip sometimes refuses to show on certain pages / after navigation.
-  // Filter the console with the prefix "[PillDebug]" to read only these.
-  console.log('[PillDebug]', {
-    pathname,
-    status: soundtrack.status,
-    audioUrl: !!audioUrl,
-    isGenerating,
-    isComplete,
-    onMusicVideoPage,
-    showInProgressChip,
-    chipDismissed,
-    visible,
-    minimized,
-    willRender:
-      !onMusicVideoPage &&
-      ((showInProgressChip && !chipDismissed) || visible || minimized),
-  });
-
   // Indicative progress derived from generation stage. Not exact %, but
   // gives the user a sense of "we're making progress" rather than just a
   // spinning loader. The exact polling phase is the longest, so we tick
