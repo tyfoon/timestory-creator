@@ -798,12 +798,12 @@ const ResultPage = () => {
                     </>
                   )}
                   
-                  {/* Debug info button */}
-                  {events.length > 0 && !isLoading && (
+                  {/* Debug info button (dev-only — shows AI prompt + internal search trace) */}
+                  {import.meta.env.DEV && events.length > 0 && !isLoading && (
                     <>
                       <PromptViewerDialog formData={formData} language={language} maxEvents={currentMaxEvents} />
-                      <DebugInfoDialog 
-                        events={events} 
+                      <DebugInfoDialog
+                        events={events}
                         onRefreshImages={handleRefreshAllImages}
                         isRefreshing={isLoadingImages}
                         onBlacklistImage={handleBlacklistImage}

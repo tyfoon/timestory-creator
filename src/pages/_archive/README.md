@@ -11,6 +11,7 @@ case any UI patterns need to be salvaged or restored.
 | `HomeV2.tsx` | Earlier homepage iteration. Used the `v2/` companion components below. Was wired at `/home-v2`. |
 | `Index.tsx` | "home-v4" iteration — split from HomeV3 line. Was wired at `/home-v4`. Imports active components from `@/components/*` (DateInput, SubcultureSelector, etc.); those imports still resolve. |
 | `v2/` | Companion components for HomeV2 only (RetroDateInput, PhaseSelector, IdentityForm, ChapterIndicator, NostalgicLoading, PaperTexture, TimeDial, plus the never-rendered OccasionSelector and SubjectSelector). |
+| `ImageBlacklistButton.tsx` | Standalone "ban this image" button. Was never imported anywhere — DebugInfoDialog has its own inline blacklist button instead. Original component was marked `TEMPORARY: dev only` in its file header. |
 
 ## What was removed from `App.tsx`
 

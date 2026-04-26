@@ -1301,16 +1301,20 @@ const TimelineStoryPage = () => {
                 {getTitle()}
               </h1>
               
-              {/* Debug dialogs - small icons after title */}
+              {/* Debug dialogs - dev-only; refresh button below stays user-visible */}
               {events.length > 0 && !isLoading && (
                 <>
-                  <PromptViewerDialog formData={formData} language={language} maxEvents={currentMaxEvents} />
-                  <DebugInfoDialog 
-                    events={events} 
-                    onRefreshImages={handleRefreshAllImages}
-                    isRefreshing={isLoadingImages}
-                    onBlacklistImage={handleBlacklistImage}
-                  />
+                  {import.meta.env.DEV && (
+                    <>
+                      <PromptViewerDialog formData={formData} language={language} maxEvents={currentMaxEvents} />
+                      <DebugInfoDialog
+                        events={events}
+                        onRefreshImages={handleRefreshAllImages}
+                        isRefreshing={isLoadingImages}
+                        onBlacklistImage={handleBlacklistImage}
+                      />
+                    </>
+                  )}
                   <button
                     onClick={() => handleClearCache(20)}
                     className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
