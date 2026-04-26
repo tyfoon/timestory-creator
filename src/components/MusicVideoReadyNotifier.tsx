@@ -1,23 +1,32 @@
 /**
  * Global notifier that watches the soundtrack-generation state.
  *
- * When the user's personalised music video finishes generating AND they are
- * NOT currently on /muziek-video, a sticky toast appears bottom-right with:
- *   - "Bekijk nu" → navigates to /muziek-video
- *   - "✕"        → dismisses, but leaves a small floating badge so the user
- *                   can come back to it later.
+ * Three states surface different UI:
+ *   1. IN PROGRESS (off /story, off /muziek-video):
+ *        small pulsing chip "🎵 Je muziekvideo wordt gemaakt — kijk straks terug"
+ *        → click navigates back to /story
+ *   2. READY for the first time (off /muziek-video):
+ *        sticky toast bottom-right with "Bekijk nu" / "Later"
+ *   3. READY but already dismissed:
+ *        small floating music-icon badge that re-opens the toast on click
+ *
+ * Plus: while generating AND the tab is in the background, the document
+ * title pulses ("🎵 Wordt gemaakt..." ↔ original title) so the browser
+ * tab-bar grabs attention without requiring notification permission.
  *
  * Mounted once inside <BrowserRouter> in App.tsx.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Music, X, Play, Sparkles } from 'lucide-react';
+import { Music, X, Play, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSoundtrackGeneration } from '@/hooks/useSoundtrackGeneration';
 
 const SEEN_KEY = 'soundtrack_notify_seen';     // value = audioUrl (one notif per track)
 const DISMISSED_KEY = 'soundtrack_notify_dismissed'; // value = audioUrl (collapsed to badge)
+const TITLE_PULSE_TEXT = '🎵 Wordt gemaakt...';
+const TITLE_PULSE_INTERVAL_MS = 1500;
 
 export const MusicVideoReadyNotifier = () => {
   const navigate = useNavigate();
@@ -31,7 +40,13 @@ export const MusicVideoReadyNotifier = () => {
 
   const audioUrl = soundtrack.audioUrl;
   const isComplete = soundtrack.isComplete && !!audioUrl;
+  const isGenerating = soundtrack.isGenerating;
   const onMusicVideoPage = pathname === '/muziek-video';
+  const onStoryPage = pathname === '/story';
+  // In-progress chip should only show when the user is on a page that does
+  // NOT already display the inline soundtrack status (story has its own
+  // SoundtrackSection + StoryEndCarousel; muziek-video has the player itself).
+  const showInProgressChip = isGenerating && !isComplete && !onStoryPage && !onMusicVideoPage;
 
   // Decide when to surface the toast
   useEffect(() => {
@@ -86,6 +101,61 @@ export const MusicVideoReadyNotifier = () => {
     setVisible(true);
   };
 
+  const handleResumeStory = () => {
+    const qs = searchParams.toString();
+    navigate(qs ? `/story?${qs}` : '/story');
+  };
+
+  // Document title pulse: while generating AND the tab is in the background,
+  // alternate the page title so the browser tab-bar grabs the user's eye.
+  // Also works on mobile Safari/Chrome (visibilitychange + document.title).
+  // Restored on: tab visible, generation finishes, or component unmounts.
+  const originalTitleRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    let intervalId: number | null = null;
+
+    const startPulse = () => {
+      if (intervalId !== null) return;
+      if (originalTitleRef.current === null) {
+        originalTitleRef.current = document.title;
+      }
+      let toggled = false;
+      intervalId = window.setInterval(() => {
+        document.title = toggled ? (originalTitleRef.current ?? document.title) : TITLE_PULSE_TEXT;
+        toggled = !toggled;
+      }, TITLE_PULSE_INTERVAL_MS);
+    };
+
+    const stopPulse = () => {
+      if (intervalId !== null) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+      if (originalTitleRef.current !== null) {
+        document.title = originalTitleRef.current;
+        // Keep the cached original — multiple start/stop cycles reuse it.
+      }
+    };
+
+    const evaluate = () => {
+      if (isGenerating && !isComplete && document.hidden) {
+        startPulse();
+      } else {
+        stopPulse();
+      }
+    };
+
+    evaluate();
+    document.addEventListener('visibilitychange', evaluate);
+
+    return () => {
+      document.removeEventListener('visibilitychange', evaluate);
+      stopPulse();
+    };
+  }, [isGenerating, isComplete]);
+
   // Hide everything when user lands on the music video page
   useEffect(() => {
     if (onMusicVideoPage) {
@@ -94,10 +164,58 @@ export const MusicVideoReadyNotifier = () => {
     }
   }, [onMusicVideoPage]);
 
-  if (!isComplete || onMusicVideoPage) return null;
+  // The /muziek-video page has its own player and doesn't need any overlay.
+  // Otherwise: render the in-progress chip OR the ready toast/badge.
+  if (onMusicVideoPage) return null;
+  if (!isComplete && !showInProgressChip) return null;
 
   return (
     <AnimatePresence>
+      {showInProgressChip && (
+        <motion.button
+          key="in-progress-chip"
+          initial={{ opacity: 0, y: 40, scale: 0.92 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 40, scale: 0.92 }}
+          transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+          onClick={handleResumeStory}
+          aria-label="Open story page to follow music video generation"
+          className="fixed bottom-4 right-4 z-[100] max-w-[340px] w-[calc(100vw-2rem)] sm:w-[340px] text-left"
+        >
+          <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-card/95 backdrop-blur-md shadow-2xl shadow-primary/20">
+            {/* Subtle aurora gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-fuchsia-500/8 to-transparent pointer-events-none" />
+            {/* Pulse ring on the icon */}
+            <div className="relative z-[1] p-3.5 flex items-center gap-3">
+              <div className="relative flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-violet-300">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </div>
+                <motion.div
+                  className="absolute inset-0 rounded-xl border-2 border-violet-400/50"
+                  animate={{ scale: [1, 1.25, 1], opacity: [0.6, 0, 0.6] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <Sparkles className="h-3 w-3 text-violet-300" />
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-violet-300 font-semibold">
+                    Wordt gemaakt
+                  </p>
+                </div>
+                <p className="text-sm font-medium text-foreground leading-tight">
+                  Je muziekvideo wordt gemaakt
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Tik om terug te gaan en mee te kijken.
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.button>
+      )}
+
       {visible && (
         <motion.div
           key="toast"
