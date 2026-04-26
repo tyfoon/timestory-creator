@@ -83,12 +83,8 @@ export default function SharedStoryPage() {
 
         setStory(storyData);
 
-        // Increment view count (fire-and-forget)
-        supabase
-          .from('saved_stories')
-          .update({ view_count: (storyData.view_count || 0) + 1 })
-          .eq('id', id)
-          .then(() => {});
+        // Increment view count (fire-and-forget) via SECURITY DEFINER RPC
+        supabase.rpc('increment_story_view_count', { p_story_id: id }).then(() => {});
 
       } catch (err) {
         console.error('Error fetching story:', err);
