@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
+  const err = error as Error;
   const { t } = useLanguage();
   const isDev = import.meta.env.DEV;
 
