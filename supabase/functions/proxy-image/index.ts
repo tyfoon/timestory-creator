@@ -103,7 +103,7 @@ serve(async (req) => {
         chunks.push(value);
       }
 
-      const body = new Blob(chunks as BlobPart[], { type: contentType });
+      const body = new Blob(chunks as unknown as BlobPart[], { type: contentType });
       const headers: Record<string, string> = {
         ...corsHeaders,
         'Content-Type': contentType,
