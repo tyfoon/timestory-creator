@@ -5,8 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
-import Index from "./pages/Index";
-import HomeV2 from "./pages/HomeV2";
 import HomeV3 from "./pages/HomeV3";
 import ResultPage from "./pages/ResultPage";
 import PolaroidCollagePage from "./pages/PolaroidCollagePage";
@@ -35,9 +33,10 @@ const App = () => (
             <MusicVideoReadyNotifier />
             <Routes>
               <Route path="/" element={<HomeV3 />} />
-              <Route path="/home-v2" element={<HomeV2 />} />
-              <Route path="/home-v3" element={<HomeV3 />} />
-              <Route path="/home-v4" element={<Index />} />
+              {/* Archived: HomeV2, Index (home-v4). See src/pages/_archive/ */}
+              <Route path="/home-v2" element={<Navigate to="/" replace />} />
+              <Route path="/home-v3" element={<Navigate to="/" replace />} />
+              <Route path="/home-v4" element={<Navigate to="/" replace />} />
               <Route path="/resultaat" element={<ResultPage />} />
               <Route path="/polaroid" element={<PolaroidCollagePage />} />
               <Route path="/story" element={<TimelineStoryPage />} />
