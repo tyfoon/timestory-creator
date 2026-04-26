@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { VideoEvent } from '@/remotion/types';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export interface StoryContent {
   events: VideoEvent[];
@@ -22,6 +23,9 @@ export interface StorySettings {
   // Intro
   introAudioUrl?: string;
   introDurationFrames?: number;
+  // Locale at save time — used by the share-preview edge function so og-tags
+  // come out in the same language the user generated their story in.
+  language?: string;
 }
 
 export interface SaveStoryResult {
@@ -79,6 +83,7 @@ export const useSaveStory = (): UseSaveStoryReturn => {
   const [isSaving, setIsSaving] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressMessage, setProgressMessage] = useState('');
+  const { language } = useLanguage();
 
   const saveStory = useCallback(async (
     content: StoryContent,
@@ -205,6 +210,10 @@ export const useSaveStory = (): UseSaveStoryReturn => {
         ...settings,
         introAudioUrl: finalIntroAudioUrl,
         backgroundMusicUrl: finalBackgroundMusicUrl,
+        // Capture locale so the share-preview edge function emits og-tags
+        // in the language the user generated their story in (not whatever
+        // language a future viewer happens to have set).
+        language: settings.language ?? language,
       };
 
       // 5. Insert into database - link to user if authenticated
@@ -232,10 +241,19 @@ export const useSaveStory = (): UseSaveStoryReturn => {
       setProgress(100);
       setProgressMessage('Klaar!');
 
-      // Generate share URL - use custom domain for branded links
+      // Share URL goes through the share-preview edge function so social
+      // scrapers (Twitter / FB / WhatsApp / LinkedIn / Slack / Telegram /
+      // Discord / Google) receive per-story og-tags. The function 302s
+      // human visitors to the SPA route /s/:id, so the user-visible page
+      // is unchanged.
+      //
+      // Lovable proxies /functions/v1/* through the branded domain, so
+      // the URL stays on hetjaarvan.nl. If that proxy ever breaks, the
+      // function is also reachable directly at
+      // ${VITE_SUPABASE_URL}/functions/v1/share-preview/${storyId}.
       const storyId = insertData.id;
       const brandedUrl = 'https://hetjaarvan.nl';
-      const shareUrl = `${brandedUrl}/s/${storyId}`;
+      const shareUrl = `${brandedUrl}/functions/v1/share-preview/${storyId}`;
 
       return {
         success: true,

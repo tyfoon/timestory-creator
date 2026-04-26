@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.generate-roast]
 verify_jwt = false
+
+[functions.share-preview]
+verify_jwt = false
