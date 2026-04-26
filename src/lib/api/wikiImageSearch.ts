@@ -431,7 +431,7 @@ async function searchTMDB(
     const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
     if (!supabaseUrl || !supabaseKey) return { eventId, imageUrl: null, source: null };
 
-    const response = await fetch(`${supabaseUrl}/functions/v1/search-images`, {
+    const response = await fetchWithRetry(`${supabaseUrl}/functions/v1/search-images`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${supabaseKey}`, apikey: supabaseKey },
       body: JSON.stringify({

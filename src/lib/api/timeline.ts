@@ -1,6 +1,7 @@
 import { FormData } from '@/types/form';
 import { TimelineEvent, TimelineResponse, FamousBirthday } from '@/types/timeline';
 import { getTranslationString, Language } from '@/lib/i18n';
+import { fetchWithRetry } from './invokeWithRetry';
 
 // Fallback Supabase configuration
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
@@ -257,7 +258,7 @@ export const searchImages = async (
   options?: { mode?: 'fast' | 'full' }
 ): Promise<{ success: boolean; images?: { eventId: string; imageUrl: string | null; source: string | null }[] }> => {
   try {
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/search-images`, {
+    const response = await fetchWithRetry(`${SUPABASE_URL}/functions/v1/search-images`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
