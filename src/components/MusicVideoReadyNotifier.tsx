@@ -43,10 +43,13 @@ export const MusicVideoReadyNotifier = () => {
   const isGenerating = soundtrack.isGenerating;
   const onMusicVideoPage = pathname === '/muziek-video';
   const onStoryPage = pathname === '/story';
-  // In-progress chip should only show when the user is on a page that does
-  // NOT already display the inline soundtrack status (story has its own
-  // SoundtrackSection + StoryEndCarousel; muziek-video has the player itself).
-  const showInProgressChip = isGenerating && !isComplete && !onStoryPage && !onMusicVideoPage;
+  // In-progress chip shows on every page except /muziek-video (where the
+  // player itself is the destination). On /story we still show it because
+  // the music-video card lives at the BOTTOM of the page (inside
+  // StoryEndCarousel), which a scrolling user wouldn't see for minutes —
+  // the floating chip keeps the "something is being made for you" cue
+  // visible during the scroll.
+  const showInProgressChip = isGenerating && !isComplete && !onMusicVideoPage;
 
   // Decide when to surface the toast
   useEffect(() => {
@@ -102,6 +105,16 @@ export const MusicVideoReadyNotifier = () => {
   };
 
   const handleResumeStory = () => {
+    // If we're already on /story, scroll to the music-video card at the
+    // bottom of the page rather than re-navigating (which would no-op).
+    // The card's wrapper has id="music-video-card" in StoryEndCarousel.
+    if (onStoryPage) {
+      const target = document.getElementById('music-video-card');
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+    }
     const qs = searchParams.toString();
     navigate(qs ? `/story?${qs}` : '/story');
   };
@@ -208,7 +221,9 @@ export const MusicVideoReadyNotifier = () => {
                   Je muziekvideo wordt gemaakt
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Tik om terug te gaan en mee te kijken.
+                  {onStoryPage
+                    ? 'Tik om naar je muziekvideo te scrollen.'
+                    : 'Tik om terug te gaan en mee te kijken.'}
                 </p>
               </div>
             </div>
