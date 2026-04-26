@@ -11,8 +11,8 @@ export const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
 
   useEffect(() => {
     // TODO: forward to Sentry once integrated
-    console.error("[ErrorBoundary]", error);
-  }, [error]);
+    console.error("[ErrorBoundary]", err);
+  }, [err]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-6">
@@ -23,9 +23,9 @@ export const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">{t("errorBoundaryBody")}</p>
 
-          {!isDev && error?.message && (
+          {!isDev && err?.message && (
             <p className="text-xs text-muted-foreground/80 font-mono break-words">
-              {error.message}
+              {err.message}
             </p>
           )}
 
@@ -33,9 +33,9 @@ export const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
             <details className="text-xs">
               <summary className="cursor-pointer text-muted-foreground">Debug</summary>
               <pre className="mt-2 whitespace-pre-wrap break-words bg-muted p-2 rounded text-[11px]">
-                {error?.message}
+                {err?.message}
                 {"\n\n"}
-                {error?.stack}
+                {err?.stack}
               </pre>
             </details>
           )}
