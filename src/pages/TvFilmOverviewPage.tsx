@@ -6,7 +6,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Heart, Loader2, Tv, Film, Play, X, Bookmark, BookmarkCheck, MapPin, ListVideo } from 'lucide-react';
-import { SharedExperienceCarousel } from '@/components/story/SharedExperienceCarousel';
+import { StoryEndDiscover } from '@/components/story/StoryEndDiscover';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -549,7 +549,7 @@ const TvFilmOverviewPage = () => {
         )}
 
         {/* Discover more carousel */}
-        <SharedExperienceCarousel excludeCards={['tv-film-overview']} searchParams={searchParams} />
+        <StoryEndDiscover currentPage="tv-film-overview" searchParams={searchParams} />
       </main>
     </div>
   );

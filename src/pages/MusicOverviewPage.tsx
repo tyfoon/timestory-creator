@@ -8,7 +8,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Heart, Loader2, Music, Play, Pause, X, ListMusic, Bookmark, BookmarkCheck, Globe, MapPin } from 'lucide-react';
-import { SharedExperienceCarousel } from '@/components/story/SharedExperienceCarousel';
+import { StoryEndDiscover } from '@/components/story/StoryEndDiscover';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
@@ -568,7 +568,7 @@ const MusicOverviewPage = () => {
         )}
 
         {/* Discover more carousel */}
-        <SharedExperienceCarousel excludeCards={['music-overview']} searchParams={searchParams} />
+        <StoryEndDiscover currentPage="music-overview" searchParams={searchParams} />
       </main>
     </div>
   );

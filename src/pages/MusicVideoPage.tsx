@@ -22,7 +22,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSoundtrackGeneration, clearSoundtrackState } from '@/hooks/useSoundtrackGeneration';
 import { TimelineVideoComponent, VideoEvent } from '@/remotion';
-import { SharedExperienceCarousel } from '@/components/story/SharedExperienceCarousel';
+import { StoryEndDiscover } from '@/components/story/StoryEndDiscover';
 import { getCachedTimeline } from '@/lib/timelineCache';
 import { TimelineEvent } from '@/types/timeline';
 import { FormData } from '@/types/form';
@@ -125,6 +125,18 @@ const MusicVideoPage = () => {
   const isComplete = soundtrack.isComplete && !!soundtrack.audioUrl;
   const hasError = soundtrack.hasError;
   const isIdle = soundtrack.status === 'idle';
+
+  // Mark this music video as "viewed" once the user lands on this page with
+  // a complete track. StoryEndDiscover reads this flag to demote the music
+  // video from hero to a regular tile after first viewing.
+  useEffect(() => {
+    if (!isComplete || !soundtrack.audioUrl) return;
+    try {
+      localStorage.setItem(`music_video_viewed_${soundtrack.audioUrl}`, '1');
+    } catch {
+      // localStorage disabled / quota — non-fatal, hero will stay shown
+    }
+  }, [isComplete, soundtrack.audioUrl]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -301,8 +313,8 @@ const MusicVideoPage = () => {
         </motion.div>
 
         {/* Carousel of other actions below */}
-        <SharedExperienceCarousel
-          excludeCards={['music-video']}
+        <StoryEndDiscover
+          currentPage="music-video"
           searchParams={searchParams}
         />
       </main>
