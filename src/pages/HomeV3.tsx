@@ -307,11 +307,18 @@ const HomeV3 = () => {
     // No auto-advance for step 2 anymore since we added city field
   }, [isStep2Complete, currentStep, step2HasAdvanced]);
 
-  // Auto-collapse step 3 only the FIRST time both gender and subculture are selected
+  // Auto-collapse step 3 the first time both gender and subculture are
+  // selected — and re-arm so it triggers again if the user deselects and
+  // re-selects (e.g. changes their mind about subculture).
   useEffect(() => {
     if (isStep3Complete && currentStep === 3 && !step3HasAdvanced) {
       setStep3HasAdvanced(true);
-      setTimeout(() => setCurrentStep(0), 300); // Collapse all and show Start button
+      const t = setTimeout(() => setCurrentStep(0), 300); // Collapse all and show Start button
+      return () => clearTimeout(t);
+    }
+    if (!isStep3Complete && step3HasAdvanced) {
+      // User undid step 3 — re-arm so the collapse fires again on next completion.
+      setStep3HasAdvanced(false);
     }
   }, [isStep3Complete, currentStep, step3HasAdvanced]);
 
