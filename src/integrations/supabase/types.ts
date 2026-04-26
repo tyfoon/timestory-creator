@@ -155,6 +155,42 @@ export type Database = {
         }
         Relationships: []
       }
+      tvfilm_overview_cache: {
+        Row: {
+          cache_key: string
+          cached_at: string
+          city: string
+          country: string | null
+          end_year: number
+          items: Json
+          language: string
+          last_accessed: string
+          start_year: number
+        }
+        Insert: {
+          cache_key: string
+          cached_at?: string
+          city?: string
+          country?: string | null
+          end_year: number
+          items: Json
+          language: string
+          last_accessed?: string
+          start_year: number
+        }
+        Update: {
+          cache_key?: string
+          cached_at?: string
+          city?: string
+          country?: string | null
+          end_year?: number
+          items?: Json
+          language?: string
+          last_accessed?: string
+          start_year?: number
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           form_data: Json | null
