@@ -34,6 +34,7 @@ import { motion, useInView } from 'framer-motion';
 import {
   Music, Mic, Image, FileText, Sparkles, ChevronLeft, ChevronRight,
   Crown, Gift, Lock, Flame, ListMusic, Tv, Film, Play, Loader2,
+  BookOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -55,7 +56,8 @@ export type DiscoverTileId =
   | 'personalized'
   | 'roast'
   | 'spoken-story'
-  | 'presentation';
+  | 'presentation'
+  | 'story';  // "back to my timeline" — only shown on non-story pages
 
 interface TileDef {
   id: DiscoverTileId;
@@ -135,6 +137,16 @@ export const StoryEndDiscover = ({
   // ─── Tile definitions ─────────────────────────────────────────────────
   const allTiles: TileDef[] = useMemo(() => [
     {
+      // "Back to my timeline" — only shows when currentPage !== 'story'.
+      // Sits at the front of the row so the back-affordance is immediate.
+      id: 'story',
+      title: t('myTimeline') as string || 'Mijn tijdlijn',
+      subtitle: t('backToTimeline') as string || 'Terug naar je verhaal',
+      icon: <BookOpen className="h-5 w-5" />,
+      isPremium: false,
+      accentColor: 'text-primary',
+    },
+    {
       id: 'music-video',
       title: t('myMusicVideo') as string || 'Mijn Muziekvideo',
       subtitle: (t('aiMusicVideo') as string) || 'AI-muziek',
@@ -204,8 +216,10 @@ export const StoryEndDiscover = ({
   //   - Hide music-video tile if it's currently the hero (not viewed yet).
   //   - Hide the current-page tile (you're already there).
   //   - Hide music-video tile if not ready (pill handles in-progress state).
+  //   - Hide the back-to-story tile when already on /story.
   const tiles = useMemo(() => {
     const currentPageToTileId: Partial<Record<DiscoverPage, DiscoverTileId>> = {
+      'story': 'story',
       'music-overview': 'music-overview',
       'tv-film-overview': 'tv-film-overview',
       'polaroid': 'polaroids',
@@ -225,6 +239,7 @@ export const StoryEndDiscover = ({
 
   // ─── Default click actions ────────────────────────────────────────────
   const defaultActions: Record<DiscoverTileId, () => void> = {
+    'story': () => navigate(`/story${params}`),
     'music-video': () => navigate(`/muziek-video${params}`),
     'music-overview': () => navigate(`/muziek${params}`),
     'tv-film-overview': () => navigate(`/tv-film${params}`),
@@ -271,8 +286,15 @@ export const StoryEndDiscover = ({
       initial={{ opacity: 0, y: 60 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
-      className="py-12 sm:py-16"
+      // Self-contained layout: negative outer margins break out of any
+      // parent's horizontal padding so the section spans full width
+      // regardless of which page hosts us. The inner max-w-7xl + px-*
+      // then enforces a CONSISTENT content width across all 5 pages.
+      // Without this, /muziek (max-w-7xl) and /story (different parent
+      // container) ended up with visibly different left/right margins.
+      className="py-12 sm:py-16 -mx-4 sm:-mx-6 lg:-mx-8"
     >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* ─── Hero card (state-aware) ──────────────────────────────────── */}
       {showHero && (
         <motion.div
@@ -417,6 +439,7 @@ export const StoryEndDiscover = ({
         <div className="pointer-events-none absolute left-0 top-0 bottom-3 w-6 bg-gradient-to-r from-background to-transparent sm:hidden" />
         <div className="pointer-events-none absolute right-0 top-0 bottom-3 w-6 bg-gradient-to-l from-background to-transparent sm:hidden" />
       </div>
+      </div> {/* end max-w-7xl wrapper */}
     </motion.section>
   );
 };
