@@ -103,7 +103,7 @@ serve(async (req) => {
         chunks.push(value);
       }
 
-      const body = new Blob(chunks, { type: contentType });
+      const body = new Blob(chunks as BlobPart[], { type: contentType });
       console.log(`Successfully proxied ${total} bytes of audio`);
 
       return new Response(body, {
