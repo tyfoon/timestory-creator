@@ -425,17 +425,19 @@ const LayoutShout = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPattern
         </motion.div>
       </div>
       
-      {/* Small floating image */}
+      {/* Small floating image — aspect-ratio reserves space so lazy-load
+          doesn't pop the layout when the image arrives. */}
       <motion.div
         initial={{ opacity: 0, x: 50, rotate: 3 }}
         animate={isInView ? { opacity: 1, x: 0, rotate: 3 } : {}}
         transition={{ delay: 0.5, duration: 0.8 }}
         className="absolute bottom-8 right-8 w-32 sm:w-48 lg:w-64 z-20"
+        style={{ aspectRatio: '4 / 3' }}
       >
-        <ImageWithBlacklist 
-          src={imageUrl} 
+        <ImageWithBlacklist
+          src={imageUrl}
           alt={event.title}
-          className="w-full h-auto rounded-lg shadow-2xl"
+          className="w-full h-full object-cover rounded-lg shadow-2xl"
           event={event}
           onBlacklistImage={onBlacklistImage}
         />
@@ -527,13 +529,20 @@ const LayoutMagazine = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatt
             transition={{ duration: 0.8 }}
             className="space-y-4"
           >
-            <ImageWithBlacklist 
-              src={imageUrl} 
-              alt={event.title}
-              className="w-full h-auto max-h-[50vh] object-cover object-top rounded-sm shadow-xl"
-              event={event}
-              onBlacklistImage={onBlacklistImage}
-            />
+            {/* aspect-ratio wrapper reserves vertical space so lazy-loading
+                the image doesn't push the MediaButtons + caption below it. */}
+            <div
+              className="w-full max-h-[50vh] overflow-hidden rounded-sm shadow-xl"
+              style={{ aspectRatio: '16 / 10' }}
+            >
+              <ImageWithBlacklist
+                src={imageUrl}
+                alt={event.title}
+                className="w-full h-full object-cover object-top"
+                event={event}
+                onBlacklistImage={onBlacklistImage}
+              />
+            </div>
             {/* Media buttons below image */}
             <MediaButtons 
               spotifySearchQuery={event.spotifySearchQuery}
