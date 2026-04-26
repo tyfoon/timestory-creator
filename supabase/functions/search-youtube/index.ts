@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,10 +12,15 @@ interface YouTubeSearchRequest {
 
 interface YouTubeSearchResponse {
   success: boolean;
-  videoId?: string;
-  title?: string;
-  thumbnail?: string;
+  videoId?: string | null;
+  title?: string | null;
+  thumbnail?: string | null;
+  cached?: boolean;
   error?: string;
+}
+
+function normalizeQueryForCache(q: string): string {
+  return q.toLowerCase().trim().replace(/\s+/g, " ");
 }
 
 serve(async (req) => {
@@ -42,6 +48,49 @@ serve(async (req) => {
       );
     }
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const supabase =
+      supabaseUrl && supabaseServiceKey
+        ? createClient(supabaseUrl, supabaseServiceKey)
+        : null;
+
+    const normalizedQuery = normalizeQueryForCache(query);
+
+    // ───── 1. Cache lookup ─────────────────────────────────────────
+    if (supabase) {
+      try {
+        const { data: cached } = await supabase
+          .from("youtube_search_cache")
+          .select("video_id, title, thumbnail")
+          .eq("query", normalizedQuery)
+          .maybeSingle();
+
+        if (cached) {
+          // Fire-and-forget bump of last_accessed.
+          (supabase.from("youtube_search_cache") as any)
+            .update({ last_accessed: new Date().toISOString() })
+            .eq("query", normalizedQuery)
+            .then(() => {});
+
+          console.log(`[search-youtube] cache hit: ${normalizedQuery}`);
+          return new Response(
+            JSON.stringify({
+              success: true,
+              videoId: cached.video_id,
+              title: cached.title,
+              thumbnail: cached.thumbnail,
+              cached: true,
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+      } catch (e) {
+        // Cache failure is non-fatal — fall through to YouTube call.
+        console.warn("[search-youtube] cache lookup failed:", e);
+      }
+    }
+
     console.log(`Searching YouTube for: ${query}`);
 
     // Search YouTube Data API v3
@@ -60,11 +109,8 @@ serve(async (req) => {
       const errorText = await response.text();
       console.error("YouTube API error:", response.status, errorText);
       // Return 200 with success:false so the supabase-js client gets a
-      // structured response instead of throwing on a non-2xx status. This
-      // keeps a recoverable failure (e.g. daily quota exceeded → 403) from
-      // crashing the page-level Promise chain. The caller distinguishes
-      // "no trailer found" (success: true, videoId: null) from "upstream
-      // unavailable" (success: false) via the success flag.
+      // structured response instead of throwing on a non-2xx status.
+      // Quota-exceeded responses are NOT cached — retryable tomorrow.
       return new Response(
         JSON.stringify({ success: false, error: `YouTube API error: ${response.status}` }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -75,6 +121,23 @@ serve(async (req) => {
 
     if (!data.items || data.items.length === 0) {
       console.log("No YouTube results found for:", query);
+
+      // Cache the no-result so we don't re-spend quota on rare titles.
+      if (supabase) {
+        (supabase.from("youtube_search_cache") as any)
+          .upsert(
+            {
+              query: normalizedQuery,
+              video_id: null,
+              title: null,
+              thumbnail: null,
+              last_accessed: new Date().toISOString(),
+            },
+            { onConflict: "query" },
+          )
+          .then(() => {});
+      }
+
       return new Response(
         JSON.stringify({ success: true, videoId: null }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -90,6 +153,22 @@ serve(async (req) => {
     };
 
     console.log(`Found YouTube video: ${result.videoId} - ${result.title}`);
+
+    // Cache the successful result (fire-and-forget).
+    if (supabase) {
+      (supabase.from("youtube_search_cache") as any)
+        .upsert(
+          {
+            query: normalizedQuery,
+            video_id: result.videoId,
+            title: result.title,
+            thumbnail: result.thumbnail,
+            last_accessed: new Date().toISOString(),
+          },
+          { onConflict: "query" },
+        )
+        .then(() => {});
+    }
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
