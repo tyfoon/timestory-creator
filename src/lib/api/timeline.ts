@@ -1,6 +1,7 @@
 import { FormData } from '@/types/form';
 import { TimelineEvent, TimelineResponse, FamousBirthday } from '@/types/timeline';
 import { getTranslationString, Language } from '@/lib/i18n';
+import { fetchWithRetry } from './invokeWithRetry';
 
 // Fallback Supabase configuration
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
