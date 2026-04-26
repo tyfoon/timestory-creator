@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { clearAppSessionData } from '@/lib/sessionCleanup';
 import type { User, Session } from '@supabase/supabase-js';
 
 type AuthContextType = {
@@ -35,6 +36,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signOut = async () => {
+    // Wipe per-user sessionStorage before the auth call so the next user
+    // signing in on this browser cannot read the previous user's form data,
+    // cached timeline, or overview lookups. Token-expiry signouts (handled
+    // via onAuthStateChange) intentionally skip this — the same user might
+    // come back to the same session and expect their work intact.
+    clearAppSessionData();
     await supabase.auth.signOut();
   };
 
