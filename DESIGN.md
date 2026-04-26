@@ -402,22 +402,56 @@ All decorative motion respects `prefers-reduced-motion` and degrades to instant 
 - All `<img>` tags ship with `referrerPolicy="no-referrer"` to survive anti-hotlinking
   on heritage image sources.
 
-## 10. Era Modes (Cinematic Only)
+## 10. Era Theming — Two Distinct Layers
 
-When the user enters the Remotion video player, the experience adopts a per-decade
-visual identity that lives entirely within the player canvas:
+The product adapts to the user's birth year on **two separate surfaces**. Mixing them
+is forbidden — each layer has its own job and its own loudness budget.
 
-- **’70s — Vintage Warmth:** chocolate background, cream text, orange accent, Cooper
-  Black headings, sepia + warm contrast filter.
+### 10a. Ambient Era Themes (Homepage & Story chrome)
+
+When the user provides a birth year, the homepage and story background subtly
+re-tune themselves to evoke that decade. These themes are *atmospheric* — they
+tint backgrounds, ornaments and accent flourishes, but they never override the
+warm-cream sepia identity of buttons, cards or body type.
+
+- **Pre-1970 — Parchment & Sepia:** dusty cream background, sepia brown primary,
+  vintage-gold accent, Playfair Display headings, soft noise pattern.
+- **1970s — Burnt Orange:** old-lace background, burnt-orange primary, goldenrod
+  accent, Playfair Display, no pattern. Earthy and warm.
+- **1980s — Neon on Dark:** dark blue-black background, deep neon-pink primary,
+  cyan secondary, gold accent, VT323 monospace, faint grid pattern.
+- **1990s — Memphis Pop:** white background, primary blue, sun yellow secondary,
+  hot pink accent, Anton condensed sans, Memphis confetti pattern.
+- **2000s — Early-Web Confidence:** light grey background, near-black primary,
+  bright blue secondary, lime accent, Source Sans 3, dot pattern.
+- **2010s — Flat Design:** near-white background, dark blue-grey primary, flat
+  red secondary, turquoise accent, Source Sans 3, no pattern.
+- **2020s+ — Modern:** near-white background, indigo primary, pink secondary,
+  emerald accent, Source Sans 3, no pattern.
+
+### 10b. Cinematic Era Themes (Remotion video player only)
+
+Inside the video module the theme takes over the **entire** canvas: background,
+type, colour and image filter. These themes are loud by design and never escape
+the player surface — the surrounding product chrome stays warm-cream-and-sepia.
+
+- **’70s — Vintage Warmth:** chocolate background, cream text, orange accent,
+  Cooper Black headings, sepia + warm contrast filter.
 - **’80s — Neon VHS:** near-black background, cyan text, magenta accent, Orbitron
   headings, scanline overlay, hue-shifted saturation.
-- **’90s — Grunge Pop:** charcoal background, white text, red accent, Impact + Comic
-  Sans pairing, vignette overlay.
-- **2000+ — Modern Clean:** white background, black text, blue accent, Inter throughout,
-  no filters.
+- **’90s — Grunge Pop:** charcoal background, white text, red accent, Impact +
+  Comic Sans pairing, vignette overlay.
+- **2000+ — Modern Clean:** white background, black text, blue accent, Inter
+  throughout, no filters.
 
-These themes never escape the cinematic surface — the surrounding product chrome
-remains warm-cream-and-sepia at all times.
+### Rules across both layers
+
+- Era loudness scales with surface: ambient = whisper, cinematic = full theatre.
+- Polaroid neon accents (pink/cyan/yellow/purple/orange/mint) are quarantined to
+  the polaroid collage and shareable portrait artwork — they are not part of
+  either era system.
+- Whatever the era, the product's voice (Reverence, Warmth, Wonder) is constant.
+  Era theming colours the room; it does not change the conversation.
 
 ## 11. Accessibility & Restraint
 
