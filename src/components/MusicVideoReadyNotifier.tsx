@@ -37,6 +37,9 @@ export const MusicVideoReadyNotifier = () => {
   // visible = full toast; minimized = small floating badge
   const [visible, setVisible] = useState(false);
   const [minimized, setMinimized] = useState(false);
+  // Tick to force re-render every few seconds during the polling phase so
+  // the indicative progress percentage visibly moves.
+  const [, setProgressTick] = useState(0);
 
   const audioUrl = soundtrack.audioUrl;
   const isComplete = soundtrack.isComplete && !!audioUrl;
@@ -50,6 +53,29 @@ export const MusicVideoReadyNotifier = () => {
   // the floating chip keeps the "something is being made for you" cue
   // visible during the scroll.
   const showInProgressChip = isGenerating && !isComplete && !onMusicVideoPage;
+
+  // Indicative progress derived from generation stage. Not exact %, but
+  // gives the user a sense of "we're making progress" rather than just a
+  // spinning loader. The exact polling phase is the longest, so we tick
+  // it up gradually based on elapsed time within the phase.
+  const progressPct = (() => {
+    const status = soundtrack.status;
+    const startedAt = soundtrack.startedAt ?? Date.now();
+    switch (status) {
+      case 'generating_lyrics': return 15;
+      case 'generating_music':  return 30;
+      case 'warming_up':        return 45;
+      case 'polling': {
+        // Suno's polling stage typically resolves in 60-120s; tick from
+        // 60% up to 95% over that window so the bar visibly moves.
+        const elapsedSec = Math.max(0, (Date.now() - startedAt) / 1000);
+        const POLL_WINDOW = 90; // seconds — typical p50
+        return Math.min(95, 60 + Math.round((elapsedSec / POLL_WINDOW) * 35));
+      }
+      case 'completed':         return 100;
+      default:                  return 5;
+    }
+  })();
 
   // Decide when to surface the toast
   useEffect(() => {
@@ -119,6 +145,16 @@ export const MusicVideoReadyNotifier = () => {
     navigate(qs ? `/story?${qs}` : '/story');
   };
 
+  // While in the polling phase the indicative progress is time-derived;
+  // re-render every 3s so the bar visibly moves.
+  useEffect(() => {
+    if (soundtrack.status !== 'polling') return;
+    const id = window.setInterval(() => {
+      setProgressTick((n) => n + 1);
+    }, 3000);
+    return () => clearInterval(id);
+  }, [soundtrack.status]);
+
   // Document title pulse: while generating AND the tab is in the background,
   // alternate the page title so the browser tab-bar grabs the user's eye.
   // Also works on mobile Safari/Chrome (visibilitychange + document.title).
@@ -187,47 +223,40 @@ export const MusicVideoReadyNotifier = () => {
       {showInProgressChip && (
         <motion.button
           key="in-progress-chip"
-          initial={{ opacity: 0, y: 40, scale: 0.92 }}
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 40, scale: 0.92 }}
-          transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+          exit={{ opacity: 0, y: 20, scale: 0.95 }}
+          transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
           onClick={handleResumeStory}
-          aria-label="Open story page to follow music video generation"
-          className="fixed bottom-4 right-4 z-[100] max-w-[340px] w-[calc(100vw-2rem)] sm:w-[340px] text-left"
+          aria-label={`Persoonlijke muziekvideo wordt gemaakt — ${progressPct}%`}
+          title={
+            onStoryPage
+              ? 'Tik om naar je muziekvideo te scrollen'
+              : 'Tik om naar je muziekvideo te gaan'
+          }
+          className="fixed bottom-4 right-4 z-[100] group flex items-center gap-2.5 h-9 pl-2 pr-3 rounded-full border border-primary/30 bg-card/95 backdrop-blur-md shadow-lg shadow-primary/10 hover:border-primary/50 hover:shadow-primary/20 transition-colors text-left"
         >
-          <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-card/95 backdrop-blur-md shadow-2xl shadow-primary/20">
-            {/* Subtle aurora gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-fuchsia-500/8 to-transparent pointer-events-none" />
-            {/* Pulse ring on the icon */}
-            <div className="relative z-[1] p-3.5 flex items-center gap-3">
-              <div className="relative flex-shrink-0">
-                <div className="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-violet-300">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                </div>
-                <motion.div
-                  className="absolute inset-0 rounded-xl border-2 border-violet-400/50"
-                  animate={{ scale: [1, 1.25, 1], opacity: [0.6, 0, 0.6] }}
-                  transition={{ duration: 2, repeat: Infinity }}
+          <span className="relative flex-shrink-0 w-6 h-6 rounded-full bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-violet-300">
+            <Loader2 className="h-3 w-3 animate-spin" />
+          </span>
+          <span className="flex flex-col leading-tight min-w-0">
+            <span className="text-[11px] font-medium text-foreground truncate">
+              Persoonlijke muziekvideo
+            </span>
+            {/* Progress: thin bar + numeric % */}
+            <span className="flex items-center gap-1.5 mt-0.5">
+              <span className="relative h-1 w-20 rounded-full bg-muted overflow-hidden">
+                <motion.span
+                  className="absolute inset-y-0 left-0 bg-violet-500 rounded-full"
+                  animate={{ width: `${progressPct}%` }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
                 />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <Sparkles className="h-3 w-3 text-violet-300" />
-                  <p className="text-[10px] font-mono uppercase tracking-wider text-violet-300 font-semibold">
-                    Wordt gemaakt
-                  </p>
-                </div>
-                <p className="text-sm font-medium text-foreground leading-tight">
-                  Je muziekvideo wordt gemaakt
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {onStoryPage
-                    ? 'Tik om naar je muziekvideo te scrollen.'
-                    : 'Tik om terug te gaan en mee te kijken.'}
-                </p>
-              </div>
-            </div>
-          </div>
+              </span>
+              <span className="text-[10px] font-mono tabular-nums text-muted-foreground">
+                {progressPct}%
+              </span>
+            </span>
+          </span>
         </motion.button>
       )}
 
