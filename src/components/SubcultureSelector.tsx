@@ -32,25 +32,33 @@ export const SubcultureSelector = ({
     return getSubculturesForPeriod(startYear, endYear, periodType, focus, city);
   }, [startYear, endYear, periodType, focus, city]);
 
-  // Build the options: 5 subcultures + 1 neutral
+  // Build the options: 5 subcultures + 1 neutral. If the user has a previously
+  // saved selection that is no longer in the current era's top-5 (because they
+  // went back and changed city/year/period), include it as an extra option
+  // so the selection stays visible and the user can confirm or re-pick instead
+  // of silently losing their choice.
   const options = useMemo(() => {
     if (!subcultureResult) return [];
-    
-    const subcultureOptions = subcultureResult.subcultures.slice(0, 5).map(name => ({
+
+    const currentTop = subcultureResult.subcultures.slice(0, 5);
+    const orphan = value?.myGroup && !currentTop.includes(value.myGroup) ? value.myGroup : null;
+
+    const list = orphan ? [orphan, ...currentTop] : currentTop;
+
+    const subcultureOptions = list.map(name => ({
       value: name,
       label: name,
-      isNeutral: false
+      isNeutral: false,
     }));
-    
-    // Add neutral option
+
     subcultureOptions.push({
       value: 'neutral',
       label: t('subcultureNoPreference') as string,
-      isNeutral: true
+      isNeutral: true,
     });
-    
+
     return subcultureOptions;
-  }, [subcultureResult]);
+  }, [subcultureResult, value?.myGroup, t]);
 
   // Handle selection
   const handleSelect = (selectedValue: string) => {
