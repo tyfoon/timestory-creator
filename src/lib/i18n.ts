@@ -512,6 +512,10 @@ const nlTranslations = {
   myMusicVideoTitle: "Mijn Muziekvideo",
   eventsAiMusic: "{count} gebeurtenissen • AI-muziek",
   preparingMusicVideo: "Je muziekvideo wordt voorbereid...",
+  errorBoundaryTitle: "Er ging iets mis",
+  errorBoundaryBody: "We konden dit deel van de app niet laden.",
+  errorBoundaryRetry: "Probeer opnieuw",
+  errorBoundaryHome: "Naar home",
 } as const;
 
 export type TranslationKey = keyof typeof nlTranslations;
@@ -972,6 +976,10 @@ export const translations: Record<Language, Record<TranslationKey, TranslationVa
     myMusicVideoTitle: "My Music Video",
     eventsAiMusic: "{count} events • AI music",
     preparingMusicVideo: "Your music video is being prepared...",
+    errorBoundaryTitle: "Something went wrong",
+    errorBoundaryBody: "We couldn't load this part of the app.",
+    errorBoundaryRetry: "Try again",
+    errorBoundaryHome: "Go home",
   },
   de: {
     siteTitle: "Das Jahr von",
@@ -1406,6 +1414,10 @@ export const translations: Record<Language, Record<TranslationKey, TranslationVa
     myMusicVideoTitle: "Mein Musikvideo",
     eventsAiMusic: "{count} Ereignisse • KI-Musik",
     preparingMusicVideo: "Dein Musikvideo wird vorbereitet...",
+    errorBoundaryTitle: "Etwas ist schiefgelaufen",
+    errorBoundaryBody: "Wir konnten diesen Teil der App nicht laden.",
+    errorBoundaryRetry: "Erneut versuchen",
+    errorBoundaryHome: "Zur Startseite",
   },
   fr: {
     siteTitle: "L'année de",
@@ -1840,6 +1852,10 @@ export const translations: Record<Language, Record<TranslationKey, TranslationVa
     myMusicVideoTitle: "Mon Clip Musical",
     eventsAiMusic: "{count} événements • Musique IA",
     preparingMusicVideo: "Votre clip musical est en préparation...",
+    errorBoundaryTitle: "Une erreur s'est produite",
+    errorBoundaryBody: "Nous n'avons pas pu charger cette partie de l'application.",
+    errorBoundaryRetry: "Réessayer",
+    errorBoundaryHome: "Accueil",
   },
 };
 
