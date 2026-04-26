@@ -179,6 +179,33 @@ export type Database = {
         }
         Relationships: []
       }
+      youtube_search_cache: {
+        Row: {
+          cached_at: string
+          last_accessed: string
+          query: string
+          thumbnail: string | null
+          title: string | null
+          video_id: string | null
+        }
+        Insert: {
+          cached_at?: string
+          last_accessed?: string
+          query: string
+          thumbnail?: string | null
+          title?: string | null
+          video_id?: string | null
+        }
+        Update: {
+          cached_at?: string
+          last_accessed?: string
+          query?: string
+          thumbnail?: string | null
+          title?: string | null
+          video_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
