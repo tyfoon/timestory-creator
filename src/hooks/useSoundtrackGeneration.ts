@@ -9,7 +9,7 @@
  * - AceStep: Synchronous (generate -> direct response with audio)
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FormData } from '@/types/form';
 import { TimelineEvent } from '@/types/timeline';
 import { MUSIC_GENERATION_PROVIDER, MusicProvider } from '@/lib/promptConstants';
@@ -436,25 +436,41 @@ export const useSoundtrackGeneration = () => {
     saveState(state);
   }, [state]);
 
-  // Poll sessionStorage for updates from fire-and-forget startQuickSoundtrackGeneration
-  // This is needed because that function runs outside React and only writes to sessionStorage
-  useEffect(() => {
-    // Only poll when we're in a generating/warming_up state (waiting for the async function to finish)
-    if (state.status !== 'generating_lyrics' && state.status !== 'generating_music' && state.status !== 'warming_up' && state.status !== 'polling') {
-      return;
-    }
+  // Poll sessionStorage for updates from fire-and-forget startQuickSoundtrackGeneration.
+  // This is needed because (1) that function runs outside React and only writes to
+  // sessionStorage, and (2) multiple components mount this hook independently — the
+  // global MusicVideoReadyNotifier in App.tsx, the StoryEndCarousel on /story, etc.
+  // Each instance has its own React state, so they all need to poll sessionStorage to
+  // pick up transitions started by other instances.
+  //
+  // Previously this effect was gated on `state.status` already being a generating
+  // value, which meant a hook instance that started in 'idle' (e.g. the global
+  // notifier mounted at app boot) would never pick up the idle → generating
+  // transition triggered elsewhere — so the in-progress pill never appeared.
+  //
+  // We now poll for the entire lifetime of every hook instance. Cost: one
+  // sessionStorage read every 2s per mount. Reads are O(1) and cheap; this is
+  // negligible compared to cross-instance sync correctness.
+  // Use a ref so the polling interval always sees the *current* state for
+  // diffing — without re-running the effect (and re-creating the interval)
+  // on every state change.
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
+  useEffect(() => {
     const interval = setInterval(() => {
       const stored = loadState();
-      // If sessionStorage has a different (more advanced) status, sync it to React state
-      if (stored.status !== state.status) {
-        console.log(`[Soundtrack] SessionStorage sync: ${state.status} → ${stored.status}`);
+      const current = stateRef.current;
+      if (
+        stored.status !== current.status ||
+        stored.taskId !== current.taskId ||
+        stored.audioUrl !== current.audioUrl
+      ) {
         setState(stored);
       }
     }, 2000);
-
     return () => clearInterval(interval);
-  }, [state.status]);
+  }, []);
 
   // Poll for Suno completion when in polling state
   useEffect(() => {

@@ -59,9 +59,15 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("YouTube API error:", response.status, errorText);
+      // Return 200 with success:false so the supabase-js client gets a
+      // structured response instead of throwing on a non-2xx status. This
+      // keeps a recoverable failure (e.g. daily quota exceeded → 403) from
+      // crashing the page-level Promise chain. The caller distinguishes
+      // "no trailer found" (success: true, videoId: null) from "upstream
+      // unavailable" (success: false) via the success flag.
       return new Response(
         JSON.stringify({ success: false, error: `YouTube API error: ${response.status}` }),
-        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

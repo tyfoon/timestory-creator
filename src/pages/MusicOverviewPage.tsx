@@ -173,7 +173,11 @@ const MusicOverviewPage = () => {
   // `errorCount` to surface a toast when the upstream is genuinely flaky.
   const fetchSpotifyForHits = useCallback(async (hits: ResolvedHit[], startOffset: number): Promise<{ errorCount: number }> => {
     const batchSize = 5;
-    const concurrency = 4;
+    // Spotify rate-limits aggressively; 4 concurrent batches × 5 items = 20
+    // simultaneous calls was too much and triggered 429s, leading to most
+    // tracks failing to resolve. Concurrency 2 = 10 simultaneous calls,
+    // which Spotify reliably accepts.
+    const concurrency = 2;
     let errorCount = 0;
 
     const batches: Array<{ relativeIdx: number; items: ResolvedHit[] }> = [];
@@ -273,7 +277,11 @@ const MusicOverviewPage = () => {
       // this halves total wait. Each batch updates resolvedHits + loadedCount
       // independently as soon as its results arrive.
       const batchSize = 5;
-      const concurrency = 4;
+      // Spotify rate-limits aggressively; 4 concurrent batches × 5 items = 20
+    // simultaneous calls was too much and triggered 429s, leading to most
+    // tracks failing to resolve. Concurrency 2 = 10 simultaneous calls,
+    // which Spotify reliably accepts.
+    const concurrency = 2;
       let errorCount = 0;
 
       const batches: Array<{ startIdx: number; items: typeof globalHits }> = [];
