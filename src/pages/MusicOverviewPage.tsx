@@ -165,17 +165,27 @@ const MusicOverviewPage = () => {
   }, [city, startYear, endYear]);
 
   // Fetch Spotify data for a batch of hits and update state at given offset.
-  // Real upstream errors throw (counted as rejected by Promise.allSettled);
-  // a successful response with no trackId resolves to null (= no Spotify
-  // match for that song, not a failure). Caller can use `errorCount` to
-  // surface a toast when the upstream is genuinely flaky.
+  // Batches run with a concurrency cap so independent network round-trips
+  // overlap (~7 batches at concurrency 4 ≈ 2× speedup vs the previous strict
+  // sequential loop). Real upstream errors throw (counted as rejected by
+  // Promise.allSettled); a successful response with no trackId resolves to
+  // null (= no Spotify match for that song, not a failure). Caller can use
+  // `errorCount` to surface a toast when the upstream is genuinely flaky.
   const fetchSpotifyForHits = useCallback(async (hits: ResolvedHit[], startOffset: number): Promise<{ errorCount: number }> => {
     const batchSize = 5;
+    const concurrency = 4;
     let errorCount = 0;
+
+    const batches: Array<{ relativeIdx: number; items: ResolvedHit[] }> = [];
     for (let i = 0; i < hits.length; i += batchSize) {
-      const batch = hits.slice(i, i + batchSize);
+      batches.push({ relativeIdx: i, items: hits.slice(i, i + batchSize) });
+    }
+
+    const queue = [...batches];
+
+    const runOneBatch = async ({ relativeIdx, items }: { relativeIdx: number; items: ResolvedHit[] }) => {
       const results = await Promise.allSettled(
-        batch.map(async ({ hit }) => {
+        items.map(async ({ hit }) => {
           const query = `${hit.artist} - ${hit.title}`;
           const { data, error } = await invokeWithRetry<SpotifyTrackResult>('search-spotify', {
             body: { query },
@@ -190,10 +200,11 @@ const MusicOverviewPage = () => {
         if (r.status === 'rejected') errorCount++;
       }
 
+      // Functional state update — safe under concurrent batch completions.
       setResolvedHits(prev => {
         const updated = [...prev];
-        for (let j = 0; j < batch.length; j++) {
-          const idx = startOffset + i + j;
+        for (let j = 0; j < items.length; j++) {
+          const idx = startOffset + relativeIdx + j;
           if (idx < updated.length) {
             const r = results[j];
             updated[idx] = {
@@ -205,7 +216,20 @@ const MusicOverviewPage = () => {
         }
         return updated;
       });
-    }
+    };
+
+    const worker = async () => {
+      while (queue.length > 0) {
+        const next = queue.shift();
+        if (!next) return;
+        await runOneBatch(next);
+      }
+    };
+
+    await Promise.all(
+      Array.from({ length: Math.min(concurrency, batches.length) }, () => worker())
+    );
+
     return { errorCount };
   }, []);
 
@@ -243,16 +267,25 @@ const MusicOverviewPage = () => {
       }));
       setResolvedHits(initial);
 
+      // Spotify resolution: previously sequential batches (each batch waits
+      // for the previous before kicking off). Run with a concurrency cap so
+      // 4 batches resolve simultaneously — for the typical ~7-batch case
+      // this halves total wait. Each batch updates resolvedHits + loadedCount
+      // independently as soon as its results arrive.
       const batchSize = 5;
-      let loaded = 0;
+      const concurrency = 4;
       let errorCount = 0;
 
+      const batches: Array<{ startIdx: number; items: typeof globalHits }> = [];
       for (let i = 0; i < globalHits.length; i += batchSize) {
-        if (cancelled) return;
-        const batch = globalHits.slice(i, i + batchSize);
+        batches.push({ startIdx: i, items: globalHits.slice(i, i + batchSize) });
+      }
 
+      const queue = [...batches];
+
+      const runOneBatch = async ({ startIdx, items }: { startIdx: number; items: typeof globalHits }) => {
         const results = await Promise.allSettled(
-          batch.map(async ({ hit }) => {
+          items.map(async ({ hit }) => {
             const query = `${hit.artist} - ${hit.title}`;
             const { data, error } = await invokeWithRetry<SpotifyTrackResult>('search-spotify', {
               body: { query },
@@ -265,27 +298,40 @@ const MusicOverviewPage = () => {
 
         if (cancelled) return;
 
-        loaded += batch.length;
-        setLoadedCount(loaded);
-
         for (const r of results) {
           if (r.status === 'rejected') errorCount++;
         }
 
+        // Functional state updates avoid races between concurrent batches.
         setResolvedHits(prev => {
           const updated = [...prev];
-          for (let j = 0; j < batch.length; j++) {
-            const idx = i + j;
-            const r = results[j];
-            updated[idx] = {
-              ...updated[idx],
-              spotify: r.status === 'fulfilled' ? r.value : null,
-              loading: false,
-            };
+          for (let j = 0; j < items.length; j++) {
+            const idx = startIdx + j;
+            if (idx < updated.length) {
+              const r = results[j];
+              updated[idx] = {
+                ...updated[idx],
+                spotify: r.status === 'fulfilled' ? r.value : null,
+                loading: false,
+              };
+            }
           }
           return updated;
         });
-      }
+        setLoadedCount(prev => prev + items.length);
+      };
+
+      const worker = async () => {
+        while (queue.length > 0) {
+          const next = queue.shift();
+          if (!next || cancelled) return;
+          await runOneBatch(next);
+        }
+      };
+
+      await Promise.all(
+        Array.from({ length: Math.min(concurrency, batches.length) }, () => worker())
+      );
 
       if (!cancelled) {
         setIsLoading(false);

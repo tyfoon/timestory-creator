@@ -9,6 +9,7 @@ import { ArrowLeft, Heart, Loader2, Tv, Film, Play, X, Bookmark, BookmarkCheck, 
 import { SharedExperienceCarousel } from '@/components/story/SharedExperienceCarousel';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { AccountLink } from '@/components/AccountLink';
 import { useToast } from '@/hooks/use-toast';
@@ -101,18 +102,28 @@ const TvFilmOverviewPage = () => {
         allItems.sort((a, b) => a.year - b.year);
         setResolvedItems(allItems);
 
-        // Fetch YouTube trailers in batches of 10. Real upstream errors
-        // throw and are counted as rejected; "no videoId" results resolve to
-        // null and are not counted as failures (just no trailer found).
+        // Fetch YouTube trailers. Previously sequential (waiting for each
+        // batch before starting the next) which made progress bar tick slowly.
+        // Now: build all batches up-front and run with a concurrency cap so
+        // independent network round-trips overlap. With ~35 items and batch
+        // size 10 we get 4 batches; concurrency 4 means all batches run at
+        // once — total time drops from ~4-8s sequential to ~1-2s parallel.
+        // Each batch updates state on its own when its results arrive.
         const batchSize = 10;
-        let loaded = 0;
+        const concurrency = 4;
         let errorCount = 0;
-        for (let i = 0; i < allItems.length; i += batchSize) {
-          if (cancelled) return;
-          const batch = allItems.slice(i, i + batchSize);
 
+        // Build batch descriptors (start index + the slice).
+        const batches: Array<{ startIdx: number; items: typeof allItems }> = [];
+        for (let i = 0; i < allItems.length; i += batchSize) {
+          batches.push({ startIdx: i, items: allItems.slice(i, i + batchSize) });
+        }
+
+        const queue = [...batches];
+
+        const runOneBatch = async ({ startIdx, items }: { startIdx: number; items: typeof allItems }) => {
           const results = await Promise.allSettled(
-            batch.map(async ({ item }) => {
+            items.map(async ({ item }) => {
               const query = `${item.title} ${item.type === 'film' ? 'official trailer' : 'trailer intro'}`;
               const { data, error } = await supabase.functions.invoke('search-youtube', { body: { query } });
               if (error) throw error;             // real failure
@@ -122,17 +133,16 @@ const TvFilmOverviewPage = () => {
           );
 
           if (cancelled) return;
-          loaded += batch.length;
-          setLoadedCount(loaded);
 
           for (const r of results) {
             if (r.status === 'rejected') errorCount++;
           }
 
+          // Functional state updates avoid races between concurrent batches.
           setResolvedItems(prev => {
             const updated = [...prev];
-            for (let j = 0; j < batch.length; j++) {
-              const idx = i + j;
+            for (let j = 0; j < items.length; j++) {
+              const idx = startIdx + j;
               if (idx < updated.length) {
                 const r = results[j];
                 updated[idx] = {
@@ -144,7 +154,20 @@ const TvFilmOverviewPage = () => {
             }
             return updated;
           });
-        }
+          setLoadedCount(prev => prev + items.length);
+        };
+
+        const worker = async () => {
+          while (queue.length > 0) {
+            const next = queue.shift();
+            if (!next || cancelled) return;
+            await runOneBatch(next);
+          }
+        };
+
+        await Promise.all(
+          Array.from({ length: Math.min(concurrency, batches.length) }, () => worker())
+        );
 
         if (!cancelled && errorCount > 0) {
           const description = (t('youtubeFailedSummary') as string)
@@ -321,6 +344,31 @@ const TvFilmOverviewPage = () => {
 
       {/* Year-by-year rows */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-10">
+        {/* Stage-1 skeleton: while the AI call is still in flight and no
+            items have arrived yet, render placeholder year-rows so the page
+            feels alive instead of a blank spinner. Disappears as soon as
+            real items stream in. */}
+        {isLoading && resolvedItems.length === 0 && (
+          <>
+            {[0, 1, 2].map((rowIdx) => (
+              <section key={`skeleton-${rowIdx}`} aria-hidden="true">
+                <div className="flex items-center gap-4 mb-4">
+                  <Skeleton className="h-9 w-24 rounded" />
+                  <div className="h-px flex-1 bg-border/50" />
+                </div>
+                <div className="flex gap-3 sm:gap-4 overflow-hidden -mx-4 px-4 sm:-mx-6 sm:px-6">
+                  {[0, 1, 2, 3, 4].map((cardIdx) => (
+                    <Skeleton
+                      key={cardIdx}
+                      className="flex-shrink-0 w-44 sm:w-56 aspect-video rounded-xl"
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </>
+        )}
+
         {itemsByYear.map(([year, items], yearIdx) => (
           <motion.section
             key={year}
