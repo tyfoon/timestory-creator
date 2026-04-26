@@ -12,6 +12,16 @@ interface DateInputProps {
   onComplete?: () => void;
 }
 
+// Validates that day/month/year form a real calendar date.
+// Uses `new Date(y, m, 0).getDate()` to derive days-in-month (handles leap years).
+function isValidDate(day: number, month: number, year: number, currentYear: number): boolean {
+  if (!day || !month || !year) return false;
+  if (year < 1900 || year > currentYear) return false;
+  if (month < 1 || month > 12) return false;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  return day >= 1 && day <= daysInMonth;
+}
+
 export const DateInput = ({ label, value, onChange, error, onComplete }: DateInputProps) => {
   const { t } = useLanguage();
   const currentYear = new Date().getFullYear();
@@ -105,16 +115,27 @@ export const DateInput = ({ label, value, onChange, error, onComplete }: DateInp
     const val = parseInt(rawVal) || 0;
     onChange({ ...value, year: val });
     
-    // When year is complete (4 digits and valid), blur and trigger onComplete
+    // When year is complete (4 digits and valid), blur and trigger onComplete —
+    // but only when day+month+year form a real calendar date. Prevents Feb 30,
+    // Apr 31, etc. from advancing the form.
     if (rawVal.length >= 4 && val >= 1900 && val <= currentYear) {
       yearRef.current?.blur();
-      // Only complete if day and month are also filled
-      if (value.day > 0 && value.month > 0) {
+      if (isValidDate(value.day, value.month, val, currentYear)) {
         // Defer so parent state (onChange) has a chance to commit before advancing UI
         setTimeout(() => onComplete?.(), 0);
       }
     }
   };
+
+  // Surface a user-facing error when all three fields are filled but the
+  // combination is invalid (e.g. day=30 + month=2). Stays quiet while the
+  // user is mid-typing.
+  const combinedInvalid =
+    yearInput.length === 4 &&
+    value.day > 0 &&
+    value.month > 0 &&
+    value.year > 0 &&
+    !isValidDate(value.day, value.month, value.year, currentYear);
 
   const handleDayBlur = () => {
     // Format with leading zero on blur
@@ -181,7 +202,11 @@ export const DateInput = ({ label, value, onChange, error, onComplete }: DateInp
           />
         </div>
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {(error || combinedInvalid) && (
+        <p className="text-sm text-destructive">
+          {error || (t('invalidDate') as string)}
+        </p>
+      )}
     </div>
   );
 };
