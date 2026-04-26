@@ -1097,7 +1097,10 @@ const TimelineStoryPage = () => {
       setCurrentMaxEvents(maxEvents);
       loadTimelineStreaming(data, maxEvents);
     } else {
-      setError(t('noDataFound') as string);
+      // Store the i18n key as a sentinel so the displayed message follows
+      // the user's current language at render time (the [] effect runs once
+      // on mount and would otherwise capture the language at that moment).
+      setError('__i18n:noDataFound');
       setIsLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1204,7 +1207,9 @@ const TimelineStoryPage = () => {
         }
       }, { maxEvents });
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('unknownError') as string);
+      // For unknown errors, store the i18n sentinel so language-switch
+      // mid-session updates the displayed text on next render.
+      setError(err instanceof Error ? err.message : '__i18n:unknownError');
       setIsLoading(false);
     }
   };
@@ -1257,13 +1262,18 @@ const TimelineStoryPage = () => {
   };
 
   if (error) {
+    // Resolve i18n sentinels to current-language strings at render time.
+    // Real error messages (e.g. err.message) pass through unchanged.
+    const displayError = error.startsWith('__i18n:')
+      ? (t(error.slice('__i18n:'.length) as never) as string)
+      : error;
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 bg-background">
         <AlertCircle className="h-16 w-16 text-destructive" />
         <h1 className={`${theme.fontDisplay} text-2xl font-bold text-foreground`}>
           Er ging iets mis
         </h1>
-        <p className="text-muted-foreground text-center max-w-md">{error}</p>
+        <p className="text-muted-foreground text-center max-w-md">{displayError}</p>
         <div className="flex gap-4">
           <Button variant="outline" onClick={() => navigate('/')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
