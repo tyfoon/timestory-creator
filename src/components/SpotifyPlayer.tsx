@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Play, Loader2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { invokeWithRetry } from '@/lib/api/invokeWithRetry';
 
 interface SpotifyTrack {
   trackId: string;

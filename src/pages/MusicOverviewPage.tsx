@@ -12,6 +12,7 @@ import { SharedExperienceCarousel } from '@/components/story/SharedExperienceCar
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { invokeWithRetry } from '@/lib/api/invokeWithRetry';
 import { numberOneHits, NumberOneHit } from '@/data/numberOneHits';
 import { AccountLink } from '@/components/AccountLink';
 import { useToast } from '@/hooks/use-toast';
