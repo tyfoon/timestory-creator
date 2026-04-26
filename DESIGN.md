@@ -67,16 +67,66 @@ color:
     polaroid-orange: "hsl(25, 100%, 55%)"
     polaroid-mint: "hsl(160, 100%, 45%)"
     polaroid-bg-dark: "hsl(260, 30%, 8%)"
+  # Adaptive era themes — drive homepage background, accents and font choice
+  # based on the user's birth year. Applied as ambient tinting, never as raw UI chrome.
+  era-themes:
+    pre70s:    # < 1970 — sepia parchment
+      primary:    "hsl(16, 25%, 30%)"   # sepia brown
+      secondary:  "hsl(19, 25%, 47%)"   # warm brown
+      accent:     "hsl(46, 65%, 52%)"   # vintage gold
+      background: "hsl(40, 50%, 93%)"   # parchment
+      font:       "'Playfair Display', serif"
+      pattern:    "noise"
+    "70s":     # 1970–1979 — burnt orange & goldenrod
+      primary:    "hsl(33, 100%, 37%)"  # burnt orange
+      secondary:  "hsl(28, 53%, 36%)"   # saddle brown
+      accent:     "hsl(43, 74%, 49%)"   # goldenrod
+      background: "hsl(39, 86%, 95%)"   # old lace
+      font:       "'Playfair Display', serif"
+      pattern:    "none"
+    "80s":     # 1980–1989 — neon on dark
+      primary:    "hsl(328, 100%, 54%)" # deep neon pink
+      secondary:  "hsl(181, 100%, 41%)" # cyan / turquoise
+      accent:     "hsl(51, 100%, 50%)"  # gold
+      background: "hsl(235, 40%, 14%)"  # dark blue-black
+      font:       "'VT323', monospace"
+      pattern:    "grid"
+    "90s":     # 1990–1999 — Memphis pop
+      primary:    "hsl(210, 100%, 40%)" # primary blue
+      secondary:  "hsl(48, 100%, 50%)"  # yellow
+      accent:     "hsl(345, 100%, 60%)" # hot pink
+      background: "hsl(0, 0%, 100%)"    # white
+      font:       "'Anton', sans-serif"
+      pattern:    "memphis"
+    "2000s":   # 2000–2009 — early-web confidence
+      primary:    "hsl(0, 0%, 20%)"
+      secondary:  "hsl(204, 100%, 50%)" # bright blue
+      accent:     "hsl(84, 100%, 40%)"  # lime
+      background: "hsl(0, 0%, 94%)"
+      font:       "'Source Sans 3', sans-serif"
+      pattern:    "dots"
+    "2010s":   # 2010–2019 — flat design
+      primary:    "hsl(210, 29%, 24%)"
+      secondary:  "hsl(6, 78%, 57%)"    # flat red
+      accent:     "hsl(168, 76%, 42%)"  # turquoise
+      background: "hsl(0, 0%, 98%)"
+      font:       "'Source Sans 3', sans-serif"
+      pattern:    "none"
+    modern:    # ≥ 2020 — contemporary
+      primary:    "hsl(239, 84%, 67%)"  # indigo
+      secondary:  "hsl(330, 81%, 60%)"  # pink
+      accent:     "hsl(160, 84%, 39%)"  # emerald
+      background: "hsl(0, 0%, 98%)"
+      font:       "'Source Sans 3', sans-serif"
+      pattern:    "none"
+
+  # Cinematic video module — three full-screen decade theatres applied
+  # only inside the Remotion player, never to the surrounding UI.
   video-eras:
-    "70s-bg": "#3e2723"
-    "70s-text": "#fff3e0"
-    "70s-accent": "#ff6f00"
-    "80s-bg": "#0a0a0a"
-    "80s-text": "#00ffcc"
-    "80s-accent": "#ff00ff"
-    "90s-bg": "#212121"
-    "90s-text": "#ffffff"
-    "90s-accent": "#ff0000"
+    "70s":  { bg: "hsl(15, 47%, 19%)",  text: "hsl(36, 100%, 95%)", accent: "hsl(26, 100%, 50%)",  font: "'Cooper Black', serif",      filter: "sepia(0.4) contrast(1.1) brightness(0.9)" }
+    "80s":  { bg: "hsl(0, 0%, 4%)",     text: "hsl(168, 100%, 50%)", accent: "hsl(300, 100%, 50%)", font: "'Orbitron', sans-serif",    filter: "saturate(1.5) contrast(1.2) hue-rotate(-10deg)" }
+    "90s":  { bg: "hsl(0, 0%, 13%)",    text: "hsl(0, 0%, 100%)",    accent: "hsl(0, 100%, 50%)",   font: "Impact, sans-serif",        filter: "contrast(1.3) grayscale(0.2)" }
+    modern: { bg: "hsl(0, 0%, 100%)",   text: "hsl(0, 0%, 0%)",      accent: "hsl(217, 91%, 60%)",  font: "Inter, sans-serif",         filter: "none" }
 
 gradient:
   warm: "linear-gradient(135deg, hsl(39, 45%, 96%) 0%, hsl(35, 40%, 90%) 100%)"
@@ -352,22 +402,56 @@ All decorative motion respects `prefers-reduced-motion` and degrades to instant 
 - All `<img>` tags ship with `referrerPolicy="no-referrer"` to survive anti-hotlinking
   on heritage image sources.
 
-## 10. Era Modes (Cinematic Only)
+## 10. Era Theming — Two Distinct Layers
 
-When the user enters the Remotion video player, the experience adopts a per-decade
-visual identity that lives entirely within the player canvas:
+The product adapts to the user's birth year on **two separate surfaces**. Mixing them
+is forbidden — each layer has its own job and its own loudness budget.
 
-- **’70s — Vintage Warmth:** chocolate background, cream text, orange accent, Cooper
-  Black headings, sepia + warm contrast filter.
+### 10a. Ambient Era Themes (Homepage & Story chrome)
+
+When the user provides a birth year, the homepage and story background subtly
+re-tune themselves to evoke that decade. These themes are *atmospheric* — they
+tint backgrounds, ornaments and accent flourishes, but they never override the
+warm-cream sepia identity of buttons, cards or body type.
+
+- **Pre-1970 — Parchment & Sepia:** dusty cream background, sepia brown primary,
+  vintage-gold accent, Playfair Display headings, soft noise pattern.
+- **1970s — Burnt Orange:** old-lace background, burnt-orange primary, goldenrod
+  accent, Playfair Display, no pattern. Earthy and warm.
+- **1980s — Neon on Dark:** dark blue-black background, deep neon-pink primary,
+  cyan secondary, gold accent, VT323 monospace, faint grid pattern.
+- **1990s — Memphis Pop:** white background, primary blue, sun yellow secondary,
+  hot pink accent, Anton condensed sans, Memphis confetti pattern.
+- **2000s — Early-Web Confidence:** light grey background, near-black primary,
+  bright blue secondary, lime accent, Source Sans 3, dot pattern.
+- **2010s — Flat Design:** near-white background, dark blue-grey primary, flat
+  red secondary, turquoise accent, Source Sans 3, no pattern.
+- **2020s+ — Modern:** near-white background, indigo primary, pink secondary,
+  emerald accent, Source Sans 3, no pattern.
+
+### 10b. Cinematic Era Themes (Remotion video player only)
+
+Inside the video module the theme takes over the **entire** canvas: background,
+type, colour and image filter. These themes are loud by design and never escape
+the player surface — the surrounding product chrome stays warm-cream-and-sepia.
+
+- **’70s — Vintage Warmth:** chocolate background, cream text, orange accent,
+  Cooper Black headings, sepia + warm contrast filter.
 - **’80s — Neon VHS:** near-black background, cyan text, magenta accent, Orbitron
   headings, scanline overlay, hue-shifted saturation.
-- **’90s — Grunge Pop:** charcoal background, white text, red accent, Impact + Comic
-  Sans pairing, vignette overlay.
-- **2000+ — Modern Clean:** white background, black text, blue accent, Inter throughout,
-  no filters.
+- **’90s — Grunge Pop:** charcoal background, white text, red accent, Impact +
+  Comic Sans pairing, vignette overlay.
+- **2000+ — Modern Clean:** white background, black text, blue accent, Inter
+  throughout, no filters.
 
-These themes never escape the cinematic surface — the surrounding product chrome
-remains warm-cream-and-sepia at all times.
+### Rules across both layers
+
+- Era loudness scales with surface: ambient = whisper, cinematic = full theatre.
+- Polaroid neon accents (pink/cyan/yellow/purple/orange/mint) are quarantined to
+  the polaroid collage and shareable portrait artwork — they are not part of
+  either era system.
+- Whatever the era, the product's voice (Reverence, Warmth, Wonder) is constant.
+  Era theming colours the room; it does not change the conversation.
 
 ## 11. Accessibility & Restraint
 
