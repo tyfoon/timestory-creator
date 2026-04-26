@@ -143,6 +143,8 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
   const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
   const [isLoadingTrailer, setIsLoadingTrailer] = useState(false);
   const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
+  // Ref to the trigger button so we can return focus after closing the trailer
+  const trailerTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   // Only reset error state when imageUrl actually changes to a NEW value
   useEffect(() => {
@@ -172,11 +174,28 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
     }
   };
 
-  // Handler for stopping trailer
+  // Handler for stopping trailer — return focus to the trigger button so
+  // keyboard tab order is preserved after closing the embed.
   const handleStopTrailer = () => {
     setIsPlayingTrailer(false);
     setYoutubeVideoId(null);
+    // Defer to next paint so the trigger button is back in the DOM.
+    requestAnimationFrame(() => {
+      trailerTriggerRef.current?.focus();
+    });
   };
+
+  // Close the trailer on Escape for keyboard users.
+  useEffect(() => {
+    if (!isPlayingTrailer) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleStopTrailer();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // handleStopTrailer is stable for this effect's lifetime; intentionally omitted from deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlayingTrailer]);
 
   const Icon = categoryIcons[event.category] || Globe;
   const colorClass = categoryColors[event.category] || categoryColors.world;
@@ -337,6 +356,7 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
               {/* Play Trailer Button */}
               {event.movieSearchQuery && (
                 <button
+                  ref={trailerTriggerRef}
                   onClick={(e) => {
                     e.stopPropagation();
                     handlePlayTrailer();
