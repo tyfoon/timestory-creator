@@ -618,36 +618,37 @@ const LayoutOverlap = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatte
           </div>
         </div>
 
-        {/* Desktop: Overlap layout */}
-        <div className="hidden sm:block">
-          {/* Image - constrained to max 50vh */}
+        {/* Desktop: Overlap layout via grid (prevents card escape on long text / lazy-loaded images) */}
+        <div className="hidden sm:grid grid-cols-12 items-center">
+          {/* Image — right-side columns, fixed aspect-ratio prevents layout shift during lazy-load */}
           <motion.div
             initial={{ opacity: 0, scale: 1.02 }}
             animate={isInView ? { opacity: 1, scale: 1 } : {}}
             transition={{ duration: 1 }}
-            className="w-3/4 lg:w-2/3 ml-auto"
+            className="col-start-5 col-end-13 row-start-1 z-10"
+            style={{ aspectRatio: '16 / 10' }}
           >
-            <ImageWithBlacklist 
-              src={imageUrl} 
+            <ImageWithBlacklist
+              src={imageUrl}
               alt={event.title}
-              className="w-full h-auto max-h-[50vh] object-cover object-top rounded-lg"
+              className="w-full h-full max-h-[50vh] object-cover object-top rounded-lg"
               event={event}
               onBlacklistImage={onBlacklistImage}
             />
           </motion.div>
-          
-          {/* Text overlapping from left - must be above image */}
+
+          {/* Text card — left-side columns overlap image; row height grows to taller child */}
           <motion.div
             initial={{ opacity: 0, x: -40 }}
             animate={isInView ? { opacity: 1, x: 0 } : {}}
             transition={{ delay: 0.4, duration: 0.8 }}
-            className="absolute left-0 top-1/2 -translate-y-1/2 w-2/3 lg:w-1/2 z-20"
+            className="col-start-1 col-end-8 row-start-1 self-center z-20"
           >
             <div className="bg-background/95 backdrop-blur-md p-10 lg:p-12 rounded-r-2xl shadow-2xl space-y-4">
               <span className={`${theme.fontMono} text-xs uppercase tracking-[0.3em] text-muted-foreground block`}>
                 {event.date}
               </span>
-              
+
               <StaggeredText
                 text={event.title}
                 className={`${theme.fontDisplay} font-black text-foreground leading-none`}
@@ -655,12 +656,12 @@ const LayoutOverlap = ({ event, theme, imageUrl, onBlacklistImage }: LayoutPatte
                 as="h2"
                 highlightWords={[0, 1]}
               />
-              
+
               <p className={`${theme.fontBody} text-base lg:text-lg text-muted-foreground leading-relaxed`}>
                 {event.description}
               </p>
-              
-              <MediaButtons 
+
+              <MediaButtons
                 spotifySearchQuery={event.spotifySearchQuery}
                 movieSearchQuery={event.movieSearchQuery}
                 eventTitle={event.title}
