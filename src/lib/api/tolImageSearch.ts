@@ -10,6 +10,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { fetchWithRetry } from './invokeWithRetry';
 import { ImageResult, SearchTraceEntry } from './wikiImageSearch';
 
 // Get the image blacklist from the database

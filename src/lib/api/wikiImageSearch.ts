@@ -8,6 +8,7 @@
 
 // Import blacklist checker (uses cached data, initialized on app load)
 import { getBlacklistedImages, initializeBlacklistCache } from '@/hooks/useImageBlacklist';
+import { fetchWithRetry } from './invokeWithRetry';
 
 // Initialize blacklist cache when this module loads
 initializeBlacklistCache();
