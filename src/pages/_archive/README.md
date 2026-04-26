@@ -12,6 +12,7 @@ case any UI patterns need to be salvaged or restored.
 | `Index.tsx` | "home-v4" iteration — split from HomeV3 line. Was wired at `/home-v4`. Imports active components from `@/components/*` (DateInput, SubcultureSelector, etc.); those imports still resolve. |
 | `v2/` | Companion components for HomeV2 only (RetroDateInput, PhaseSelector, IdentityForm, ChapterIndicator, NostalgicLoading, PaperTexture, TimeDial, plus the never-rendered OccasionSelector and SubjectSelector). |
 | `ImageBlacklistButton.tsx` | Standalone "ban this image" button. Was never imported anywhere — DebugInfoDialog has its own inline blacklist button instead. Original component was marked `TEMPORARY: dev only` in its file header. |
+| `ResultPage.tsx` | Earlier "result" page that rendered the generated timeline using TimelineCarousel + TimeTravelCounter. Was wired at `/resultaat`. Replaced in the active flow by `TimelineStoryPage` at `/story` — `HomeV3` navigates exclusively to `/story`. The `/resultaat` URL now `<Navigate to="/story" replace />` so old bookmarks land on the live timeline. Imports active components (TimelineCarousel, TimeTravelCounter, etc.) which are still used elsewhere — leaving them in place. |
 
 ## What was removed from `App.tsx`
 

@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import HomeV3 from "./pages/HomeV3";
-import ResultPage from "./pages/ResultPage";
 import PolaroidCollagePage from "./pages/PolaroidCollagePage";
 import TimelineStoryPage from "./pages/TimelineStoryPage";
 import SharedStoryPage from "./pages/SharedStoryPage";
@@ -37,7 +36,8 @@ const App = () => (
               <Route path="/home-v2" element={<Navigate to="/" replace />} />
               <Route path="/home-v3" element={<Navigate to="/" replace />} />
               <Route path="/home-v4" element={<Navigate to="/" replace />} />
-              <Route path="/resultaat" element={<ResultPage />} />
+              {/* Archived: ResultPage. The active timeline view is /story (TimelineStoryPage). */}
+              <Route path="/resultaat" element={<Navigate to="/story" replace />} />
               <Route path="/polaroid" element={<PolaroidCollagePage />} />
               <Route path="/story" element={<TimelineStoryPage />} />
               <Route path="/muziek" element={<MusicOverviewPage />} />
