@@ -188,7 +188,8 @@ const callAceStep = async (
     onWarmingUp();
   }, 10_000);
   const abortController = new AbortController();
-  const abortTimer = setTimeout(() => abortController.abort(), 30_000);
+  // 120s allows for AceStep GPU cold start (~30-60s) plus generation time
+  const abortTimer = setTimeout(() => abortController.abort(), 120_000);
 
   try {
     const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-acestep-track`, {
