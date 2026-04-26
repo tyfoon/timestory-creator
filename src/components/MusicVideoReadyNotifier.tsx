@@ -122,25 +122,28 @@ export const MusicVideoReadyNotifier = () => {
     }
   }, [isComplete, audioUrl, onMusicVideoPage]);
 
+  // The /muziek-video target URL — computed once so the native <a href>
+  // on the "Bekijk nu" button can use it as a fallback target.
+  const targetMusicVideoHref = (() => {
+    const qs = searchParams.toString();
+    return qs ? `/muziek-video?${qs}` : '/muziek-video';
+  })();
+
   const handleWatch = () => {
     setVisible(false);
     setMinimized(false);
     if (audioUrl) sessionStorage.setItem(DISMISSED_KEY, audioUrl);
-    const qs = searchParams.toString();
-    const target = qs ? `/muziek-video?${qs}` : '/muziek-video';
 
     // Try the SPA-friendly route first (preserves react-router state).
-    navigate(target);
+    navigate(targetMusicVideoHref);
 
-    // Defense in depth: if `navigate()` somehow doesn't take effect
-    // (dev-tool overlay swallowing the SPA route change, an in-flight
-    // re-render, or any other edge case), force a hard navigation
-    // 150ms later. The check first verifies the URL didn't already
-    // change, so we don't double-navigate when navigate() worked.
+    // Defense in depth: if `navigate()` doesn't take effect within 150ms,
+    // force a hard navigation. Covers edge cases where SPA routing is
+    // somehow blocked (dev-tool overlay, weird click-event paths, etc).
     setTimeout(() => {
       if (typeof window !== 'undefined' &&
           !window.location.pathname.startsWith('/muziek-video')) {
-        window.location.assign(target);
+        window.location.assign(targetMusicVideoHref);
       }
     }, 150);
   };
@@ -441,13 +444,25 @@ export const MusicVideoReadyNotifier = () => {
               </div>
 
               <div className="flex gap-2 mt-3">
-                <Button
-                  onClick={handleWatch}
-                  size="sm"
-                  className="flex-1 gap-1.5 text-xs font-semibold"
-                >
-                  <Play className="h-3 w-3 fill-current" />
-                  Bekijk nu
+                {/* Native <a href> via Button asChild — guarantees the URL
+                    changes even if React click handlers fail (dev overlays,
+                    z-index issues, etc.). The onClick still tries SPA-style
+                    navigation; if metakey is held the browser handles
+                    "open in new tab" naturally. */}
+                <Button asChild size="sm" className="flex-1 gap-1.5 text-xs font-semibold">
+                  <a
+                    href={targetMusicVideoHref}
+                    onClick={(e) => {
+                      // Let modifier-clicks fall through to native (open
+                      // in new tab / window).
+                      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                      e.preventDefault();
+                      handleWatch();
+                    }}
+                  >
+                    <Play className="h-3 w-3 fill-current" />
+                    Bekijk nu
+                  </a>
                 </Button>
                 <Button
                   onClick={handleDismiss}
