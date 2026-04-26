@@ -3,15 +3,30 @@ import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Sentry } from "@/lib/sentry";
 
 export const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
   const err = error as Error;
-  const { t } = useLanguage();
   const isDev = import.meta.env.DEV;
 
+  // Resilient t(): if rendered outside LanguageProvider (or it crashed),
+  // fall back to NL strings so the boundary itself never throws.
+  let t: (k: string) => string;
+  try {
+    t = useLanguage().t;
+  } catch {
+    const fallbacks: Record<string, string> = {
+      errorBoundaryTitle: "Er ging iets mis",
+      errorBoundaryBody: "We konden dit deel van de app niet laden.",
+      errorBoundaryRetry: "Probeer opnieuw",
+      errorBoundaryHome: "Naar home",
+    };
+    t = (k: string) => fallbacks[k] ?? k;
+  }
+
   useEffect(() => {
-    // TODO: forward to Sentry once integrated
     console.error("[ErrorBoundary]", err);
+    Sentry.captureException(err);
   }, [err]);
 
   return (
