@@ -444,26 +444,25 @@ export const MusicVideoReadyNotifier = () => {
               </div>
 
               <div className="flex gap-2 mt-3">
-                {/* Native <a href> via Button asChild — guarantees the URL
-                    changes even if React click handlers fail (dev overlays,
-                    z-index issues, etc.). The onClick still tries SPA-style
-                    navigation; if metakey is held the browser handles
-                    "open in new tab" naturally. */}
-                <Button asChild size="sm" className="flex-1 gap-1.5 text-xs font-semibold">
-                  <a
-                    href={targetMusicVideoHref}
-                    onClick={(e) => {
-                      // Let modifier-clicks fall through to native (open
-                      // in new tab / window).
-                      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-                      e.preventDefault();
-                      handleWatch();
-                    }}
-                  >
-                    <Play className="h-3 w-3 fill-current" />
-                    Bekijk nu
-                  </a>
-                </Button>
+                {/* Pure native <a href> — no preventDefault, no SPA
+                    routing. The browser handles navigation; nothing in
+                    React-land can block it. Trade-off: a full page reload
+                    (acceptable since user is leaving the toast anyway).
+                    The earlier SPA-with-fallback approach failed silently
+                    in the Lovable preview environment (popup dismissed
+                    but URL never changed). Side-effect on click: mark
+                    this audioUrl as dismissed so the toast doesn't
+                    re-appear if the user navigates back. */}
+                <a
+                  href={targetMusicVideoHref}
+                  onClick={() => {
+                    if (audioUrl) sessionStorage.setItem(DISMISSED_KEY, audioUrl);
+                  }}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
+                >
+                  <Play className="h-3 w-3 fill-current" />
+                  Bekijk nu
+                </a>
                 <Button
                   onClick={handleDismiss}
                   size="sm"

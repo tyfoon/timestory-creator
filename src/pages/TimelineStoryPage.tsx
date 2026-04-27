@@ -1434,21 +1434,45 @@ const TimelineStoryPage = () => {
           </div>
         </div>
 
-        {/* Story End Discover — hero (state-aware music video) + tiles row.
-            Replaces the old StoryEndCarousel; year-range and city are passed
-            via searchParams so navigation to /muziek and /tv-film preserves
-            them. Page-specific actions (open the various dialogs, download
-            the PDF) are wired through tileActions; the StoryEndDiscover
-            component stays generic. */}
-        {!isLoading && events.length > 0 && (() => {
-          const start = events.length > 0 ? events[0].year : 1980;
-          const end = events.length > 0 ? events[events.length - 1].year : new Date().getFullYear();
-          const city = formData?.optionalData?.city || '';
-          const discoverParams = new URLSearchParams();
-          discoverParams.set('start', String(start));
-          discoverParams.set('end', String(end));
-          if (city) discoverParams.set('city', String(city));
-          return (
+        {/* Right: Parallax Music Sidebar - sticky, no own background, no scrollbar */}
+        {!isLoading && events.length > 0 && formData && (
+          <div className="hidden lg:block absolute top-0 right-0 w-[20%] h-full pointer-events-none bg-transparent overflow-visible">
+            <div className="sticky top-4 pointer-events-auto overflow-hidden">
+              <ParallaxMusicColumn
+                startYear={
+                  formData.type === 'birthdate' && formData.birthDate
+                    ? formData.birthDate.year
+                    : formData.yearRange?.startYear || 1980
+                }
+                endYear={
+                  formData.yearRange?.endYear
+                    || (events.length > 0 ? Math.max(...events.map(e => e.year)) : new Date().getFullYear())
+                }
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Story End Discover — hero (state-aware music video) + tiles row.
+          IMPORTANT: rendered OUTSIDE the timeline's relative wrapper so the
+          ParallaxMusicColumn (absolute h-full inside that wrapper) does not
+          overlap the right-side tiles. Inside the wrapper its h-full made
+          the parallax sidebar extend over the discover row, intercepting
+          clicks on the right tiles ("personalized", "roast") and blocking
+          horizontal scroll in that zone. Now placed below the wrapper as a
+          sibling, so the parallax sidebar's height is bounded by the
+          timeline events only. */}
+      {!isLoading && events.length > 0 && (() => {
+        const start = events.length > 0 ? events[0].year : 1980;
+        const end = events.length > 0 ? events[events.length - 1].year : new Date().getFullYear();
+        const city = formData?.optionalData?.city || '';
+        const discoverParams = new URLSearchParams();
+        discoverParams.set('start', String(start));
+        discoverParams.set('end', String(end));
+        if (city) discoverParams.set('city', String(city));
+        return (
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <StoryEndDiscover
               currentPage="story"
               searchParams={discoverParams}
@@ -1473,28 +1497,9 @@ const TimelineStoryPage = () => {
                 },
               }}
             />
-          );
-        })()}
-
-        {/* Right: Parallax Music Sidebar - sticky, no own background, no scrollbar */}
-        {!isLoading && events.length > 0 && formData && (
-          <div className="hidden lg:block absolute top-0 right-0 w-[20%] h-full pointer-events-none bg-transparent overflow-visible">
-            <div className="sticky top-4 pointer-events-auto overflow-hidden">
-              <ParallaxMusicColumn
-                startYear={
-                  formData.type === 'birthdate' && formData.birthDate
-                    ? formData.birthDate.year
-                    : formData.yearRange?.startYear || 1980
-                }
-                endYear={
-                  formData.yearRange?.endYear
-                    || (events.length > 0 ? Math.max(...events.map(e => e.year)) : new Date().getFullYear())
-                }
-              />
-            </div>
           </div>
-        )}
-      </div>
+        );
+      })()}
 
       {/* Events-loaded banner — fixed at bottom-center, auto-dismisses
           after 2.5s. Replaces the old top-right toast with a more visible
