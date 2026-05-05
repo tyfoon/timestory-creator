@@ -241,8 +241,8 @@ const PolaroidCollagePage = () => {
           setIsLoading(false);
           
           toast({
-            title: "Tijdlijn geladen!",
-            description: `${completeData.events.length} gebeurtenissen gevonden`,
+            title: t('timelineLoaded') as string,
+            description: (t('eventsFoundDesc') as string).replace('{count}', String(completeData.events.length)),
           });
         },
         onError: (errorMsg) => {
@@ -251,7 +251,7 @@ const PolaroidCollagePage = () => {
           
           toast({
             variant: "destructive",
-            title: "Fout bij laden",
+            title: t('loadError') as string,
             description: errorMsg,
           });
         }
