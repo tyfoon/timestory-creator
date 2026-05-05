@@ -63,8 +63,8 @@ export const MediaButtons = ({
         console.warn('YouTube search error:', result.error);
         setTrailerError(true);
         toast({
-          title: "Trailer niet gevonden",
-          description: "Kon geen trailer vinden voor deze film.",
+          title: String(t('trailerNotFoundTitle')),
+          description: String(t('trailerNotFoundDesc')),
           variant: "destructive",
         });
       } else {
@@ -75,8 +75,8 @@ export const MediaButtons = ({
       console.error('Error fetching YouTube video:', error);
       setTrailerError(true);
       toast({
-        title: "Verbindingsfout",
-        description: "Kon geen verbinding maken met de server. Probeer het later opnieuw.",
+        title: String(t('connectionErrorTitle')),
+        description: String(t('connectionErrorDesc')),
         variant: "destructive",
       });
     } finally {
