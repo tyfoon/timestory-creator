@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Play, Loader2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { invokeWithRetry } from '@/lib/api/invokeWithRetry';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface SpotifyTrack {
   trackId: string;
@@ -19,6 +20,7 @@ interface SpotifyPlayerProps {
 }
 
 export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerProps) => {
+  const { t } = useLanguage();
   const [track, setTrack] = useState<SpotifyTrack | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
