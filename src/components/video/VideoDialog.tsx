@@ -125,7 +125,13 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+
+  // Per-language ElevenLabs voice IDs (falls back to default George if not mapped)
+  const elevenLabsVoiceByLang: Record<string, string> = {
+    nl: 'FpLGR2n1CcG1v7SHJFsa',
+  };
+  const elevenLabsVoiceId = elevenLabsVoiceByLang[language];
 
   // Force back to Google if user logs out while ElevenLabs is selected
   useEffect(() => {
