@@ -125,7 +125,13 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+
+  // Per-language ElevenLabs voice IDs (falls back to default George if not mapped)
+  const elevenLabsVoiceByLang: Record<string, string> = {
+    nl: 'FpLGR2n1CcG1v7SHJFsa',
+  };
+  const elevenLabsVoiceId = elevenLabsVoiceByLang[language];
 
   // Force back to Google if user logs out while ElevenLabs is selected
   useEffect(() => {
@@ -165,7 +171,8 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
         ? generateSpeech({ 
             text: storyIntroduction,
             speakingRate: 1.0,
-            provider: voiceProvider
+            provider: voiceProvider,
+            voice: voiceProvider === 'elevenlabs' ? elevenLabsVoiceId : undefined,
           }).then(async (result) => {
             // Measure EXACT duration using Web Audio API
             const exactDuration = await measureAudioDuration(result.audioContent);
@@ -181,7 +188,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
         const speechText = `${event.title}. ${event.description}`;
         
         const [speechResult, soundEffectResult] = await Promise.all([
-          generateSpeech({ text: speechText, provider: voiceProvider })
+          generateSpeech({ text: speechText, provider: voiceProvider, voice: voiceProvider === 'elevenlabs' ? elevenLabsVoiceId : undefined })
             .then(async (result) => {
               // Measure EXACT duration using Web Audio API
               const exactDuration = await measureAudioDuration(result.audioContent);
