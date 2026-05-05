@@ -609,6 +609,29 @@ const nlTranslations = {
   pdfAlsoBornToday: "Ook Jarig op Deze Dag",
   pdfThanksFor: "Bedankt voor",
   pdfThanksShort: "Bedankt!",
+
+  // Toast messages — phase 3
+  imageCreationFailed: "Er ging iets mis bij het maken van de afbeelding",
+  copiedTitle: "Gekopieerd!",
+  textCopiedDesc: "Tekst gekopieerd naar klembord.",
+  oopsTitle: "Oeps",
+  roastGenerationFailed: "Kon de roast niet genereren",
+  roastImageFailed: "Kon de afbeelding niet genereren.",
+  downloadedTitle: "Gedownload!",
+  shareImageOnSocial: "Deel de afbeelding op social media!",
+  loginRequiredTitle: "Log in",
+  loginRequiredRoastDesc: "Maak een account aan om je roast op te slaan.",
+  savedTitle: "Opgeslagen!",
+  errorShortLabel: "Fout",
+  roastSaveFailed: "Kon de roast niet opslaan.",
+  trailerNotFoundTitle: "Trailer niet gevonden",
+  trailerNotFoundDesc: "Kon geen trailer vinden voor deze film.",
+  connectionErrorTitle: "Verbindingsfout",
+  connectionErrorDesc: "Kon geen verbinding maken met de server. Probeer het later opnieuw.",
+  pdfGenerationFailed: "PDF generatie mislukt",
+  imageBlacklistedTitle: "Afbeelding geblacklist",
+  imageBlacklistedDesc: "Nieuwe zoekopdracht gestart...",
+  eventsFoundDesc: "{count} gebeurtenissen gevonden",
 } as const;
 
 export type TranslationKey = keyof typeof nlTranslations;
