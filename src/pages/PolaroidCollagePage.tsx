@@ -442,7 +442,12 @@ const PolaroidCollagePage = () => {
         events,
         famousBirthdays,
         summary,
-        (current, total) => setTikTokProgress({ current, total })
+        (current, total) => setTikTokProgress({ current, total }),
+        {
+          introTitle: t('tiktokIntroTitle') as string,
+          outroTitle: t('tiktokOutroTitle') as string,
+          watermark: t('tiktokWatermark') as string,
+        }
       );
       
       setGeneratedTikTokFiles(files);
@@ -455,7 +460,7 @@ const PolaroidCollagePage = () => {
       toast({
         variant: "destructive",
         title: t('shareError') as string,
-        description: err instanceof Error ? err.message : 'Onbekende fout',
+        description: err instanceof Error ? err.message : (t('tiktokUnknownError') as string),
       });
     } finally {
       setIsGeneratingTikTok(false);
