@@ -19,6 +19,11 @@ import { measureAudioDuration } from '@/remotion/lib/audioUtils';
 import { ShareDialog } from '@/components/video/ShareDialog';
 import { StoryContent, StorySettings } from '@/hooks/useSaveStory';
 import { useWakeLock } from '@/hooks/useWakeLock';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Lock } from 'lucide-react';
 
 // Fallback Supabase configuration for sound effects
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
