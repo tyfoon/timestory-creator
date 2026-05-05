@@ -435,7 +435,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-sm">
                     <Loader2 className="h-3 w-3 animate-spin" />
-                    <span>Audio genereren... {Math.round(audioProgress)}%</span>
+                    <span>{String(t('spokenStoryGenerating')).replace('{pct}', String(Math.round(audioProgress)))}</span>
                   </div>
                   <Progress value={audioProgress} className="h-1.5" />
                 </div>
