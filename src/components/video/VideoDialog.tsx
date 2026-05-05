@@ -359,7 +359,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
               {/* Info line */}
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Volume2 className="h-4 w-4" />
-                <span>Audio genereren voor {events.length} gebeurtenissen{storyIntroduction ? ' + intro' : ''}</span>
+                <span>{String(t('spokenStoryGenerateAudioFor')).replace('{count}', String(events.length)).replace('{intro}', storyIntroduction ? String(t('spokenStoryWithIntro')) : '')}</span>
               </div>
 
               {/* Options - stacked on mobile, row on desktop */}
