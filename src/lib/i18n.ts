@@ -632,6 +632,62 @@ const nlTranslations = {
   imageBlacklistedTitle: "Afbeelding geblacklist",
   imageBlacklistedDesc: "Nieuwe zoekopdracht gestart...",
   eventsFoundDesc: "{count} gebeurtenissen gevonden",
+
+  // Phase 4 — aria labels & misc UI
+  ariaPrev: "Vorige",
+  ariaNext: "Volgende",
+  ariaStopTrailer: "Stop trailer",
+  ariaCloseTrailer: "Trailer sluiten",
+  ariaPlayTrailer: "Trailer afspelen",
+  ariaBlacklistImage: "Blokkeer afbeelding",
+  blacklistImageTitle: "Foto blokkeren (globaal) en nieuwe zoeken",
+  playSongCompact: "Lied",
+  searchingPhotoLabel: "Foto zoeken...",
+  scrollToLoadPhoto: "Scroll om foto te laden",
+
+  // Debug dialog
+  debugInfoTitle: "Debug info",
+  debugInfoFilterPlaceholder: "Filter op titel, categorie, type...",
+  debugInfoBlacklistThumb: "Blokkeer deze afbeelding",
+  debugInfoReloadAll: "Herlaad alle afbeeldingen",
+  debugInfoSearchingShort: "Zoeken...",
+  debugInfoLabelImages: "beeld",
+  debugInfoLabelSounds: "geluid",
+  debugInfoNone: "Geen",
+
+  // Prompt viewer copy button
+  promptCopyToClipboard: "Kopieer naar klembord",
+  promptCopiedShort: "Gekopieerd",
+
+  // Story page refresh buttons
+  quickRefreshTitle: "Snel vernieuwen (20 events)",
+  fullRefreshTitle: "Volledig vernieuwen (50 events)",
+
+  // RoastDialog
+  roastTitle: "Roast mijn leven",
+  roastIntensityLabel: "Intensiteit",
+  roastIntensityMild: "Mild",
+  roastIntensitySpicy: "Pittig",
+  roastIntensityMedium: "Gemiddeld",
+  roastIntensitySharp: "Scherp",
+  roastIntensityExtreme: "Extreem",
+  roastWriting: "{level} roast wordt geschreven...",
+  roastShareLabel: "Delen",
+  roastImageMaking: "Afbeelding maken...",
+  roastSaveLabel: "Opslaan",
+  roastImageAlt: "Roast afbeelding",
+  roastShareViaLabel: "Deel via",
+  roastNativeShareLabel: "Delen...",
+  roastCopyText: "Kopieer tekst",
+  roastCopiedShort: "Gekopieerd!",
+  roastDownloadImage: "Download afbeelding",
+  roastEmailSubject: "🔥 Roast mijn leven",
+  roastShareTextTpl: "🔥 Roast mijn leven ({level}) - Ontdek jouw tijdreis op {url}",
+  roastEmailBodyTpl: "Bekijk mijn roast:\n\n{roast}\n\nMaak je eigen tijdreis op {url}",
+  roastImageHeading: "ROAST MIJN LEVEN",
+  roastBornInLabel: "Geboren in {year}",
+  roastFooterTagline: "Ontdek jouw tijdreis • Gratis",
+  roastNoneReceived: "Geen roast ontvangen",
 } as const;
 
 export type TranslationKey = keyof typeof nlTranslations;
