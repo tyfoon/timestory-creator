@@ -303,17 +303,14 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
     return videoEvents.filter(e => e.soundEffectAudioUrl).length;
   }, [videoEvents]);
 
-  // Reset state when dialog closes
+  // Reset state when dialog closes.
+  // IMPORTANT: keep generated audio (videoEvents, introAudioUrl, isReady, voiceProvider,
+  // videoVariant, enableVhsEffect) so reopening the dialog doesn't force a regenerate.
+  // Only clear transient progress/error UI bits.
   const handleOpenChange = useCallback((newOpen: boolean) => {
     if (!newOpen) {
-      setIsReady(false);
-      setVideoEvents([]);
-      setIntroAudioUrl(undefined);
       setAudioProgress(0);
       setAudioError(null);
-      setEnableVhsEffect(false);
-      setVideoVariant('slideshow');
-      setVoiceProvider('google');
       setShowFullscreenOverlay(false);
       setHasTriedAutoFullscreen(false);
     }
