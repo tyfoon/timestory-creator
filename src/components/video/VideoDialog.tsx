@@ -267,7 +267,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
       setIsReady(true);
     } catch (error) {
       console.error('Audio generation failed:', error);
-      setAudioError(error instanceof Error ? error.message : 'Audio generatie mislukt');
+      setAudioError(error instanceof Error ? error.message : String(t('spokenStoryError')));
     } finally {
       setIsGeneratingAudio(false);
     }
