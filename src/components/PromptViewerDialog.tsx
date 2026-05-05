@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { FileText, Copy, Check, ChevronDown, ChevronRight } from 'lucide-react';
 import {
   Dialog,
@@ -370,7 +371,8 @@ function CollapsibleSection({ section }: { section: PromptSection }) {
 
 function CopyButton({ text, label }: { text: string; label?: string }) {
   const [copied, setCopied] = useState(false);
-  
+  const { t } = useLanguage();
+
   const handleCopy = async () => {
     await navigator.clipboard.writeText(text);
     setCopied(true);
@@ -381,12 +383,12 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
     <button
       onClick={handleCopy}
       className="flex items-center gap-1 px-2 py-1 text-xs rounded hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
-      title="Kopieer naar klembord"
+      title={t('promptCopyToClipboard') as string}
     >
       {copied ? (
         <>
           <Check className="h-3 w-3 text-green-500" />
-          <span className="text-green-600">Gekopieerd</span>
+          <span className="text-green-600">{t('promptCopiedShort') as string}</span>
         </>
       ) : (
         <>
