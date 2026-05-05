@@ -159,7 +159,7 @@ export const SpotifyPlayer = ({ searchQuery, compact = false }: SpotifyPlayerPro
       title={`${track.trackName} - ${track.artistName}`}
     >
       <Play className={compact ? "h-2.5 w-2.5 fill-current" : "h-3 w-3 fill-current"} />
-      <span>{compact ? "Song" : "Play song"}</span>
+      <span>{compact ? (t('playSongCompact') as string) : (t('playSong') as string)}</span>
     </button>
   );
 };
