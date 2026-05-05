@@ -20,6 +20,14 @@ const CARD_HEIGHT = 720;
 const CARD_PDF_WIDTH_MM = 270; // Leave margins
 const CARD_PDF_HEIGHT_MM = (CARD_PDF_WIDTH_MM * 9) / 16; // Maintain 16:9
 
+interface StoryBookPdfLabels {
+  defaultFirstName?: string;
+  defaultStoryName?: string;
+  titleFallback?: string; // contains {name}
+  albumFooter?: string;
+  albumFileSuffix?: string;
+}
+
 interface StoryBookPdfOptions {
   events: TimelineEvent[];
   famousBirthdays?: FamousBirthday[];
@@ -27,6 +35,7 @@ interface StoryBookPdfOptions {
   summary: string;
   storyTitle?: string;
   storyIntroduction?: string;
+  labels?: StoryBookPdfLabels;
 }
 
 /**
@@ -475,10 +484,10 @@ async function createCoverPage(
   pdf: jsPDF,
   options: StoryBookPdfOptions
 ): Promise<void> {
-  const { events, formData, storyTitle, storyIntroduction } = options;
+  const { events, formData, storyTitle, storyIntroduction, labels } = options;
   
   // Extract name and year from formData
-  const firstName = formData.optionalData?.firstName || 'Jou';
+  const firstName = formData.optionalData?.firstName || labels?.defaultFirstName || 'Jou';
   const birthYear = formData.birthDate?.year || formData.yearRange?.startYear;
   
   // Dark cinematic background
@@ -486,7 +495,8 @@ async function createCoverPage(
   pdf.rect(0, 0, A4_WIDTH_MM, A4_HEIGHT_MM, 'F');
 
   // Title
-  const title = storyTitle || `Het Jaar Van ${firstName}`;
+  const titleTemplate = labels?.titleFallback || 'Het Jaar Van {name}';
+  const title = storyTitle || titleTemplate.replace('{name}', firstName);
   pdf.setTextColor(255, 255, 255);
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(48);
@@ -532,7 +542,7 @@ async function createCoverPage(
   // Footer
   pdf.setFontSize(10);
   pdf.setTextColor(100, 100, 100);
-  pdf.text('TimeStory Album', A4_WIDTH_MM / 2, A4_HEIGHT_MM - 15, { align: 'center' });
+  pdf.text(labels?.albumFooter || 'TimeStory Album', A4_WIDTH_MM / 2, A4_HEIGHT_MM - 15, { align: 'center' });
 }
 
 /**
@@ -629,7 +639,7 @@ export async function generateStoryBookPdf(
   }
 
   // Save the PDF
-  const firstName = formData.optionalData?.firstName || 'TimeStory';
-  const fileName = `${firstName}-Album.pdf`;
+  const firstName = formData.optionalData?.firstName || options.labels?.defaultStoryName || 'TimeStory';
+  const fileName = `${firstName}-${options.labels?.albumFileSuffix || 'Album'}.pdf`;
   pdf.save(fileName);
 }

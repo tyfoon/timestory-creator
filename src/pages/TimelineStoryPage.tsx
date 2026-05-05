@@ -1490,6 +1490,13 @@ const TimelineStoryPage = () => {
                       summary: storyIntroduction || '',
                       storyTitle,
                       storyIntroduction,
+                      labels: {
+                        defaultFirstName: t('pdfDefaultFirstName') as string,
+                        defaultStoryName: t('pdfDefaultStoryName') as string,
+                        titleFallback: t('pdfTitleFallback') as string,
+                        albumFooter: t('pdfAlbumFooter') as string,
+                        albumFileSuffix: t('pdfAlbumFileSuffix') as string,
+                      },
                     });
                   } catch (err) {
                     toast({ title: 'PDF generatie mislukt', variant: 'destructive' });

@@ -34,6 +34,8 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
   retroIntensity = 1,
   externalAudioUrl,
   externalAudioDuration,
+  introReadyTitle,
+  introReadyHint,
 }) => {
   const sequences: React.ReactNode[] = [];
 
@@ -104,7 +106,7 @@ export const TimelineVideoComponent: React.FC<TimelineVideoProps> = ({
   if (storyTitle) {
     sequences.push(
       <Sequence key="intro" from={currentFrame} durationInFrames={effectiveIntroDuration}>
-        {wrapContent(<IntroCard storyTitle={storyTitle} storyIntroduction={storyIntroduction} theme={introTheme} />)}
+        {wrapContent(<IntroCard storyTitle={storyTitle} storyIntroduction={storyIntroduction} theme={introTheme} readyTitle={introReadyTitle} readyHint={introReadyHint} />)}
         {!isMusicVideoMode && introAudioUrl && (
           <Audio src={introAudioUrl} />
         )}

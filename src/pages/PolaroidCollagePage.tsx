@@ -442,7 +442,12 @@ const PolaroidCollagePage = () => {
         events,
         famousBirthdays,
         summary,
-        (current, total) => setTikTokProgress({ current, total })
+        (current, total) => setTikTokProgress({ current, total }),
+        {
+          introTitle: t('tiktokIntroTitle') as string,
+          outroTitle: t('tiktokOutroTitle') as string,
+          watermark: t('tiktokWatermark') as string,
+        }
       );
       
       setGeneratedTikTokFiles(files);
@@ -455,7 +460,7 @@ const PolaroidCollagePage = () => {
       toast({
         variant: "destructive",
         title: t('shareError') as string,
-        description: err instanceof Error ? err.message : 'Onbekende fout',
+        description: err instanceof Error ? err.message : (t('tiktokUnknownError') as string),
       });
     } finally {
       setIsGeneratingTikTok(false);
@@ -721,6 +726,13 @@ const PolaroidCollagePage = () => {
                       summary: storyIntroduction || summary || '',
                       storyTitle,
                       storyIntroduction,
+                      labels: {
+                        defaultFirstName: t('pdfDefaultFirstName') as string,
+                        defaultStoryName: t('pdfDefaultStoryName') as string,
+                        titleFallback: t('pdfTitleFallback') as string,
+                        albumFooter: t('pdfAlbumFooter') as string,
+                        albumFileSuffix: t('pdfAlbumFileSuffix') as string,
+                      },
                     });
                   } catch (err) {
                     toast({ title: 'PDF generatie mislukt', variant: 'destructive' });

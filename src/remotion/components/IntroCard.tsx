@@ -6,13 +6,15 @@ interface IntroCardProps {
   storyTitle: string;
   storyIntroduction?: string;
   theme?: EraTheme;
+  readyTitle?: string;
+  readyHint?: string;
 }
 
 /**
  * Cinematic intro card with era-themed styling.
  * Shows "ready" prompt at frame 0, then dramatic title reveal.
  */
-export const IntroCard: React.FC<IntroCardProps> = ({ storyTitle, storyIntroduction, theme }) => {
+export const IntroCard: React.FC<IntroCardProps> = ({ storyTitle, storyIntroduction, theme, readyTitle, readyHint }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const t = theme || TIMELINE_THEMES['default'];
@@ -59,7 +61,7 @@ export const IntroCard: React.FC<IntroCardProps> = ({ storyTitle, storyIntroduct
             textAlign: 'center',
             lineHeight: 1.3,
           }}>
-            🎬 Je persoonlijke muziekvideo is klaar
+            🎬 {readyTitle || 'Je persoonlijke muziekvideo is klaar'}
           </div>
           <div style={{
             fontFamily: t.fonts.body,
@@ -67,7 +69,7 @@ export const IntroCard: React.FC<IntroCardProps> = ({ storyTitle, storyIntroduct
             color: `${t.colors.text}88`,
             marginTop: 20,
           }}>
-            Druk op ▶ om af te spelen
+            {readyHint || 'Druk op ▶ om af te spelen'}
           </div>
         </div>
       )}
