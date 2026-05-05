@@ -19,6 +19,11 @@ import { measureAudioDuration } from '@/remotion/lib/audioUtils';
 import { ShareDialog } from '@/components/video/ShareDialog';
 import { StoryContent, StorySettings } from '@/hooks/useSaveStory';
 import { useWakeLock } from '@/hooks/useWakeLock';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Lock } from 'lucide-react';
 
 // Fallback Supabase configuration for sound effects
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://koeoboygsssyajpdstel.supabase.co';
@@ -117,6 +122,33 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
   const [showFullscreenOverlay, setShowFullscreenOverlay] = useState(false);
   const [hasTriedAutoFullscreen, setHasTriedAutoFullscreen] = useState(false);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { t } = useLanguage();
+
+  // Force back to Google if user logs out while ElevenLabs is selected
+  useEffect(() => {
+    if (!user && voiceProvider === 'elevenlabs') {
+      setVoiceProvider('google');
+    }
+  }, [user, voiceProvider]);
+
+  const handleSelectElevenLabs = useCallback(() => {
+    if (!user) {
+      toast({
+        title: String(t('voiceElevenLabsLoginRequired')),
+        description: String(t('voiceElevenLabsLoginRequiredDesc')),
+        action: (
+          <Button size="sm" variant="outline" onClick={() => navigate('/auth')}>
+            {String(t('authLogin'))}
+          </Button>
+        ) as any,
+      });
+      return;
+    }
+    setVoiceProvider('elevenlabs');
+  }, [user, navigate, toast, t]);
 
   // Generate audio for all events - PARALLEL for speed, EXACT durations via Web Audio API
   const handleGenerateAudio = useCallback(async () => {
@@ -376,13 +408,15 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                     Google
                   </button>
                   <button
-                    onClick={() => setVoiceProvider('elevenlabs')}
+                    onClick={handleSelectElevenLabs}
+                    title={!user ? String(t('voiceElevenLabsLoginRequired')) : undefined}
                     className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-1.5 text-sm sm:text-xs font-medium transition-colors ${
                       voiceProvider === 'elevenlabs' 
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-muted/50 hover:bg-muted'
-                    }`}
+                    } ${!user ? 'opacity-70' : ''}`}
                   >
+                    {!user && <Lock className="h-3 w-3 sm:h-2.5 sm:w-2.5" />}
                     ElevenLabs
                   </button>
                 </div>
