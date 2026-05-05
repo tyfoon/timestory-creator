@@ -341,10 +341,10 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
         event_year: formData?.birthDate?.year || null,
       });
       if (error) throw error;
-      toast({ title: 'Opgeslagen!', description: 'De roast is opgeslagen in je account.' });
+      toast({ title: String(t('savedTitle')), description: String(t('roastSavedDesc')) });
     } catch (err) {
       console.error('Save roast error:', err);
-      toast({ title: 'Fout', description: 'Kon de roast niet opslaan.', variant: 'destructive' });
+      toast({ title: String(t('errorShortLabel')), description: String(t('roastSaveFailed')), variant: 'destructive' });
     }
   };
 
