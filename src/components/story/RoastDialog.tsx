@@ -184,7 +184,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
   const [hasGenerated, setHasGenerated] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
 
   const periodLabel = formData?.yearRange
     ? `${formData.yearRange.startYear} – ${formData.yearRange.endYear}`
@@ -229,8 +229,8 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
     } catch (err) {
       console.error('Roast generation error:', err);
       toast({
-        title: 'Oeps',
-        description: err instanceof Error ? err.message : 'Kon de roast niet genereren',
+        title: String(t('oopsTitle')),
+        description: err instanceof Error ? err.message : String(t('roastGenerationFailed')),
         variant: 'destructive',
       });
     } finally {
@@ -271,7 +271,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
       setShowSharePanel(true);
     } catch (err) {
       console.error('Image generation error:', err);
-      toast({ title: 'Oeps', description: 'Kon de afbeelding niet genereren.', variant: 'destructive' });
+      toast({ title: String(t('oopsTitle')), description: String(t('roastImageFailed')), variant: 'destructive' });
     } finally {
       setIsGeneratingImage(false);
     }
@@ -306,7 +306,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    toast({ title: 'Gedownload!', description: 'Deel de afbeelding op social media!' });
+    toast({ title: String(t('downloadedTitle')), description: String(t('shareImageOnSocial')) });
   };
 
   const handleCopyText = async () => {
@@ -329,7 +329,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
 
   const handleSave = async () => {
     if (!user) {
-      toast({ title: 'Log in', description: 'Maak een account aan om je roast op te slaan.', variant: 'destructive' });
+      toast({ title: String(t('loginRequiredTitle')), description: String(t('loginRequiredRoastDesc')), variant: 'destructive' });
       return;
     }
     try {
@@ -341,10 +341,10 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
         event_year: formData?.birthDate?.year || null,
       });
       if (error) throw error;
-      toast({ title: 'Opgeslagen!', description: 'De roast is opgeslagen in je account.' });
+      toast({ title: String(t('savedTitle')), description: String(t('roastSavedDesc')) });
     } catch (err) {
       console.error('Save roast error:', err);
-      toast({ title: 'Fout', description: 'Kon de roast niet opslaan.', variant: 'destructive' });
+      toast({ title: String(t('errorShortLabel')), description: String(t('roastSaveFailed')), variant: 'destructive' });
     }
   };
 

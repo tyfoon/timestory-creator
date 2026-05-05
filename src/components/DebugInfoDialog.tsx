@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { TimelineEvent, SearchTraceEntry } from '@/types/timeline';
 import { addToBlacklist } from '@/hooks/useImageBlacklist';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DebugInfoDialogProps {
   events: TimelineEvent[];
@@ -23,6 +24,7 @@ interface DebugInfoDialogProps {
 export function DebugInfoDialog({ events, onRefreshImages, isRefreshing, onBlacklistImage }: DebugInfoDialogProps) {
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('');
+  const { t } = useLanguage();
 
   // Filter events based on search
   const filteredEvents = useMemo(() => {
@@ -268,7 +270,7 @@ export function DebugInfoDialog({ events, onRefreshImages, isRefreshing, onBlack
                           onClick={async (e) => {
                             e.stopPropagation();
                             await addToBlacklist(event.imageUrl!, event.title, event.imageSearchQuery);
-                            toast.success('Afbeelding geblacklist', { description: 'Nieuwe zoekopdracht gestart...' });
+                            toast.success(String(t('imageBlacklistedTitle')), { description: String(t('imageBlacklistedDesc')) });
                             onBlacklistImage(event.id);
                           }}
                           className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-black/60 hover:bg-destructive/90 text-white/70 hover:text-white flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100"

@@ -3,6 +3,7 @@ import { Play, Loader2, X } from 'lucide-react';
 import { SpotifyPlayer } from '@/components/SpotifyPlayer';
 import { searchYouTube } from '@/lib/api/youtube';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { SaveEventButton } from './SaveEventButton';
 
 interface MediaButtonsProps {
@@ -38,6 +39,7 @@ export const MediaButtons = ({
   onTrailerStop,
 }: MediaButtonsProps) => {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [isLoadingTrailer, setIsLoadingTrailer] = useState(false);
   const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
   const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
@@ -61,8 +63,8 @@ export const MediaButtons = ({
         console.warn('YouTube search error:', result.error);
         setTrailerError(true);
         toast({
-          title: "Trailer niet gevonden",
-          description: "Kon geen trailer vinden voor deze film.",
+          title: String(t('trailerNotFoundTitle')),
+          description: String(t('trailerNotFoundDesc')),
           variant: "destructive",
         });
       } else {
@@ -73,8 +75,8 @@ export const MediaButtons = ({
       console.error('Error fetching YouTube video:', error);
       setTrailerError(true);
       toast({
-        title: "Verbindingsfout",
-        description: "Kon geen verbinding maken met de server. Probeer het later opnieuw.",
+        title: String(t('connectionErrorTitle')),
+        description: String(t('connectionErrorDesc')),
         variant: "destructive",
       });
     } finally {
