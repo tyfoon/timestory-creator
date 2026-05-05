@@ -315,7 +315,7 @@ export const StoryEndDiscover = ({
               </Badge>
               <Badge variant="secondary" className="bg-emerald-500/90 text-white border-emerald-400 gap-1 text-[11px] font-bold uppercase tracking-wide px-3 py-1">
                 <Gift className="h-3.5 w-3.5" />
-                Gratis
+                {t('badgeFree') as string}
               </Badge>
             </div>
 
@@ -377,7 +377,7 @@ export const StoryEndDiscover = ({
             size="icon"
             className={`h-9 w-9 rounded-full transition-opacity ${canScrollLeft ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}
             onClick={() => scrollTilesBy('left')}
-            aria-label="Vorige"
+            aria-label={t('ariaPrev') as string}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -386,7 +386,7 @@ export const StoryEndDiscover = ({
             size="icon"
             className={`h-9 w-9 rounded-full transition-opacity ${canScrollRight ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}
             onClick={() => scrollTilesBy('right')}
-            aria-label="Volgende"
+            aria-label={t('ariaNext') as string}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>

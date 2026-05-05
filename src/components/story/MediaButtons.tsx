@@ -110,7 +110,7 @@ export const MediaButtons = ({
         <button
           onClick={handleStopTrailer}
           className="absolute top-3 right-3 z-20 p-2 rounded-full bg-black/70 text-white hover:bg-black/90 transition-colors"
-          aria-label="Trailer sluiten"
+          aria-label={t('ariaCloseTrailer') as string}
         >
           <X className="h-4 w-4" />
         </button>
@@ -132,7 +132,7 @@ export const MediaButtons = ({
           onClick={handlePlayTrailer}
           disabled={isLoadingTrailer}
           className="inline-flex items-center gap-1.5 h-7 px-3 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-full text-xs font-medium transition-colors shadow-md"
-          aria-label="Trailer afspelen"
+          aria-label={t('ariaPlayTrailer') as string}
         >
           {isLoadingTrailer ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
