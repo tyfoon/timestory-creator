@@ -533,7 +533,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
 
                   {/* Email */}
                   <a 
-                    href={`mailto:?subject=${encodeURIComponent(`🔥 ${String(t('roastTitle'))}`)}&body=${encodeURIComponent(String(t('roastEmailBodyTpl')).replace('{roast}', roastText).replace('{url}', SITE_URL))}`}
+                    href={`mailto:?subject=${encodeURIComponent(String(t('roastEmailSubject')))}&body=${encodeURIComponent(String(t('roastEmailBody')).replace('{text}', roastText).replace('{url}', SITE_URL))}`}
                     className="flex flex-col items-center gap-1 p-3 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
                   >
                     <Mail className="h-6 w-6 text-primary" />
