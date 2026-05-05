@@ -22,10 +22,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Music, X, Play, Sparkles, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSoundtrackGeneration } from '@/hooks/useSoundtrackGeneration';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const SEEN_KEY = 'soundtrack_notify_seen';     // value = audioUrl (one notif per track)
 const DISMISSED_KEY = 'soundtrack_notify_dismissed'; // value = audioUrl (collapsed to badge)
-const TITLE_PULSE_TEXT = '🎵 Wordt gemaakt...';
 const TITLE_PULSE_INTERVAL_MS = 1500;
 
 export const MusicVideoReadyNotifier = () => {
@@ -33,6 +33,9 @@ export const MusicVideoReadyNotifier = () => {
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
   const soundtrack = useSoundtrackGeneration();
+  const { t } = useLanguage();
+  const tr = (k: Parameters<typeof t>[0]) => t(k) as string;
+  const TITLE_PULSE_TEXT = tr('notifTitlePulse');
 
   // visible = full toast; minimized = small floating badge
   const [visible, setVisible] = useState(false);
