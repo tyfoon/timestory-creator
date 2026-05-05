@@ -154,7 +154,7 @@ export const MusicVideoReadyNotifier = () => {
   const handleDismiss = () => {
     if (audioUrl) sessionStorage.setItem(DISMISSED_KEY, audioUrl);
     setVisible(false);
-    setMinimized(true);
+    setMinimized(false);
   };
 
   const handleExpand = () => {
