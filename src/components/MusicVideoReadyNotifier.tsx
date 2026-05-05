@@ -330,8 +330,8 @@ export const MusicVideoReadyNotifier = () => {
             const qs = searchParams.toString();
             navigate(qs ? `/muziek-video?${qs}` : '/muziek-video');
           }}
-          aria-label="Muziekvideo mislukt — tik om opnieuw te proberen"
-          title="Tik voor opnieuw proberen"
+          aria-label={tr('notifMusicVideoFailedAria')}
+          title={tr('notifTapToRetry')}
           style={{
             bottom: 'max(1rem, env(safe-area-inset-bottom))',
             right: 'max(1rem, env(safe-area-inset-right))',
@@ -343,11 +343,11 @@ export const MusicVideoReadyNotifier = () => {
           </span>
           <span className="flex flex-col leading-tight min-w-0">
             <span className="text-[11px] font-medium text-foreground truncate">
-              Muziekvideo mislukt
+              {tr('notifMusicVideoFailed')}
             </span>
             <span className="flex items-center gap-1 mt-0.5 text-[10px] text-muted-foreground">
               <RefreshCw className="h-2.5 w-2.5" />
-              <span>Opnieuw proberen</span>
+              <span>{tr('notifRetry')}</span>
             </span>
           </span>
         </motion.button>
