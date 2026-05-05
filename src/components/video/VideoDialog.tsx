@@ -408,13 +408,15 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                     Google
                   </button>
                   <button
-                    onClick={() => setVoiceProvider('elevenlabs')}
+                    onClick={handleSelectElevenLabs}
+                    title={!user ? String(t('voiceElevenLabsLoginRequired')) : undefined}
                     className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2.5 sm:py-1.5 text-sm sm:text-xs font-medium transition-colors ${
                       voiceProvider === 'elevenlabs' 
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-muted/50 hover:bg-muted'
-                    }`}
+                    } ${!user ? 'opacity-70' : ''}`}
                   >
+                    {!user && <Lock className="h-3 w-3 sm:h-2.5 sm:w-2.5" />}
                     ElevenLabs
                   </button>
                 </div>
