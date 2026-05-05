@@ -267,7 +267,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
       setIsReady(true);
     } catch (error) {
       console.error('Audio generation failed:', error);
-      setAudioError(error instanceof Error ? error.message : 'Audio generatie mislukt');
+      setAudioError(error instanceof Error ? error.message : String(t('spokenStoryError')));
     } finally {
       setIsGeneratingAudio(false);
     }
@@ -303,17 +303,14 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
     return videoEvents.filter(e => e.soundEffectAudioUrl).length;
   }, [videoEvents]);
 
-  // Reset state when dialog closes
+  // Reset state when dialog closes.
+  // IMPORTANT: keep generated audio (videoEvents, introAudioUrl, isReady, voiceProvider,
+  // videoVariant, enableVhsEffect) so reopening the dialog doesn't force a regenerate.
+  // Only clear transient progress/error UI bits.
   const handleOpenChange = useCallback((newOpen: boolean) => {
     if (!newOpen) {
-      setIsReady(false);
-      setVideoEvents([]);
-      setIntroAudioUrl(undefined);
       setAudioProgress(0);
       setAudioError(null);
-      setEnableVhsEffect(false);
-      setVideoVariant('slideshow');
-      setVoiceProvider('google');
       setShowFullscreenOverlay(false);
       setHasTriedAutoFullscreen(false);
     }
@@ -327,7 +324,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
           <div className="flex items-center justify-between gap-4">
             <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
               <Video className="h-4 w-4" />
-              Video Preview
+              {String(t('spokenStoryReady'))}
             </DialogTitle>
             
             {/* Share button - visible when video is ready */}
@@ -362,7 +359,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
               {/* Info line */}
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Volume2 className="h-4 w-4" />
-                <span>Audio genereren voor {events.length} gebeurtenissen{storyIntroduction ? ' + intro' : ''}</span>
+                <span>{String(t('spokenStoryGenerateAudioFor')).replace('{count}', String(events.length)).replace('{intro}', storyIntroduction ? String(t('spokenStoryWithIntro')) : '')}</span>
               </div>
 
               {/* Options - stacked on mobile, row on desktop */}
@@ -438,7 +435,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-sm">
                     <Loader2 className="h-3 w-3 animate-spin" />
-                    <span>Audio genereren... {Math.round(audioProgress)}%</span>
+                    <span>{String(t('spokenStoryGenerating')).replace('{pct}', String(Math.round(audioProgress)))}</span>
                   </div>
                   <Progress value={audioProgress} className="h-1.5" />
                 </div>
@@ -458,9 +455,9 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                 className="w-full"
               >
                 {isGeneratingAudio ? (
-                  <><Loader2 className="mr-2 h-3 w-3 animate-spin" />Genereren...</>
+                  <><Loader2 className="mr-2 h-3 w-3 animate-spin" />{String(t('spokenStoryGeneratingShort'))}</>
                 ) : (
-                  <><Volume2 className="mr-2 h-3 w-3" />Genereer Audio</>
+                  <><Volume2 className="mr-2 h-3 w-3" />{String(t('spokenStoryGenerateButton'))}</>
                 )}
               </Button>
             </div>

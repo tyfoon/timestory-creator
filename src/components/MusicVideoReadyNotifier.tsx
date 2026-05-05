@@ -110,9 +110,9 @@ export const MusicVideoReadyNotifier = () => {
       return;
     }
 
-    // Already dismissed for this exact track → show only minimized badge
+    // Already dismissed for this exact track → hide completely (no badge)
     if (dismissed === audioUrl) {
-      setMinimized(true);
+      setMinimized(false);
       setVisible(false);
       return;
     }
