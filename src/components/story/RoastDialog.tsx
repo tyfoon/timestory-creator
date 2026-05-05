@@ -26,7 +26,7 @@ interface RoastDialogProps {
   formData: FormData | null;
 }
 
-const intensityLabels = ['', 'Mild', 'Pittig', 'Gemiddeld', 'Scherp', 'Extreem'];
+const intensityKeyByLevel = ['', 'roastIntensityMild', 'roastIntensitySpicy', 'roastIntensityMedium', 'roastIntensitySharp', 'roastIntensityExtreme'] as const;
 const intensityEmojis = ['', '😊', '😏', '😄', '🔥', '💀'];
 
 /** Generate a branded portrait image (1080x1350) from roast text */
