@@ -44,25 +44,54 @@ const generateSpeechGoogle = async (params: Omit<GenerateSpeechParams, 'provider
 
 /**
  * Generate speech audio using ElevenLabs TTS via Edge Function.
+ * Throttled to MAX 2 concurrent requests (free tier limit is 3).
  */
-const generateSpeechElevenLabs = async (params: Omit<GenerateSpeechParams, 'provider'>): Promise<SpeechResult> => {
-  const { data, error } = await supabase.functions.invoke<SpeechResult>('generate-speech-elevenlabs', {
-    body: {
-      text: params.text,
-      voiceId: params.voice || DEFAULT_ELEVENLABS_VOICE_ID,
-    },
+const ELEVENLABS_MAX_CONCURRENT = 2;
+let elevenLabsActive = 0;
+const elevenLabsQueue: Array<() => void> = [];
+
+const acquireElevenLabsSlot = (): Promise<void> => {
+  if (elevenLabsActive < ELEVENLABS_MAX_CONCURRENT) {
+    elevenLabsActive++;
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    elevenLabsQueue.push(() => {
+      elevenLabsActive++;
+      resolve();
+    });
   });
+};
 
-  if (error) {
-    console.error('ElevenLabs TTS generation error:', error);
-    throw new Error(error.message || 'Failed to generate speech with ElevenLabs');
+const releaseElevenLabsSlot = () => {
+  elevenLabsActive--;
+  const next = elevenLabsQueue.shift();
+  if (next) next();
+};
+
+const generateSpeechElevenLabs = async (params: Omit<GenerateSpeechParams, 'provider'>): Promise<SpeechResult> => {
+  await acquireElevenLabsSlot();
+  try {
+    const { data, error } = await supabase.functions.invoke<SpeechResult>('generate-speech-elevenlabs', {
+      body: {
+        text: params.text,
+        voiceId: params.voice || DEFAULT_ELEVENLABS_VOICE_ID,
+      },
+    });
+
+    if (error) {
+      console.error('ElevenLabs TTS generation error:', error);
+      throw new Error(error.message || 'Failed to generate speech with ElevenLabs');
+    }
+
+    if (!data) {
+      throw new Error('No data returned from ElevenLabs TTS');
+    }
+
+    return { ...data, provider: 'elevenlabs' };
+  } finally {
+    releaseElevenLabsSlot();
   }
-
-  if (!data) {
-    throw new Error('No data returned from ElevenLabs TTS');
-  }
-
-  return { ...data, provider: 'elevenlabs' };
 };
 
 /**
