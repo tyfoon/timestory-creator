@@ -271,7 +271,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
       setShowSharePanel(true);
     } catch (err) {
       console.error('Image generation error:', err);
-      toast({ title: 'Oeps', description: 'Kon de afbeelding niet genereren.', variant: 'destructive' });
+      toast({ title: String(t('oopsTitle')), description: String(t('roastImageFailed')), variant: 'destructive' });
     } finally {
       setIsGeneratingImage(false);
     }
