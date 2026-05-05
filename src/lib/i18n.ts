@@ -445,6 +445,13 @@ const nlTranslations = {
   letAiRoast: "Laat AI je leven genadeloos (of mild) roasten op basis van jouw tijdlijn. Van liefdevol tot brutaal.",
   roastMe: "Roast mij!",
   spokenStory: "Gesproken Verhaal",
+  spokenStoryReady: "Jouw persoonlijke verhaal is klaar",
+  spokenStoryGenerateAudioFor: "Audio genereren voor {count} gebeurtenissen{intro}",
+  spokenStoryWithIntro: " + intro",
+  spokenStoryGenerating: "Audio genereren... {pct}%",
+  spokenStoryGenerateButton: "Genereer Audio",
+  spokenStoryGeneratingShort: "Genereren...",
+  spokenStoryError: "Audio generatie mislukt",
   aiVoiceNarration: "AI-stem • Vertelling",
   listenToStory: "Luister naar je levensverhaal als gesproken vertelling met beelden en sfeervolle muziek.",
   
