@@ -87,7 +87,7 @@ function selectHighlights(
 /**
  * Create a styled HTML element for a TikTok slide (1080x1920, 9:16)
  */
-function createSlideElement(slide: TikTokSlide, index: number): HTMLDivElement {
+function createSlideElement(slide: TikTokSlide, index: number, watermarkText: string = 'TimeStory'): HTMLDivElement {
   const container = document.createElement('div');
   container.style.cssText = `
     width: 1080px;
@@ -258,7 +258,7 @@ function createSlideElement(slide: TikTokSlide, index: number): HTMLDivElement {
   `;
   watermark.innerHTML = `
     <span style="font-size: 40px;">⏳</span>
-    <span>TimeStory</span>
+    <span>${watermarkText}</span>
   `;
   container.appendChild(watermark);
 
@@ -302,16 +302,17 @@ export async function generateTikTokSlides(
   events: TimelineEvent[],
   famousBirthdays: FamousBirthday[],
   summary: string,
-  onProgress?: (current: number, total: number) => void
+  onProgress?: (current: number, total: number) => void,
+  labels?: TikTokLabels,
 ): Promise<File[]> {
-  const slides = selectHighlights(events, famousBirthdays, summary);
+  const slides = selectHighlights(events, famousBirthdays, summary, labels);
   const files: File[] = [];
   
   // Generate each slide
   for (let i = 0; i < slides.length; i++) {
     onProgress?.(i + 1, slides.length);
     
-    const element = createSlideElement(slides[i], i + 1);
+    const element = createSlideElement(slides[i], i + 1, labels?.watermark);
     const file = await elementToFile(element, `timestory-${i + 1}.png`);
     files.push(file);
   }
