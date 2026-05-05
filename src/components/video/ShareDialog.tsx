@@ -77,8 +77,8 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
     
     try {
       await navigator.share({
-        title: content.storyTitle || tr('shareDefaultTitle'),
-        text: tr('shareDefaultText'),
+        title: content.storyTitle || tr('shareTitle'),
+        text: tr('shareVideoText'),
         url: shareUrl,
       });
     } catch (err) {
