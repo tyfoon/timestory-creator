@@ -61,7 +61,7 @@ export const IntroCard: React.FC<IntroCardProps> = ({ storyTitle, storyIntroduct
             textAlign: 'center',
             lineHeight: 1.3,
           }}>
-            🎬 Je persoonlijke muziekvideo is klaar
+            🎬 {readyTitle || 'Je persoonlijke muziekvideo is klaar'}
           </div>
           <div style={{
             fontFamily: t.fonts.body,
@@ -69,7 +69,7 @@ export const IntroCard: React.FC<IntroCardProps> = ({ storyTitle, storyIntroduct
             color: `${t.colors.text}88`,
             marginTop: 20,
           }}>
-            Druk op ▶ om af te spelen
+            {readyHint || 'Druk op ▶ om af te spelen'}
           </div>
         </div>
       )}
