@@ -276,6 +276,8 @@ const MusicVideoPage = () => {
                         retroIntensity: 0.85,
                         externalAudioUrl: soundtrack.audioUrl,
                         externalAudioDuration: soundtrack.duration,
+                        introReadyTitle: t('introReadyTitle') as string,
+                        introReadyHint: t('introReadyHint') as string,
                       }}
                       durationInFrames={totalDuration}
                       compositionWidth={1920}
@@ -338,6 +340,8 @@ const MusicVideoPage = () => {
                   retroIntensity: 0.85,
                   externalAudioUrl: soundtrack.audioUrl,
                   externalAudioDuration: soundtrack.duration,
+                  introReadyTitle: t('introReadyTitle') as string,
+                  introReadyHint: t('introReadyHint') as string,
                 }}
                 durationInFrames={totalDuration}
                 compositionWidth={1920}
