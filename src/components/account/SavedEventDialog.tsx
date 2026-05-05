@@ -301,7 +301,7 @@ export const SavedEventDialog = ({ event, open, onOpenChange, startInShareMode }
       setShareImageUrl(URL.createObjectURL(blob));
       setShowSharePanel(true);
     } catch {
-      toast({ title: 'Er ging iets mis bij het maken van de afbeelding', variant: 'destructive' });
+      toast({ title: String(t('imageCreationFailed')), variant: 'destructive' });
     } finally {
       setIsGenerating(false);
     }
