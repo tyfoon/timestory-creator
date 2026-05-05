@@ -20,6 +20,14 @@ const CARD_HEIGHT = 720;
 const CARD_PDF_WIDTH_MM = 270; // Leave margins
 const CARD_PDF_HEIGHT_MM = (CARD_PDF_WIDTH_MM * 9) / 16; // Maintain 16:9
 
+interface StoryBookPdfLabels {
+  defaultFirstName?: string;
+  defaultStoryName?: string;
+  titleFallback?: string; // contains {name}
+  albumFooter?: string;
+  albumFileSuffix?: string;
+}
+
 interface StoryBookPdfOptions {
   events: TimelineEvent[];
   famousBirthdays?: FamousBirthday[];
@@ -27,6 +35,7 @@ interface StoryBookPdfOptions {
   summary: string;
   storyTitle?: string;
   storyIntroduction?: string;
+  labels?: StoryBookPdfLabels;
 }
 
 /**
