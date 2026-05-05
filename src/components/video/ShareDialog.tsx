@@ -17,6 +17,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useSaveStory, StoryContent, StorySettings } from '@/hooks/useSaveStory';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ShareDialogProps {
   open: boolean;
@@ -34,6 +35,8 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
   onShareComplete,
 }) => {
   const { saveStory, isSaving, progress, progressMessage } = useSaveStory();
+  const { t } = useLanguage();
+  const tr = (k: Parameters<typeof t>[0]) => t(k) as string;
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -53,7 +56,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
       setShareUrl(result.shareUrl);
       onShareComplete?.(result.shareUrl);
     } else {
-      setError(result.error || 'Er ging iets mis');
+      setError(result.error || tr('shareGenericError'));
     }
   };
 
@@ -74,8 +77,8 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
     
     try {
       await navigator.share({
-        title: content.storyTitle || 'Mijn TimeStory',
-        text: 'Bekijk mijn persoonlijke tijdlijn video!',
+        title: content.storyTitle || tr('shareTitle'),
+        text: tr('shareVideoText'),
         url: shareUrl,
       });
     } catch (err) {
@@ -85,11 +88,11 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
   };
 
   const shareLinks = shareUrl ? {
-    whatsapp: `https://wa.me/?text=${encodeURIComponent(`Bekijk mijn TimeStory: ${shareUrl}`)}`,
-    telegram: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent('Bekijk mijn TimeStory!')}`,
+    whatsapp: `https://wa.me/?text=${encodeURIComponent(tr('shareWhatsapp').replace('{url}', shareUrl))}`,
+    telegram: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(tr('shareTelegram'))}`,
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
-    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent('Bekijk mijn persoonlijke tijdlijn video!')}`,
-    email: `mailto:?subject=${encodeURIComponent('Bekijk mijn TimeStory')}&body=${encodeURIComponent(`Ik heb een persoonlijke tijdlijn video gemaakt! Bekijk hem hier: ${shareUrl}`)}`,
+    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(tr('shareTwitter'))}`,
+    email: `mailto:?subject=${encodeURIComponent(tr('shareEmailSubject'))}&body=${encodeURIComponent(tr('shareEmailBody').replace('{url}', shareUrl))}`,
   } : null;
 
   const handleClose = () => {
@@ -106,12 +109,12 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
         <DialogHeader className="pb-2">
           <DialogTitle className="flex items-center gap-2">
             <Share2 className="h-5 w-5 text-primary" />
-            Deel je video
+            {tr('shareYourVideoTitle')}
           </DialogTitle>
           <DialogDescription>
-            {isSaving ? 'Even geduld, we maken je deelbare link...' : 
-             shareUrl ? 'Je video is klaar om te delen!' :
-             'Er ging iets mis'}
+            {isSaving ? tr('shareGeneratingLink') : 
+             shareUrl ? tr('shareReadyDesc') :
+             tr('shareSomethingWrong')}
           </DialogDescription>
         </DialogHeader>
 
@@ -133,7 +136,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
               <div className="flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm text-destructive font-medium">Uploaden mislukt</p>
+                  <p className="text-sm text-destructive font-medium">{tr('shareUploadFailed')}</p>
                   <p className="text-xs text-destructive/80 mt-1">{error}</p>
                 </div>
               </div>
@@ -143,7 +146,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                 size="sm" 
                 className="mt-3 w-full"
               >
-                Probeer opnieuw
+                {tr('shareTryAgain')}
               </Button>
             </div>
           )}
@@ -153,7 +156,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
             <>
               {/* Copy link input */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Link kopiëren</label>
+                <label className="text-sm font-medium">{tr('shareCopyLinkLabel')}</label>
                 <div className="flex gap-2">
                   <Input 
                     value={shareUrl} 
@@ -179,13 +182,13 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                   variant="default"
                 >
                   <Share2 className="h-4 w-4" />
-                  Delen...
+                  {tr('shareDeleteEllipsis')}
                 </Button>
               )}
 
               {/* Share buttons grid */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Deel via</label>
+                <label className="text-sm font-medium">{tr('shareViaLabel')}</label>
                 <div className="grid grid-cols-5 gap-2">
                   {/* WhatsApp */}
                   <a 
@@ -251,7 +254,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                   className="flex items-center gap-2 text-sm text-primary hover:underline"
                 >
                   <LinkIcon className="h-4 w-4" />
-                  Bekijk je gedeelde video
+                  {tr('viewSharedVideo')}
                 </a>
               </div>
             </>

@@ -22,10 +22,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Music, X, Play, Sparkles, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSoundtrackGeneration } from '@/hooks/useSoundtrackGeneration';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const SEEN_KEY = 'soundtrack_notify_seen';     // value = audioUrl (one notif per track)
 const DISMISSED_KEY = 'soundtrack_notify_dismissed'; // value = audioUrl (collapsed to badge)
-const TITLE_PULSE_TEXT = '🎵 Wordt gemaakt...';
 const TITLE_PULSE_INTERVAL_MS = 1500;
 
 export const MusicVideoReadyNotifier = () => {
@@ -33,6 +33,9 @@ export const MusicVideoReadyNotifier = () => {
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
   const soundtrack = useSoundtrackGeneration();
+  const { t } = useLanguage();
+  const tr = (k: Parameters<typeof t>[0]) => t(k) as string;
+  const TITLE_PULSE_TEXT = tr('notifTitlePulse');
 
   // visible = full toast; minimized = small floating badge
   const [visible, setVisible] = useState(false);
@@ -274,11 +277,11 @@ export const MusicVideoReadyNotifier = () => {
           <button
             type="button"
             onClick={handleResumeStory}
-            aria-label={`Persoonlijke muziekvideo wordt gemaakt — ${progressPct}%`}
+            aria-label={tr('notifProgressAria').replace('{pct}', String(progressPct))}
             title={
               onStoryPage
-                ? 'Tik om naar je muziekvideo te scrollen'
-                : 'Tik om naar je muziekvideo te gaan'
+                ? tr('notifTapToScroll')
+                : tr('notifTapToGo')
             }
             className="group flex items-center gap-2.5 h-9 pl-2 pr-2 rounded-l-full hover:bg-muted/40 transition-colors text-left"
           >
@@ -287,7 +290,7 @@ export const MusicVideoReadyNotifier = () => {
             </span>
             <span className="flex flex-col leading-tight min-w-0">
               <span className="text-[11px] font-medium text-foreground truncate">
-                Persoonlijke muziekvideo
+                {tr('notifPersonalMusicVideo')}
               </span>
               <span className="flex items-center gap-1.5 mt-0.5">
                 <span className="relative h-1 w-20 rounded-full bg-muted overflow-hidden">
@@ -306,8 +309,8 @@ export const MusicVideoReadyNotifier = () => {
           <button
             type="button"
             onClick={() => setChipDismissed(true)}
-            aria-label="Melding inklappen"
-            title="Inklappen"
+            aria-label={tr('notifCollapseAria')}
+            title={tr('notifCollapse')}
             className="flex items-center justify-center w-7 h-9 rounded-r-full text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
           >
             <X className="h-3 w-3" />
@@ -327,8 +330,8 @@ export const MusicVideoReadyNotifier = () => {
             const qs = searchParams.toString();
             navigate(qs ? `/muziek-video?${qs}` : '/muziek-video');
           }}
-          aria-label="Muziekvideo mislukt — tik om opnieuw te proberen"
-          title="Tik voor opnieuw proberen"
+          aria-label={tr('notifMusicVideoFailedAria')}
+          title={tr('notifTapToRetry')}
           style={{
             bottom: 'max(1rem, env(safe-area-inset-bottom))',
             right: 'max(1rem, env(safe-area-inset-right))',
@@ -340,11 +343,11 @@ export const MusicVideoReadyNotifier = () => {
           </span>
           <span className="flex flex-col leading-tight min-w-0">
             <span className="text-[11px] font-medium text-foreground truncate">
-              Muziekvideo mislukt
+              {tr('notifMusicVideoFailed')}
             </span>
             <span className="flex items-center gap-1 mt-0.5 text-[10px] text-muted-foreground">
               <RefreshCw className="h-2.5 w-2.5" />
-              <span>Opnieuw proberen</span>
+              <span>{tr('notifRetry')}</span>
             </span>
           </span>
         </motion.button>
@@ -359,8 +362,8 @@ export const MusicVideoReadyNotifier = () => {
           exit={{ opacity: 0, scale: 0.6 }}
           transition={{ duration: 0.2 }}
           onClick={() => setChipDismissed(false)}
-          aria-label={`Persoonlijke muziekvideo wordt gemaakt — ${progressPct}%, klik om te tonen`}
-          title="Voortgang muziekvideo"
+          aria-label={tr('notifProgressAriaCollapsed').replace('{pct}', String(progressPct))}
+          title={tr('notifProgressTitle')}
           style={{
             bottom: 'max(1rem, env(safe-area-inset-bottom))',
             right: 'max(1rem, env(safe-area-inset-right))',
@@ -416,7 +419,7 @@ export const MusicVideoReadyNotifier = () => {
 
             <button
               onClick={handleDismiss}
-              aria-label="Sluiten"
+              aria-label={tr('notifClose')}
               className="absolute top-2 right-2 z-10 h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
             >
               <X className="h-4 w-4" />
@@ -431,14 +434,14 @@ export const MusicVideoReadyNotifier = () => {
                   <div className="flex items-center gap-1.5 mb-0.5">
                     <Sparkles className="h-3 w-3 text-emerald-400" />
                     <p className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-semibold">
-                      Klaar om af te spelen
+                      {tr('notifReadyToPlay')}
                     </p>
                   </div>
                   <h4 className="font-serif text-sm font-bold text-foreground leading-tight truncate">
-                    {soundtrack.title || 'Je muziekvideo'}
+                    {soundtrack.title || tr('notifYourMusicVideoFallback')}
                   </h4>
                   <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                    Je persoonlijke muziekvideo is klaar.
+                    {tr('notifYourPersonalVideoReady')}
                   </p>
                 </div>
               </div>
@@ -461,7 +464,7 @@ export const MusicVideoReadyNotifier = () => {
                   className="flex-1 inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
                 >
                   <Play className="h-3 w-3 fill-current" />
-                  Bekijk nu
+                  {tr('notifWatchNow')}
                 </a>
                 <Button
                   onClick={handleDismiss}
@@ -469,7 +472,7 @@ export const MusicVideoReadyNotifier = () => {
                   variant="outline"
                   className="text-xs"
                 >
-                  Later
+                  {tr('notifLater')}
                 </Button>
               </div>
             </div>
@@ -485,7 +488,7 @@ export const MusicVideoReadyNotifier = () => {
           exit={{ opacity: 0, scale: 0.6 }}
           transition={{ duration: 0.25 }}
           onClick={handleExpand}
-          aria-label="Open muziekvideo melding"
+          aria-label={tr('notifOpenMusicVideo')}
           className="fixed bottom-4 right-4 z-[100] h-12 w-12 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-2xl shadow-violet-500/40 flex items-center justify-center hover:scale-110 transition-transform"
         >
           <Music className="h-5 w-5" />
