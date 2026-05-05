@@ -561,14 +561,6 @@ const nlTranslations = {
   shareCopyLinkLabel: "Link kopiëren",
   shareDeleteEllipsis: "Delen...",
   shareViaLabel: "Deel via",
-  shareViewSharedVideo: "Bekijk je gedeelde video",
-  shareDefaultTitle: "Mijn TimeStory",
-  shareDefaultText: "Bekijk mijn persoonlijke tijdlijn video!",
-  shareWhatsappText: "Bekijk mijn TimeStory: {url}",
-  shareTelegramText: "Bekijk mijn TimeStory!",
-  shareTwitterText: "Bekijk mijn persoonlijke tijdlijn video!",
-  shareEmailSubject: "Bekijk mijn TimeStory",
-  shareEmailBody: "Ik heb een persoonlijke tijdlijn video gemaakt! Bekijk hem hier: {url}",
   shareGenericError: "Er ging iets mis",
 } as const;
 
