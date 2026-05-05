@@ -29,11 +29,19 @@ interface RoastDialogProps {
 const intensityLabels = ['', 'Mild', 'Pittig', 'Gemiddeld', 'Scherp', 'Extreem'];
 const intensityEmojis = ['', '😊', '😏', '😄', '🔥', '💀'];
 
+interface RoastImageLabels {
+  heading: string;
+  intensityLabel: string;
+  footerTagline: string;
+  siteUrl: string;
+}
+
 /** Generate a branded portrait image (1080x1350) from roast text */
 const generateRoastImage = async (
   roastText: string,
   intensity: number,
   periodLabel: string,
+  labels: RoastImageLabels,
 ): Promise<Blob> => {
   const W = 1080;
   const H = 1350;
@@ -77,10 +85,10 @@ const generateRoastImage = async (
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 56px Georgia, serif';
   ctx.textAlign = 'center';
-  ctx.fillText('ROAST MIJN LEVEN', W / 2, 210);
+  ctx.fillText(labels.heading, W / 2, 210);
 
   // Intensity badge
-  const badgeText = `${intensityEmojis[intensity]} ${intensityLabels[intensity]}`.trim();
+  const badgeText = `${intensityEmojis[intensity]} ${labels.intensityLabel}`.trim();
   ctx.font = 'bold 28px sans-serif';
   const badgeWidth = ctx.measureText(badgeText).width + 40;
   const badgeX = (W - badgeWidth) / 2;
@@ -159,11 +167,11 @@ const generateRoastImage = async (
   ctx.fillStyle = 'rgba(255,255,255,0.5)';
   ctx.font = 'bold 24px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('www.hetjaarvan.nl', W / 2, footerY + 35);
+  ctx.fillText(labels.siteUrl.replace(/^https?:\/\//, ''), W / 2, footerY + 35);
 
   ctx.fillStyle = 'rgba(255,255,255,0.3)';
   ctx.font = '20px sans-serif';
-  ctx.fillText('Ontdek jouw tijdreis • Gratis', W / 2, footerY + 65);
+  ctx.fillText(labels.footerTagline, W / 2, footerY + 65);
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
