@@ -15,6 +15,7 @@ import {
   VideoEvent 
 } from '@/remotion';
 import { generateSpeech, base64ToAudioUrl, VoiceProvider } from '@/remotion/lib/speechApi';
+import { classifyEventEmotions, EmotionSegment } from '@/remotion/lib/emotionClassifier';
 import { measureAudioDuration } from '@/remotion/lib/audioUtils';
 import { ShareDialog } from '@/components/video/ShareDialog';
 import { StoryContent, StorySettings } from '@/hooks/useSaveStory';
