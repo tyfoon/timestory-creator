@@ -277,7 +277,12 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
     setIsGeneratingImage(true);
 
     try {
-      const blob = await generateRoastImage(roastText, intensity, periodLabel);
+      const blob = await generateRoastImage(roastText, intensity, periodLabel, {
+        heading: String(t('roastImageHeading')),
+        intensityLabel,
+        footerTagline: String(t('roastFooterTagline')),
+        siteUrl: SITE_URL,
+      });
       const url = URL.createObjectURL(blob);
       setShareImageUrl(url);
       setShowSharePanel(true);
@@ -298,7 +303,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
 
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
-          title: 'Roast mijn leven',
+          title: String(t('roastTitle')),
           text: shareText,
           files: [file],
         });
@@ -322,7 +327,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
   };
 
   const handleCopyText = async () => {
-    const text = `🔥 Roast van mijn leven (${intensityLabels[intensity]}):\n\n${roastText}\n\n${SITE_URL}`;
+    const text = `🔥 ${String(t('roastTitle'))} (${intensityLabel}):\n\n${roastText}\n\n${SITE_URL}`;
     try {
       await navigator.clipboard.writeText(text);
     } catch {
@@ -347,7 +352,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
     try {
       const { error } = await supabase.from('saved_events').insert({
         user_id: user.id,
-        event_title: `🔥 Roast (${intensityLabels[intensity]})`,
+        event_title: `🔥 ${String(t('roastTitle'))} (${intensityLabel})`,
         event_description: roastText,
         event_category: 'personal',
         event_year: formData?.birthDate?.year || null,
