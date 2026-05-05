@@ -3,6 +3,7 @@ import { Play, Loader2, X } from 'lucide-react';
 import { SpotifyPlayer } from '@/components/SpotifyPlayer';
 import { searchYouTube } from '@/lib/api/youtube';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/lib/i18n';
 import { SaveEventButton } from './SaveEventButton';
 
 interface MediaButtonsProps {
