@@ -173,7 +173,7 @@ export function DebugInfoDialog({ events, onRefreshImages, isRefreshing, onBlack
       <DialogTrigger asChild>
         <button
           className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
-          title="Debug info"
+          title={t('debugInfoTitle') as string}
         >
           <Bug className="h-3.5 w-3.5" />
         </button>
@@ -183,9 +183,9 @@ export function DebugInfoDialog({ events, onRefreshImages, isRefreshing, onBlack
           <DialogTitle className="flex items-center justify-between text-base">
             <div className="flex items-center gap-2">
               <Bug className="h-4 w-4" />
-              Debug Info
+              {t('debugInfoTitle') as string}
               <span className="text-muted-foreground font-normal">
-                — {stats.total} events, {stats.withImages} beeld, {stats.withSoundEffects} geluid
+                — {stats.total} events, {stats.withImages} {t('debugInfoLabelImages') as string}, {stats.withSoundEffects} {t('debugInfoLabelSounds') as string}
               </span>
             </div>
             {onRefreshImages && (
@@ -197,7 +197,7 @@ export function DebugInfoDialog({ events, onRefreshImages, isRefreshing, onBlack
                 className="gap-1.5 text-xs h-7"
               >
                 <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-                {isRefreshing ? 'Zoeken...' : 'Herlaad alle afbeeldingen'}
+                {isRefreshing ? (t('debugInfoSearchingShort') as string) : (t('debugInfoReloadAll') as string)}
               </Button>
             )}
           </DialogTitle>
@@ -216,7 +216,7 @@ export function DebugInfoDialog({ events, onRefreshImages, isRefreshing, onBlack
           }
           {stats.bySource['Geen'] > 0 && (
             <span className="px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-700 dark:text-orange-300">
-              Geen: {stats.bySource['Geen']}
+              {t('debugInfoNone') as string}: {stats.bySource['Geen']}
             </span>
           )}
           <span className="w-px bg-border mx-1" />
@@ -234,7 +234,7 @@ export function DebugInfoDialog({ events, onRefreshImages, isRefreshing, onBlack
         <div className="shrink-0 relative py-2">
           <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Filter op titel, categorie, type..."
+            placeholder={t('debugInfoFilterPlaceholder') as string}
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             className="pl-9 h-9"
@@ -274,7 +274,7 @@ export function DebugInfoDialog({ events, onRefreshImages, isRefreshing, onBlack
                             onBlacklistImage(event.id);
                           }}
                           className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-black/60 hover:bg-destructive/90 text-white/70 hover:text-white flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100"
-                          title="Blacklist deze afbeelding"
+                          title={t('debugInfoBlacklistThumb') as string}
                         >
                           <Ban className="h-2.5 w-2.5" />
                         </button>

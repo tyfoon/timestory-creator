@@ -1347,7 +1347,7 @@ const TimelineStoryPage = () => {
                   <button
                     onClick={() => handleClearCache(20)}
                     className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
-                    title="Snel vernieuwen (20 events)"
+                    title={t('quickRefreshTitle') as string}
                   >
                     <RefreshCw className="h-3.5 w-3.5" />
                     <span className="sr-only">20</span>
@@ -1355,7 +1355,7 @@ const TimelineStoryPage = () => {
                   <button
                     onClick={() => handleClearCache()}
                     className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50 relative"
-                    title="Volledig vernieuwen (50 events)"
+                    title={t('fullRefreshTitle') as string}
                   >
                     <RefreshCw className="h-3.5 w-3.5" />
                     <span className="absolute -top-1 -right-1 text-[8px] font-bold bg-muted text-muted-foreground rounded-full w-3.5 h-3.5 flex items-center justify-center leading-none">50</span>
