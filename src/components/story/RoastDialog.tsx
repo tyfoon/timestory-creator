@@ -329,7 +329,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
 
   const handleSave = async () => {
     if (!user) {
-      toast({ title: 'Log in', description: 'Maak een account aan om je roast op te slaan.', variant: 'destructive' });
+      toast({ title: String(t('loginRequiredTitle')), description: String(t('loginRequiredRoastDesc')), variant: 'destructive' });
       return;
     }
     try {
