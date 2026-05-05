@@ -188,7 +188,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
         const speechText = `${event.title}. ${event.description}`;
         
         const [speechResult, soundEffectResult] = await Promise.all([
-          generateSpeech({ text: speechText, provider: voiceProvider })
+          generateSpeech({ text: speechText, provider: voiceProvider, voice: voiceProvider === 'elevenlabs' ? elevenLabsVoiceId : undefined })
             .then(async (result) => {
               // Measure EXACT duration using Web Audio API
               const exactDuration = await measureAudioDuration(result.audioContent);
