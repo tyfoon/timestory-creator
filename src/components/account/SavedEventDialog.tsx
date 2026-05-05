@@ -329,7 +329,7 @@ export const SavedEventDialog = ({ event, open, onOpenChange, startInShareMode }
       document.execCommand('copy');
       document.body.removeChild(ta);
     }
-    toast({ title: 'Gekopieerd!', description: 'Tekst gekopieerd naar klembord.' });
+    toast({ title: String(t('copiedTitle')), description: String(t('textCopiedDesc')) });
   };
 
   const handleNativeShare = async () => {
