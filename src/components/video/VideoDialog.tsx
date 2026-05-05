@@ -324,7 +324,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
           <div className="flex items-center justify-between gap-4">
             <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
               <Video className="h-4 w-4" />
-              Video Preview
+              {String(t('spokenStoryReady'))}
             </DialogTitle>
             
             {/* Share button - visible when video is ready */}
