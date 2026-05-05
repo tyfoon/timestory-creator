@@ -39,6 +39,7 @@ export const MediaButtons = ({
   onTrailerStop,
 }: MediaButtonsProps) => {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [isLoadingTrailer, setIsLoadingTrailer] = useState(false);
   const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
   const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
