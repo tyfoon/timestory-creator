@@ -8,6 +8,12 @@ interface GenerateSpeechParams {
   languageCode?: string;
   speakingRate?: number;
   provider?: VoiceProvider;
+  /** ElevenLabs only — prepended to text (e.g. "[warm][softly] ") */
+  audioTag?: string;
+  /** ElevenLabs only — overrides default voice settings */
+  stability?: number;
+  similarityBoost?: number;
+  style?: number;
 }
 
 interface SpeechResult {
