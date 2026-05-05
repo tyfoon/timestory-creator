@@ -8,6 +8,12 @@ interface GenerateSpeechParams {
   languageCode?: string;
   speakingRate?: number;
   provider?: VoiceProvider;
+  /** ElevenLabs only — prepended to text (e.g. "[warm][softly] ") */
+  audioTag?: string;
+  /** ElevenLabs only — overrides default voice settings */
+  stability?: number;
+  similarityBoost?: number;
+  style?: number;
 }
 
 interface SpeechResult {
@@ -72,10 +78,18 @@ const releaseElevenLabsSlot = () => {
 const generateSpeechElevenLabs = async (params: Omit<GenerateSpeechParams, 'provider'>): Promise<SpeechResult> => {
   await acquireElevenLabsSlot();
   try {
+    // Prefix the audio tag (e.g. "[warm][softly] ") so ElevenLabs picks up the emotion.
+    const taggedText = params.audioTag
+      ? `${params.audioTag.trim()} ${params.text}`
+      : params.text;
+
     const { data, error } = await supabase.functions.invoke<SpeechResult>('generate-speech-elevenlabs', {
       body: {
-        text: params.text,
+        text: taggedText,
         voiceId: params.voice || DEFAULT_ELEVENLABS_VOICE_ID,
+        stability: params.stability,
+        similarityBoost: params.similarityBoost,
+        style: params.style,
       },
     });
 
