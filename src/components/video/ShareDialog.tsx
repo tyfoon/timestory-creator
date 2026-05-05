@@ -17,6 +17,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useSaveStory, StoryContent, StorySettings } from '@/hooks/useSaveStory';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ShareDialogProps {
   open: boolean;
