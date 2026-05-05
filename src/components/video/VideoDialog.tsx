@@ -455,9 +455,9 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                 className="w-full"
               >
                 {isGeneratingAudio ? (
-                  <><Loader2 className="mr-2 h-3 w-3 animate-spin" />Genereren...</>
+                  <><Loader2 className="mr-2 h-3 w-3 animate-spin" />{String(t('spokenStoryGeneratingShort'))}</>
                 ) : (
-                  <><Volume2 className="mr-2 h-3 w-3" />Genereer Audio</>
+                  <><Volume2 className="mr-2 h-3 w-3" />{String(t('spokenStoryGenerateButton'))}</>
                 )}
               </Button>
             </div>
