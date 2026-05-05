@@ -735,7 +735,7 @@ const PolaroidCollagePage = () => {
                       },
                     });
                   } catch (err) {
-                    toast({ title: 'PDF generatie mislukt', variant: 'destructive' });
+                    toast({ title: t('pdfGenerationFailed') as string, variant: 'destructive' });
                   }
                 },
               }}
