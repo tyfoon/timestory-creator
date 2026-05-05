@@ -949,6 +949,8 @@ export const translations: Record<Language, Record<TranslationKey, TranslationVa
     authWelcome: "Welcome to Your Year",
     authSubtitle: "Create an account to save your content",
     authLogin: "Log in",
+    voiceElevenLabsLoginRequired: "Sign in to use ElevenLabs",
+    voiceElevenLabsLoginRequiredDesc: "ElevenLabs voices are available to signed-in users.",
     authSignUp: "Sign up",
     authLogout: "Log out",
     authEmail: "Email address",
