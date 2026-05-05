@@ -29,11 +29,19 @@ interface RoastDialogProps {
 const intensityLabels = ['', 'Mild', 'Pittig', 'Gemiddeld', 'Scherp', 'Extreem'];
 const intensityEmojis = ['', '😊', '😏', '😄', '🔥', '💀'];
 
+interface RoastImageLabels {
+  heading: string;
+  intensityLabel: string;
+  footerTagline: string;
+  siteUrl: string;
+}
+
 /** Generate a branded portrait image (1080x1350) from roast text */
 const generateRoastImage = async (
   roastText: string,
   intensity: number,
   periodLabel: string,
+  labels: RoastImageLabels,
 ): Promise<Blob> => {
   const W = 1080;
   const H = 1350;
@@ -77,10 +85,10 @@ const generateRoastImage = async (
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 56px Georgia, serif';
   ctx.textAlign = 'center';
-  ctx.fillText('ROAST MIJN LEVEN', W / 2, 210);
+  ctx.fillText(labels.heading, W / 2, 210);
 
   // Intensity badge
-  const badgeText = `${intensityEmojis[intensity]} ${intensityLabels[intensity]}`.trim();
+  const badgeText = `${intensityEmojis[intensity]} ${labels.intensityLabel}`.trim();
   ctx.font = 'bold 28px sans-serif';
   const badgeWidth = ctx.measureText(badgeText).width + 40;
   const badgeX = (W - badgeWidth) / 2;
@@ -159,11 +167,11 @@ const generateRoastImage = async (
   ctx.fillStyle = 'rgba(255,255,255,0.5)';
   ctx.font = 'bold 24px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('www.hetjaarvan.nl', W / 2, footerY + 35);
+  ctx.fillText(labels.siteUrl.replace(/^https?:\/\//, ''), W / 2, footerY + 35);
 
   ctx.fillStyle = 'rgba(255,255,255,0.3)';
   ctx.font = '20px sans-serif';
-  ctx.fillText('Ontdek jouw tijdreis • Gratis', W / 2, footerY + 65);
+  ctx.fillText(labels.footerTagline, W / 2, footerY + 65);
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
@@ -186,13 +194,17 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
   const { toast } = useToast();
   const { language, t } = useLanguage();
 
+  const intensityLabel = String(t(['', 'roastIntensityMild', 'roastIntensitySpicy', 'roastIntensityMedium', 'roastIntensitySharp', 'roastIntensityExtreme'][intensity] as never));
+
   const periodLabel = formData?.yearRange
     ? `${formData.yearRange.startYear} – ${formData.yearRange.endYear}`
     : formData?.birthDate
-      ? `Geboren in ${formData.birthDate.year}`
+      ? String(t('roastBornInLabel')).replace('{year}', String(formData.birthDate.year))
       : '';
 
-  const shareText = `🔥 Roast mijn leven (${intensityLabels[intensity]}) - Ontdek jouw tijdreis op ${SITE_URL}`;
+  const shareText = String(t('roastShareTextTpl'))
+    .replace('{level}', intensityLabel)
+    .replace('{url}', SITE_URL);
 
   const generateRoast = useCallback(async (level: number) => {
     setIsLoading(true);
@@ -224,7 +236,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
         setRoastText(data.roast);
         setHasGenerated(true);
       } else {
-        throw new Error(data.error || 'Geen roast ontvangen');
+        throw new Error(data.error || String(t('roastNoneReceived')));
       }
     } catch (err) {
       console.error('Roast generation error:', err);
@@ -265,7 +277,12 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
     setIsGeneratingImage(true);
 
     try {
-      const blob = await generateRoastImage(roastText, intensity, periodLabel);
+      const blob = await generateRoastImage(roastText, intensity, periodLabel, {
+        heading: String(t('roastImageHeading')),
+        intensityLabel,
+        footerTagline: String(t('roastFooterTagline')),
+        siteUrl: SITE_URL,
+      });
       const url = URL.createObjectURL(blob);
       setShareImageUrl(url);
       setShowSharePanel(true);
@@ -286,7 +303,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
 
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
-          title: 'Roast mijn leven',
+          title: String(t('roastTitle')),
           text: shareText,
           files: [file],
         });
@@ -310,7 +327,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
   };
 
   const handleCopyText = async () => {
-    const text = `🔥 Roast van mijn leven (${intensityLabels[intensity]}):\n\n${roastText}\n\n${SITE_URL}`;
+    const text = `🔥 ${String(t('roastTitle'))} (${intensityLabel}):\n\n${roastText}\n\n${SITE_URL}`;
     try {
       await navigator.clipboard.writeText(text);
     } catch {
@@ -335,7 +352,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
     try {
       const { error } = await supabase.from('saved_events').insert({
         user_id: user.id,
-        event_title: `🔥 Roast (${intensityLabels[intensity]})`,
+        event_title: `🔥 ${String(t('roastTitle'))} (${intensityLabel})`,
         event_description: roastText,
         event_category: 'personal',
         event_year: formData?.birthDate?.year || null,
@@ -371,7 +388,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
         <DialogHeader>
           <div className="flex items-center gap-2">
             <Flame className="h-6 w-6 text-orange-500" />
-            <DialogTitle className="font-serif text-xl">Roast mijn leven</DialogTitle>
+            <DialogTitle className="font-serif text-xl">{t('roastTitle') as string}</DialogTitle>
           </div>
         </DialogHeader>
 
@@ -382,7 +399,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
               <div className="flex flex-col items-center justify-center h-32 gap-3">
                 <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
                 <p className="text-sm text-muted-foreground">
-                  {intensityLabels[intensity]} roast wordt geschreven...
+                  {String(t('roastWriting')).replace('{level}', intensityLabel)}
                 </p>
               </div>
             ) : roastText ? (
@@ -399,10 +416,10 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Thermometer className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground">Intensiteit</span>
+                <span className="text-sm font-medium text-foreground">{t('roastIntensityLabel') as string}</span>
               </div>
               <Badge variant="outline" className="text-xs gap-1 font-semibold">
-                {intensityEmojis[intensity]} {intensityLabels[intensity]}
+                {intensityEmojis[intensity]} {intensityLabel}
               </Badge>
             </div>
 
@@ -417,8 +434,8 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
             />
 
             <div className="flex justify-between text-[10px] text-muted-foreground px-1">
-              <span>Mild</span>
-              <span>Extreem</span>
+              <span>{t('roastIntensityMild') as string}</span>
+              <span>{t('roastIntensityExtreme') as string}</span>
             </div>
           </div>
 
@@ -432,12 +449,12 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
               disabled={!roastText || isLoading || isGeneratingImage}
             >
               {isGeneratingImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Share2 className="h-3.5 w-3.5" />}
-              {isGeneratingImage ? 'Afbeelding maken...' : 'Delen'}
+              {isGeneratingImage ? (t('roastImageMaking') as string) : (t('roastShareLabel') as string)}
             </Button>
             {user && (
               <Button onClick={handleSave} variant="outline" size="sm" className="flex-1 gap-1.5 text-xs" disabled={!roastText || isLoading}>
                 <Bookmark className="h-3.5 w-3.5" />
-                Opslaan
+                {t('roastSaveLabel') as string}
               </Button>
             )}
           </div>
@@ -449,7 +466,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
               <div className="rounded-lg overflow-hidden border border-border/50 shadow-md">
                 <img 
                   src={shareImageUrl} 
-                  alt="Roast afbeelding" 
+                  alt={t('roastImageAlt') as string} 
                   className="w-full h-auto"
                 />
               </div>
@@ -462,13 +479,13 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
                   variant="default"
                 >
                   <Share2 className="h-4 w-4" />
-                  Delen...
+                  {t('roastNativeShareLabel') as string}
                 </Button>
               )}
 
               {/* Share buttons grid */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Deel via</label>
+                <label className="text-sm font-medium text-foreground">{t('roastShareViaLabel') as string}</label>
                 <div className="grid grid-cols-5 gap-2">
                   {/* WhatsApp */}
                   <a 
@@ -516,7 +533,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
 
                   {/* Email */}
                   <a 
-                    href={`mailto:?subject=${encodeURIComponent('🔥 Roast mijn leven')}&body=${encodeURIComponent(`Bekijk mijn roast:\n\n${roastText}\n\nMaak je eigen tijdreis op ${SITE_URL}`)}`}
+                    href={`mailto:?subject=${encodeURIComponent(String(t('roastEmailSubject')))}&body=${encodeURIComponent(String(t('roastEmailBody')).replace('{text}', roastText).replace('{url}', SITE_URL))}`}
                     className="flex flex-col items-center gap-1 p-3 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
                   >
                     <Mail className="h-6 w-6 text-primary" />
@@ -529,11 +546,11 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
               <div className="flex gap-2">
                 <Button onClick={handleCopyText} variant="outline" size="sm" className="flex-1 gap-1.5 text-xs">
                   {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
-                  {copied ? 'Gekopieerd!' : 'Kopieer tekst'}
+                  {copied ? (t('roastCopiedShort') as string) : (t('roastCopyText') as string)}
                 </Button>
                 <Button onClick={handleDownloadImage} variant="outline" size="sm" className="flex-1 gap-1.5 text-xs">
                   <Download className="h-3.5 w-3.5" />
-                  Download afbeelding
+                  {t('roastDownloadImage') as string}
                 </Button>
               </div>
             </div>
