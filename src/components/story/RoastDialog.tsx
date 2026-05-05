@@ -229,8 +229,8 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
     } catch (err) {
       console.error('Roast generation error:', err);
       toast({
-        title: 'Oeps',
-        description: err instanceof Error ? err.message : 'Kon de roast niet genereren',
+        title: String(t('oopsTitle')),
+        description: err instanceof Error ? err.message : String(t('roastGenerationFailed')),
         variant: 'destructive',
       });
     } finally {
