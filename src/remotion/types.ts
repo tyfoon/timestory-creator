@@ -22,6 +22,9 @@ export interface TimelineVideoProps {
   externalAudioUrl?: string;
   /** Duration of external audio in seconds - when set, events are distributed over this duration */
   externalAudioDuration?: number;
+  /** Localized "ready" overlay shown at frame 0 of the intro */
+  introReadyTitle?: string;
+  introReadyHint?: string;
 }
 
 export interface EventCardProps {
