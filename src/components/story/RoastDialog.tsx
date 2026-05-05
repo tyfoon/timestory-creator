@@ -306,7 +306,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    toast({ title: 'Gedownload!', description: 'Deel de afbeelding op social media!' });
+    toast({ title: String(t('downloadedTitle')), description: String(t('shareImageOnSocial')) });
   };
 
   const handleCopyText = async () => {
