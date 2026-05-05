@@ -122,6 +122,33 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
   const [showFullscreenOverlay, setShowFullscreenOverlay] = useState(false);
   const [hasTriedAutoFullscreen, setHasTriedAutoFullscreen] = useState(false);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { t } = useLanguage();
+
+  // Force back to Google if user logs out while ElevenLabs is selected
+  useEffect(() => {
+    if (!user && voiceProvider === 'elevenlabs') {
+      setVoiceProvider('google');
+    }
+  }, [user, voiceProvider]);
+
+  const handleSelectElevenLabs = useCallback(() => {
+    if (!user) {
+      toast({
+        title: String(t('voiceElevenLabsLoginRequired')),
+        description: String(t('voiceElevenLabsLoginRequiredDesc')),
+        action: (
+          <Button size="sm" variant="outline" onClick={() => navigate('/auth')}>
+            {String(t('authLogin'))}
+          </Button>
+        ) as any,
+      });
+      return;
+    }
+    setVoiceProvider('elevenlabs');
+  }, [user, navigate, toast, t]);
 
   // Generate audio for all events - PARALLEL for speed, EXACT durations via Web Audio API
   const handleGenerateAudio = useCallback(async () => {
