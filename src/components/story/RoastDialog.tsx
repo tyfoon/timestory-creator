@@ -194,13 +194,17 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
   const { toast } = useToast();
   const { language, t } = useLanguage();
 
+  const intensityLabel = String(t(['', 'roastIntensityMild', 'roastIntensitySpicy', 'roastIntensityMedium', 'roastIntensitySharp', 'roastIntensityExtreme'][intensity] as never));
+
   const periodLabel = formData?.yearRange
     ? `${formData.yearRange.startYear} – ${formData.yearRange.endYear}`
     : formData?.birthDate
-      ? `Geboren in ${formData.birthDate.year}`
+      ? String(t('roastBornInLabel')).replace('{year}', String(formData.birthDate.year))
       : '';
 
-  const shareText = `🔥 Roast mijn leven (${intensityLabels[intensity]}) - Ontdek jouw tijdreis op ${SITE_URL}`;
+  const shareText = String(t('roastShareTextTpl'))
+    .replace('{level}', intensityLabel)
+    .replace('{url}', SITE_URL);
 
   const generateRoast = useCallback(async (level: number) => {
     setIsLoading(true);
