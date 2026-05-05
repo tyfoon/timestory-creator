@@ -24,6 +24,7 @@ interface DebugInfoDialogProps {
 export function DebugInfoDialog({ events, onRefreshImages, isRefreshing, onBlacklistImage }: DebugInfoDialogProps) {
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('');
+  const { t } = useLanguage();
 
   // Filter events based on search
   const filteredEvents = useMemo(() => {
