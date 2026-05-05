@@ -277,11 +277,11 @@ export const MusicVideoReadyNotifier = () => {
           <button
             type="button"
             onClick={handleResumeStory}
-            aria-label={`Persoonlijke muziekvideo wordt gemaakt — ${progressPct}%`}
+            aria-label={tr('notifProgressAria').replace('{pct}', String(progressPct))}
             title={
               onStoryPage
-                ? 'Tik om naar je muziekvideo te scrollen'
-                : 'Tik om naar je muziekvideo te gaan'
+                ? tr('notifTapToScroll')
+                : tr('notifTapToGo')
             }
             className="group flex items-center gap-2.5 h-9 pl-2 pr-2 rounded-l-full hover:bg-muted/40 transition-colors text-left"
           >
@@ -290,7 +290,7 @@ export const MusicVideoReadyNotifier = () => {
             </span>
             <span className="flex flex-col leading-tight min-w-0">
               <span className="text-[11px] font-medium text-foreground truncate">
-                Persoonlijke muziekvideo
+                {tr('notifPersonalMusicVideo')}
               </span>
               <span className="flex items-center gap-1.5 mt-0.5">
                 <span className="relative h-1 w-20 rounded-full bg-muted overflow-hidden">
@@ -309,8 +309,8 @@ export const MusicVideoReadyNotifier = () => {
           <button
             type="button"
             onClick={() => setChipDismissed(true)}
-            aria-label="Melding inklappen"
-            title="Inklappen"
+            aria-label={tr('notifCollapseAria')}
+            title={tr('notifCollapse')}
             className="flex items-center justify-center w-7 h-9 rounded-r-full text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
           >
             <X className="h-3 w-3" />
