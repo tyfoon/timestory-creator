@@ -311,6 +311,8 @@ const nlTranslations = {
   authWelcome: "Welkom bij Het jaar van",
   authSubtitle: "Maak een account aan om je content te bewaren",
   authLogin: "Inloggen",
+  voiceElevenLabsLoginRequired: "Log in om ElevenLabs te gebruiken",
+  voiceElevenLabsLoginRequiredDesc: "ElevenLabs-stemmen zijn beschikbaar voor ingelogde gebruikers.",
   authSignUp: "Registreren",
   authLogout: "Uitloggen",
   authEmail: "E-mailadres",
