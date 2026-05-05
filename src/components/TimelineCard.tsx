@@ -21,6 +21,7 @@ import { useEffect, useState, useRef } from 'react';
 import { SpotifyPlayer } from './SpotifyPlayer';
 import { searchYouTube } from '@/lib/api/youtube';
 import { addToBlacklist } from '@/hooks/useImageBlacklist';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // Import category placeholder images
 import placeholderBirthday from '@/assets/placeholders/birthday.jpg';
@@ -135,6 +136,7 @@ const scopeColors = {
 };
 
 export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = true, onBlacklistImage }: TimelineCardProps) => {
+  const { t } = useLanguage();
   const [imageError, setImageError] = useState(false);
   // Track which URL we've attempted to load to prevent unnecessary resets
   const lastAttemptedUrl = useRef<string | undefined>(undefined);
@@ -289,7 +291,7 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
             <button
               onClick={handleStopTrailer}
               className="absolute top-3 right-3 z-20 p-2 rounded-full bg-black/70 text-white hover:bg-black/90 transition-colors"
-              aria-label="Trailer sluiten"
+              aria-label={t('ariaCloseTrailer') as string}
             >
               <X className="h-4 w-4" />
             </button>
@@ -326,8 +328,8 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
                       }
                     }}
                     className="absolute top-2 left-2 z-20 w-7 h-7 rounded-full bg-black/60 hover:bg-destructive/90 text-white/70 hover:text-white flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 backdrop-blur-sm"
-                    title="Foto blacklisten (globaal) en nieuwe zoeken"
-                    aria-label="Blacklist afbeelding"
+                    title={t('blacklistImageTitle') as string}
+                    aria-label={t('ariaBlacklistImage') as string}
                   >
                     <Ban className="h-3.5 w-3.5" />
                   </button>
@@ -336,12 +338,12 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
             ) : isLoading ? (
               <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-muted to-secondary/30">
                 <Loader2 className="h-8 w-8 text-muted-foreground/40 animate-spin" />
-                <span className="text-xs text-muted-foreground/50">Foto zoeken...</span>
+                <span className="text-xs text-muted-foreground/50">{t('searchingPhotoLabel') as string}</span>
               </div>
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-secondary/30">
                 <span className="text-xs text-muted-foreground/40">
-                  {!shouldLoadImage ? 'Scroll om foto te laden' : ''}
+                  {!shouldLoadImage ? (t('scrollToLoadPhoto') as string) : ''}
                 </span>
               </div>
             )}
@@ -363,7 +365,7 @@ export const TimelineCard = ({ event, isActive, scopeLabel, shouldLoadImage = tr
                   }}
                   disabled={isLoadingTrailer}
                   className="inline-flex items-center gap-1.5 h-7 px-3 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-full text-xs font-medium transition-colors shadow-md"
-                  aria-label="Trailer afspelen"
+                  aria-label={t('ariaPlayTrailer') as string}
                 >
                   {isLoadingTrailer ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
