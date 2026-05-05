@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { TimelineEvent, SearchTraceEntry } from '@/types/timeline';
 import { addToBlacklist } from '@/hooks/useImageBlacklist';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DebugInfoDialogProps {
   events: TimelineEvent[];
