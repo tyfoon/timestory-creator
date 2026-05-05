@@ -6,13 +6,15 @@ interface IntroCardProps {
   storyTitle: string;
   storyIntroduction?: string;
   theme?: EraTheme;
+  readyTitle?: string;
+  readyHint?: string;
 }
 
 /**
  * Cinematic intro card with era-themed styling.
  * Shows "ready" prompt at frame 0, then dramatic title reveal.
  */
-export const IntroCard: React.FC<IntroCardProps> = ({ storyTitle, storyIntroduction, theme }) => {
+export const IntroCard: React.FC<IntroCardProps> = ({ storyTitle, storyIntroduction, theme, readyTitle, readyHint }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const t = theme || TIMELINE_THEMES['default'];
