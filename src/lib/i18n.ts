@@ -562,6 +562,53 @@ const nlTranslations = {
   shareDeleteEllipsis: "Delen...",
   shareViaLabel: "Deel via",
   shareGenericError: "Er ging iets mis",
+
+  // Output formats — TikTok slides
+  tiktokIntroTitle: "Jouw Tijdreis",
+  tiktokOutroTitle: "Maak je eigen tijdreis!",
+  tiktokWatermark: "TimeStory",
+  tiktokUnknownError: "Onbekende fout",
+  tiktokWebShareUnavailable: "Web Share API niet beschikbaar",
+  tiktokCannotShareFiles: "Kan deze bestanden niet delen",
+
+  // Output formats — Remotion intro card
+  introReadyTitle: "🎬 Je persoonlijke muziekvideo is klaar",
+  introReadyHint: "Druk op ▶ om af te spelen",
+
+  // Output formats — PDF
+  pdfDefaultFirstName: "Jou",
+  pdfDefaultStoryName: "TimeStory",
+  pdfTitleFallback: "Het Jaar Van {name}",
+  pdfAlbumFooter: "TimeStory Album",
+  pdfAlbumFileSuffix: "Album",
+
+  // PDF categories
+  pdfCatPolitics: "Politiek",
+  pdfCatSports: "Sport",
+  pdfCatEntertainment: "Entertainment",
+  pdfCatScience: "Wetenschap",
+  pdfCatCulture: "Cultuur",
+  pdfCatWorld: "Wereld",
+  pdfCatLocal: "Lokaal",
+  pdfCatPersonal: "Persoonlijk",
+  pdfCatMusic: "Muziek",
+  pdfCatTechnology: "Technologie",
+  pdfCatCelebrity: "Beroemd",
+  pdfCatUnknown: "Onbekend",
+
+  // PDF type labels
+  pdfTypeBirthdate: "Op deze dag",
+  pdfTypeBirthmonth: "Deze maand",
+  pdfTypeBirthyear: "Dit jaar",
+  pdfTypePeriod: "Periode",
+
+  // PDF magazine labels
+  pdfPersonalJourneyFor: "De persoonlijke reis door de tijd voor",
+  pdfYourStory: "Jouw Verhaal",
+  pdfInThisIssue: "In deze uitgave",
+  pdfAlsoBornToday: "Ook Jarig op Deze Dag",
+  pdfThanksFor: "Bedankt voor",
+  pdfThanksShort: "Bedankt!",
 } as const;
 
 export type TranslationKey = keyof typeof nlTranslations;
