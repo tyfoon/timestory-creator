@@ -5,6 +5,7 @@ import { searchYouTube } from '@/lib/api/youtube';
 import { SpotifyPlayer } from './SpotifyPlayer';
 import { addToBlacklist } from '@/hooks/useImageBlacklist';
 import { SaveEventButton } from '@/components/story/SaveEventButton';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // Import category placeholder images
 import placeholderBirthday from '@/assets/placeholders/birthday.jpg';
@@ -119,6 +120,7 @@ export const PolaroidCard = ({
   onToggleSelection,
   onBlacklistImage,
 }: PolaroidCardProps) => {
+  const { t } = useLanguage();
   const [isFlipped, setIsFlipped] = useState(false);
   const rotation = getRotation(event.id);
   const accentColor = getAccentColor(index);
@@ -262,7 +264,7 @@ export const PolaroidCard = ({
                   <button
                     onClick={handleStopTrailer}
                     className="absolute top-1 right-1 z-20 p-1 bg-black/70 hover:bg-black/90 text-white rounded-full transition-colors"
-                    aria-label="Stop trailer"
+                    aria-label={t('ariaStopTrailer') as string}
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -291,8 +293,8 @@ export const PolaroidCard = ({
                         }
                       }}
                       className="absolute top-1 left-1 z-20 w-6 h-6 rounded-full bg-black/60 hover:bg-destructive/90 text-white/70 hover:text-white flex items-center justify-center transition-all duration-200 opacity-0 group-hover/image:opacity-100 backdrop-blur-sm"
-                      title="Foto blacklisten (globaal) en nieuwe zoeken"
-                      aria-label="Blacklist afbeelding"
+                      title={t('blacklistImageTitle') as string}
+                      aria-label={t('ariaBlacklistImage') as string}
                     >
                       <Ban className="h-3 w-3" />
                     </button>
@@ -311,7 +313,7 @@ export const PolaroidCard = ({
                         onClick={handlePlayTrailer}
                         disabled={isLoadingTrailer}
                         className="inline-flex items-center gap-1 px-2 py-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-full text-[10px] font-medium transition-colors shadow-md disabled:opacity-50"
-                        aria-label="Play trailer"
+                        aria-label={t('ariaPlayTrailer') as string}
                       >
                         {isLoadingTrailer ? (
                           <Loader2 className="h-2.5 w-2.5 animate-spin" />
