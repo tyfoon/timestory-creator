@@ -35,6 +35,8 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
   onShareComplete,
 }) => {
   const { saveStory, isSaving, progress, progressMessage } = useSaveStory();
+  const { t } = useLanguage();
+  const tr = (k: Parameters<typeof t>[0]) => t(k) as string;
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
