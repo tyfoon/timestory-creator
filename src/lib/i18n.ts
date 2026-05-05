@@ -1551,6 +1551,8 @@ export const translations: Record<Language, Record<TranslationKey, TranslationVa
     authWelcome: "Willkommen bei Dein Jahr",
     authSubtitle: "Erstelle ein Konto, um deine Inhalte zu speichern",
     authLogin: "Anmelden",
+    voiceElevenLabsLoginRequired: "Melde dich an, um ElevenLabs zu nutzen",
+    voiceElevenLabsLoginRequiredDesc: "ElevenLabs-Stimmen sind für angemeldete Nutzer verfügbar.",
     authSignUp: "Registrieren",
     authLogout: "Abmelden",
     authEmail: "E-Mail-Adresse",
