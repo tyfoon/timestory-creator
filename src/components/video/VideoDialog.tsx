@@ -320,7 +320,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
     } finally {
       setIsGeneratingAudio(false);
     }
-  }, [events, storyIntroduction, voiceProvider]);
+  }, [events, storyIntroduction, voiceProvider, language, elevenLabsVoiceId, t]);
 
   // Check if we're in music video mode (background music provided)
   const isMusicVideoMode = !!backgroundMusicUrl && !!backgroundMusicDuration;
