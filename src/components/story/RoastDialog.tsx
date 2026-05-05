@@ -184,7 +184,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
   const [hasGenerated, setHasGenerated] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
 
   const periodLabel = formData?.yearRange
     ? `${formData.yearRange.startYear} – ${formData.yearRange.endYear}`
