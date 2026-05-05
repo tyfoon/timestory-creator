@@ -236,7 +236,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
         setRoastText(data.roast);
         setHasGenerated(true);
       } else {
-        throw new Error(data.error || 'Geen roast ontvangen');
+        throw new Error(data.error || String(t('roastNoneReceived')));
       }
     } catch (err) {
       console.error('Roast generation error:', err);
@@ -388,7 +388,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
         <DialogHeader>
           <div className="flex items-center gap-2">
             <Flame className="h-6 w-6 text-orange-500" />
-            <DialogTitle className="font-serif text-xl">Roast mijn leven</DialogTitle>
+            <DialogTitle className="font-serif text-xl">{t('roastTitle') as string}</DialogTitle>
           </div>
         </DialogHeader>
 
@@ -399,7 +399,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
               <div className="flex flex-col items-center justify-center h-32 gap-3">
                 <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
                 <p className="text-sm text-muted-foreground">
-                  {intensityLabels[intensity]} roast wordt geschreven...
+                  {String(t('roastWriting')).replace('{level}', intensityLabel)}
                 </p>
               </div>
             ) : roastText ? (
@@ -416,10 +416,10 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Thermometer className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground">Intensiteit</span>
+                <span className="text-sm font-medium text-foreground">{t('roastIntensityLabel') as string}</span>
               </div>
               <Badge variant="outline" className="text-xs gap-1 font-semibold">
-                {intensityEmojis[intensity]} {intensityLabels[intensity]}
+                {intensityEmojis[intensity]} {intensityLabel}
               </Badge>
             </div>
 
@@ -434,8 +434,8 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
             />
 
             <div className="flex justify-between text-[10px] text-muted-foreground px-1">
-              <span>Mild</span>
-              <span>Extreem</span>
+              <span>{t('roastIntensityMild') as string}</span>
+              <span>{t('roastIntensityExtreme') as string}</span>
             </div>
           </div>
 
@@ -449,12 +449,12 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
               disabled={!roastText || isLoading || isGeneratingImage}
             >
               {isGeneratingImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Share2 className="h-3.5 w-3.5" />}
-              {isGeneratingImage ? 'Afbeelding maken...' : 'Delen'}
+              {isGeneratingImage ? (t('roastImageMaking') as string) : (t('roastShareLabel') as string)}
             </Button>
             {user && (
               <Button onClick={handleSave} variant="outline" size="sm" className="flex-1 gap-1.5 text-xs" disabled={!roastText || isLoading}>
                 <Bookmark className="h-3.5 w-3.5" />
-                Opslaan
+                {t('roastSaveLabel') as string}
               </Button>
             )}
           </div>
@@ -466,7 +466,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
               <div className="rounded-lg overflow-hidden border border-border/50 shadow-md">
                 <img 
                   src={shareImageUrl} 
-                  alt="Roast afbeelding" 
+                  alt={t('roastImageAlt') as string} 
                   className="w-full h-auto"
                 />
               </div>
@@ -479,13 +479,13 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
                   variant="default"
                 >
                   <Share2 className="h-4 w-4" />
-                  Delen...
+                  {t('roastNativeShareLabel') as string}
                 </Button>
               )}
 
               {/* Share buttons grid */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Deel via</label>
+                <label className="text-sm font-medium text-foreground">{t('roastShareViaLabel') as string}</label>
                 <div className="grid grid-cols-5 gap-2">
                   {/* WhatsApp */}
                   <a 
@@ -533,7 +533,7 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
 
                   {/* Email */}
                   <a 
-                    href={`mailto:?subject=${encodeURIComponent('🔥 Roast mijn leven')}&body=${encodeURIComponent(`Bekijk mijn roast:\n\n${roastText}\n\nMaak je eigen tijdreis op ${SITE_URL}`)}`}
+                    href={`mailto:?subject=${encodeURIComponent(`🔥 ${String(t('roastTitle'))}`)}&body=${encodeURIComponent(String(t('roastEmailBodyTpl')).replace('{roast}', roastText).replace('{url}', SITE_URL))}`}
                     className="flex flex-col items-center gap-1 p-3 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
                   >
                     <Mail className="h-6 w-6 text-primary" />
@@ -546,11 +546,11 @@ export const RoastDialog = ({ open, onOpenChange, events, formData }: RoastDialo
               <div className="flex gap-2">
                 <Button onClick={handleCopyText} variant="outline" size="sm" className="flex-1 gap-1.5 text-xs">
                   {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
-                  {copied ? 'Gekopieerd!' : 'Kopieer tekst'}
+                  {copied ? (t('roastCopiedShort') as string) : (t('roastCopyText') as string)}
                 </Button>
                 <Button onClick={handleDownloadImage} variant="outline" size="sm" className="flex-1 gap-1.5 text-xs">
                   <Download className="h-3.5 w-3.5" />
-                  Download afbeelding
+                  {t('roastDownloadImage') as string}
                 </Button>
               </div>
             </div>
