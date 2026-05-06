@@ -273,7 +273,7 @@ Om de gebruiker direct content te tonen MOET je beginnen met storyTitle en story
 
 1. EERST (direct als eerste output!):
 {"type":"storyTitle","data":"[Pakkende titel van max 10 woorden die de essentie van deze periode vangt]"}
-{"type":"storyIntroduction","data":"[Max 110 woorden nostalgische introductietekst in tweede persoon]"}
+{"type":"storyIntroduction","data":"[Maximum 110 words / Wörter / mots / palabras - regardless of output language - nostalgic intro in second person]"}
 
 2. DAARNA alle events:
 {"type":"event","data":{"id":"evt_1","date":"1980-05-22","year":1980,"title":"Pac-Man","description":"...","category":"entertainment","visualSubjectType":"logo","imageSearchQuery":"Pac-Man","imageSearchQueryEn":"Pac-Man","importance":"high","eventScope":"period"}}
@@ -291,7 +291,7 @@ RICHTLIJNEN VOOR storyTitle (EERST genereren!):
 - Mag poëtisch zijn, maar moet herkenbaar blijven
 
 RICHTLIJNEN VOOR storyIntroduction (DIRECT NA storyTitle!):
-- Max 110 woorden
+- HARD LIMIT: maximum 110 words / Wörter / mots / palabras — STRICTLY ENFORCED regardless of output language. Count words in the OUTPUT language.
 - Schrijf in tweede persoon: "Je werd geboren...", "Je hoorde...", "Je voelde..."
 - Gebruik zintuiglijke details: geuren (brommerbenzine, Sunsilk shampoo), geluiden (piepende modem, rinkelende telefoon)
 - Beschrijf de 'analoge vertraging': wachten op foto's, brieven schrijven, teletekst checken
@@ -386,7 +386,7 @@ export function getTimelineTool() {
           storyIntroduction: {
             type: "string",
             description:
-              "Max 110 woorden nostalgische introductietekst in tweede persoon, met zintuiglijke details en emotie",
+              "STRICT maximum 110 words (count in the output language, applies to ALL languages incl. English/German/French/Spanish) - nostalgic intro in second person with sensory details and emotion",
           },
           famousBirthdays: {
             type: "array",
