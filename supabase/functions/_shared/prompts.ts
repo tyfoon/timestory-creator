@@ -291,7 +291,7 @@ RICHTLIJNEN VOOR storyTitle (EERST genereren!):
 - Mag poëtisch zijn, maar moet herkenbaar blijven
 
 RICHTLIJNEN VOOR storyIntroduction (DIRECT NA storyTitle!):
-- Max 110 woorden
+- HARD LIMIT: maximum 110 words / Wörter / mots / palabras — STRICTLY ENFORCED regardless of output language. Count words in the OUTPUT language.
 - Schrijf in tweede persoon: "Je werd geboren...", "Je hoorde...", "Je voelde..."
 - Gebruik zintuiglijke details: geuren (brommerbenzine, Sunsilk shampoo), geluiden (piepende modem, rinkelende telefoon)
 - Beschrijf de 'analoge vertraging': wachten op foto's, brieven schrijven, teletekst checken
