@@ -31,6 +31,25 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJh
 
 type VideoVariant = 'slideshow' | 'scrapbook';
 
+// Extra silence between event narrations (frames @ 30fps) — gives the viewer breathing room
+const INTER_EVENT_PAUSE_FRAMES = 60; // ~2 seconds
+
+// Condense a description to ~20-30 words for spoken narration, ending at a sentence boundary.
+const condenseForSpeech = (text: string, targetWords = 25): string => {
+  if (!text) return '';
+  const sentences = text.match(/[^.!?]+[.!?]+/g) ?? [text];
+  const out: string[] = [];
+  let count = 0;
+  for (const s of sentences) {
+    const w = s.trim().split(/\s+/).length;
+    if (out.length > 0 && count + w > targetWords + 8) break;
+    out.push(s.trim());
+    count += w;
+    if (count >= targetWords) break;
+  }
+  return out.join(' ').trim() || text;
+};
+
 interface VideoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -193,7 +212,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
 
       // All events in parallel (speech + sound effects)
       const eventPromises = events.map(async (event) => {
-        const speechText = `${event.title}. ${event.description}`;
+        const speechText = `${event.title}. ${condenseForSpeech(event.description)}`;
 
         const [speechResult, soundEffectResult] = await Promise.all([
           generateSpeech({
@@ -258,7 +277,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
           audioUrl = base64ToAudioUrl(speechResult.audioContent);
           // Use EXACT duration from Web Audio API + minimal 2-frame buffer
           const exactDuration = speechResult.exactDuration || speechResult.estimatedDurationSeconds;
-          audioDurationFrames = Math.round(exactDuration * FPS) + 2;
+          audioDurationFrames = Math.round(exactDuration * FPS) + 2 + INTER_EVENT_PAUSE_FRAMES;
           console.log(`Event "${event.title}": exact=${speechResult.exactDuration?.toFixed(2)}s, estimated=${speechResult.estimatedDurationSeconds.toFixed(2)}s, frames=${audioDurationFrames}`);
         }
 
