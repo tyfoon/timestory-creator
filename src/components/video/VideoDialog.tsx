@@ -131,6 +131,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
   // Per-language ElevenLabs voice IDs (falls back to default George if not mapped)
   const elevenLabsVoiceByLang: Record<string, string> = {
     nl: 'FpLGR2n1CcG1v7SHJFsa',
+    en: '7S3KNdLDL7aRgBVRQb1z',
   };
   const elevenLabsVoiceId = elevenLabsVoiceByLang[language];
 
