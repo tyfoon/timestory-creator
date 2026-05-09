@@ -27,6 +27,7 @@ interface SpeechResult {
 
 // Default ElevenLabs voice ID - George (warm male, works with free tier)
 const DEFAULT_ELEVENLABS_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb';
+const MIN_PLAYABLE_AUDIO_BASE64_LENGTH = 1000;
 
 /**
  * Generate speech audio using Google Cloud TTS via Edge Function.
@@ -102,6 +103,10 @@ const generateSpeechElevenLabs = async (params: Omit<GenerateSpeechParams, 'prov
       throw new Error('No data returned from ElevenLabs TTS');
     }
 
+    if (!data.audioContent || data.audioContent.length < MIN_PLAYABLE_AUDIO_BASE64_LENGTH) {
+      throw new Error('ElevenLabs returned no playable audio');
+    }
+
     return { ...data, provider: 'elevenlabs' };
   } finally {
     releaseElevenLabsSlot();
@@ -126,7 +131,7 @@ export const generateSpeech = async (params: GenerateSpeechParams): Promise<Spee
  * Convert base64 audio to a data URL for use in Remotion.
  */
 export const base64ToAudioUrl = (base64: string): string => {
-  return `data:audio/mp3;base64,${base64}`;
+  return `data:audio/mpeg;base64,${base64}`;
 };
 
 /**
