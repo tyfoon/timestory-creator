@@ -135,12 +135,15 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
   };
   const elevenLabsVoiceId = elevenLabsVoiceByLang[language];
 
-  // Force back to Google if user logs out while ElevenLabs is selected
+  // Force back to Google if user is definitively logged out (not during auth loading
+  // or transient session-refresh failures). Without the loading guard, a brief
+  // network hiccup on the auth refresh would silently downgrade the user from
+  // ElevenLabs to Google TTS without any feedback.
   useEffect(() => {
-    if (!user && voiceProvider === 'elevenlabs') {
+    if (!authLoading && !user && voiceProvider === 'elevenlabs') {
       setVoiceProvider('google');
     }
-  }, [user, voiceProvider]);
+  }, [authLoading, user, voiceProvider]);
 
   const handleSelectElevenLabs = useCallback(() => {
     if (!user) {
