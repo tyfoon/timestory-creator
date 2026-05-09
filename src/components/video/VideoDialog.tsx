@@ -277,7 +277,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
           audioUrl = base64ToAudioUrl(speechResult.audioContent);
           // Use EXACT duration from Web Audio API + minimal 2-frame buffer
           const exactDuration = speechResult.exactDuration || speechResult.estimatedDurationSeconds;
-          audioDurationFrames = Math.round(exactDuration * FPS) + 2;
+          audioDurationFrames = Math.round(exactDuration * FPS) + 2 + INTER_EVENT_PAUSE_FRAMES;
           console.log(`Event "${event.title}": exact=${speechResult.exactDuration?.toFixed(2)}s, estimated=${speechResult.estimatedDurationSeconds.toFixed(2)}s, frames=${audioDurationFrames}`);
         }
 
