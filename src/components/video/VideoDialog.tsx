@@ -120,6 +120,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
   const [voiceProvider, setVoiceProvider] = useState<VoiceProvider>('google');
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const playerContainerRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<any>(null);
   const [showFullscreenOverlay, setShowFullscreenOverlay] = useState(false);
   const [hasTriedAutoFullscreen, setHasTriedAutoFullscreen] = useState(false);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
@@ -318,6 +319,10 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
       setIntroAudioUrl(newIntroAudioUrl);
       setIntroDurationFrames(newIntroDurationFrames);
       setIsReady(true);
+      requestAnimationFrame(() => {
+        playerRef.current?.seekTo?.(0);
+        playerRef.current?.pause?.();
+      });
     } catch (error) {
       console.error('Audio generation failed:', error);
       setAudioError(error instanceof Error ? error.message : String(t('spokenStoryError')));
@@ -545,6 +550,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                 }}
               >
                 <Player
+                  ref={playerRef}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   component={videoVariant === 'scrapbook' ? ScrapbookVideoComponent as any : TimelineVideoComponent as any}
                   inputProps={{
