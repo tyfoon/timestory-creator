@@ -15,7 +15,6 @@ import {
   VideoEvent 
 } from '@/remotion';
 import { generateSpeech, base64ToAudioUrl, VoiceProvider } from '@/remotion/lib/speechApi';
-import { classifyEventEmotions, EmotionSegment } from '@/remotion/lib/emotionClassifier';
 import { measureAudioDuration } from '@/remotion/lib/audioUtils';
 import { ShareDialog } from '@/components/video/ShareDialog';
 import { StoryContent, StorySettings } from '@/hooks/useSaveStory';
@@ -173,57 +172,20 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
       const totalSegments = events.length + (storyIntroduction ? 1 : 0);
       let completed = 0;
 
-      // For ElevenLabs: kick off an emotion-classification call that labels
-      // intro + every event with an audio tag and tuned voice_settings.
-      // Runs in parallel with TTS generation: we only USE its results if it
-      // resolves before the TTS call for that segment fires (typically <1s).
-      // Failures fall back to neutral narration silently.
-      const emotionPromise = voiceProvider === 'elevenlabs'
-        ? classifyEventEmotions({
-            language,
-            intro: storyIntroduction,
-            events: events.map(e => ({
-              id: e.id,
-              title: e.title,
-              description: e.description,
-              year: (e as any).year,
-            })),
-          })
-        : Promise.resolve(null);
-
-      // Helper: pull emotion segment for a given key, with a timeout so a
-      // slow classifier never blocks audio generation indefinitely.
-      const getEmotionFor = async (
-        kind: 'intro' | 'event',
-        eventId?: string,
-      ): Promise<EmotionSegment | undefined> => {
-        if (voiceProvider !== 'elevenlabs') return undefined;
-        const classification = await Promise.race([
-          emotionPromise,
-          new Promise<null>(resolve => setTimeout(() => resolve(null), 8000)),
-        ]);
-        if (!classification) return undefined;
-        if (kind === 'intro') return classification.intro ?? undefined;
-        return eventId ? classification.events[eventId] : undefined;
-      };
+      let firstSpeechError: unknown = null;
 
       // PARALLEL: Generate intro + all event audio simultaneously
       const introPromise = storyIntroduction
-        ? getEmotionFor('intro').then(emotion =>
-            generateSpeech({
-              text: storyIntroduction,
-              speakingRate: 1.0,
-              provider: voiceProvider,
-              voice: voiceProvider === 'elevenlabs' ? elevenLabsVoiceId : undefined,
-              audioTag: emotion?.audioTag,
-              stability: emotion?.voiceSettings.stability,
-              similarityBoost: emotion?.voiceSettings.similarityBoost,
-              style: emotion?.voiceSettings.style,
-            }),
-          ).then(async (result) => {
+        ? generateSpeech({
+            text: storyIntroduction,
+            speakingRate: 1.0,
+            provider: voiceProvider,
+            voice: voiceProvider === 'elevenlabs' ? elevenLabsVoiceId : undefined,
+          }).then(async (result) => {
             const exactDuration = await measureAudioDuration(result.audioContent);
             return { ...result, exactDuration };
           }).catch(err => {
+            firstSpeechError ??= err;
             console.error('Failed to generate intro audio:', err);
             return null;
           })
@@ -234,22 +196,17 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
         const speechText = `${event.title}. ${event.description}`;
 
         const [speechResult, soundEffectResult] = await Promise.all([
-          getEmotionFor('event', event.id).then(emotion =>
-            generateSpeech({
-              text: speechText,
-              provider: voiceProvider,
-              voice: voiceProvider === 'elevenlabs' ? elevenLabsVoiceId : undefined,
-              audioTag: emotion?.audioTag,
-              stability: emotion?.voiceSettings.stability,
-              similarityBoost: emotion?.voiceSettings.similarityBoost,
-              style: emotion?.voiceSettings.style,
-            }),
-          )
+          generateSpeech({
+            text: speechText,
+            provider: voiceProvider,
+            voice: voiceProvider === 'elevenlabs' ? elevenLabsVoiceId : undefined,
+          })
             .then(async (result) => {
               const exactDuration = await measureAudioDuration(result.audioContent);
               return { ...result, exactDuration };
             })
             .catch(err => {
+              firstSpeechError ??= err;
               console.error(`Failed to generate audio for event ${event.id}:`, err);
               return null;
             }),
@@ -319,6 +276,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
       });
 
       if (speechSegmentsGenerated < MIN_SPEECH_SEGMENTS_REQUIRED) {
+        if (firstSpeechError) throw firstSpeechError;
         throw new Error(`${String(t('spokenStoryError'))}: no playable speech segments were generated`);
       }
 
@@ -336,7 +294,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
     } finally {
       setIsGeneratingAudio(false);
     }
-  }, [events, storyIntroduction, voiceProvider, language, elevenLabsVoiceId, t]);
+  }, [events, storyIntroduction, voiceProvider, elevenLabsVoiceId, t]);
 
   // Check if we're in music video mode (background music provided)
   const isMusicVideoMode = !!backgroundMusicUrl && !!backgroundMusicDuration;

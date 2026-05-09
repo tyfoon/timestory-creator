@@ -96,7 +96,10 @@ const generateSpeechElevenLabs = async (params: Omit<GenerateSpeechParams, 'prov
 
     if (error) {
       console.error('ElevenLabs TTS generation error:', error);
-      throw new Error(error.message || 'Failed to generate speech with ElevenLabs');
+      const details = typeof error.context === 'object' && error.context && 'details' in error.context
+        ? String((error.context as { details?: unknown }).details)
+        : '';
+      throw new Error(details || error.message || 'Failed to generate speech with ElevenLabs');
     }
 
     if (!data) {
