@@ -98,6 +98,7 @@ const fetchSoundEffect = async (query: string): Promise<string | null> => {
 
 const FPS = 30;
 const DEFAULT_EVENT_DURATION_SECONDS = 5;
+const MIN_SPEECH_SEGMENTS_REQUIRED = 1;
 
 export const VideoDialog: React.FC<VideoDialogProps> = ({
   open,
@@ -161,15 +162,6 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
     }
     setVoiceProvider('elevenlabs');
   }, [user, navigate, toast, t]);
-
-  useEffect(() => {
-    return () => {
-      if (introAudioUrl?.startsWith('blob:')) URL.revokeObjectURL(introAudioUrl);
-      videoEvents.forEach((event) => {
-        if (event.audioUrl?.startsWith('blob:')) URL.revokeObjectURL(event.audioUrl);
-      });
-    };
-  }, [introAudioUrl, videoEvents]);
 
   // Generate audio for all events - PARALLEL for speed, EXACT durations via Web Audio API
   const handleGenerateAudio = useCallback(async () => {
@@ -298,12 +290,14 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
       }
 
       // Process event results
+      let speechSegmentsGenerated = introResult ? 1 : 0;
       const newVideoEvents: VideoEvent[] = eventResults.map(({ event, speechResult, soundEffectResult }) => {
         let audioUrl: string | undefined;
         let audioDurationFrames = Math.round(DEFAULT_EVENT_DURATION_SECONDS * FPS);
         let soundEffectAudioUrl: string | undefined;
 
         if (speechResult) {
+          speechSegmentsGenerated++;
           audioUrl = base64ToAudioUrl(speechResult.audioContent);
           // Use EXACT duration from Web Audio API + minimal 2-frame buffer
           const exactDuration = speechResult.exactDuration || speechResult.estimatedDurationSeconds;
@@ -323,6 +317,10 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
           soundEffectAudioUrl,
         };
       });
+
+      if (speechSegmentsGenerated < MIN_SPEECH_SEGMENTS_REQUIRED) {
+        throw new Error(`${String(t('spokenStoryError'))}: no playable speech segments were generated`);
+      }
 
       setVideoEvents(newVideoEvents);
       setIntroAudioUrl(newIntroAudioUrl);
@@ -575,6 +573,8 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                     retroIntensity: 0.85,
                     externalAudioUrl: isMusicVideoMode ? backgroundMusicUrl : undefined,
                     externalAudioDuration: isMusicVideoMode ? backgroundMusicDuration : undefined,
+                    introReadyTitle: t('introReadyTitle') as string,
+                    introReadyHint: t('introReadyHint') as string,
                   }}
                   durationInFrames={totalDuration}
                   compositionWidth={1920}
