@@ -162,6 +162,15 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
     setVoiceProvider('elevenlabs');
   }, [user, navigate, toast, t]);
 
+  useEffect(() => {
+    return () => {
+      if (introAudioUrl?.startsWith('blob:')) URL.revokeObjectURL(introAudioUrl);
+      videoEvents.forEach((event) => {
+        if (event.audioUrl?.startsWith('blob:')) URL.revokeObjectURL(event.audioUrl);
+      });
+    };
+  }, [introAudioUrl, videoEvents]);
+
   // Generate audio for all events - PARALLEL for speed, EXACT durations via Web Audio API
   const handleGenerateAudio = useCallback(async () => {
     setIsGeneratingAudio(true);
