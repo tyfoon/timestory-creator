@@ -131,7 +131,17 @@ export const generateSpeech = async (params: GenerateSpeechParams): Promise<Spee
  * Convert base64 audio to a data URL for use in Remotion.
  */
 export const base64ToAudioUrl = (base64: string): string => {
-  return `data:audio/mpeg;base64,${base64}`;
+  try {
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return URL.createObjectURL(new Blob([bytes], { type: 'audio/mpeg' }));
+  } catch (error) {
+    console.error('Failed to convert speech audio to Blob URL:', error);
+    return `data:audio/mpeg;base64,${base64}`;
+  }
 };
 
 /**

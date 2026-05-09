@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { Player } from '@remotion/player';
+import { Player, type PlayerRef } from '@remotion/player';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -120,7 +120,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
   const [voiceProvider, setVoiceProvider] = useState<VoiceProvider>('google');
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const playerContainerRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<any>(null);
+  const playerRef = useRef<PlayerRef>(null);
   const [showFullscreenOverlay, setShowFullscreenOverlay] = useState(false);
   const [hasTriedAutoFullscreen, setHasTriedAutoFullscreen] = useState(false);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
@@ -161,6 +161,15 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
     }
     setVoiceProvider('elevenlabs');
   }, [user, navigate, toast, t]);
+
+  useEffect(() => {
+    return () => {
+      if (introAudioUrl?.startsWith('blob:')) URL.revokeObjectURL(introAudioUrl);
+      videoEvents.forEach((event) => {
+        if (event.audioUrl?.startsWith('blob:')) URL.revokeObjectURL(event.audioUrl);
+      });
+    };
+  }, [introAudioUrl, videoEvents]);
 
   // Generate audio for all events - PARALLEL for speed, EXACT durations via Web Audio API
   const handleGenerateAudio = useCallback(async () => {
