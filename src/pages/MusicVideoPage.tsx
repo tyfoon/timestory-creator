@@ -23,6 +23,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useSoundtrackGeneration, clearSoundtrackState } from '@/hooks/useSoundtrackGeneration';
 import { TimelineVideoComponent, VideoEvent } from '@/remotion';
 import { StoryEndDiscover } from '@/components/story/StoryEndDiscover';
+import { VideoDialog } from '@/components/video/VideoDialog';
 import { getCachedTimeline } from '@/lib/timelineCache';
 import { TimelineEvent } from '@/types/timeline';
 import { FormData } from '@/types/form';
@@ -40,6 +41,7 @@ const MusicVideoPage = () => {
   const [storyTitle, setStoryTitle] = useState('');
   const [storyIntroduction, setStoryIntroduction] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [enableVhsEffect, setEnableVhsEffect] = useState(false);
 
   // Load timeline data from sessionStorage cache
@@ -318,6 +320,9 @@ const MusicVideoPage = () => {
         <StoryEndDiscover
           currentPage="music-video"
           searchParams={searchParams}
+          tileActions={{
+            'spoken-story': () => setIsVideoDialogOpen(true),
+          }}
         />
       </main>
 
@@ -355,6 +360,14 @@ const MusicVideoPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <VideoDialog
+        open={isVideoDialogOpen}
+        onOpenChange={setIsVideoDialogOpen}
+        events={events}
+        storyTitle={displayTitle}
+        storyIntroduction={storyIntroduction}
+      />
 
     </div>
   );

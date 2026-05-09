@@ -48,6 +48,8 @@ export const ScrapbookVideoComponent: React.FC<TimelineVideoProps> = ({
   retroIntensity = 0.85,
   externalAudioUrl,
   externalAudioDuration,
+  introReadyTitle,
+  introReadyHint,
 }) => {
   const { durationInFrames } = useVideoConfig();
 
@@ -155,7 +157,7 @@ export const ScrapbookVideoComponent: React.FC<TimelineVideoProps> = ({
       {/* Intro sequence */}
       {storyTitle && (
         <Sequence from={0} durationInFrames={introDurationFrames}>
-          <IntroCard storyTitle={storyTitle} storyIntroduction={storyIntroduction} />
+          <IntroCard storyTitle={storyTitle} storyIntroduction={storyIntroduction} readyTitle={introReadyTitle} readyHint={introReadyHint} />
         </Sequence>
       )}
 
