@@ -212,7 +212,7 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
 
       // All events in parallel (speech + sound effects)
       const eventPromises = events.map(async (event) => {
-        const speechText = `${event.title}. ${event.description}`;
+        const speechText = `${event.title}. ${condenseForSpeech(event.description)}`;
 
         const [speechResult, soundEffectResult] = await Promise.all([
           generateSpeech({
