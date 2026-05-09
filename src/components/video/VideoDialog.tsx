@@ -31,6 +31,25 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJh
 
 type VideoVariant = 'slideshow' | 'scrapbook';
 
+// Extra silence between event narrations (frames @ 30fps) — gives the viewer breathing room
+const INTER_EVENT_PAUSE_FRAMES = 60; // ~2 seconds
+
+// Condense a description to ~20-30 words for spoken narration, ending at a sentence boundary.
+const condenseForSpeech = (text: string, targetWords = 25): string => {
+  if (!text) return '';
+  const sentences = text.match(/[^.!?]+[.!?]+/g) ?? [text];
+  const out: string[] = [];
+  let count = 0;
+  for (const s of sentences) {
+    const w = s.trim().split(/\s+/).length;
+    if (out.length > 0 && count + w > targetWords + 8) break;
+    out.push(s.trim());
+    count += w;
+    if (count >= targetWords) break;
+  }
+  return out.join(' ').trim() || text;
+};
+
 interface VideoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
