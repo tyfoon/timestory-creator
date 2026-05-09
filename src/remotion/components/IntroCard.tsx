@@ -61,7 +61,7 @@ export const IntroCard: React.FC<IntroCardProps> = ({ storyTitle, storyIntroduct
             textAlign: 'center',
             lineHeight: 1.3,
           }}>
-            🎬 {readyTitle || 'Je persoonlijke muziekvideo is klaar'}
+            {readyTitle || '🎬 Je persoonlijke muziekvideo is klaar'}
           </div>
           <div style={{
             fontFamily: t.fonts.body,
