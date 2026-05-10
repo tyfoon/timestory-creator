@@ -583,6 +583,8 @@ const nlTranslations = {
   // Output formats — Remotion intro card
   introReadyTitle: "🎬 Je persoonlijke muziekvideo is klaar",
   introReadyHint: "Druk op ▶ om af te spelen",
+  introReadyTitleNarrative: "📖 Je persoonlijk verhaal is klaar te bekijken",
+  introReadyHintNarrative: "Druk op ▶ om af te spelen",
 
   // Output formats — PDF
   pdfDefaultFirstName: "Jou",
