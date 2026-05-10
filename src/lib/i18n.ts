@@ -1813,6 +1813,8 @@ export const translations: Record<Language, Record<TranslationKey, TranslationVa
     tiktokCannotShareFiles: "Diese Dateien können nicht geteilt werden",
     introReadyTitle: "🎬 Dein persönliches Musikvideo ist bereit",
     introReadyHint: "Drücke ▶ zum Abspielen",
+    introReadyTitleNarrative: "📖 Deine persönliche Erzählung ist bereit",
+    introReadyHintNarrative: "Drücke ▶ zum Abspielen",
     pdfDefaultFirstName: "Dich",
     pdfDefaultStoryName: "TimeStory",
     pdfTitleFallback: "Das Jahr von {name}",
