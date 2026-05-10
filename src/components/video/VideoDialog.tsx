@@ -550,8 +550,8 @@ export const VideoDialog: React.FC<VideoDialogProps> = ({
                     retroIntensity: 0.85,
                     externalAudioUrl: isMusicVideoMode ? backgroundMusicUrl : undefined,
                     externalAudioDuration: isMusicVideoMode ? backgroundMusicDuration : undefined,
-                    introReadyTitle: t('introReadyTitle') as string,
-                    introReadyHint: t('introReadyHint') as string,
+                    introReadyTitle: t(isMusicVideoMode ? 'introReadyTitle' : 'introReadyTitleNarrative') as string,
+                    introReadyHint: t(isMusicVideoMode ? 'introReadyHint' : 'introReadyHintNarrative') as string,
                   }}
                   durationInFrames={totalDuration}
                   compositionWidth={1920}

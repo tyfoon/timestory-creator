@@ -583,6 +583,8 @@ const nlTranslations = {
   // Output formats — Remotion intro card
   introReadyTitle: "🎬 Je persoonlijke muziekvideo is klaar",
   introReadyHint: "Druk op ▶ om af te spelen",
+  introReadyTitleNarrative: "📖 Je persoonlijk verhaal is klaar te bekijken",
+  introReadyHintNarrative: "Druk op ▶ om af te spelen",
 
   // Output formats — PDF
   pdfDefaultFirstName: "Jou",
@@ -1219,6 +1221,8 @@ export const translations: Record<Language, Record<TranslationKey, TranslationVa
     tiktokCannotShareFiles: "Cannot share these files",
     introReadyTitle: "🎬 Your personal music video is ready",
     introReadyHint: "Press ▶ to play",
+    introReadyTitleNarrative: "📖 Your personal narrative book is ready",
+    introReadyHintNarrative: "Press ▶ to play",
     pdfDefaultFirstName: "You",
     pdfDefaultStoryName: "TimeStory",
     pdfTitleFallback: "The Year of {name}",
@@ -1809,6 +1813,8 @@ export const translations: Record<Language, Record<TranslationKey, TranslationVa
     tiktokCannotShareFiles: "Diese Dateien können nicht geteilt werden",
     introReadyTitle: "🎬 Dein persönliches Musikvideo ist bereit",
     introReadyHint: "Drücke ▶ zum Abspielen",
+    introReadyTitleNarrative: "📖 Deine persönliche Erzählung ist bereit",
+    introReadyHintNarrative: "Drücke ▶ zum Abspielen",
     pdfDefaultFirstName: "Dich",
     pdfDefaultStoryName: "TimeStory",
     pdfTitleFallback: "Das Jahr von {name}",
@@ -2399,6 +2405,8 @@ export const translations: Record<Language, Record<TranslationKey, TranslationVa
     tiktokCannotShareFiles: "Impossible de partager ces fichiers",
     introReadyTitle: "🎬 Votre vidéo musicale personnelle est prête",
     introReadyHint: "Appuyez sur ▶ pour lire",
+    introReadyTitleNarrative: "📖 Votre récit personnel est prêt",
+    introReadyHintNarrative: "Appuyez sur ▶ pour lire",
     pdfDefaultFirstName: "Toi",
     pdfDefaultStoryName: "TimeStory",
     pdfTitleFallback: "L'année de {name}",
