@@ -144,7 +144,7 @@ export const MusicVideoReadyNotifier = () => {
   const handleWatch = () => {
     setVisible(false);
     setMinimized(false);
-    if (audioUrl) sessionStorage.setItem(DISMISSED_KEY, audioUrl);
+    if (audioUrl) safeSetItem(DISMISSED_KEY, audioUrl);
 
     // Try the SPA-friendly route first (preserves react-router state).
     navigate(targetMusicVideoHref);
@@ -161,7 +161,7 @@ export const MusicVideoReadyNotifier = () => {
   };
 
   const handleDismiss = () => {
-    if (audioUrl) sessionStorage.setItem(DISMISSED_KEY, audioUrl);
+    if (audioUrl) safeSetItem(DISMISSED_KEY, audioUrl);
     setVisible(false);
     setMinimized(false);
   };
@@ -468,7 +468,7 @@ export const MusicVideoReadyNotifier = () => {
                 <a
                   href={targetMusicVideoHref}
                   onClick={() => {
-                    if (audioUrl) sessionStorage.setItem(DISMISSED_KEY, audioUrl);
+                    if (audioUrl) safeSetItem(DISMISSED_KEY, audioUrl);
                   }}
                   className="flex-1 inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
                 >
