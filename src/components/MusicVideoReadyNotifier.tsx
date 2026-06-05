@@ -113,7 +113,7 @@ export const MusicVideoReadyNotifier = () => {
 
     // Already on the music video page → no notification needed
     if (onMusicVideoPage) {
-      sessionStorage.setItem(SEEN_KEY, audioUrl);
+      safeSetItem(SEEN_KEY, audioUrl);
       setVisible(false);
       setMinimized(false);
       return;
@@ -128,7 +128,7 @@ export const MusicVideoReadyNotifier = () => {
 
     // First time seeing this completed track on a different page
     if (seen !== audioUrl) {
-      sessionStorage.setItem(SEEN_KEY, audioUrl);
+      safeSetItem(SEEN_KEY, audioUrl);
       setVisible(true);
       setMinimized(false);
     }
