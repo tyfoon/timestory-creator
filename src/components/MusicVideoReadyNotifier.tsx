@@ -28,6 +28,15 @@ const SEEN_KEY = 'soundtrack_notify_seen';     // value = audioUrl (one notif pe
 const DISMISSED_KEY = 'soundtrack_notify_dismissed'; // value = audioUrl (collapsed to badge)
 const TITLE_PULSE_INTERVAL_MS = 1500;
 
+/** Guarded sessionStorage write — avoids QuotaExceededError crashes. */
+const safeSetItem = (key: string, value: string) => {
+  try {
+    sessionStorage.setItem(key, value);
+  } catch {
+    // Quota full or storage unavailable — silently ignore
+  }
+};
+
 export const MusicVideoReadyNotifier = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
