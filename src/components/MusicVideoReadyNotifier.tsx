@@ -28,6 +28,15 @@ const SEEN_KEY = 'soundtrack_notify_seen';     // value = audioUrl (one notif pe
 const DISMISSED_KEY = 'soundtrack_notify_dismissed'; // value = audioUrl (collapsed to badge)
 const TITLE_PULSE_INTERVAL_MS = 1500;
 
+/** Guarded sessionStorage write — avoids QuotaExceededError crashes. */
+const safeSetItem = (key: string, value: string) => {
+  try {
+    sessionStorage.setItem(key, value);
+  } catch {
+    // Quota full or storage unavailable — silently ignore
+  }
+};
+
 export const MusicVideoReadyNotifier = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -104,7 +113,7 @@ export const MusicVideoReadyNotifier = () => {
 
     // Already on the music video page → no notification needed
     if (onMusicVideoPage) {
-      sessionStorage.setItem(SEEN_KEY, audioUrl);
+      safeSetItem(SEEN_KEY, audioUrl);
       setVisible(false);
       setMinimized(false);
       return;
@@ -119,7 +128,7 @@ export const MusicVideoReadyNotifier = () => {
 
     // First time seeing this completed track on a different page
     if (seen !== audioUrl) {
-      sessionStorage.setItem(SEEN_KEY, audioUrl);
+      safeSetItem(SEEN_KEY, audioUrl);
       setVisible(true);
       setMinimized(false);
     }
@@ -135,7 +144,7 @@ export const MusicVideoReadyNotifier = () => {
   const handleWatch = () => {
     setVisible(false);
     setMinimized(false);
-    if (audioUrl) sessionStorage.setItem(DISMISSED_KEY, audioUrl);
+    if (audioUrl) safeSetItem(DISMISSED_KEY, audioUrl);
 
     // Try the SPA-friendly route first (preserves react-router state).
     navigate(targetMusicVideoHref);
@@ -152,7 +161,7 @@ export const MusicVideoReadyNotifier = () => {
   };
 
   const handleDismiss = () => {
-    if (audioUrl) sessionStorage.setItem(DISMISSED_KEY, audioUrl);
+    if (audioUrl) safeSetItem(DISMISSED_KEY, audioUrl);
     setVisible(false);
     setMinimized(false);
   };
@@ -459,7 +468,7 @@ export const MusicVideoReadyNotifier = () => {
                 <a
                   href={targetMusicVideoHref}
                   onClick={() => {
-                    if (audioUrl) sessionStorage.setItem(DISMISSED_KEY, audioUrl);
+                    if (audioUrl) safeSetItem(DISMISSED_KEY, audioUrl);
                   }}
                   className="flex-1 inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
                 >
