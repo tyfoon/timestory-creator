@@ -3,7 +3,7 @@ export type Language = "nl" | "en" | "de" | "fr";
 const nlTranslations = {
   // Landing page
   siteTitle: "Het jaar van",
-  heroTitle: "Jouw verhaal door de tijd",
+  heroTitle: "Juw verhaal door de tijd",
   heroSubtitle:
     "Ontdek wat er gebeurde op de dag dat jij geboren werd, of reis door de jaren heen met een persoonlijk historisch overzicht.",
   startButton: "Begin je reis",
